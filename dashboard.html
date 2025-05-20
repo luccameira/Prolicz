@@ -1,21 +1,90 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard - Prolicz</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="incluir-layout.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Prolicz</title>
+    <link rel="stylesheet" href="layout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <!-- Layout e conteúdo da página -->
-  <div id="layout-container">
-    <main class="main-content">
-      <h1>Olá, <span id="nome-usuario">Usuário</span>!</h1>
-      <div class="card">
+
+    <div class="topbar"></div>
+
+    <div class="sidebar"></div>
+
+    <div class="content">
+        <h1 class="titulo-pagina">Dashboard</h1>
+
         <p>Bem-vindo ao sistema Prolicz. Aqui você poderá acompanhar o andamento das coletas, pedidos e tarefas operacionais.</p>
-      </div>
-    </main>
-  </div>
+
+        <div class="tabela-container" style="margin-top: 20px;">
+            <p style="padding: 14px 18px; margin-bottom: 0;">Visão geral das principais informações:</p>
+            <ul>
+                <li style="padding: 5px 18px;">Total de Clientes: <strong>150</strong></li>
+                <li style="padding: 5px 18px;">Coletas Pendentes: <strong style="color: #ffc107;">5</strong></li>
+                <li style="padding: 5px 18px;">Pedidos Concluídos Hoje: <strong>25</strong></li>
+            </ul>
+        </div>
+
+        <div class="filtros" style="margin-top: 30px;">
+            <div class="filtro-item">
+                <label for="periodo">Filtrar por Período:</label>
+                <select id="periodo">
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Últimos 7 dias</option>
+                    <option value="mes">Últimos 30 dias</option>
+                </select>
+            </div>
+            <div class="filtro-item">
+                <label for="status">Filtrar por Status:</label>
+                <select id="status">
+                    <option value="todos">Todos</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="concluido">Concluído</option>
+                </select>
+            </div>
+            <button class="btn btn-registrar" style="align-self: flex-end;">Aplicar Filtro</button>
+        </div>
+
+        <div class="tabela-container" style="margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>#001</td>
+                        <td>Cliente A</td>
+                        <td><span style="color: green;">Concluído</span></td>
+                        <td>20/05/2025</td>
+                        <td>R$ 1.200,00</td>
+                    </tr>
+                    <tr>
+                        <td>#002</td>
+                        <td>Cliente B</td>
+                        <td><span style="color: #ffc107;">Pendente</span></td>
+                        <td>20/05/2025</td>
+                        <td>R$ 850,00</td>
+                    </tr>
+                    <tr>
+                        <td>#003</td>
+                        <td>Cliente C</td>
+                        <td><span style="color: green;">Concluído</span></td>
+                        <td>19/05/2025</td>
+                        <td>R$ 3.100,00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="incluir-layout.js"></script>
 </body>
 </html>
