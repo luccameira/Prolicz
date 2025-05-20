@@ -3,7 +3,7 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-const connection = require('./db'); // usa ./ pois está no mesmo nível
+const connection = require('./routes/db');
 
 // Middlewares
 app.use(express.json());
