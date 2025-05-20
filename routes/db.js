@@ -1,15 +1,20 @@
-const mysql = require('mysql');
+// /Prolicz/routes/db.js
+const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
   host: 'localhost',
-  user: 'root',
-  password: '', // ou '123' se estiver diferente
-  database: 'prolicz'
+  user: 'prolicz_user',       // novo usuário que você criou
+  password: 'senha123',       // senha definida no HeidiSQL
+  database: 'prolicz'         // nome do seu banco de dados
 });
 
-connection.connect(err => {
-  if (err) throw err;
-  console.log('✅ Conectado ao banco de dados MySQL!');
+// Conectar e exibir erros se houver
+connection.connect((err) => {
+  if (err) {
+    console.error('❌ Erro ao conectar ao banco de dados:', err.message);
+  } else {
+    console.log('✅ Conectado ao banco de dados MySQL!');
+  }
 });
 
 module.exports = connection;
