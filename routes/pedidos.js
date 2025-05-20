@@ -50,15 +50,15 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   }
 });
 
-// GET /api/pedidos - Listar pedidos com materiais organizados
+// GET /api/pedidos - Listar pedidos com dados completos para tarefas
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      c.nome_fantasia AS cliente,
-      p.placa_veiculo, p.nome_motorista, p.nome_ajudante
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE 1 = 1
@@ -93,17 +93,20 @@ router.get('/', async (req, res) => {
     const [pedidos] = await connection.promise().query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-      const [materiais] = await connection.promise().query(
-        `SELECT nome_produto, peso AS quantidade, unidade, tipo_peso
+      const [itens] = await connection.promise().query(
+        `SELECT nome_produto, peso, valor_unitario, (peso * valor_unitario) AS valor_total
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
-      pedido.materiais = materiais.map(m => ({
-        ...m,
-        texto_formatado: `${m.nome_produto} - ${Number(m.quantidade).toFixed(3)} ${m.unidade} (${m.tipo_peso})`
-      }));
-      pedido.nome_produto = materiais.map(m => m.nome_produto).join(', ');
+
+      pedido.itens = itens;
+      pedido.valor_total = itens.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
+      pedido.observacoes = pedido.observacao || '';
+      pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
+        .split('|')
+        .map(str => str.trim())
+        .filter(str => str.length > 0);
     }
 
     res.json(pedidos);
@@ -171,7 +174,7 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/registrar-peso - Registro do peso carregado (antigo - usado em versões anteriores)
+// PUT /api/pedidos/:id/registrar-peso
 router.put('/:id/registrar-peso', async (req, res) => {
   const pedidoId = req.params.id;
   const { peso, desconto, motivo } = req.body;
@@ -234,7 +237,7 @@ router.get('/produtos', async (req, res) => {
   }
 });
 
-// ✅ ROTA CORRETA: Finalizar tarefa de carga e avançar status
+// PUT /api/pedidos/:id/carga - Finalizar tarefa de carga
 router.put('/:id/carga', async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
