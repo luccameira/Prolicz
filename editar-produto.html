@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Produto</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f6fa; }
+    .sidebar { height: 100vh; width: 220px; position: fixed; top: 0; left: 0; background-color: #1e1e2f; padding-top: 20px; color: white; }
+    .sidebar h3 { text-align: center; }
+    .sidebar a { display: block; color: white; padding: 10px 20px; text-decoration: none; }
+    .sidebar a:hover { background-color: #333; }
+    .main-content { margin-left: 240px; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    form { background-color: white; padding: 20px; border-radius: 8px; max-width: 600px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+  </style>
+  <script>
+    function mostrarAlerta(mensagem) {
+      alert(mensagem);
+    }
+  </script>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h1>Editar Produto</h1>
+    <form onsubmit="event.preventDefault(); mostrarAlerta('Alterações salvas com sucesso!');">
+
+      <label for="nome">Nome do Produto</label>
+      <input type="text" id="nome" name="nome" value="Alumínio" required>
+
+      <label for="descricao">Descrição</label>
+      <textarea id="descricao" name="descricao" required>Material reciclável leve</textarea>
+
+      <label for="unidade">Unidade de Medida</label>
+      <select id="unidade" name="unidade" required>
+        <option value="">Selecione</option>
+        <option value="kg" selected>Kg</option>
+        <option value="litros">Litros</option>
+        <option value="unidade">Unidade</option>
+        <option value="caixa">Caixa</option>
+      </select>
+
+      <label for="categoria">Categoria</label>
+      <input type="text" id="categoria" name="categoria" value="Matéria-prima">
+
+      <label for="estoque">Estoque Atual</label>
+      <input type="number" id="estoque" name="estoque" value="150" min="0">
+
+      <button type="submit">Salvar Alterações</button>
+    </form>
+  </div>
+</body>
+</html>

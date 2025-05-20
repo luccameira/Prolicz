@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalhes do Usuário</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f6fa; display: flex; }
+    .sidebar { height: 100vh; width: 220px; position: fixed; top: 0; left: 0; background-color: #1e1e2f; padding-top: 20px; color: white; }
+    .sidebar h3 { text-align: center; }
+    .sidebar a { display: block; color: white; padding: 10px 20px; text-decoration: none; }
+    .sidebar a:hover { background-color: #333; }
+    .main-content { margin-left: 240px; padding: 30px; flex: 1; }
+    h2 { margin-bottom: 20px; }
+    .info { margin-bottom: 15px; }
+    .info span.label { font-weight: bold; display: inline-block; width: 120px; }
+    .voltar { padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h2>Detalhes do Usuário</h2>
+    <div class="info"><span class="label">Nome:</span> <span id="nome"></span></div>
+    <div class="info"><span class="label">Tipo:</span> <span id="tipo"></span></div>
+    <div class="info"><span class="label">E-mail:</span> <span id="email"></span></div>
+    <a href="usuarios.html" class="voltar">← Voltar</a>
+  </div>
+
+  <script>
+    const usuarios = [
+      { nome: "Carlos Mendes", tipo: "Representante", email: "carlos@email.com" },
+      { nome: "Ana Paula", tipo: "Usuário Comum", email: "ana@email.com" }
+    ];
+
+    const index = localStorage.getItem('usuarioVisualizando');
+
+    if (index !== null && usuarios[index]) {
+      const usuario = usuarios[index];
+      document.getElementById('nome').textContent = usuario.nome;
+      document.getElementById('tipo').textContent = usuario.tipo;
+      document.getElementById('email').textContent = usuario.email;
+    } else {
+      document.querySelector('.main-content').innerHTML = "<p>Usuário não encontrado.</p><a class='voltar' href='usuarios.html'>← Voltar</a>";
+    }
+  </script>
+</body>
+</html>

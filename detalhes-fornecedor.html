@@ -1,0 +1,105 @@
+<!-- detalhes-fornecedor.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalhes do Fornecedor</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+    }
+    .sidebar {
+      height: 100vh;
+      width: 220px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #1e1e2f;
+      padding-top: 20px;
+      color: white;
+    }
+    .sidebar h3 {
+      text-align: center;
+      color: white;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #333;
+    }
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+    }
+    .card {
+      background-color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .value {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+  <div class="main-content">
+    <h1>Detalhes do Fornecedor</h1>
+
+    <div class="card">
+      <h2>Informações da Empresa</h2>
+      <p><span class="label">Nome Fantasia:</span> Fornecedora XYZ</p>
+      <p><span class="label">Razão Social:</span> Fornecedora XYZ Ltda</p>
+      <p><span class="label">CNPJ:</span> 11.111.111/0001-11</p>
+      <p><span class="label">Inscrição Estadual:</span> 987654321</p>
+    </div>
+
+    <div class="card">
+      <h2>Endereço</h2>
+      <p><span class="label">Rua:</span> Rua das Indústrias</p>
+      <p><span class="label">Número:</span> 456</p>
+      <p><span class="label">Bairro:</span> Distrito Industrial</p>
+      <p><span class="label">Cidade:</span> Campinas</p>
+      <p><span class="label">Estado:</span> SP</p>
+      <p><span class="label">CEP:</span> 13000-000</p>
+    </div>
+
+    <div class="card">
+      <h2>Contato</h2>
+      <p><span class="label">Nome do Responsável:</span> Maria Oliveira</p>
+      <p><span class="label">Telefone:</span> (19) 99876-5432</p>
+      <p><span class="label">E-mail:</span> contato@fornecedora.xyz</p>
+    </div>
+
+    <div class="card">
+      <h2>Observações</h2>
+      <p><span class="label">Anotações:</span> Fornece equipamentos recicláveis desde 2019. Boa reputação no setor.</p>
+    </div>
+  </div>
+</body>
+</html>

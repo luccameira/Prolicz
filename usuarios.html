@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuários - Prolicz</title>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    .main-content {
+      margin-left: 280px;
+      padding: 100px 20px 40px;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 15px;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      margin-right: 5px;
+      text-decoration: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+    }
+
+    .btn-success {
+      background-color: #28a745;
+    }
+
+    #acoes {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Usuários</h1>
+    <div id="acoes"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Tipo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="lista-usuarios"></tbody>
+    </table>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    function loadUsuarioLogado() {
+      return JSON.parse(localStorage.getItem('usuarioLogado'));
+    }
+
+    window.onload = () => {
+      const usuarioLogado = loadUsuarioLogado();
+      if (!usuarioLogado) return;
+
+      const span = document.getElementById('usuario-nome');
+      if (span) span.textContent = usuarioLogado.nome;
+
+      if (usuarioLogado.permissoes.includes('criar_usuario')) {
+        document.getElementById('acoes').innerHTML = '<a href="novo-usuario.html" class="btn">+ Novo Usuário</a>';
+      }
+
+      carregarUsuarios(usuarioLogado);
+    };
+
+    async function carregarUsuarios(usuarioLogado) {
+      try {
+        const res = await fetch('/api/usuarios');
+        const usuarios = await res.json();
+        const tbody = document.getElementById('lista-usuarios');
+        tbody.innerHTML = '';
+
+        usuarios.forEach(usuario => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${usuario.nome}</td>
+            <td>${usuario.email}</td>
+            <td>${usuario.tipo}</td>
+            <td>
+              ${usuarioLogado.permissoes.includes('editar_usuario') ? `<a href="editar-usuario.html?id=${usuario.id}" class="btn btn-success">Editar</a>` : ''}
+              ${usuarioLogado.permissoes.includes('excluir_usuario') ? `<button onclick="excluirUsuario(${usuario.id})" class="btn btn-danger">Excluir</button>` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+      }
+    }
+
+    async function excluirUsuario(id) {
+      if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        try {
+          const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+          const result = await res.text();
+          alert(result);
+          window.location.reload();
+        } catch (error) {
+          alert('Erro ao excluir usuário.');
+        }
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>
+

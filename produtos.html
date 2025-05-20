@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Produtos</title>
+  <link rel="stylesheet" href="layout.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    .main-content {
+      margin-left: 280px;
+      padding: 100px 40px 40px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .btn-adicionar {
+      background-color: #ffc107;
+      color: black;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-adicionar:hover {
+      background-color: #e0ac00;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i.fa-search {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      color: #999;
+      font-size: 14px;
+    }
+
+    .input-wrapper .input-filtro {
+      padding: 10px 14px 10px 34px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+      color: #333;
+      outline: none;
+      width: 260px;
+    }
+
+    .select-ordenar {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+      color: #333;
+      outline: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      background-color: #f9f9f9;
+      font-weight: 500;
+    }
+
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Produtos</h1>
+
+    <div class="card">
+      <div class="top-actions">
+        <button class="btn-adicionar" onclick="window.location.href='novo-produto.html'">+ Adicionar Produto</button>
+        <div class="input-wrapper">
+          <i class="fa fa-search"></i>
+          <input type="text" id="filtroNome" class="input-filtro" placeholder="Buscar produto..." oninput="filtrarTabela()" />
+        </div>
+        <select id="ordenar" class="select-ordenar" onchange="carregarProdutos()">
+          <option value="mais_recente">Cadastro mais recente</option>
+          <option value="mais_antigo">Cadastro mais antigo</option>
+          <option value="nome_az">Nome (A-Z)</option>
+          <option value="nome_za">Nome (Z-A)</option>
+        </select>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Unidade de Medida</th>
+            <th>Data de Cadastro</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-produtos">
+          <!-- Dados carregados dinamicamente -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      Prolicz © 2025. Todos os direitos reservados.
+    </div>
+  </div>
+
+  <script>
+    let dadosProdutos = [];
+
+    async function carregarProdutos() {
+      try {
+        const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
+        const resposta = await fetch(`/api/pedidos/produtos?ordenar=${ordem}`);
+        dadosProdutos = await resposta.json();
+        renderizarTabela(dadosProdutos);
+      } catch (erro) {
+        console.error('Erro ao carregar produtos:', erro);
+      }
+    }
+
+    function renderizarTabela(lista) {
+      const tabela = document.getElementById('tabela-produtos');
+      tabela.innerHTML = '';
+      lista.forEach(produto => {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${produto.nome_produto}</td>
+          <td>${produto.unidade}</td>
+          <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
+        `;
+        tabela.appendChild(linha);
+      });
+    }
+
+    function filtrarTabela() {
+      const filtro = document.getElementById('filtroNome').value.toLowerCase();
+      const filtrados = dadosProdutos.filter(p => p.nome_produto.toLowerCase().includes(filtro));
+      renderizarTabela(filtrados);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarProdutos();
+    });
+  </script>
+</body>
+</html>

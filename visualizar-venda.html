@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualizar Pedido</title>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    .main-content {
+      margin-left: 280px;
+      padding: 100px 40px 40px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .btn-voltar {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-voltar:hover {
+      background-color: #5a6268;
+    }
+
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      max-width: 600px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #e9ecef;
+      color: #333;
+    }
+
+    input[readonly], select[disabled], textarea[readonly] {
+      background-color: #e0e0e0;
+      color: #666;
+    }
+
+    .produto-bloco {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      background-color: #f9f9f9;
+    }
+
+    .produto-bloco .form-group {
+      margin-bottom: 12px;
+    }
+
+    #valor-total {
+      font-weight: bold;
+      text-align: right;
+      padding-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Visualizar Pedido</h1>
+    <a href="vendas.html" class="btn-voltar">Voltar</a>
+    <form id="form-visualizar">
+      <div class="form-group"><label>Cliente</label><input id="cliente" readonly></div>
+      <div class="form-group"><label>Data da Coleta</label><input id="data-coleta" readonly></div>
+      <div class="form-group"><label>Pedido para</label><input id="pedido-para" readonly></div>
+      <div class="form-group"><label>Código Fiscal</label><input id="codigo-fiscal" readonly></div>
+      <div class="form-group"><label>Prazo de Pagamento</label><input id="prazo-pagamento" readonly></div>
+      <div id="produtos"></div>
+      <div class="form-group"><label>Observação</label><textarea id="observacao" readonly></textarea></div>
+      <div id="valor-total"></div>
+    </form>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const pedidoId = urlParams.get("id");
+
+    function criarCardProduto(item) {
+      const valorUnitario = parseFloat(item.valor_unitario);
+      const peso = parseFloat(item.peso);
+      const subtotal = valorUnitario * peso;
+
+      const div = document.createElement('div');
+      div.className = 'produto-bloco';
+      div.innerHTML = `
+        <div class="form-group"><label>Produto</label><input readonly value="${item.nome_produto}"></div>
+        <div class="form-group"><label>Valor Unitário</label><input readonly value="R$ ${valorUnitario.toFixed(2).replace('.', ',')}"></div>
+        <div class="form-group"><label>Peso (Kg)</label><input readonly value="${peso}"></div>
+        <div class="form-group"><label>Tipo de Peso</label><input readonly value="${item.tipo_peso}"></div>
+        <div class="form-group"><label>Subtotal</label><input readonly value="R$ ${subtotal.toFixed(2).replace('.', ',')}"></div>
+      `;
+      return div;
+    }
+
+    if (pedidoId) {
+      fetch(`/api/pedidos/${pedidoId}`)
+        .then(res => res.json())
+        .then(pedido => {
+          document.getElementById("cliente").value = pedido.cliente_nome;
+          document.getElementById("data-coleta").value = pedido.data_coleta;
+          document.getElementById("pedido-para").value = pedido.tipo;
+          document.getElementById("codigo-fiscal").value = pedido.codigo_fiscal;
+          document.getElementById("prazo-pagamento").value = pedido.prazo_pagamento;
+          document.getElementById("observacao").value = pedido.observacao;
+
+          let total = 0;
+          pedido.itens.forEach(item => {
+            const valor = parseFloat(item.valor_unitario);
+            const peso = parseFloat(item.peso);
+            total += valor * peso;
+            document.getElementById("produtos").appendChild(criarCardProduto(item));
+          });
+
+          document.getElementById("valor-total").textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+        })
+        .catch(err => {
+          console.error("Erro ao carregar o pedido:", err);
+          alert("Não foi possível carregar os dados do pedido.");
+        });
+    }
+  </script>
+</body>
+</html>

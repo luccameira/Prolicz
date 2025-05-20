@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Novo Fornecedor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f4f6f8; }
+    .sidebar { height: 100vh; width: 220px; position: fixed; top: 0; left: 0; background-color: #1e1e2f; padding-top: 20px; color: white; }
+    .sidebar h3 { text-align: center; margin-bottom: 30px; }
+    .sidebar a { display: block; color: white; padding: 10px 20px; text-decoration: none; }
+    .sidebar a:hover { background-color: #333; }
+    .main-content { margin-left: 240px; padding: 20px; }
+    .container { background-color: #fff; padding: 30px; border-radius: 10px; max-width: 800px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h1 { margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    .telefone-group, .email-group { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .telefone-group input, .email-group input { flex: 1; }
+    .telefone-group button, .email-group button { width: auto; background: red; color: white; border: none; border-radius: 50%; padding: 8px 12px; cursor: pointer; font-size: 16px; line-height: 1; }
+    .btn-adicionar { background-color: #007bff; color: white; width: auto; margin-top: 10px; margin-bottom: 20px; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+
+  <div class="main-content">
+    <div class="container">
+      <h1>Novo Fornecedor</h1>
+      <form id="formFornecedor">
+        <label for="tipoPessoa">Tipo de Pessoa</label>
+        <select id="tipoPessoa" required onchange="atualizarCamposPessoa()">
+          <option value="juridica">Jurídica</option>
+          <option value="fisica">Física</option>
+        </select>
+
+        <label id="labelDocumento" for="documento">CNPJ</label>
+        <input type="text" id="documento" required>
+
+        <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
+        <input type="text" id="nomeFantasia" required>
+
+        <div id="divSituacaoTributaria">
+          <label for="situacaoTributaria">Situação Tributária</label>
+          <select id="situacaoTributaria">
+            <option value="">Selecione</option>
+            <option value="simples">Simples Nacional</option>
+            <option value="lucroPresumido">Lucro Presumido</option>
+            <option value="lucroReal">Lucro Real</option>
+          </select>
+        </div>
+
+        <h3>Endereço</h3>
+        <label for="cep">CEP</label>
+        <input type="text" id="cep" required onblur="buscarEndereco()">
+
+        <label for="logradouro">Logradouro</label>
+        <input type="text" id="logradouro" required>
+
+        <label for="numero">Número</label>
+        <input type="text" id="numero" required>
+
+        <label for="bairro">Bairro</label>
+        <input type="text" id="bairro" required>
+
+        <label for="cidade">Cidade</label>
+        <input type="text" id="cidade" required>
+
+        <label for="estado">Estado</label>
+        <select id="estado" required>
+          <option value="">Selecione</option>
+          <option value="SP">SP</option>
+          <option value="RJ">RJ</option>
+          <option value="MG">MG</option>
+          <option value="RS">RS</option>
+        </select>
+
+        <h3>Contato</h3>
+        <div id="telefones">
+          <div class="telefone-group">
+            <input type="text" class="telefone" required placeholder="(11) 91234-5678">
+          </div>
+        </div>
+        <button type="button" class="btn-adicionar" onclick="adicionarTelefone()">+ Adicionar Telefone</button>
+
+        <div id="emails">
+          <div class="email-group">
+            <input type="email" class="email" required placeholder="email@dominio.com">
+          </div>
+        </div>
+        <button type="button" class="btn-adicionar" onclick="adicionarEmail()">+ Adicionar E-mail</button>
+
+        <button type="submit" style="background-color: #28a745; color: white; margin-top: 20px;">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function atualizarCamposPessoa() {
+      const tipo = document.getElementById("tipoPessoa").value;
+      const labelDoc = document.getElementById("labelDocumento");
+      const inputDoc = document.getElementById("documento");
+      const divSit = document.getElementById("divSituacaoTributaria");
+      const labelNome = document.getElementById("labelNomeFantasia");
+
+      if (tipo === "fisica") {
+        labelDoc.textContent = "CPF";
+        $(inputDoc).unmask().mask("000.000.000-00");
+        divSit.classList.add("hidden");
+        labelNome.textContent = "Nome";
+      } else {
+        labelDoc.textContent = "CNPJ";
+        $(inputDoc).unmask().mask("00.000.000/0000-00");
+        divSit.classList.remove("hidden");
+        labelNome.textContent = "Nome Fantasia";
+      }
+    }
+
+    function adicionarTelefone() {
+      const container = document.getElementById("telefones");
+      if (container.children.length >= 5) return;
+      const div = document.createElement("div");
+      div.className = "telefone-group";
+      div.innerHTML = `<input type="text" class="telefone" required placeholder="(11) 91234-5678">
+                       <button type="button" onclick="this.parentElement.remove()">&times;</button>`;
+      container.appendChild(div);
+      $(div).find(".telefone").mask("(00) 00000-0000");
+    }
+
+    function adicionarEmail() {
+      const container = document.getElementById("emails");
+      if (container.children.length >= 5) return;
+      const div = document.createElement("div");
+      div.className = "email-group";
+      div.innerHTML = `<input type="email" class="email" required placeholder="email@dominio.com">
+                       <button type="button" onclick="this.parentElement.remove()">&times;</button>`;
+      container.appendChild(div);
+    }
+
+    function buscarEndereco() {
+      const cep = document.getElementById("cep").value.replace(/\D/g, "");
+      if (cep.length !== 8) return;
+      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.erro) {
+            document.getElementById("logradouro").value = data.logradouro;
+            document.getElementById("bairro").value = data.bairro;
+            document.getElementById("cidade").value = data.localidade;
+            document.getElementById("estado").value = data.uf;
+          }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      atualizarCamposPessoa();
+      $("#cep").mask("00000-000");
+      $(".telefone").mask("(00) 00000-0000");
+
+      document.getElementById("formFornecedor").addEventListener("submit", function(e) {
+        e.preventDefault();
+        alert("Fornecedor cadastrado com sucesso!");
+        window.location.href = "fornecedores.html";
+      });
+    });
+  </script>
+</body>
+</html>

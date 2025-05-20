@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Fornecedores</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { margin: 0; font-family: 'Roboto', Arial, sans-serif; background: #f5f6fa; }
+    .topbar {
+      height: 60px;
+      background-color: #2B2B2B;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 999;
+    }
+    .topbar .menu-toggle, .topbar .fullscreen, .topbar .user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar {
+      height: 100vh;
+      width: 220px;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      background-color: #2e2e2e;
+      padding-top: 20px;
+      color: white;
+    }
+    .sidebar h3 { text-align: center; font-weight: normal; }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+      font-size: 14px;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      background-color: #ffcc00;
+      color: black;
+    }
+    .sidebar i { width: 16px; text-align: center; color: white; }
+    .main-content { margin-left: 240px; padding: 20px; padding-top: 80px; }
+    h1 { margin-bottom: 20px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; background-color: white; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f0f0f0; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background-color 0.2s ease; }
+    .btn-editar { background-color: #f1f1f1; color: #212529; }
+    .btn-excluir { background-color: #f1f1f1; color: #212529; }
+    .btn-editar:hover { background-color: #e2e6ea; }
+    .btn-excluir:hover { background-color: #e2e6ea; }
+    .btn-adicionar { background-color: #ffc107; color: black; margin-bottom: 10px; }
+    .filtros { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px; }
+    .filtros .filtro-item { display: flex; flex-direction: column; align-items: flex-start; min-width: 180px; flex: 1; }
+    .filtros label { font-weight: bold; margin-bottom: 5px; text-align: center; width: 100%; }
+    .filtros input, .filtros select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="menu-toggle">
+      <i class="fas fa-bars"></i>
+    </div>
+    <div class="user">
+      <i class="fas fa-expand"></i>
+      Rodrigo Neubern
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="clientes.html"><i class="fas fa-user"></i> Clientes</a>
+    <a href="fornecedores.html" class="active"><i class="fas fa-industry"></i> Fornecedores</a>
+    <a href="vendas.html"><i class="fas fa-cart-arrow-down"></i> Vendas</a>
+    <a href="produtos.html"><i class="fas fa-box"></i> Produtos</a>
+    <a href="usuarios.html"><i class="fas fa-users"></i> Usuários</a>
+    <a href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a>
+    <a href="compras.html"><i class="fas fa-shopping-bag"></i> Compras</a>
+    <a href="logistica.html"><i class="fas fa-truck"></i> Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h1>Fornecedores</h1>
+
+    <div class="filtros">
+      <div class="filtro-item">
+        <label for="filtro-nome">Nome do Fornecedor</label>
+        <input type="text" id="filtro-nome" placeholder="Filtrar por nome">
+      </div>
+      <div class="filtro-item">
+        <label for="filtro-cnpj">CNPJ</label>
+        <input type="text" id="filtro-cnpj" placeholder="Filtrar por CNPJ">
+      </div>
+      <div class="filtro-item">
+        <label for="filtro-status">Status</label>
+        <select id="filtro-status">
+          <option>Todos</option>
+          <option>Ativo</option>
+          <option>Inativo</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-adicionar" onclick="location.href='novo-fornecedor.html'">+ Adicionar Fornecedor</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CNPJ</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fornecedor XPTO</td>
+          <td>98.765.432/0001-00</td>
+          <td>contato@fornecedorxpto.com</td>
+          <td>Ativo</td>
+          <td>
+            <button class="btn btn-editar">Editar</button>
+            <button class="btn btn-excluir">Excluir</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
+
+

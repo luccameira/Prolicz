@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Fornecedor</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+    }
+    .sidebar {
+      height: 100vh;
+      width: 220px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #1e1e2f;
+      padding-top: 20px;
+      color: white;
+    }
+    .sidebar h3 {
+      text-align: center;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #333;
+    }
+    .main-content {
+      margin-left: 240px;
+      padding: 20px;
+    }
+    form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+  <script>
+    function mostrarAlerta(mensagem) {
+      alert(mensagem);
+    }
+  </script>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h1>Editar Fornecedor</h1>
+    <form onsubmit="event.preventDefault(); mostrarAlerta('Fornecedor atualizado com sucesso!');">
+      <label>Nome Fantasia</label>
+      <input type="text" value="Fornecedor XYZ">
+
+      <label>CNPJ</label>
+      <input type="text" value="12.345.678/0001-90">
+
+      <label>Responsável</label>
+      <input type="text" value="Maria Oliveira">
+
+      <label>Contato</label>
+      <input type="text" value="(11) 99876-5432">
+
+      <label>Endereço</label>
+      <input type="text" value="Av. Central, 789">
+
+      <button type="submit">Salvar Alterações</button>
+    </form>
+  </div>
+</body>
+</html>
+

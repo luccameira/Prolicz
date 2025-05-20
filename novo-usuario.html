@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuários - Prolicz</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-k6RqeWeci5ZR/Lv4MR0sA0FfDOMaL1fK9u28pNJjbl8WLOhbl3WGMV5sO6xDAoBR5g5Iz9XP6dpV91IZ5qj5dA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="all.min.css"> <!-- Certifique-se de que o arquivo CSS está sendo carregado corretamente -->
+  <style>
+    /* O estilo permanece o mesmo */
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div><strong>MelliczAmbiental</strong></div>
+    <div class="user">
+      <i class="fas fa-user"></i>
+      <span id="usuario-nome">Usuário</span>
+      <button onclick="logout()" style="background:transparent; border:none; color:white; cursor:pointer;">Sair</button>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Usuários</h1>
+    <div id="acoes"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Tipo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="lista-usuarios"></tbody>
+    </table>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    window.onload = () => {
+      console.log('Verificando usuarioLogado no localStorage');
+      const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+      if (!usuarioLogado) {
+        console.log("Nenhum usuário logado encontrado.");
+        return;
+      }
+
+      console.log("Usuário logado:", usuarioLogado);
+      
+      // Exibe o nome do usuário logado
+      if (document.getElementById('usuario-nome')) 
+        document.getElementById('usuario-nome').textContent = usuarioLogado.nome;
+        
+      // Exibe botão de "Novo Usuário" para usuários com a permissão "criar_usuario"
+      if (usuarioLogado.permissoes.includes('criar_usuario')) {
+        document.getElementById('acoes').innerHTML = '<a href="novo-usuario.html" class="btn">+ Novo Usuário</a>';
+      }
+      
+      // Carrega a lista de usuários
+      carregarUsuarios();
+    };
+
+    async function carregarUsuarios() {
+      try {
+        const response = await fetch('http://localhost:3000/api/usuarios');
+        const usuarios = await response.json();
+        const tbody = document.getElementById('lista-usuarios');
+        tbody.innerHTML = '';
+
+        usuarios.forEach(usuario => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${usuario.nome}</td>
+            <td>${usuario.email}</td>
+            <td>${usuario.tipo}</td>
+            <td>
+              ${usuarioLogado.permissoes.includes('editar_usuario') ? `<a href="editar-usuario.html?id=${usuario.id}" class="btn btn-success">Editar</a>` : ''}
+              ${usuarioLogado.permissoes.includes('excluir_usuario') ? `<button onclick="excluirUsuario(${usuario.id})" class="btn btn-danger">Excluir</button>` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+      }
+    }
+
+    async function excluirUsuario(id) {
+      if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        try {
+          const response = await fetch(`http://localhost:3000/api/usuarios/${id}`, { method: 'DELETE' });
+          const result = await response.text();
+          alert(result);
+          carregarUsuarios();
+        } catch (error) {
+          alert('Erro ao excluir usuário.');
+          console.error(error);
+        }
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

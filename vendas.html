@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Vendas</title>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    .main-content {
+      margin-left: 280px;
+      padding: 100px 40px 40px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-weight: 600;
+      font-size: 22px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #e2e2e2;
+      cursor: pointer;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-editar,
+    .btn-excluir {
+      background-color: #f1f1f1;
+      color: #212529;
+    }
+
+    .btn-editar:hover,
+    .btn-excluir:hover {
+      background-color: #e2e6ea;
+    }
+
+    .btn-adicionar {
+      background-color: #ffc107;
+      color: black;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Pedidos</h1>
+    <button class="btn btn-adicionar" onclick="location.href='nova-venda.html'">+ Novo Pedido</button>
+    <table id="tabela-vendas">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Cliente</th>
+          <th>Produto</th>
+          <th>Peso</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    function excluirLinha(botao) {
+      if (confirm("Deseja realmente excluir este pedido?")) {
+        const linha = botao.closest("tr");
+        const editarBtn = linha.querySelector(".btn-editar");
+        const match = editarBtn.getAttribute("onclick").match(/id=(\d+)/);
+        if (!match) {
+          alert("ID do pedido não encontrado.");
+          return;
+        }
+        const pedidoId = match[1];
+
+        fetch(`/api/pedidos/${pedidoId}`, {
+          method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.mensagem);
+          linha.remove();
+        })
+        .catch(err => {
+          console.error('Erro ao excluir pedido:', err);
+          alert('Erro ao excluir o pedido.');
+        });
+      }
+    }
+
+    function formatarDataBRCompleto(dataIso) {
+      if (!dataIso) return '-';
+      const data = new Date(dataIso);
+      if (isNaN(data)) return '-';
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    fetch('/api/pedidos')
+      .then(res => res.json())
+      .then(pedidos => {
+        const tabela = document.querySelector('#tabela-vendas tbody');
+        pedidos.forEach(p => {
+          const linha = document.createElement('tr');
+          linha.addEventListener('click', () => {
+            window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
+          });
+          linha.innerHTML = `
+            <td>${formatarDataBRCompleto(p.data_criacao)}</td>
+            <td>${p.cliente}</td>
+            <td>${p.nome_produto || '-'}</td>
+            <td>${p.peso_total || 0} Kg</td>
+            <td>${p.status}</td>
+            <td>
+              <button class="btn btn-editar" onclick="event.stopPropagation(); window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
+              <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirLinha(this)">Excluir</button>
+            </td>
+          `;
+          tabela.appendChild(linha);
+        });
+      });
+  </script>
+</body>
+</html>

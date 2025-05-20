@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Tarefas - Emissão de NF</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+    }
+    .topbar {
+      background-color: #2B2B2B;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .card h3 {
+      margin: 0 0 10px;
+    }
+    .card p {
+      margin: 5px 0;
+    }
+    .btn {
+      padding: 8px 16px;
+      background-color: #2B2B2B;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">Tarefas - Emissão de Nota Fiscal</div>
+  <div class="content" id="lista-pedidos">
+    <!-- Os pedidos com status "Aguardando Emissão de NF" serão carregados aqui -->
+  </div>
+
+  <script>
+    async function carregarPedidos() {
+      const resposta = await fetch('/api/pedidos?status=Aguardando Emissão de NF');
+      const pedidos = await resposta.json();
+      const lista = document.getElementById('lista-pedidos');
+      lista.innerHTML = '';
+
+      pedidos.forEach(pedido => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <h3>Cliente: ${pedido.cliente}</h3>
+          <p><strong>Tipo:</strong> ${pedido.tipo}</p>
+          <p><strong>Data:</strong> ${new Date(pedido.data_criacao).toLocaleDateString()}</p>
+          <p><strong>Status:</strong> ${pedido.status}</p>
+          <button class="btn" onclick="emitirNota(${pedido.pedido_id})">Nota Fiscal Emitida</button>
+        `;
+
+        lista.appendChild(card);
+      });
+    }
+
+    async function emitirNota(id) {
+      const confirmado = confirm('Deseja confirmar a emissão da Nota Fiscal para este pedido?');
+      if (!confirmado) return;
+
+      const resposta = await fetch(`/api/pedidos/${id}/emitir-nf`, {
+        method: 'PUT'
+      });
+
+      const resultado = await resposta.json();
+      alert(resultado.mensagem || 'Status atualizado.');
+      carregarPedidos();
+    }
+
+    carregarPedidos();
+  </script>
+</body>
+</html>

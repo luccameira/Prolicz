@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualizar Fornecedor</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f6fa; }
+    .sidebar { height: 100vh; width: 220px; position: fixed; top: 0; left: 0; background-color: #1e1e2f; padding-top: 20px; color: white; }
+    .sidebar h3 { text-align: center; }
+    .sidebar a { display: block; color: white; padding: 10px 20px; text-decoration: none; }
+    .sidebar a:hover { background-color: #333; }
+    .main-content { margin-left: 240px; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    .dados { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .dados p { margin: 10px 0; font-size: 16px; }
+    .btn-voltar { padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; margin-top: 20px; }
+  </style>
+  <script>
+    window.onload = function() {
+      const index = localStorage.getItem('fornecedorVisualizando');
+      const lista = JSON.parse(localStorage.getItem('fornecedores')) || [];
+      const fornecedor = lista[index];
+
+      if (fornecedor) {
+        document.getElementById("nome").textContent = fornecedor.nome;
+        document.getElementById("responsavel").textContent = fornecedor.responsavel;
+        document.getElementById("cnpj").textContent = fornecedor.cnpj;
+      }
+    };
+  </script>
+</head>
+<body>
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="clientes.html">👥 Clientes</a>
+    <a href="fornecedores.html">🏢 Fornecedores</a>
+    <a href="vendas.html">🛒 Vendas</a>
+    <a href="produtos.html">📦 Produtos</a>
+    <a href="usuarios.html">👤 Usuários</a>
+    <a href="relatorios.html">📈 Relatórios</a>
+    <a href="compras.html">🛍️ Compras</a>
+    <a href="logistica.html">🚚 Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h1>Detalhes do Fornecedor</h1>
+    <div class="dados">
+      <p><strong>Nome:</strong> <span id="nome"></span></p>
+      <p><strong>Responsável:</strong> <span id="responsavel"></span></p>
+      <p><strong>CNPJ:</strong> <span id="cnpj"></span></p>
+      <a href="fornecedores.html" class="btn-voltar">Voltar</a>
+    </div>
+  </div>
+</body>
+</html>
+

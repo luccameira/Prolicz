@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Novo Produto - Prolicz</title>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    .main-content {
+      margin-left: 280px;
+      padding: 100px 20px 40px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      max-width: 500px;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    button[type="submit"] {
+      margin-top: 25px;
+      padding: 12px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+
+  <div class="main-content">
+    <h1>Novo Produto</h1>
+    <div class="card">
+      <form id="form-produto">
+        <label for="nome">Nome do Produto</label>
+        <input type="text" id="nome" name="nome" placeholder="Ex: Alumínio, Bag, Barreira" required>
+
+        <label for="unidade">Unidade de Medida</label>
+        <select id="unidade" name="unidade" required>
+          <option value="">Selecione</option>
+          <option value="kg">Kg</option>
+          <option value="unidade">Unidade</option>
+        </select>
+
+        <button type="submit">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado')) || { nome: 'Visitante', permissoes: [] };
+    const permissoes = usuarioLogado.permissoes || [];
+
+    // Marcar menu como ativo para novo-produto
+    document.addEventListener("DOMContentLoaded", () => {
+      const path = window.location.pathname.split('/').pop();
+      const links = document.querySelectorAll(".sidebar a");
+      links.forEach(link => {
+        if (path === "novo-produto.html" && link.getAttribute("href") === "produtos.html") {
+          link.classList.add("active");
+        }
+      });
+    });
+
+    // Envio do formulário para API
+    document.getElementById('form-produto').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('nome').value.trim();
+      const unidade = document.getElementById('unidade').value;
+
+      try {
+        const resposta = await fetch('/api/produtos/novo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, unidade })
+        });
+
+        if (resposta.ok) {
+          alert('Produto cadastrado com sucesso!');
+          window.location.href = 'produtos.html';
+        } else {
+          alert('Erro ao cadastrar produto.');
+        }
+      } catch (erro) {
+        console.error('Erro na requisição:', erro);
+        alert('Erro ao se comunicar com o servidor.');
+      }
+    });
+  </script>
+</body>
+</html>

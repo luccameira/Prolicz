@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Usuário - Prolicz</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Seu estilo padrão */
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: #f5f6fa; }
+    .topbar { height: 60px; background-color: #2B2B2B; color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 999; }
+    .sidebar { height: 100vh; width: 220px; position: fixed; top: 60px; left: 0; background-color: #2e2e2e; padding-top: 20px; color: white; }
+    .sidebar h3 { text-align: center; font-weight: normal; }
+    .sidebar a { display: flex; align-items: center; gap: 10px; color: white; padding: 10px 20px; text-decoration: none; transition: background-color 0.2s ease; font-size: 14px; }
+    .sidebar a:hover, .sidebar a.active { background-color: #ffcc00; color: black; }
+    .sidebar i { width: 16px; text-align: center; color: white; }
+    .main-content { margin-left: 240px; padding: 20px; padding-top: 80px; }
+    form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    button { margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .permissoes { margin-top: 20px; }
+    .permissoes label { font-weight: normal; display: flex; align-items: center; gap: 10px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="menu-toggle"><i class="fas fa-bars"></i></div>
+    <div class="user"><i class="fas fa-user"></i> Rodrigo Neubern</div>
+  </div>
+
+  <div class="sidebar">
+    <h3>MelliczAmbiental</h3>
+    <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="clientes.html"><i class="fas fa-user"></i> Clientes</a>
+    <a href="fornecedores.html"><i class="fas fa-industry"></i> Fornecedores</a>
+    <a href="vendas.html"><i class="fas fa-cart-arrow-down"></i> Vendas</a>
+    <a href="produtos.html"><i class="fas fa-box"></i> Produtos</a>
+    <a href="usuarios.html" class="active"><i class="fas fa-users"></i> Usuários</a>
+    <a href="relatorios.html"><i class="fas fa-chart-bar"></i> Relatórios</a>
+    <a href="compras.html"><i class="fas fa-shopping-bag"></i> Compras</a>
+    <a href="logistica.html"><i class="fas fa-truck"></i> Logística</a>
+  </div>
+
+  <div class="main-content">
+    <h1>Editar Usuário</h1>
+    <form id="form-editar-usuario">
+      <label for="nome">Nome</label>
+      <input type="text" id="nome" required>
+
+      <label for="email">E-mail</label>
+      <input type="email" id="email" readonly>
+
+      <label for="senha">Nova Senha</label>
+      <input type="password" id="senha">
+
+      <label for="confirmarSenha">Confirmar Nova Senha</label>
+      <input type="password" id="confirmarSenha">
+
+      <label for="tipo">Tipo de Usuário</label>
+      <select id="tipo" required>
+        <option value="administrador">Administrador</option>
+        <option value="usuario">Usuário Comum</option>
+        <option value="representante">Representante</option>
+        <option value="motorista">Motorista</option>
+      </select>
+
+      <div class="permissoes">
+        <h3>Permissões</h3>
+        <div id="lista-permissoes"></div>
+      </div>
+
+      <button type="submit">Salvar Alterações</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Verifica se o usuário logado é o master
+      const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+      if (!usuarioLogado || usuarioLogado.tipo !== 'master') {
+        alert('Você não tem permissão para editar usuários.');
+        window.location.href = 'usuarios.html';  // Redireciona para a página de usuários
+        return;
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('id');
+
+      if (!userId) {
+        alert('ID do usuário não informado.');
+        window.location.href = 'usuarios.html';
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/usuarios/${userId}`);
+        const usuario = await response.json();
+
+        // Carrega os dados do usuário no formulário
+        document.getElementById('nome').value = usuario.nome;
+        document.getElementById('email').value = usuario.email;
+        document.getElementById('tipo').value = usuario.tipo;
+
+        const permissoes = usuario.permissoes ? usuario.permissoes.split(',') : [];
+        const listaPermissoes = [
+          "Criar cliente", "Editar cliente", "Visualizar cliente",
+          "Criar fornecedor", "Editar fornecedor", "Visualizar fornecedor",
+          "Criar pedido", "Editar pedido", "Visualizar pedido",
+          "Iniciar coleta", "Confirmar peso carregado", "Confirmar ticket de peso",
+          "Confirmar pagamento", "Confirmar nota fiscal", "Ver relatórios financeiros",
+          "Criar usuário", "Editar permissões", "Ver log de atividades",
+          "Acessar relatórios", "Exportar dados"
+        ];
+
+        const container = document.getElementById('lista-permissoes');
+        container.innerHTML = '';
+        listaPermissoes.forEach(p => {
+          const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = permissoes.includes(p);
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(' ' + p));
+          container.appendChild(label);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        alert('Erro ao carregar usuário.');
+      }
+    });
+
+    // Evento de envio do formulário
+    document.getElementById('form-editar-usuario').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const nome = document.getElementById('nome').value;
+      const tipo = document.getElementById('tipo').value;
+      const senha = document.getElementById('senha').value;
+      const confirmarSenha = document.getElementById('confirmarSenha').value;
+
+      if (senha && senha !== confirmarSenha) {
+        alert('As senhas não coincidem.');
+        return;
+      }
+
+      const permissoesSelecionadas = Array.from(document.querySelectorAll('#lista-permissoes input:checked'))
+        .map(cb => cb.nextSibling.textContent.trim());
+
+      try {
+        const response = await fetch(`http://localhost:3000/usuarios/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, tipo, senha, permissoes: permissoesSelecionadas })
+        });
+
+        if (response.ok) {
+          alert('Usuário atualizado com sucesso!');
+          window.location.href = 'usuarios.html';
+        } else {
+          const errorData = await response.json();
+          alert('Erro ao atualizar usuário: ' + errorData.erro);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        alert('Erro ao atualizar usuário.');
+      }
+    });
+  </script>
+</body>
+</html>
+
+
