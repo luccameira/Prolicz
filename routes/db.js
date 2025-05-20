@@ -1,14 +1,13 @@
-// /Prolicz/routes/db.js
 const mysql = require('mysql2');
+require('dotenv').config(); // ← importante para carregar o .env
 
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'prolicz_user',       // novo usuário que você criou
-  password: 'senha123',       // senha definida no HeidiSQL
-  database: 'prolicz'         // nome do seu banco de dados
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
 });
 
-// Conectar e exibir erros se houver
 connection.connect((err) => {
   if (err) {
     console.error('❌ Erro ao conectar ao banco de dados:', err.message);
@@ -18,3 +17,4 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+
