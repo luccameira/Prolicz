@@ -3,7 +3,7 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-const connection = require('./routes/db');
+const connection = require('./db');
 
 // Middlewares
 app.use(express.json());
