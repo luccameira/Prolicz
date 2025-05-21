@@ -113,11 +113,7 @@ h1 {
   margin-top: 12px;
 }
 
-.formulario input[type="text"],
-.formulario input[type="file"],
-.formulario input[type="date"],
-.formulario input[type="number"],
-.formulario input[type="email"],
+.formulario input,
 .formulario select,
 .formulario textarea {
   width: 100%;
@@ -132,31 +128,6 @@ h1 {
 .formulario textarea {
   min-height: 80px;
   resize: vertical;
-}
-
-/* Estilo para os campos de upload */
-input[type="file"] {
-  padding: 8px;
-  background-color: #f9f9f9;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  color: #444;
-}
-
-input[type="file"]::file-selector-button {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 4px;
-  margin-right: 10px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-input[type="file"]::file-selector-button:hover {
-  background-color: #0069d9;
 }
 
 /* Botões */
@@ -255,12 +226,29 @@ input[type="file"]::file-selector-button:hover {
   border-radius: 4px;
 }
 
-.alerta-info {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 4px;
-  color: #856404;
+/* ⬇️ Estilização personalizada para os botões de upload (amarelos) */
+input[type="file"] {
+  padding: 8px;
+  background-color: #fff8e1;
+  border-radius: 6px;
+  border: 1px solid #ffd54f;
   font-size: 14px;
+  color: #444;
 }
+
+input[type="file"]::file-selector-button {
+  background-color: #ffc107;
+  color: #1f1f1f;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: #e0a800;
+}
+
