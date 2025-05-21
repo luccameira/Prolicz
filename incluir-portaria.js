@@ -111,6 +111,7 @@ async function verificarCPF(pedidoId) {
   const uploads = document.getElementById(`upload-documentos-${pedidoId}`);
   const docInput = document.getElementById(`doc-${pedidoId}`);
   const formInput = document.getElementById(`form-${pedidoId}`);
+  const caminhaoInput = document.getElementById(`caminhao-${pedidoId}`);
 
   if (!cpf) return;
 
@@ -119,13 +120,13 @@ async function verificarCPF(pedidoId) {
     if (res.status === 404) {
       alerta.style.display = 'none';
       uploads.style.display = 'block';
-      nomeInput.disabled = false;
-      nomeInput.value = '';
       if (docInput) docInput.style.display = 'block';
       if (formInput) formInput.style.display = 'block';
+      if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
+      nomeInput.disabled = false;
+      nomeInput.value = '';
     } else {
       const dados = await res.json();
-
       nomeInput.value = dados.nome || '';
       nomeInput.disabled = !!dados.nome;
 
@@ -135,9 +136,11 @@ async function verificarCPF(pedidoId) {
         uploads.style.display = 'block';
         if (docInput) docInput.style.display = 'none';
         if (formInput) formInput.style.display = 'block';
+        if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
       } else {
         alerta.style.display = 'none';
         uploads.style.display = 'none';
+        if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
       }
     }
   } catch (err) {
@@ -188,6 +191,7 @@ async function registrarColeta(pedidoId, botao) {
   } else if (formInput && formInput.files.length) {
     const formAtualiza = new FormData();
     formAtualiza.append('foto_formulario', formInput.files[0]);
+    formAtualiza.append('foto_caminhao', caminhaoInput.files[0]);
 
     try {
       const res = await fetch(`/api/motoristas/${cpf}/formulario`, {
