@@ -218,38 +218,49 @@ h1 {
   margin-top: 6px;
 }
 
+/* Alerta de status do motorista */
 .alerta-vencido {
-  background-color: #ffe0e0;
-  border: 1px solid #cc0000;
   padding: 10px;
   margin-top: 10px;
   border-radius: 4px;
-}
-
-/* Status do motorista (CPF) */
-.status-info {
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-weight: bold;
-  margin: 12px 0;
+  font-weight: 500;
   font-size: 14px;
-  border-left: 6px solid;
 }
 
-.status-novo {
-  background-color: #fff3cd;
-  color: #856404;
-  border-color: #ffeeba;
+/* Estilo moderno para campo de upload */
+.formulario input[type="file"] {
+  display: none;
 }
 
-.status-valido {
-  background-color: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
+.formulario label[for^="doc"],
+.formulario label[for^="form"],
+.formulario label[for^="foto-caminhao"] {
+  display: block;
+  font-weight: 500;
+  margin-top: 12px;
 }
 
-.status-vencido {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
+.custom-file-upload {
+  margin-top: 6px;
+  display: inline-block;
+  padding: 10px 16px;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.custom-file-upload:hover {
+  background-color: #e4e4e4;
+}
+
+/* Nome do arquivo ao lado do botão */
+.upload-info {
+  margin-left: 10px;
+  font-size: 13px;
+  color: #555;
 }
