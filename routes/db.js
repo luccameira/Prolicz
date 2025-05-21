@@ -8,6 +8,7 @@ const connection = mysql.createConnection({
   database: process.env.DB_NAME
 });
 
+// Testa conexão (callback)
 connection.connect((err) => {
   if (err) {
     console.error('❌ Erro ao conectar ao banco de dados:', err.message);
@@ -16,5 +17,8 @@ connection.connect((err) => {
   }
 });
 
-module.exports = connection;
-
+// Exporta versões para callback e promise
+module.exports = {
+  callback: connection,
+  promise: connection.promise()
+};
