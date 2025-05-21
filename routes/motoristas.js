@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const db = require('./db').callback;
+const db = require('./db').promise; // ✅ CORRETO
 
 // Cria a pasta de uploads, se necessário
 const pastaUpload = path.join(__dirname, '..', 'uploads', 'motoristas');
@@ -11,7 +11,7 @@ if (!fs.existsSync(pastaUpload)) {
   fs.mkdirSync(pastaUpload, { recursive: true });
 }
 
-// Configuração do multer para salvar os arquivos com nome baseado no CPF
+// Configuração do multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, pastaUpload);
@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Utilitário para verificar validade do formulário (90 dias)
+// Verifica se cadastro está vencido (> 90 dias)
 function cadastroVencido(dataUltimoFormulario) {
   const hoje = new Date();
   const validade = new Date(dataUltimoFormulario);
@@ -34,7 +34,7 @@ function cadastroVencido(dataUltimoFormulario) {
   return validade < hoje;
 }
 
-// GET /api/motoristas/:cpf → Busca motorista
+// GET /api/motoristas/:cpf
 router.get('/:cpf', async (req, res) => {
   try {
     const cpfLimpo = req.params.cpf.replace(/\D/g, '');
@@ -64,7 +64,7 @@ router.get('/:cpf', async (req, res) => {
   }
 });
 
-// POST /api/motoristas → Cadastra motorista novo
+// POST /api/motoristas
 router.post('/', upload.fields([
   { name: 'foto_documento', maxCount: 1 },
   { name: 'foto_formulario', maxCount: 1 },
@@ -94,7 +94,7 @@ router.post('/', upload.fields([
   }
 });
 
-// PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
+// PUT /api/motoristas/:cpf/formulario
 router.put('/:cpf/formulario', upload.fields([
   { name: 'foto_formulario', maxCount: 1 },
   { name: 'foto_caminhao', maxCount: 1 }
@@ -127,3 +127,4 @@ router.put('/:cpf/formulario', upload.fields([
 });
 
 module.exports = router;
+
