@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('./db').callback;
+const db = require('../db').callback;
 
 // Rota para cadastrar um novo usuário
 router.post('/', (req, res) => {
