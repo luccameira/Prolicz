@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const db = require('./db');
+const db = require('./db').promise;
 
 // Configuração do multer (upload de imagens)
 const pastaUpload = path.join(__dirname, '..', 'uploads', 'motoristas');
