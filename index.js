@@ -22,6 +22,9 @@ app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos')); // se necessário
 app.use('/api/usuarios', withConnection('./routes/usuarios')); // se necessário
 
+// Nova rota para motoristas (sem conexão manual, pois não é necessário)
+app.use('/api/motoristas', require('./routes/motoristas'));
+
 // Redirecionamentos para páginas HTML (existentes)
 app.get('/visualizar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
