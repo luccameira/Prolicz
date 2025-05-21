@@ -55,11 +55,15 @@ router.post('/', (req, res) => {
 // GET /api/clientes - Para filtros e dropdowns
 router.get('/', (req, res) => {
   const sql = 'SELECT id, nome_fantasia FROM clientes ORDER BY nome_fantasia';
-  connection.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: 'Erro ao buscar clientes' });
-    res.json(results);
-  });
+  
+  connection.promise().query(sql)
+    .then(([results]) => res.json(results))
+    .catch(err => {
+      console.error('Erro ao buscar clientes:', err);
+      res.status(500).json({ error: 'Erro ao buscar clientes' });
+    });
 });
+
 
 // GET /api/clientes/produtos - Listar produtos disponíveis
 router.get('/produtos', (req, res) => {
