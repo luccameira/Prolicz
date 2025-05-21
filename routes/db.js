@@ -1,25 +1,16 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise'); // Importa a versão com suporte a Promises
 
-// Cria a conexão com o banco de dados
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // deixe vazio se não tiver senha
-  database: 'prolicz'
+// Cria um pool de conexões com suporte nativo a async/await
+const connection = mysql.createPool({
+  host: 'localhost',         // Endereço do servidor MySQL
+  user: 'root',              // Usuário do MySQL (ajuste se necessário)
+  password: '',              // Senha do MySQL (preencha se você usa senha)
+  database: 'prolicz',       // Nome do banco que você está usando
+  waitForConnections: true,  // Espera na fila se todas as conexões estiverem em uso
+  connectionLimit: 10,       // Máximo de conexões simultâneas
+  queueLimit: 0              // Sem limite de fila (0 = infinito)
 });
 
-// Conecta ao banco e exibe no terminal
-connection.connect(err => {
-  if (err) {
-    console.error('❌ Erro ao conectar ao banco de dados:', err);
-    return;
-  }
-  console.log('✅ Conectado ao banco de dados MySQL!');
-});
+module.exports = connection; // Exporta para uso nos outros arquivos
 
-// Exporta a conexão normal (callback) e em modo promise (async/await)
-module.exports = {
-  callback: connection,
-  promise: connection.promise()
-};
 
