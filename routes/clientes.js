@@ -18,9 +18,12 @@ router.post('/', (req, res) => {
   const values = [tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
     codigo_fiscal, cep, logradouro, numero, bairro, cidade, estado, meio_pagamento];
 
-  connection.query(sql, values, (err, resultado) => {
-    if (err) return res.status(500).json({ erro: 'Erro ao salvar cliente.' });
-    const clienteId = resultado.insertId;
+  connection.query(sql)
+  .then(([results]) => res.json(results))
+  .catch(err => {
+    console.error('Erro ao buscar clientes:', err);
+    res.status(500).json({ error: 'Erro ao buscar clientes' });
+  });
 
     const { contatos = [], produtos = [], prazos = [] } = req.body;
     const promises = [];
