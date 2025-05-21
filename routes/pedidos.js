@@ -1,15 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const db = require('./db').callback;
+const db = require('./db').promise;
 
-// Função utilitária para converter data de dd/mm/yyyy para yyyy-mm-dd
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
   return `${ano}-${mes}-${dia}`;
 }
 
-// GET /api/pedidos/carga - Listar pedidos com coleta hoje ou amanhã para carga e descarga
-router.get('/carga', (req, res) => {
+// GET /api/pedidos/carga
+router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
       p.id,
@@ -26,20 +25,20 @@ router.get('/carga', (req, res) => {
     ORDER BY p.data_coleta ASC
   `;
 
-  connection.query(sql, (err, results) => {
-    if (err) {
-      console.error('Erro ao buscar pedidos de carga:', err);
-      return res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
-    }
+  try {
+    const [results] = await db.query(sql);
     res.json(results);
-  });
+  } catch (err) {
+    console.error('Erro ao buscar pedidos de carga:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
+  }
 });
 
-// GET /api/clientes/:id/produtos - Listar produtos autorizados de um cliente
+// GET /api/clientes/:id/produtos
 router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
-    const [produtos] = await connection.promise().query(
+    const [produtos] = await db.query(
       `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
       [clienteId]
     );
@@ -50,7 +49,7 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   }
 });
 
-// GET /api/pedidos - Listar pedidos com dados completos para tarefas
+// GET /api/pedidos
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
@@ -90,10 +89,10 @@ router.get('/', async (req, res) => {
   sqlPedidos += " ORDER BY p.data_criacao DESC";
 
   try {
-    const [pedidos] = await connection.promise().query(sqlPedidos, params);
+    const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-      const [itens] = await connection.promise().query(
+      const [itens] = await db.query(
         `SELECT nome_produto, peso, valor_unitario, (peso * valor_unitario) AS valor_total
          FROM itens_pedido
          WHERE pedido_id = ?`,
@@ -116,13 +115,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/pedidos - Criar novo pedido
+// POST /api/pedidos
 router.post('/', async (req, res) => {
   const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazo_pagamento, codigo_fiscal } = req.body;
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
-    const [pedidoResult] = await connection.promise().query(
+    const [pedidoResult] = await db.query(
       `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, prazo_pagamento, codigo_fiscal, data_criacao)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta', prazo_pagamento, codigo_fiscal || '']
@@ -132,7 +131,7 @@ router.post('/', async (req, res) => {
     const itens = req.body.itens || [];
 
     for (const item of itens) {
-      await connection.promise().query(
+      await db.query(
         `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [pedido_id, item.nome_produto, item.valor_unitario, item.peso, item.tipo_peso, item.unidade]
@@ -146,7 +145,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/coleta - Portaria inicia a coleta
+// PUT /api/pedidos/:id/coleta
 router.put('/:id/coleta', async (req, res) => {
   const pedidoId = req.params.id;
   const { placa, motorista, ajudante } = req.body;
@@ -156,7 +155,7 @@ router.put('/:id/coleta', async (req, res) => {
   }
 
   try {
-    await connection.promise().query(
+    await db.query(
       `UPDATE pedidos 
        SET status = 'Coleta Iniciada', 
            placa_veiculo = ?, 
@@ -184,7 +183,7 @@ router.put('/:id/registrar-peso', async (req, res) => {
   }
 
   try {
-    await connection.promise().query(
+    await db.query(
       `UPDATE pedidos 
        SET peso_registrado = ?, 
            desconto_peso = ?, 
@@ -202,7 +201,7 @@ router.put('/:id/registrar-peso', async (req, res) => {
   }
 });
 
-// POST /api/pedidos/produtos/novo - Cadastrar novo produto
+// POST /api/pedidos/produtos/novo
 router.post('/produtos/novo', async (req, res) => {
   const { nome_produto, unidade } = req.body;
 
@@ -211,7 +210,7 @@ router.post('/produtos/novo', async (req, res) => {
   }
 
   try {
-    await connection.promise().query(
+    await db.query(
       `INSERT INTO produtos (nome, unidade) VALUES (?, ?)`,
       [nome_produto, unidade]
     );
@@ -223,10 +222,10 @@ router.post('/produtos/novo', async (req, res) => {
   }
 });
 
-// GET /api/pedidos/produtos - Listar produtos com nomes corretos
+// GET /api/pedidos/produtos
 router.get('/produtos', async (req, res) => {
   try {
-    const [produtos] = await connection.promise().query(
+    const [produtos] = await db.query(
       `SELECT nome AS nome_produto, unidade, criado_em AS data_cadastro FROM produtos ORDER BY criado_em DESC`
     );
 
@@ -237,13 +236,13 @@ router.get('/produtos', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga - Finalizar tarefa de carga
+// PUT /api/pedidos/:id/carga
 router.put('/:id/carga', async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
 
   try {
-    await connection.promise().query(
+    await db.query(
       `UPDATE pedidos
        SET 
          peso_registrado = ?, 
@@ -261,12 +260,12 @@ router.put('/:id/carga', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/conferencia - Atualiza status para "Em Análise pelo Financeiro"
+// PUT /api/pedidos/:id/conferencia
 router.put('/:id/conferencia', async (req, res) => {
   const pedidoId = req.params.id;
 
   try {
-    const [result] = await connection.promise().query(
+    const [result] = await db.query(
       'UPDATE pedidos SET status = ? WHERE id = ?',
       ['Em Análise pelo Financeiro', pedidoId]
     );
@@ -283,4 +282,5 @@ router.put('/:id/conferencia', async (req, res) => {
 });
 
 module.exports = router;
+
 
