@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../db'); // <-- correto
 let connection;
 
 // POST /api/clientes - Cadastrar novo cliente
