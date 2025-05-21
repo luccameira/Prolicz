@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('./db');
 
 // Função utilitária para converter data de dd/mm/yyyy para yyyy-mm-dd
 function formatarDataBRparaISO(dataBR) {
