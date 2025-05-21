@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const db = require('./db').promise; // ✅ CORRETO
+const db = require('../db');
 
 // Cria a pasta de uploads, se necessário
 const pastaUpload = path.join(__dirname, '..', 'uploads', 'motoristas');
@@ -11,7 +11,7 @@ if (!fs.existsSync(pastaUpload)) {
   fs.mkdirSync(pastaUpload, { recursive: true });
 }
 
-// Configuração do multer
+// Configuração do multer para salvar os arquivos com nome baseado no CPF
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, pastaUpload);
@@ -26,31 +26,34 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Verifica se cadastro está vencido (> 90 dias)
+// Utilitário para verificar validade do formulário (90 dias)
 function cadastroVencido(dataUltimoFormulario) {
+  if (!dataUltimoFormulario) return true;
   const hoje = new Date();
   const validade = new Date(dataUltimoFormulario);
   validade.setDate(validade.getDate() + 90);
   return validade < hoje;
 }
 
-// GET /api/motoristas/:cpf
+// GET /api/motoristas/:cpf → Busca motorista
 router.get('/:cpf', async (req, res) => {
   try {
     const cpfLimpo = req.params.cpf.replace(/\D/g, '');
+
     const [resultado] = await db.query(`
       SELECT * FROM motoristas 
-      WHERE REPLACE(REPLACE(REPLACE(cpf, ".", ""), "-", ""), " ", "") = ?
+      WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ?
     `, [cpfLimpo]);
 
-    if (resultado.length === 0) {
+    if (!resultado || resultado.length === 0) {
       return res.status(404).json({ encontrado: false });
     }
 
     const motorista = resultado[0];
     const vencido = cadastroVencido(motorista.data_ultimo_formulario);
 
-    res.json({
+    return res.status(200).json({
+      encontrado: true,
       cpf: motorista.cpf,
       nome: motorista.nome,
       cadastroVencido: vencido,
@@ -58,13 +61,14 @@ router.get('/:cpf', async (req, res) => {
       foto_formulario: motorista.foto_formulario,
       foto_caminhao: motorista.foto_caminhao
     });
+
   } catch (err) {
     console.error('Erro ao buscar motorista:', err);
     res.status(500).json({ erro: 'Erro ao buscar motorista' });
   }
 });
 
-// POST /api/motoristas
+// POST /api/motoristas → Cadastra motorista novo
 router.post('/', upload.fields([
   { name: 'foto_documento', maxCount: 1 },
   { name: 'foto_formulario', maxCount: 1 },
@@ -94,7 +98,7 @@ router.post('/', upload.fields([
   }
 });
 
-// PUT /api/motoristas/:cpf/formulario
+// PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
 router.put('/:cpf/formulario', upload.fields([
   { name: 'foto_formulario', maxCount: 1 },
   { name: 'foto_caminhao', maxCount: 1 }
@@ -127,4 +131,3 @@ router.put('/:cpf/formulario', upload.fields([
 });
 
 module.exports = router;
-
