@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
+const connection = require('./db');
 
 // GET /api/pedidos - Listagem com filtros e ordenações agrupada por pedido
 router.get('/', (req, res) => {
