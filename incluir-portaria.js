@@ -2,6 +2,15 @@ function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
 
+function formatarCPF(cpf) {
+  return cpf
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+    .substring(0, 14);
+}
+
 async function carregarPedidosPortaria() {
   const [resPendentes, resIniciados] = await Promise.all([
     fetch('/api/pedidos?status=Aguardando%20In%C3%ADcio%20da%20Coleta'),
@@ -52,7 +61,7 @@ async function carregarPedidosPortaria() {
       <label>CPF do Motorista</label>
       <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
 
-      <div id="status-cadastro-${idPedido}" class="alerta-vencido" style="display: none; color: red; font-weight: bold;"></div>
+      <div id="status-cadastro-${idPedido}" class="alerta-vencido" style="display: none;"></div>
 
       <label>Nome do Motorista</label>
       <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista">
@@ -79,6 +88,9 @@ async function carregarPedidosPortaria() {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
 
         const cpfInput = form.querySelector(`#cpf-${idPedido}`);
+        cpfInput.addEventListener('input', () => {
+          cpfInput.value = formatarCPF(cpfInput.value);
+        });
         cpfInput.addEventListener('blur', () => verificarCPF(idPedido));
       });
     }
@@ -89,7 +101,8 @@ async function carregarPedidosPortaria() {
 }
 
 async function verificarCPF(pedidoId) {
-  const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
+  const cpfInput = document.getElementById(`cpf-${pedidoId}`);
+  const cpf = cpfInput.value.trim();
   const nomeInput = document.getElementById(`nome-${pedidoId}`);
   const alerta = document.getElementById(`status-cadastro-${pedidoId}`);
   const uploads = document.getElementById(`upload-documentos-${pedidoId}`);
@@ -105,14 +118,20 @@ async function verificarCPF(pedidoId) {
       nomeInput.value = '';
     } else {
       const dados = await res.json();
-      nomeInput.value = dados.nome;
-      nomeInput.disabled = true;
+
+      if (dados.nome) {
+        nomeInput.value = dados.nome;
+        nomeInput.disabled = true;
+      } else {
+        nomeInput.value = '';
+        nomeInput.disabled = false;
+      }
 
       if (dados.cadastroVencido) {
-        alerta.innerText = 'Cadastro vencido — é necessário reenviar o formulário assinado.';
+        alerta.innerText = '⚠️ Cadastro vencido — é necessário reenviar o formulário assinado.';
         alerta.style.display = 'block';
         uploads.style.display = 'block';
-        document.getElementById(`doc-${pedidoId}`).style.display = 'none'; // não precisa da foto do documento de novo
+        document.getElementById(`doc-${pedidoId}`).style.display = 'none';
       } else {
         alerta.style.display = 'none';
         uploads.style.display = 'none';
@@ -144,7 +163,6 @@ async function registrarColeta(pedidoId, botao) {
   formData.append('placa', placa);
   formData.append('ajudante', ajudante);
 
-  // Envia novo cadastro
   if (docInput && docInput.files.length && formInput && formInput.files.length) {
     formData.append('nome', nome);
     formData.append('foto_documento', docInput.files[0]);
@@ -165,7 +183,6 @@ async function registrarColeta(pedidoId, botao) {
     }
   }
 
-  // Atualiza formulário vencido
   else if (formInput && formInput.files.length) {
     const formAtualiza = new FormData();
     formAtualiza.append('foto_formulario', formInput.files[0]);
@@ -185,7 +202,6 @@ async function registrarColeta(pedidoId, botao) {
     }
   }
 
-  // Por fim, registra a coleta
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/coleta`, {
       method: 'PUT',
