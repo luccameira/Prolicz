@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('./db'); // ✅ CORREÇÃO AQUI
+const db = require('../db'); // ✅ CORREÇÃO AQUI
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
