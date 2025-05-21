@@ -35,7 +35,8 @@ function cadastroVencido(dataUltimoFormulario) {
 // GET /api/motoristas/:cpf → Verifica se já existe
 router.get('/:cpf', async (req, res) => {
   try {
-    const [resultado] = await db.query('SELECT * FROM motoristas WHERE cpf = ?', [req.params.cpf]);
+    const cpfLimpo = req.params.cpf.replace(/\D/g, ''); // remove pontos e traços
+    const [resultado] = await db.query('SELECT * FROM motoristas WHERE REPLACE(REPLACE(REPLACE(cpf, ".", ""), "-", ""), " ", "") = ?', [cpfLimpo]);
 
     if (resultado.length === 0) {
       return res.status(404).json({ encontrado: false });
