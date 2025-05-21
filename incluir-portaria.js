@@ -117,9 +117,10 @@ async function verificarCPF(pedidoId) {
 
   try {
     const res = await fetch(`/api/motoristas/${cpf}`);
+
     if (res.status === 404) {
       alerta.style.display = 'none';
-      uploads.style.display = 'block';
+      if (uploads) uploads.style.display = 'block';
       if (docInput) docInput.style.display = 'block';
       if (formInput) formInput.style.display = 'block';
       if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
@@ -133,13 +134,13 @@ async function verificarCPF(pedidoId) {
       if (dados.cadastroVencido) {
         alerta.innerText = '⚠️ Cadastro vencido — é necessário reenviar o formulário assinado.';
         alerta.style.display = 'block';
-        uploads.style.display = 'block';
+        if (uploads) uploads.style.display = 'block';
         if (docInput) docInput.style.display = 'none';
         if (formInput) formInput.style.display = 'block';
         if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
       } else {
         alerta.style.display = 'none';
-        uploads.style.display = 'none';
+        if (uploads) uploads.style.display = 'none';
         if (caminhaoInput) caminhaoInput.parentElement.style.display = 'block';
       }
     }
