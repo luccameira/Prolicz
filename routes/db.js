@@ -1,13 +1,14 @@
 const mysql = require('mysql2');
 
+// Cria a conexão com o banco de dados
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: '', // deixe vazio se não tiver senha
   database: 'prolicz'
 });
 
-// Conecta ao banco (para debug e garantir conectividade)
+// Conecta ao banco e exibe no terminal
 connection.connect(err => {
   if (err) {
     console.error('❌ Erro ao conectar ao banco de dados:', err);
@@ -16,8 +17,9 @@ connection.connect(err => {
   console.log('✅ Conectado ao banco de dados MySQL!');
 });
 
-// Exporta conexão normal e modo promise
+// Exporta a conexão normal (callback) e em modo promise (async/await)
 module.exports = {
   callback: connection,
   promise: connection.promise()
 };
+
