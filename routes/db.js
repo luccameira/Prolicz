@@ -1,20 +1,22 @@
-const mysql = require('mysql2');
-require('dotenv').config({ path: __dirname + '/../.env' });
+// db.js
+const mysql = require('mysql2/promise');
 
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '', // ajuste se necessário
+  database: 'prolicz',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ Erro ao conectar ao banco de dados:', err.message);
-  } else {
+pool.getConnection()
+  .then(() => {
     console.log('✅ Conectado ao banco de dados MySQL!');
-  }
-});
+  })
+  .catch((err) => {
+    console.error('❌ Erro ao conectar ao banco de dados:', err);
+  });
 
-module.exports = connection;
-
+module.exports = pool;
