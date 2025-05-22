@@ -53,8 +53,7 @@ router.post('/', (req, res) => {
     });
 });
 
-// GET /api/clientes - Para filtros e dropdowns
-// MODIFICADO: AQUI INCLUÍMOS AS COLUNAS QUE VOCÊ PRECISA NA TELA
+// GET /api/clientes - PARA EXIBIR TODOS OS DADOS NECESSÁRIOS
 router.get('/', (req, res) => {
     const sql = 'SELECT id, nome_fantasia, documento, situacao_tributaria FROM clientes ORDER BY nome_fantasia';
     connection.query(sql, (err, results) => {
