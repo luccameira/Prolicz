@@ -3,13 +3,15 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-// CORRIGIDO: O db.js correto está na raiz do projeto, não em ./routes/db
-const connection = require('./db'); // Certifique-se que 'db.js' na raiz exporta a conexão
+// CORRIGIDO: Importa o db.js da raiz do projeto, que é o correto
+const connection = require('./db');
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname))); // Serve arquivos estáticos da raiz do projeto
+
+// Serve arquivos estáticos da raiz do projeto
+app.use(express.static(path.join(__dirname)));
 
 // Rotas com conexão injetada
 function withConnection(routePath) {
@@ -37,7 +39,7 @@ app.get('/editar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
 
-// **ADICIONADO E CORRIGIDO: Rota para a página de clientes**
+// Rota EXPLICITA para a página de clientes - ISSO DEVE RESOLVER O "CANNOT GET"
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
