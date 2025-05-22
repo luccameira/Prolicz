@@ -218,6 +218,7 @@ h1 {
   margin-top: 6px;
 }
 
+/* Alertas */
 .alerta-vencido {
   background-color: #ffe0e0;
   border: 1px solid #cc0000;
@@ -226,7 +227,16 @@ h1 {
   border-radius: 4px;
 }
 
-/* ⬇️ Estilização personalizada para os botões de upload (amarelos) */
+.alerta-sucesso {
+  background-color: #e2f0d9;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+/* ⬇️ Estilização para campo de upload */
 input[type="file"] {
   padding: 8px;
   background-color: #f5f5f5;
@@ -298,6 +308,8 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(24px);
+}
+teX(24px);
 }
 
 
