@@ -11,15 +11,15 @@ if (!fs.existsSync(pastaUpload)) {
   fs.mkdirSync(pastaUpload, { recursive: true });
 }
 
-// Configuração do multer para salvar os arquivos com nome baseado no CPF
+// Configuração do multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, pastaUpload);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const cpf = req.body.cpf || req.params.cpf || 'desconhecido';
-    const nome = `${cpf.replace(/\D/g, '')}-${file.fieldname}${ext}`;
+    const cpfBase = req.body.cpf || req.body.cpf_ajudante || req.params.cpf || 'desconhecido';
+    const nome = `${cpfBase.replace(/\D/g, '')}-${file.fieldname}${ext}`;
     cb(null, nome);
   }
 });
@@ -58,7 +58,7 @@ router.get('/:cpf', async (req, res) => {
       nome: motorista.nome,
       cadastroVencido: vencido,
       foto_documento: motorista.foto_documento,
-      foto_formulario: motorista.foto_formulario,
+      ficha_integracao: motorista.ficha_integracao,
       foto_caminhao: motorista.foto_caminhao
     });
 
@@ -68,46 +68,67 @@ router.get('/:cpf', async (req, res) => {
   }
 });
 
-// POST /api/motoristas → Cadastra motorista novo
+// POST /api/motoristas → Cadastra motorista e opcionalmente o ajudante
 router.post('/', upload.fields([
   { name: 'foto_documento', maxCount: 1 },
-  { name: 'foto_formulario', maxCount: 1 },
-  { name: 'foto_caminhao', maxCount: 1 }
+  { name: 'ficha_integracao', maxCount: 1 },
+  { name: 'foto_caminhao', maxCount: 1 },
+  { name: 'documento_ajudante', maxCount: 1 },
+  { name: 'ficha_ajudante', maxCount: 1 }
 ]), async (req, res) => {
-  const { cpf, nome } = req.body;
+  const { cpf, nome, placa, cpf_ajudante, nome_ajudante } = req.body;
+
   const fotoDocumento = req.files['foto_documento']?.[0]?.filename || null;
-  const fotoFormulario = req.files['foto_formulario']?.[0]?.filename || null;
+  const fichaMotorista = req.files['ficha_integracao']?.[0]?.filename || null;
   const fotoCaminhao = req.files['foto_caminhao']?.[0]?.filename || null;
   const dataFormulario = new Date().toISOString().slice(0, 10);
 
-  if (!cpf || !nome || !fotoDocumento || !fotoFormulario || !fotoCaminhao) {
-    return res.status(400).json({ erro: 'Campos obrigatórios faltando' });
+  // Dados do ajudante
+  const docAjudante = req.files['documento_ajudante']?.[0]?.filename || null;
+  const fichaAjudante = req.files['ficha_ajudante']?.[0]?.filename || null;
+
+  if (!cpf || !nome || !placa || !fotoDocumento || !fichaMotorista || !fotoCaminhao) {
+    return res.status(400).json({ erro: 'Campos obrigatórios do motorista faltando' });
   }
 
   try {
+    // Motorista
     await db.query(`
       INSERT INTO motoristas 
-      (cpf, nome, foto_documento, foto_formulario, foto_caminhao, data_ultimo_formulario)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [cpf, nome, fotoDocumento, fotoFormulario, fotoCaminhao, dataFormulario]);
+      (cpf, nome, placa, foto_documento, ficha_integracao, foto_caminhao, data_ultimo_formulario)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [cpf, nome, placa, fotoDocumento, fichaMotorista, fotoCaminhao, dataFormulario]);
 
-    res.json({ sucesso: true, mensagem: 'Motorista cadastrado com sucesso' });
+    // Ajudante (condicional)
+    if (cpf_ajudante && nome_ajudante) {
+      await db.query(`
+        INSERT INTO ajudantes (cpf, nome, documento, ficha_integracao)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          nome = VALUES(nome),
+          documento = VALUES(documento),
+          ficha_integracao = VALUES(ficha_integracao)
+      `, [cpf_ajudante, nome_ajudante, docAjudante, fichaAjudante]);
+    }
+
+    res.json({ sucesso: true, mensagem: 'Cadastro realizado com sucesso' });
+
   } catch (err) {
-    console.error('Erro ao cadastrar motorista:', err);
-    res.status(500).json({ erro: 'Erro ao cadastrar motorista' });
+    console.error('Erro ao cadastrar motorista ou ajudante:', err);
+    res.status(500).json({ erro: 'Erro ao salvar os dados' });
   }
 });
 
 // PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
 router.put('/:cpf/formulario', upload.fields([
-  { name: 'foto_formulario', maxCount: 1 },
+  { name: 'ficha_integracao', maxCount: 1 },
   { name: 'foto_caminhao', maxCount: 1 }
 ]), async (req, res) => {
-  const fotoFormulario = req.files['foto_formulario']?.[0]?.filename || null;
-  const fotoCaminhao = req.files['foto_caminhao']?.[0]?.filename || null;
+  const ficha = req.files['ficha_integracao']?.[0]?.filename || null;
+  const caminhao = req.files['foto_caminhao']?.[0]?.filename || null;
   const dataFormulario = new Date().toISOString().slice(0, 10);
 
-  if (!fotoFormulario || !fotoCaminhao) {
+  if (!ficha || !caminhao) {
     return res.status(400).json({ erro: 'Fotos obrigatórias não enviadas' });
   }
 
@@ -119,14 +140,15 @@ router.put('/:cpf/formulario', upload.fields([
 
     await db.query(`
       UPDATE motoristas 
-      SET foto_formulario = ?, foto_caminhao = ?, data_ultimo_formulario = ? 
+      SET ficha_integracao = ?, foto_caminhao = ?, data_ultimo_formulario = ? 
       WHERE cpf = ?
-    `, [fotoFormulario, fotoCaminhao, dataFormulario, req.params.cpf]);
+    `, [ficha, caminhao, dataFormulario, req.params.cpf]);
 
-    res.json({ sucesso: true, mensagem: 'Formulário atualizado com sucesso' });
+    res.json({ sucesso: true, mensagem: 'Ficha atualizada com sucesso' });
+
   } catch (err) {
-    console.error('Erro ao atualizar formulário:', err);
-    res.status(500).json({ erro: 'Erro ao atualizar formulário' });
+    console.error('Erro ao atualizar ficha:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar ficha' });
   }
 });
 
