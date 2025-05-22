@@ -69,7 +69,7 @@ async function carregarPedidosPortaria() {
     form.innerHTML = `
       <label>CPF do Motorista</label>
       <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
-      <div id="status-cadastro-${idPedido}" class="alerta-vencido" style="display: none;"></div>
+      <div id="status-cadastro-${idPedido}" class="" style="display: none;"></div>
 
       <div id="bloco-form-${idPedido}" style="display: none;">
         <label>Nome do Motorista</label>
@@ -78,6 +78,13 @@ async function carregarPedidosPortaria() {
         <label>Placa do Veículo</label>
         <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão">
 
+        <label>Foto do Caminhão</label>
+        <input type="file" id="foto-caminhao-${idPedido}" accept="image/*">
+
+        <label>Ficha de Integração Assinada (motorista)</label>
+        <input type="file" id="ficha-${idPedido}" accept="image/*">
+
+        <!-- Ajudante (final do formulário) -->
         <label for="tem-ajudante-${idPedido}" style="margin-top: 12px;">Tem Ajudante?</label>
         <label class="switch">
           <input type="checkbox" id="tem-ajudante-${idPedido}">
@@ -99,12 +106,6 @@ async function carregarPedidosPortaria() {
             <input type="file" id="ficha-ajudante-${idPedido}" accept="image/*">
           </div>
         </div>
-
-        <label>Foto do Caminhão</label>
-        <input type="file" id="foto-caminhao-${idPedido}" accept="image/*">
-
-        <label>Ficha de Integração Assinada (motorista)</label>
-        <input type="file" id="ficha-${idPedido}" accept="image/*">
 
         <button class="btn btn-registrar" onclick="registrarColeta(${idPedido}, this)">Iniciar Coleta</button>
       </div>
@@ -129,7 +130,7 @@ async function carregarPedidosPortaria() {
           const cpf = cpfAjudante.value.replace(/\D/g, '');
           if (cpf.length === 11) {
             camposAjudante.style.display = 'block';
-            // Aqui pode ser incluída lógica de verificação do ajudante no backend
+            // Aqui pode entrar verificação futura do ajudante
           }
         });
       });
@@ -153,6 +154,7 @@ async function verificarCPF(pedidoId) {
     blocoForm.style.display = 'block';
 
     if (res.status === 404) {
+      alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
       alerta.innerText = '🚫 Motorista não possui cadastro. Preencha os dados abaixo.';
       nomeInput.disabled = false;
@@ -163,9 +165,11 @@ async function verificarCPF(pedidoId) {
       nomeInput.disabled = true;
 
       if (dados.cadastroVencido) {
+        alerta.className = 'alerta-vencido';
         alerta.style.display = 'block';
         alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração e a foto do caminhão.';
       } else {
+        alerta.className = 'alerta-sucesso';
         alerta.style.display = 'block';
         alerta.innerText = '✅ Motorista já cadastrado.';
       }
@@ -177,16 +181,16 @@ async function verificarCPF(pedidoId) {
 
 async function registrarColeta(pedidoId, botao) {
   const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
-  const nome = document.getElementById(`nome-${pedidoId}`).value.trim();
-  const placa = document.getElementById(`placa-${pedidoId}`).value.trim();
-  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
-  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const nome = document.getElementById(`nome-${idPedido}`)?.value.trim();
+  const placa = document.getElementById(`placa-${idPedido}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${idPedido}`);
+  const fichaInput = document.getElementById(`ficha-${idPedido}`);
 
-  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`).checked;
-  const cpfAjudante = document.getElementById(`cpf-ajudante-${pedidoId}`)?.value.trim();
-  const nomeAjudante = document.getElementById(`nome-ajudante-${pedidoId}`)?.value.trim();
-  const docAjudante = document.getElementById(`doc-ajudante-${pedidoId}`);
-  const fichaAjudante = document.getElementById(`ficha-ajudante-${pedidoId}`);
+  const temAjudante = document.getElementById(`tem-ajudante-${idPedido}`)?.checked;
+  const cpfAjudante = document.getElementById(`cpf-ajudante-${idPedido}`)?.value.trim();
+  const nomeAjudante = document.getElementById(`nome-ajudante-${idPedido}`)?.value.trim();
+  const docAjudante = document.getElementById(`doc-ajudante-${idPedido}`);
+  const fichaAjudante = document.getElementById(`ficha-ajudante-${idPedido}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
@@ -200,22 +204,14 @@ async function registrarColeta(pedidoId, botao) {
   formData.append('cpf', cpf);
   formData.append('placa', placa);
   formData.append('foto_caminhao', caminhaoInput.files[0]);
-
   if (nome) formData.append('nome', nome);
-  if (fichaInput && fichaInput.files.length) {
-    formData.append('ficha_integracao', fichaInput.files[0]);
-  }
+  if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
 
   if (temAjudante && cpfAjudante && nomeAjudante) {
     formData.append('cpf_ajudante', cpfAjudante);
     formData.append('nome_ajudante', nomeAjudante);
-
-    if (docAjudante && docAjudante.files.length) {
-      formData.append('documento_ajudante', docAjudante.files[0]);
-    }
-    if (fichaAjudante && fichaAjudante.files.length) {
-      formData.append('ficha_ajudante', fichaAjudante.files[0]);
-    }
+    if (docAjudante?.files.length) formData.append('documento_ajudante', docAjudante.files[0]);
+    if (fichaAjudante?.files.length) formData.append('ficha_ajudante', fichaAjudante.files[0]);
   }
 
   try {
@@ -240,6 +236,5 @@ async function registrarColeta(pedidoId, botao) {
     botao.innerText = 'Iniciar Coleta';
   }
 }
-
 
 
