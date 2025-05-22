@@ -21,19 +21,16 @@ function conectarRotas(caminhoDoArquivo) {
 }
 
 app.use('/api/clientes', conectarRotas('./routes/clientes'));
-app.use('/api/pedidos', conectarRotar('./routes/pedidos')); // Corrigido aqui, se estiver com 'rotas'
+app.use('/api/pedidos', conectarRotas('./routes/pedidos')); // <<--- AQUI ESTÁ A LINHA CORRIGIDA
 app.use('/api/produtos', conectarRotas('./routes/produtos'));
 app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
 
-// ************* MUDANÇA MAIS IMPORTANTE AQUI AGORA *************
-// Vamos garantir que a rota para /clientes seja a PRIMEIRA rota de GET para HTML.
-// Isso é uma tentativa de evitar que alguma outra configuração "engula" essa rota.
-// Se isso não funcionar, é um problema muito mais profundo.
+// Estas são as rotas que servem as páginas HTML.
+// A ordem é importante: as rotas mais específicas (como /clientes) vêm antes de rotas mais genéricas.
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
 
-// Estas são outras páginas do seu site, seguindo a mesma lógica.
 app.get('/visualizar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
