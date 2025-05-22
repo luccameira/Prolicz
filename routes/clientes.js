@@ -3,24 +3,31 @@ const router = express.Router();
 
 // Rota para obter todos os clientes
 router.get('/', (req, res) => {
-    // A conexão com o banco de dados é injetada via index.js
-    const connection = router.connection;
+    const connection = router.connection; // A conexão com o banco de dados é injetada via index.js
 
     if (!connection) {
-        console.error('[ERRO FATAL API CLIENTES] Conexão com o banco de dados não estabelecida.');
+        console.error('[ERRO FATAL API CLIENTES] Conexão com o banco de dados não estabelecida. Verifique db.js e index.js');
         return res.status(500).json({ error: 'Erro interno do servidor: conexão com o banco de dados ausente.' });
     }
 
     const query = 'SELECT * FROM clientes';
+    console.log(`[DEBUG API CLIENTES] Tentando executar a query: "${query}"`); // Novo log
+
     connection.query(query, (err, results) => {
         if (err) {
-            console.error(`[ERRO API CLIENTES] Erro ao executar a query: ${err.message}`);
-            console.error(`[ERRO API CLIENTES] Detalhes do erro:`, err); // Imprime o erro completo
-            return res.status(500).json({ error: 'Erro ao buscar clientes no banco de dados.', details: err.message });
+            // ESTA É A LINHA MAIS IMPORTANTE: IMPRIMIR O ERRO DETALHADO DO MYSQL
+            console.error(`\n[ERRO MYSQL] Erro ao executar a query "${query}":`);
+            console.error(err); // Isso vai imprimir o objeto de erro COMPLETO do MySQL
+            console.error(`[ERRO MYSQL] Código do erro: ${err.code}`);
+            console.error(`[ERRO MYSQL] Mensagem de erro: ${err.sqlMessage || err.message}`);
+            console.error(`[ERRO MYSQL] Query problemática: ${err.sql}`);
+            // FIM DAS LINHAS IMPORTANTES
+
+            return res.status(500).json({ error: 'Erro ao buscar clientes no banco de dados. Consulte o console do servidor para mais detalhes.' });
         }
         if (results.length === 0) {
             console.log('[DEBUG API CLIENTES] Nenhum cliente encontrado no banco de dados.');
-            return res.status(200).json([]); // Retorna um array vazio se não houver clientes
+            return res.status(200).json([]);
         }
         console.log(`[DEBUG API CLIENTES] Clientes encontrados: ${results.length}`);
         res.status(200).json(results);
