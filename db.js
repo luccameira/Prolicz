@@ -3,8 +3,8 @@ const mysql = require('mysql');
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root', // Seu usuário do MySQL
-    password: '', // Sua senha do MySQL (provavelmente vazia se for padrão)
-    database: 'prolicz' // Seu banco de dados
+    password: '', // Sua senha do MySQL (que você deixou vazia)
+    database: 'meu_projeto_db' // <--- Mude para o nome do banco de dados que você criou!
 });
 
 // Tentar conectar ao banco de dados MySQL ao iniciar.
