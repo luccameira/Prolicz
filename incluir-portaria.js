@@ -39,7 +39,7 @@ async function carregarPedidosPortaria() {
   }
 
   todos.forEach(pedido => {
-    const idPedido = pedido.pedido_id || pedido.id;
+    const pedidoId = pedido.pedido_id || pedido.id;
     const finalizado = pedido.status === 'Coleta Iniciada';
 
     const card = document.createElement('div');
@@ -71,80 +71,50 @@ async function carregarPedidosPortaria() {
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${idPedido}" required placeholder="Digite o CPF">
+          <input type="text" id="cpf-${pedidoId}" required placeholder="Digite o CPF">
         </div>
-        <div id="status-cadastro-${idPedido}" style="display: none; flex: 1;"></div>
+        <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
       </div>
 
-      <div id="bloco-form-${idPedido}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
+      <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
+        <h4 style="margin-bottom: 15px;">Motorista</h4>
         <div style="display: flex; gap: 20px;">
           <div style="flex: 1;">
             <label>Nome do Motorista</label>
-            <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista" required>
+            <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
           </div>
           <div style="flex: 1;">
             <label>Placa do Veículo</label>
-            <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão" required>
+            <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
           </div>
         </div>
 
         <label style="margin-top: 12px;">Foto do Caminhão</label>
-        <input type="file" id="foto-caminhao-${idPedido}" accept="image/*" required>
+        <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
 
         <label style="margin-top: 12px;">Ficha de Integração Assinada (motorista)</label>
-        <input type="file" id="ficha-${idPedido}" accept="image/*" required>
+        <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+
+        <label style="margin-top: 12px;">Foto do Documento (motorista)</label>
+        <input type="file" id="doc-${pedidoId}" accept="image/*" required>
 
         <label style="margin-top: 12px;">Tem Ajudante?</label>
-        <select id="tem-ajudante-${idPedido}" required>
+        <select id="tem-ajudante-${pedidoId}" required>
           <option value="">Selecione</option>
           <option value="sim">Sim</option>
           <option value="nao">Não</option>
         </select>
 
-        <div id="bloco-ajudante-${idPedido}" style="display: none; margin-top: 20px;">
-          <label>CPF do Ajudante</label>
-          <input type="text" id="cpf-ajudante-${idPedido}" placeholder="Digite o CPF do ajudante" required>
+        <div id="card-ajudante-${pedidoId}" style="display: none; margin-top: 25px;"></div>
 
-          <div id="campos-ajudante-${idPedido}" style="display: none;">
-            <label>Nome do Ajudante</label>
-            <input type="text" id="nome-ajudante-${idPedido}" placeholder="Nome completo do ajudante" required>
-
-            <label>Foto do Documento (ajudante)</label>
-            <input type="file" id="doc-ajudante-${idPedido}" accept="image/*" required>
-
-            <label>Ficha de Integração Assinada (ajudante)</label>
-            <input type="file" id="ficha-ajudante-${idPedido}" accept="image/*" required>
-          </div>
-        </div>
-
-        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${idPedido}, this)">Iniciar Coleta</button>
+        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
       </div>
     `;
 
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
-        aplicarMascaraCPF(form.querySelector(`#cpf-${idPedido}`));
-
-        const select = form.querySelector(`#tem-ajudante-${idPedido}`);
-        const blocoAjudante = form.querySelector(`#bloco-ajudante-${idPedido}`);
-        const camposAjudante = form.querySelector(`#campos-ajudante-${idPedido}`);
-        const cpfAjudante = form.querySelector(`#cpf-ajudante-${idPedido}`);
-
-        aplicarMascaraCPF(cpfAjudante);
-
-        select.addEventListener('change', () => {
-          const temAjudante = select.value === 'sim';
-          blocoAjudante.style.display = temAjudante ? 'block' : 'none';
-          camposAjudante.style.display = 'none';
-        });
-
-        cpfAjudante.addEventListener('input', () => {
-          const cpf = cpfAjudante.value.replace(/\D/g, '');
-          if (cpf.length === 11) {
-            camposAjudante.style.display = 'block';
-          }
-        });
+        aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
       });
     }
 
@@ -153,11 +123,55 @@ async function carregarPedidosPortaria() {
   });
 }
 
-async function verificarCPF(pedidoId) {
-  const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
-  const nomeInput = document.getElementById(`nome-${pedidoId}`);
-  const alerta = document.getElementById(`status-cadastro-${pedidoId}`);
-  const blocoForm = document.getElementById(`bloco-form-${pedidoId}`);
+function exibirCardAjudante(pedidoId) {
+  const card = document.getElementById(`card-ajudante-${pedidoId}`);
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="subcard" style="padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
+      <h4 style="margin-bottom: 15px;">Ajudante</h4>
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="max-width: 300px; flex: none;">
+          <label>CPF do Ajudante</label>
+          <input type="text" id="cpf-ajudante-${pedidoId}" required placeholder="Digite o CPF do ajudante">
+        </div>
+        <div id="status-cadastro-ajudante-${pedidoId}" style="display: none; flex: 1;"></div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <label>Nome do Ajudante</label>
+        <input type="text" id="nome-ajudante-${pedidoId}" placeholder="Nome completo do ajudante" required>
+
+        <label style="margin-top: 12px;">Ficha de Integração Assinada (ajudante)</label>
+        <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
+
+        <label style="margin-top: 12px;">Foto do Documento (ajudante)</label>
+        <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
+      </div>
+    </div>
+  `;
+
+  const cpfInput = document.getElementById(`cpf-ajudante-${pedidoId}`);
+  aplicarMascaraCPF(cpfInput);
+  cpfInput.addEventListener('input', () => {
+    const cpf = cpfInput.value.replace(/\D/g, '');
+    if (cpf.length === 11) verificarCPF(pedidoId, true);
+  });
+}
+
+async function verificarCPF(pedidoId, isAjudante = false) {
+  const prefix = isAjudante ? 'cpf-ajudante' : 'cpf';
+  const nomePrefix = isAjudante ? 'nome-ajudante' : 'nome';
+  const alertaPrefix = isAjudante ? 'status-cadastro-ajudante' : 'status-cadastro';
+  const docId = isAjudante ? 'doc-ajudante' : 'doc';
+  const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
+  const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
+
+  const cpf = document.getElementById(`${prefix}-${pedidoId}`).value.trim();
+  const nomeInput = document.getElementById(`${nomePrefix}-${pedidoId}`);
+  const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
+  const docInput = document.getElementById(`${docId}-${pedidoId}`);
+  const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
+  const blocoForm = document.getElementById(cardId);
 
   if (!cpf) return;
 
@@ -168,9 +182,11 @@ async function verificarCPF(pedidoId) {
     if (res.status === 404) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
-      alerta.innerText = '🚫 Motorista não possui cadastro.';
+      alerta.innerText = '🚫 Não possui cadastro.';
       nomeInput.disabled = false;
       nomeInput.value = '';
+      docInput.required = true;
+      fichaInput.required = true;
     } else {
       const dados = await res.json();
       nomeInput.value = dados.nome;
@@ -179,11 +195,15 @@ async function verificarCPF(pedidoId) {
       if (dados.cadastroVencido) {
         alerta.className = 'alerta-vencido';
         alerta.style.display = 'block';
-        alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração e a foto do caminhão.';
+        alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
+        fichaInput.required = true;
+        docInput.required = false;
       } else {
         alerta.className = 'alerta-sucesso';
         alerta.style.display = 'block';
-        alerta.innerText = '✅ Motorista já cadastrado.';
+        alerta.innerText = '✅ Já cadastrado.';
+        fichaInput.required = false;
+        docInput.required = false;
       }
     }
   } catch (err) {
@@ -191,18 +211,33 @@ async function verificarCPF(pedidoId) {
   }
 }
 
-async function registrarColeta(pedidoId, botao) {
-  const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
-  const nome = document.getElementById(`nome-${idPedido}`)?.value.trim();
-  const placa = document.getElementById(`placa-${idPedido}`)?.value.trim();
-  const caminhaoInput = document.getElementById(`foto-caminhao-${idPedido}`);
-  const fichaInput = document.getElementById(`ficha-${idPedido}`);
+document.addEventListener('change', function (e) {
+  if (e.target.id.startsWith('tem-ajudante-')) {
+    const pedidoId = e.target.id.split('-')[2];
+    const valor = e.target.value;
+    const card = document.getElementById(`card-ajudante-${pedidoId}`);
+    if (valor === 'sim') {
+      exibirCardAjudante(pedidoId);
+    } else {
+      card.style.display = 'none';
+      card.innerHTML = '';
+    }
+  }
+});
 
-  const temAjudante = document.getElementById(`tem-ajudante-${idPedido}`)?.value === 'sim';
-  const cpfAjudante = document.getElementById(`cpf-ajudante-${idPedido}`)?.value.trim();
-  const nomeAjudante = document.getElementById(`nome-ajudante-${idPedido}`)?.value.trim();
-  const docAjudante = document.getElementById(`doc-ajudante-${idPedido}`);
-  const fichaAjudante = document.getElementById(`ficha-ajudante-${idPedido}`);
+async function registrarColeta(pedidoId, botao) {
+  const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const docInput = document.getElementById(`doc-${pedidoId}`);
+
+  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`)?.value === 'sim';
+  const cpfAjudante = document.getElementById(`cpf-ajudante-${pedidoId}`)?.value.trim();
+  const nomeAjudante = document.getElementById(`nome-ajudante-${pedidoId}`)?.value.trim();
+  const fichaAjudante = document.getElementById(`ficha-ajudante-${pedidoId}`);
+  const docAjudante = document.getElementById(`doc-ajudante-${pedidoId}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
@@ -218,6 +253,7 @@ async function registrarColeta(pedidoId, botao) {
   formData.append('foto_caminhao', caminhaoInput.files[0]);
   if (nome) formData.append('nome', nome);
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
+  if (docInput?.files.length) formData.append('documento', docInput.files[0]);
 
   if (temAjudante && cpfAjudante && nomeAjudante) {
     formData.append('cpf_ajudante', cpfAjudante);
