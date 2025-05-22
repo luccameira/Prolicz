@@ -7,25 +7,13 @@ const connection = mysql.createConnection({
     database: 'prolicz' // Seu banco de dados
 });
 
-// Tentar conectar e logar o resultado
+// Tentar conectar ao banco de dados MySQL ao iniciar.
 connection.connect(err => {
     if (err) {
-        console.error('[ERRO DB.JS] Erro ao conectar ao banco de dados MySQL:');
-        console.error(err); // Imprime o erro completo
-        console.error(`[ERRO DB.JS] Código do erro: ${err.code}`);
-        console.error(`[ERRO DB.JS] Mensagem de erro: ${err.sqlMessage || err.message}`);
-        return;
+        console.error('[ERRO FATAL DB] Erro ao conectar ao banco de dados MySQL: ' + err.stack);
+        return; // Impede que o servidor inicie sem conexão com o DB
     }
-    console.log('Conectado ao banco de dados MySQL com sucesso via db.js!');
-    // Se a conexão for bem-sucedida, tente uma query simples
-    connection.query('SELECT 1 + 1 AS solution', (error, results) => {
-        if (error) {
-            console.error('[ERRO DB.JS] Erro ao executar query de teste:', error);
-        } else {
-            console.log('[DEBUG DB.JS] Query de teste executada com sucesso. Solução:', results[0].solution);
-        }
-        connection.end(); // Fechar a conexão após o teste
-    });
+    console.log('Conectado ao banco de dados MySQL!');
 });
 
-module.exports = connection; // 
+module.exports = connection;
