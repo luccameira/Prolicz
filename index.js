@@ -90,3 +90,30 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
+
+// *******************************************************************
+// NOVO BLOCO: TRATAMENTO DE ERROS GLOBAL (PARA PEGAR O ERRO 500 DA API)
+// *******************************************************************
+app.use((err, req, res, next) => {
+    console.error(`\n[ERRO GLOBAL DO EXPRESS] Um erro inesperado ocorreu!`);
+    console.error(`Caminho da requisição: ${req.path}`);
+    console.error(`Método: ${req.method}`);
+    console.error('Detalhes do Erro:', err.stack || err.message);
+
+    // Se já enviou a resposta, passa para o próximo middleware
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    // Envia uma resposta de erro 500 para o cliente
+    res.status(500).send('Erro interno do servidor. Consulte o console do servidor para detalhes.');
+});
+
+// *******************************************************************
+// FIM DO NOVO BLOCO
+// *******************************************************************
+
+// Inicia o servidor.
+app.listen(port, () => {
+    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+});
