@@ -31,7 +31,7 @@ app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
 // *******************************************************************
 // AS ROTAS HTML FORAM AJUSTADAS PARA INCLUIR ".HTML" PARA CORRESPONDER AOS SEUS LINKS.
 // *******************************************************************
-app.get('/clientes.html', (req, res) => { // MUDANÇA AQUI: /clientes.html
+app.get('/clientes.html', (req, res) => {
     const filePath = path.join(__dirname, 'clientes.html');
     console.log(`[DEBUG] Requisição recebida para /clientes.html.`);
     console.log(`[DEBUG] Tentando enviar o arquivo: ${filePath}`);
@@ -49,20 +49,20 @@ app.get('/clientes.html', (req, res) => { // MUDANÇA AQUI: /clientes.html
     });
 });
 
-app.get('/novo-cliente.html', (req, res) => { // MUDANÇA AQUI: /novo-cliente.html
+app.get('/novo-cliente.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'novo-cliente.html'));
 });
 
-app.get('/visualizar-venda.html', (req, res) => { // MUDANÇA AQUI
+app.get('/visualizar-venda.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
-app.get('/vendas.html', (req, res) => { // MUDANÇA AQUI
+app.get('/vendas.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'vendas.html'));
 });
-app.get('/nova-venda.html', (req, res) => { // MUDANÇA AQUI
+app.get('/nova-venda.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'nova-venda.html'));
 });
-app.get('/editar-venda.html', (req, res) => { // MUDANÇA AQUI
+app.get('/editar-venda.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
 app.get('/tarefas-portaria.html', (req, res) => {
@@ -83,12 +83,7 @@ app.get('/tarefas-liberacao.html', (req, res) => {
 
 // Se alguém acessar só http://localhost:3000/, ele vai para a página de vendas.
 app.get('/', (req, res) => {
-    res.redirect('/vendas.html'); // MUDANÇA AQUI
-});
-
-// Inicia o servidor.
-app.listen(port, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+    res.redirect('/vendas.html');
 });
 
 // *******************************************************************
@@ -109,11 +104,7 @@ app.use((err, req, res, next) => {
     res.status(500).send('Erro interno do servidor. Consulte o console do servidor para detalhes.');
 });
 
-// *******************************************************************
-// FIM DO NOVO BLOCO
-// *******************************************************************
-
-// Inicia o servidor.
+// Inicia o servidor. (APENAS UMA VEZ!)
 app.listen(port, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
