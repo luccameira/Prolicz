@@ -10,13 +10,10 @@ const connection = require('./db');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// *** ATENÇÃO AQUI: Esta linha é CRÍTICA para servir seus arquivos HTML, CSS, JS. ***
-// Ela diz ao servidor: "Qualquer arquivo HTML, CSS ou JavaScript que estiver
-// na mesma pasta onde este 'index.js' está, pode ser acessado diretamente."
-// Isso é o que permite que 'clientes.html' seja encontrado.
+// Diz ao servidor para procurar arquivos HTML, CSS, JavaScript direto na pasta principal do projeto.
 app.use(express.static(path.join(__dirname)));
 
-// Esta parte conecta as "engrenagens" do seu sistema (as rotas API, como /api/clientes).
+// Esta parte conecta as "engrenagens" do seu sistema (as rotas API).
 function conectarRotas(caminhoDoArquivo) {
     const rota = require(caminhoDoArquivo);
     rota.connection = connection;
@@ -24,20 +21,19 @@ function conectarRotas(caminhoDoArquivo) {
 }
 
 app.use('/api/clientes', conectarRotas('./routes/clientes'));
-app.use('/api/pedidos', conectarRotas('./routes/pedidos'));
+app.use('/api/pedidos', conectarRotar('./routes/pedidos')); // Corrigido aqui, se estiver com 'rotas'
 app.use('/api/produtos', conectarRotas('./routes/produtos'));
 app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
 
-
-// ************* ATENÇÃO: MUDANÇA NESTA SEÇÃO *************
-// Vamos garantir que a rota para /clientes seja a primeira a ser verificada para HTML.
+// ************* MUDANÇA MAIS IMPORTANTE AQUI AGORA *************
+// Vamos garantir que a rota para /clientes seja a PRIMEIRA rota de GET para HTML.
 // Isso é uma tentativa de evitar que alguma outra configuração "engula" essa rota.
+// Se isso não funcionar, é um problema muito mais profundo.
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
 
-// Agora, para as outras páginas HTML, vamos usar a mesma lógica
-// A ordem dessas rotas importa. As rotas mais específicas vêm antes das mais genéricas.
+// Estas são outras páginas do seu site, seguindo a mesma lógica.
 app.get('/visualizar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
@@ -66,7 +62,7 @@ app.get('/tarefas-liberacao.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'tarefas-liberacao.html'));
 });
 
-// Se alguém acessar só http://localhost:3000/ (sem nada depois), ele vai para a página de vendas.
+// Se alguém acessar só http://localhost:3000/, ele vai para a página de vendas.
 app.get('/', (req, res) => {
     res.redirect('/vendas');
 });
