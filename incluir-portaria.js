@@ -173,6 +173,9 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
   const blocoForm = document.getElementById(cardId);
 
+  const docLabel = docInput?.closest('label');
+  const fichaLabel = fichaInput?.closest('label');
+
   if (!cpf) return;
 
   try {
@@ -187,6 +190,8 @@ async function verificarCPF(pedidoId, isAjudante = false) {
       nomeInput.value = '';
       docInput.required = true;
       fichaInput.required = true;
+      docLabel.style.display = 'block';
+      fichaLabel.style.display = 'block';
     } else {
       const dados = await res.json();
       nomeInput.value = dados.nome;
@@ -198,12 +203,16 @@ async function verificarCPF(pedidoId, isAjudante = false) {
         alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
         fichaInput.required = true;
         docInput.required = false;
+        fichaLabel.style.display = 'block';
+        docLabel.style.display = 'none';
       } else {
         alerta.className = 'alerta-sucesso';
         alerta.style.display = 'block';
         alerta.innerText = '✅ Já cadastrado.';
         fichaInput.required = false;
         docInput.required = false;
+        fichaLabel.style.display = 'none';
+        docLabel.style.display = 'none';
       }
     }
   } catch (err) {
