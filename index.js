@@ -3,35 +3,35 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-// Importa o db.js da raiz do projeto. Isso está correto.
+// Conecta ao banco de dados MySQL.
 const connection = require('./db');
 
-// Middlewares
+// Permite que o servidor entenda informações enviadas de formulários.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// *** ATENÇÃO AQUI: Servir arquivos estáticos de uma pasta 'public' (vamos criá-la) ***
-// Isso é uma prática comum para arquivos HTML, CSS, JS do frontend.
-// Primeiro tentamos na raiz da pasta. Se não funcionar, tentaremos com uma pasta 'public'.
-app.use(express.static(path.join(__dirname))); 
+// Diz ao servidor para procurar arquivos HTML, CSS, JavaScript direto na pasta principal do projeto.
+app.use(express.static(path.join(__dirname)));
 
-// Rotas com conexão injetada
-function withConnection(routePath) {
-    const router = require(routePath);
-    router.connection = connection;
-    return router;
+// Esta parte conecta as "engrenagens" do seu sistema (as rotas API).
+function conectarRotas(caminhoDoArquivo) {
+    const rota = require(caminhoDoArquivo);
+    rota.connection = connection;
+    return rota;
 }
 
-app.use('/api/clientes', withConnection('./routes/clientes'));
-app.use('/api/pedidos', withConnection('./routes/pedidos'));
-app.use('/api/produtos', withConnection('./routes/produtos'));
-app.use('/api/usuarios', withConnection('./routes/usuarios'));
+app.use('/api/clientes', conectarRotas('./routes/clientes'));
+app.use('/api/pedidos', conectarRotas('./routes/pedidos'));
+app.use('/api/produtos', conectarRotas('./routes/produtos'));
+app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
 
-// Rotas explícitas para as páginas HTML
-// Estas rotas SEMPRE devem vir ANTES de qualquer rota 'catch-all' ou de erro.
+// ESTA É A LINHA MAIS IMPORTANTE PARA O SEU PROBLEMA "Cannot GET /clientes"
+// Ela diz: "Quando alguém pedir '/clientes', mostre o arquivo 'clientes.html' que está aqui na mesma pasta."
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
+
+// Estas são outras páginas do seu site, seguindo a mesma lógica.
 app.get('/visualizar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
@@ -60,13 +60,12 @@ app.get('/tarefas-liberacao.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'tarefas-liberacao.html'));
 });
 
-
-// Redirecionamento padrão (quando acessar http://localhost:3000/)
+// Se alguém acessar só http://localhost:3000/, ele vai para a página de vendas.
 app.get('/', (req, res) => {
     res.redirect('/vendas');
 });
 
-// Iniciar servidor
+// Inicia o servidor para que seu site funcione.
 app.listen(port, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
