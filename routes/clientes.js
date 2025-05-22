@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 let connection;
 
-// POST /api/clientes - Cadastrar novo cliente
+// Código para cadastrar um novo cliente (permanece o mesmo)
 router.post('/', (req, res) => {
     const {
         tipo_pessoa, documento, nome_fantasia, situacao_tributaria, codigo_fiscal,
@@ -53,7 +53,8 @@ router.post('/', (req, res) => {
     });
 });
 
-// GET /api/clientes - PARA EXIBIR TODOS OS DADOS NECESSÁRIOS
+// ESTA É A PARTE QUE BUSCA OS CLIENTES DO BANCO DE DADOS
+// Ela pega o ID, Nome, CNPJ e Status para mostrar na sua tabela.
 router.get('/', (req, res) => {
     const sql = 'SELECT id, nome_fantasia, documento, situacao_tributaria FROM clientes ORDER BY nome_fantasia';
     connection.query(sql, (err, results) => {
@@ -62,7 +63,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// GET /api/clientes/produtos - Listar produtos disponíveis
+// Outros códigos que buscam produtos, contatos, etc., que já estavam no arquivo.
 router.get('/produtos', (req, res) => {
     connection.query(`SELECT id, nome, unidade FROM produtos ORDER BY nome ASC`, (err, resultados) => {
         if (err) return res.status(500).json({ erro: 'Erro ao buscar produtos.' });
@@ -70,7 +71,6 @@ router.get('/produtos', (req, res) => {
     });
 });
 
-// GET /api/clientes/:id/produtos - Buscar produtos autorizados por cliente
 router.get('/:id/produtos', (req, res) => {
     const clienteId = req.params.id;
     const sql = `
@@ -88,7 +88,6 @@ router.get('/:id/produtos', (req, res) => {
     });
 });
 
-// GET /api/clientes/:id - Buscar cliente completo
 router.get('/:id', (req, res) => {
     const id = req.params.id;
 
@@ -121,7 +120,6 @@ router.get('/:id', (req, res) => {
     });
 });
 
-// PUT /api/clientes/:id - Atualizar cliente
 router.put('/:id', async (req, res) => {
     const id = req.params.id;
     const {
@@ -176,7 +174,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Injetar a conexão
+// Conecta as "engrenagens" do banco de dados a este arquivo.
 Object.defineProperty(router, 'connection', {
     set(conn) {
         connection = conn;
