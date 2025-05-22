@@ -71,7 +71,7 @@ router.get('/', (req, res) => {
 
 // GET /api/clientes/produtos - Listar produtos disponíveis
 router.get('/produtos', (req, res) => {
-  connection.query(SELECT id, nome, unidade FROM produtos ORDER BY nome ASC)
+  connection.query("SELECT id, nome, unidade FROM produtos ORDER BY nome ASC")
     .then(([resultados]) => res.status(200).json(resultados))
     .catch(err => {
       console.error('Erro ao buscar produtos:', err);
