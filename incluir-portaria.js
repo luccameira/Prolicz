@@ -68,16 +68,25 @@ async function carregarPedidosPortaria() {
     form.style.display = 'none';
 
     form.innerHTML = `
-      <label>CPF do Motorista</label>
-      <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
-      <div id="status-cadastro-${idPedido}" style="display: none;"></div>
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="flex: 1;">
+          <label>CPF do Motorista</label>
+          <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
+        </div>
+        <div id="status-cadastro-${idPedido}" style="display: none; min-width: 220px;"></div>
+      </div>
 
       <div id="bloco-form-${idPedido}" style="display: none;">
-        <label>Nome do Motorista</label>
-        <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista">
-
-        <label>Placa do Veículo</label>
-        <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão">
+        <div style="display: flex; gap: 20px;">
+          <div style="flex: 1;">
+            <label>Nome do Motorista</label>
+            <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista">
+          </div>
+          <div style="flex: 1;">
+            <label>Placa do Veículo</label>
+            <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão">
+          </div>
+        </div>
 
         <label>Foto do Caminhão</label>
         <input type="file" id="foto-caminhao-${idPedido}" accept="image/*">
@@ -159,7 +168,7 @@ async function verificarCPF(pedidoId) {
     if (res.status === 404) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
-      alerta.innerText = '🚫 Motorista não possui cadastro. Preencha os dados abaixo.';
+      alerta.innerText = '🚫 Motorista não possui cadastro.';
       nomeInput.disabled = false;
       nomeInput.value = '';
     } else {
@@ -244,5 +253,3 @@ async function registrarColeta(pedidoId, botao) {
     botao.innerText = 'Iniciar Coleta';
   }
 }
-
-
