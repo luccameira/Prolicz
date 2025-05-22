@@ -28,14 +28,16 @@ app.use('/api/pedidos', conectarRotas('./routes/pedidos'));
 app.use('/api/produtos', conectarRotas('./routes/produtos'));
 app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
 
-// ESTAS SÃO AS LINHAS QUE DIZEM AO SERVIDOR ONDE ENCONTRAR AS PÁGINAS HTML.
-// Elas são importantes porque permitem que você acesse, por exemplo,
-// http://localhost:3000/clientes (sem o .html no final).
+
+// ************* ATENÇÃO: MUDANÇA NESTA SEÇÃO *************
+// Vamos garantir que a rota para /clientes seja a primeira a ser verificada para HTML.
+// Isso é uma tentativa de evitar que alguma outra configuração "engula" essa rota.
 app.get('/clientes', (req, res) => {
-    // Manda o arquivo 'clientes.html' que está na mesma pasta do 'index.js'.
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
 
+// Agora, para as outras páginas HTML, vamos usar a mesma lógica
+// A ordem dessas rotas importa. As rotas mais específicas vêm antes das mais genéricas.
 app.get('/visualizar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
