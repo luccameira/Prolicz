@@ -2,9 +2,9 @@ const mysql = require('mysql');
 
 const connection = mysql.createConnection({
     host: 'localhost',
-    user: 'root', // Seu usuário do MySQL
-    password: '', // Sua senha do MySQL (que você deixou vazia)
-    database: 'meu_projeto_db' // <--- Mude para o nome do banco de dados que você criou!
+    user: 'usuario_projeto', // <--- Use o usuário que você criou
+    password: 'MinhaSenhaSegura123!', // <--- Use a senha forte que você definiu para 'usuario_projeto'
+    database: 'meu_projeto_db' // <--- O banco de dados do seu projeto
 });
 
 // Tentar conectar ao banco de dados MySQL ao iniciar.
