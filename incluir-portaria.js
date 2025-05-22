@@ -69,33 +69,33 @@ async function carregarPedidosPortaria() {
 
     form.innerHTML = `
       <div style="display: flex; align-items: flex-end; gap: 12px;">
-        <div style="flex: 1;">
+        <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
-          <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
+          <input type="text" id="cpf-${idPedido}" required placeholder="Digite o CPF">
         </div>
-        <div id="status-cadastro-${idPedido}" style="display: none; min-width: 220px;"></div>
+        <div id="status-cadastro-${idPedido}" style="display: none; flex: 1;"></div>
       </div>
 
-      <div id="bloco-form-${idPedido}" style="display: none;">
+      <div id="bloco-form-${idPedido}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
         <div style="display: flex; gap: 20px;">
           <div style="flex: 1;">
             <label>Nome do Motorista</label>
-            <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista">
+            <input type="text" id="nome-${idPedido}" placeholder="Nome completo do motorista" required>
           </div>
           <div style="flex: 1;">
             <label>Placa do Veículo</label>
-            <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão">
+            <input type="text" id="placa-${idPedido}" placeholder="Digite a placa do caminhão" required>
           </div>
         </div>
 
-        <label>Foto do Caminhão</label>
-        <input type="file" id="foto-caminhao-${idPedido}" accept="image/*">
+        <label style="margin-top: 12px;">Foto do Caminhão</label>
+        <input type="file" id="foto-caminhao-${idPedido}" accept="image/*" required>
 
-        <label>Ficha de Integração Assinada (motorista)</label>
-        <input type="file" id="ficha-${idPedido}" accept="image/*">
+        <label style="margin-top: 12px;">Ficha de Integração Assinada (motorista)</label>
+        <input type="file" id="ficha-${idPedido}" accept="image/*" required>
 
-        <label for="tem-ajudante-${idPedido}" style="margin-top: 12px;">Tem Ajudante?</label>
-        <select id="tem-ajudante-${idPedido}">
+        <label style="margin-top: 12px;">Tem Ajudante?</label>
+        <select id="tem-ajudante-${idPedido}" required>
           <option value="">Selecione</option>
           <option value="sim">Sim</option>
           <option value="nao">Não</option>
@@ -103,21 +103,21 @@ async function carregarPedidosPortaria() {
 
         <div id="bloco-ajudante-${idPedido}" style="display: none; margin-top: 20px;">
           <label>CPF do Ajudante</label>
-          <input type="text" id="cpf-ajudante-${idPedido}" placeholder="Digite o CPF do ajudante">
+          <input type="text" id="cpf-ajudante-${idPedido}" placeholder="Digite o CPF do ajudante" required>
 
           <div id="campos-ajudante-${idPedido}" style="display: none;">
             <label>Nome do Ajudante</label>
-            <input type="text" id="nome-ajudante-${idPedido}" placeholder="Nome completo do ajudante">
+            <input type="text" id="nome-ajudante-${idPedido}" placeholder="Nome completo do ajudante" required>
 
             <label>Foto do Documento (ajudante)</label>
-            <input type="file" id="doc-ajudante-${idPedido}" accept="image/*">
+            <input type="file" id="doc-ajudante-${idPedido}" accept="image/*" required>
 
             <label>Ficha de Integração Assinada (ajudante)</label>
-            <input type="file" id="ficha-ajudante-${idPedido}" accept="image/*">
+            <input type="file" id="ficha-ajudante-${idPedido}" accept="image/*" required>
           </div>
         </div>
 
-        <button class="btn btn-registrar" onclick="registrarColeta(${idPedido}, this)">Iniciar Coleta</button>
+        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${idPedido}, this)">Iniciar Coleta</button>
       </div>
     `;
 
@@ -193,24 +193,19 @@ async function verificarCPF(pedidoId) {
 
 async function registrarColeta(pedidoId, botao) {
   const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
-  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
-  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
-  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
-  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const nome = document.getElementById(`nome-${idPedido}`)?.value.trim();
+  const placa = document.getElementById(`placa-${idPedido}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${idPedido}`);
+  const fichaInput = document.getElementById(`ficha-${idPedido}`);
 
-  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`)?.value === 'sim';
-  const cpfAjudante = document.getElementById(`cpf-ajudante-${pedidoId}`)?.value.trim();
-  const nomeAjudante = document.getElementById(`nome-ajudante-${pedidoId}`)?.value.trim();
-  const docAjudante = document.getElementById(`doc-ajudante-${pedidoId}`);
-  const fichaAjudante = document.getElementById(`ficha-ajudante-${pedidoId}`);
+  const temAjudante = document.getElementById(`tem-ajudante-${idPedido}`)?.value === 'sim';
+  const cpfAjudante = document.getElementById(`cpf-ajudante-${idPedido}`)?.value.trim();
+  const nomeAjudante = document.getElementById(`nome-ajudante-${idPedido}`)?.value.trim();
+  const docAjudante = document.getElementById(`doc-ajudante-${idPedido}`);
+  const fichaAjudante = document.getElementById(`ficha-ajudante-${idPedido}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
-    return;
-  }
-
-  if (temAjudante && document.getElementById(`tem-ajudante-${pedidoId}`).value === "") {
-    alert('Por favor, selecione se há ajudante.');
     return;
   }
 
