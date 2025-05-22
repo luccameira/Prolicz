@@ -3,16 +3,13 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-// Este é o problema de conexão que eu mencionei antes.
-// Você tem um 'db.js' na raiz do seu projeto que exporta a conexão.
-// O 'index.js' estava tentando importar de './routes/db', que é outro arquivo.
-// Vamos mudar para o 'db.js' correto, que está na raiz.
-const connection = require('./db'); // Caminho correto para o db.js na raiz
+// CORRIGIDO: O db.js correto está na raiz do projeto, não em ./routes/db
+const connection = require('./db'); // Certifique-se que 'db.js' na raiz exporta a conexão
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname))); // Serve arquivos estáticos da raiz do projeto
 
 // Rotas com conexão injetada
 function withConnection(routePath) {
@@ -23,8 +20,8 @@ function withConnection(routePath) {
 
 app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
-app.use('/api/produtos', withConnection('./routes/produtos')); // se necessário
-app.use('/api/usuarios', withConnection('./routes/usuarios')); // se necessário
+app.use('/api/produtos', withConnection('./routes/produtos'));
+app.use('/api/usuarios', withConnection('./routes/usuarios'));
 
 // Redirecionamentos para páginas HTML (existentes)
 app.get('/visualizar-venda', (req, res) => {
@@ -40,7 +37,7 @@ app.get('/editar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
 
-// **ADICIONADO: Rota para a página de clientes**
+// **ADICIONADO E CORRIGIDO: Rota para a página de clientes**
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'clientes.html'));
 });
