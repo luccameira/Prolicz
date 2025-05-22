@@ -11,6 +11,7 @@ function aplicarMascaraCPF(input) {
 
     if (v.length === 14) {
       const id = input.id.split('-')[1];
+      if (input.id.startsWith("cpf-ajudante")) return;
       verificarCPF(id);
     }
   });
@@ -69,7 +70,7 @@ async function carregarPedidosPortaria() {
     form.innerHTML = `
       <label>CPF do Motorista</label>
       <input type="text" placeholder="Digite o CPF" id="cpf-${idPedido}" required>
-      <div id="status-cadastro-${idPedido}" class="" style="display: none;"></div>
+      <div id="status-cadastro-${idPedido}" style="display: none;"></div>
 
       <div id="bloco-form-${idPedido}" style="display: none;">
         <label>Nome do Motorista</label>
@@ -84,12 +85,12 @@ async function carregarPedidosPortaria() {
         <label>Ficha de Integração Assinada (motorista)</label>
         <input type="file" id="ficha-${idPedido}" accept="image/*">
 
-        <!-- Ajudante (final do formulário) -->
         <label for="tem-ajudante-${idPedido}" style="margin-top: 12px;">Tem Ajudante?</label>
-        <label class="switch">
-          <input type="checkbox" id="tem-ajudante-${idPedido}">
-          <span class="slider round"></span>
-        </label>
+        <select id="tem-ajudante-${idPedido}">
+          <option value="">Selecione</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
 
         <div id="bloco-ajudante-${idPedido}" style="display: none; margin-top: 20px;">
           <label>CPF do Ajudante</label>
@@ -116,13 +117,16 @@ async function carregarPedidosPortaria() {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
         aplicarMascaraCPF(form.querySelector(`#cpf-${idPedido}`));
 
-        const toggle = form.querySelector(`#tem-ajudante-${idPedido}`);
+        const select = form.querySelector(`#tem-ajudante-${idPedido}`);
         const blocoAjudante = form.querySelector(`#bloco-ajudante-${idPedido}`);
         const camposAjudante = form.querySelector(`#campos-ajudante-${idPedido}`);
         const cpfAjudante = form.querySelector(`#cpf-ajudante-${idPedido}`);
 
-        toggle.addEventListener('change', () => {
-          blocoAjudante.style.display = toggle.checked ? 'block' : 'none';
+        aplicarMascaraCPF(cpfAjudante);
+
+        select.addEventListener('change', () => {
+          const temAjudante = select.value === 'sim';
+          blocoAjudante.style.display = temAjudante ? 'block' : 'none';
           camposAjudante.style.display = 'none';
         });
 
@@ -130,7 +134,6 @@ async function carregarPedidosPortaria() {
           const cpf = cpfAjudante.value.replace(/\D/g, '');
           if (cpf.length === 11) {
             camposAjudante.style.display = 'block';
-            // Aqui pode entrar verificação futura do ajudante
           }
         });
       });
@@ -181,19 +184,24 @@ async function verificarCPF(pedidoId) {
 
 async function registrarColeta(pedidoId, botao) {
   const cpf = document.getElementById(`cpf-${pedidoId}`).value.trim();
-  const nome = document.getElementById(`nome-${idPedido}`)?.value.trim();
-  const placa = document.getElementById(`placa-${idPedido}`)?.value.trim();
-  const caminhaoInput = document.getElementById(`foto-caminhao-${idPedido}`);
-  const fichaInput = document.getElementById(`ficha-${idPedido}`);
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
 
-  const temAjudante = document.getElementById(`tem-ajudante-${idPedido}`)?.checked;
-  const cpfAjudante = document.getElementById(`cpf-ajudante-${idPedido}`)?.value.trim();
-  const nomeAjudante = document.getElementById(`nome-ajudante-${idPedido}`)?.value.trim();
-  const docAjudante = document.getElementById(`doc-ajudante-${idPedido}`);
-  const fichaAjudante = document.getElementById(`ficha-ajudante-${idPedido}`);
+  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`)?.value === 'sim';
+  const cpfAjudante = document.getElementById(`cpf-ajudante-${pedidoId}`)?.value.trim();
+  const nomeAjudante = document.getElementById(`nome-ajudante-${pedidoId}`)?.value.trim();
+  const docAjudante = document.getElementById(`doc-ajudante-${pedidoId}`);
+  const fichaAjudante = document.getElementById(`ficha-ajudante-${pedidoId}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  if (temAjudante && document.getElementById(`tem-ajudante-${pedidoId}`).value === "") {
+    alert('Por favor, selecione se há ajudante.');
     return;
   }
 
