@@ -3,15 +3,17 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-// CORRIGIDO: Importa o db.js da raiz do projeto, que é o correto
+// Importa o db.js da raiz do projeto. Isso está correto.
 const connection = require('./db');
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve arquivos estáticos da raiz do projeto
-app.use(express.static(path.join(__dirname)));
+// *** ATENÇÃO AQUI: Servir arquivos estáticos de uma pasta 'public' (vamos criá-la) ***
+// Isso é uma prática comum para arquivos HTML, CSS, JS do frontend.
+// Primeiro tentamos na raiz da pasta. Se não funcionar, tentaremos com uma pasta 'public'.
+app.use(express.static(path.join(__dirname))); 
 
 // Rotas com conexão injetada
 function withConnection(routePath) {
@@ -25,7 +27,11 @@ app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos'));
 app.use('/api/usuarios', withConnection('./routes/usuarios'));
 
-// Redirecionamentos para páginas HTML (existentes)
+// Rotas explícitas para as páginas HTML
+// Estas rotas SEMPRE devem vir ANTES de qualquer rota 'catch-all' ou de erro.
+app.get('/clientes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'clientes.html'));
+});
 app.get('/visualizar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
@@ -38,13 +44,6 @@ app.get('/nova-venda', (req, res) => {
 app.get('/editar-venda', (req, res) => {
     res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
-
-// Rota EXPLICITA para a página de clientes - ISSO DEVE RESOLVER O "CANNOT GET"
-app.get('/clientes', (req, res) => {
-    res.sendFile(path.join(__dirname, 'clientes.html'));
-});
-
-// Redirecionamentos para novas páginas de tarefas
 app.get('/tarefas-portaria.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'tarefas-portaria.html'));
 });
@@ -61,7 +60,8 @@ app.get('/tarefas-liberacao.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'tarefas-liberacao.html'));
 });
 
-// Redirecionamento padrão
+
+// Redirecionamento padrão (quando acessar http://localhost:3000/)
 app.get('/', (req, res) => {
     res.redirect('/vendas');
 });
