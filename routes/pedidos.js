@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // ✅ CORREÇÃO AQUI - Importa o pool de conexões com Promises
+const db = require('../db'); // Correctly imports the promise-based connection pool
 
 function formatarDataBRparaISO(dataBR) {
     const [dia, mes, ano] = dataBR.split('/');
-    // Correção: Use ${} para interpolação de variáveis em template literals
+    // Corrected: Use backticks (`) for template literals and ${} for variable interpolation
     return `${ano}-${mes}-${dia}`;
 }
 
@@ -35,12 +35,11 @@ router.get('/carga', async (req, res) => {
     }
 });
 
-// GET /api/clientes/:id/produtos - Esta rota parece estar duplicada/similar à de clientes.js
-// Dependendo da sua arquitetura, talvez ela devesse ficar apenas em clientes.js
+// GET /api/clientes/:id/produtos
 router.get('/clientes/:id/produtos', async (req, res) => {
     const clienteId = req.params.id;
     try {
-        // Correção: Envolvendo a query SQL em crases
+        // Corrected: Enclosed SQL query in backticks
         const [produtos] = await db.query(
             `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
             [clienteId]
@@ -213,7 +212,7 @@ router.post('/produtos/novo', async (req, res) => {
     }
 
     try {
-        // Correção: Envolvendo a query SQL em crases
+        // Corrected: Enclosed SQL query in backticks
         await db.query(
             `INSERT INTO produtos (nome, unidade) VALUES (?, ?)`,
             [nome_produto, unidade]
@@ -229,7 +228,7 @@ router.post('/produtos/novo', async (req, res) => {
 // GET /api/pedidos/produtos
 router.get('/produtos', async (req, res) => {
     try {
-        // Correção: Envolvendo a query SQL em crases
+        // Corrected: Enclosed SQL query in backticks
         const [produtos] = await db.query(
             `SELECT nome AS nome_produto, unidade, criado_em AS data_cadastro FROM produtos ORDER BY criado_em DESC`
         );
@@ -270,8 +269,9 @@ router.put('/:id/conferencia', async (req, res) => {
     const pedidoId = req.params.id;
 
     try {
+        // Corrected: Enclosed SQL query in backticks
         const [result] = await db.query(
-            `UPDATE pedidos SET status = ? WHERE id = ?`, // Correção: Envolvendo a query SQL em crases
+            `UPDATE pedidos SET status = ? WHERE id = ?`,
             ['Em Análise pelo Financeiro', pedidoId]
         );
 
