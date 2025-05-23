@@ -1,110 +1,20 @@
+// ... (outros requires no topo)
 const express = require('express');
-const path = require('path');
+const pedidosRoutes = require('./routes/pedidos'); // Certifique-se que o caminho está correto
+
 const app = express();
 const port = 3000;
 
-// Conecta ao banco de dados MySQL.
-const connection = require('./db');
+app.use(express.json()); // Para parsear JSON do corpo das requisições
 
-// Permite que o servidor entenda informações enviadas de formulários (JSON e URL-encoded).
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Configura o Express para servir arquivos estáticos da pasta raiz do seu projeto
+app.use(express.static(__dirname)); // Isso faz com que arquivos como tarefas-nf.html, layout.css, etc., sejam acessíveis.
 
-// Configuração para servir arquivos estáticos (HTML, CSS, JS) da pasta principal do projeto.
-// Isso é o que permite que 'clientes.html' (e outros) sejam encontrados.
-const staticPath = path.join(__dirname);
-console.log(`[DEBUG] Caminho dos arquivos estáticos configurado para: ${staticPath}`);
-app.use(express.static(staticPath));
+// Rotas da API
+app.use('/api/pedidos', pedidosRoutes);
+// ... (outras rotas)
 
-// Esta parte conecta as "engrenagens" do seu sistema (as rotas API, como /api/clientes).
-function conectarRotas(caminhoDoArquivo) {
-    const rota = require(caminhoDoArquivo);
-    rota.connection = connection;
-    return rota;
-}
-
-app.use('/api/clientes', conectarRotas('./routes/clientes'));
-app.use('/api/pedidos', conectarRotas('./routes/pedidos'));
-app.use('/api/produtos', conectarRotas('./routes/produtos'));
-app.use('/api/usuarios', conectarRotas('./routes/usuarios'));
-
-// *******************************************************************
-// AS ROTAS HTML FORAM AJUSTADAS PARA INCLUIR ".HTML" PARA CORRESPONDER AOS SEUS LINKS.
-// *******************************************************************
-app.get('/clientes.html', (req, res) => {
-    const filePath = path.join(__dirname, 'clientes.html');
-    console.log(`[DEBUG] Requisição recebida para /clientes.html.`);
-    console.log(`[DEBUG] Tentando enviar o arquivo: ${filePath}`);
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error(`[ERROR] Erro ao enviar clientes.html: ${err.message}`);
-            console.error(`[ERROR] Detalhes do erro (código): ${err.code}`);
-            if (err.code === 'ENOENT') {
-                console.error(`[ERROR] O arquivo clientes.html NÃO FOI ENCONTRADO no caminho especificado: ${filePath}`);
-            }
-            res.status(500).send('Erro interno do servidor ao carregar a página de clientes.');
-        } else {
-            console.log(`[DEBUG] clientes.html enviado com sucesso para ${req.url}`);
-        }
-    });
-});
-
-app.get('/novo-cliente.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'novo-cliente.html'));
-});
-
-app.get('/visualizar-venda.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
-});
-app.get('/vendas.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'vendas.html'));
-});
-app.get('/nova-venda.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'nova-venda.html'));
-});
-app.get('/editar-venda.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'editar-venda.html'));
-});
-app.get('/tarefas-portaria.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tarefas-portaria.html'));
-});
-app.get('/tarefas-conferencia.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tarefas-conferencia.html'));
-});
-app.get('/tarefas-financeiro.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tarefas-financeiro.html'));
-});
-app.get('/tarefas-nf.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tarefas-nf.html'));
-});
-app.get('/tarefas-liberacao.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'tarefas-liberacao.html'));
-});
-
-// Se alguém acessar só http://localhost:3000/, ele vai para a página de vendas.
-app.get('/', (req, res) => {
-    res.redirect('/vendas.html');
-});
-
-// *******************************************************************
-// NOVO BLOCO: TRATAMENTO DE ERROS GLOBAL (PARA PEGAR O ERRO 500 DA API)
-// *******************************************************************
-app.use((err, req, res, next) => {
-    console.error(`\n[ERRO GLOBAL DO EXPRESS] Um erro inesperado ocorreu!`);
-    console.error(`Caminho da requisição: ${req.path}`);
-    console.error(`Método: ${req.method}`);
-    console.error('Detalhes do Erro:', err.stack || err.message);
-
-    // Se já enviou a resposta, passa para o próximo middleware
-    if (res.headersSent) {
-        return next(err);
-    }
-
-    // Envia uma resposta de erro 500 para o cliente
-    res.status(500).send('Erro interno do servidor. Consulte o console do servidor para detalhes.');
-});
-
-// Inicia o servidor. (APENAS UMA VEZ!)
+// ... (início do servidor)
 app.listen(port, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${port}`);
+    console.log(`Servidor rodando em http://localhost:${port}`);
 });
