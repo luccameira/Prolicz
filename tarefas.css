@@ -1,4 +1,4 @@
-/* tarefas.css - Estilo padrão para páginas de tarefas operacionais */
+ /* tarefas.css - Estilo padrão para páginas de tarefas operacionais */
 
 body {
   background-color: #e2e4e7;
@@ -315,5 +315,17 @@ teX(24px);
 
 input[type="file"]::file-selector-button:hover {
   background-color: #e0a800;
+}
+
+/* ✅ Etiqueta para identificar peso exato */
+.etiqueta-exato {
+  display: inline-block;
+  background-color: #28a745;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-left: 10px;
 }
 
