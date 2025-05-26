@@ -176,52 +176,52 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !blocoForm) return;
   blocoForm.style.display = 'block';
 
-  try {
-    const res = await fetch(`/api/motoristas/${cpf}`);
+try {
+  const res = await fetch(`/api/motoristas/${cpf}`);
+  blocoForm.style.display = 'block';
 
-    if (res.status === 404) {
+  // Exibe todos os campos por padrão (garantia visual)
+  fichaInput.style.display = 'block';
+  fichaInput.required = true;
+  docInput.style.display = 'block';
+  docInput.required = true;
+
+  if (res.status === 404) {
+    alerta.className = 'alerta-vencido';
+    alerta.style.display = 'block';
+    alerta.innerText = '🚫 Não possui cadastro.';
+
+    nomeInput.disabled = false;
+    nomeInput.value = '';
+  } else {
+    const dados = await res.json();
+    nomeInput.value = dados.nome;
+    nomeInput.disabled = true;
+
+    if (dados.cadastroVencido) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
-      alerta.innerText = '🚫 Não possui cadastro.';
+      alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
 
-      nomeInput.disabled = false;
-      nomeInput.value = '';
-
-      docInput.required = true;
+      fichaInput.style.display = 'block';
       fichaInput.required = true;
 
-      docInput.closest('label').style.display = 'block';
-      fichaInput.closest('label').style.display = 'block';
+      docInput.style.display = 'none';
+      docInput.required = false;
     } else {
-      const dados = await res.json();
-      nomeInput.value = dados.nome;
-      nomeInput.disabled = true;
+      alerta.className = 'alerta-sucesso';
+      alerta.style.display = 'block';
+      alerta.innerText = '✅ Já cadastrado.';
 
-      if (dados.cadastroVencido) {
-        alerta.className = 'alerta-vencido';
-        alerta.style.display = 'block';
-        alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
+      fichaInput.style.display = 'none';
+      fichaInput.required = false;
 
-        fichaInput.required = true;
-        fichaInput.closest('label').style.display = 'block';
-
-        docInput.required = false;
-        docInput.closest('label').style.display = 'none';
-      } else {
-        alerta.className = 'alerta-sucesso';
-        alerta.style.display = 'block';
-        alerta.innerText = '✅ Já cadastrado.';
-
-        fichaInput.required = false;
-        fichaInput.closest('label').style.display = 'none';
-
-        docInput.required = false;
-        docInput.closest('label').style.display = 'none';
-      }
+      docInput.style.display = 'none';
+      docInput.required = false;
     }
-  } catch (err) {
-    console.error('Erro ao verificar CPF:', err);
   }
+} catch (err) {
+  console.error('Erro ao verificar CPF:', err);
 }
 
 document.addEventListener('change', function (e) {
