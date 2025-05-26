@@ -207,11 +207,11 @@ async function registrarPeso(id) {
 
   blocos.forEach((bloco, index) => {
     const input = bloco.querySelector('input[type="number"]');
-    const nomeProduto = pedido.materiais[index]?.nome_produto || '';
     const valor = parseFloat(input.value);
-    if (!isNaN(valor)) {
+    const itemOriginal = pedido.materiais[index];
+    if (!isNaN(valor) && itemOriginal?.id) {
       itens.push({
-        nome_produto: nomeProduto,
+        item_id: itemOriginal.id,
         peso_carregado: valor
       });
     }
@@ -259,3 +259,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
+
