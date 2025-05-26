@@ -166,32 +166,32 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
   const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
 
-  const cpf = document.getElementById(`${prefix}-${pedidoId}`).value.trim();
+  const cpf = document.getElementById(`${prefix}-${pedidoId}`)?.value.trim();
   const nomeInput = document.getElementById(`${nomePrefix}-${pedidoId}`);
   const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
   const docInput = document.getElementById(`${docId}-${pedidoId}`);
   const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
   const blocoForm = document.getElementById(cardId);
 
-  const docLabel = docInput?.closest('label');
-  const fichaLabel = fichaInput?.closest('label');
-
-  if (!cpf) return;
+  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !blocoForm) return;
+  blocoForm.style.display = 'block';
 
   try {
     const res = await fetch(`/api/motoristas/${cpf}`);
-    blocoForm.style.display = 'block';
 
     if (res.status === 404) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
       alerta.innerText = '🚫 Não possui cadastro.';
+
       nomeInput.disabled = false;
       nomeInput.value = '';
+
       docInput.required = true;
       fichaInput.required = true;
-      docLabel.style.display = 'block';
-      fichaLabel.style.display = 'block';
+
+      docInput.closest('label').style.display = 'block';
+      fichaInput.closest('label').style.display = 'block';
     } else {
       const dados = await res.json();
       nomeInput.value = dados.nome;
@@ -201,18 +201,22 @@ async function verificarCPF(pedidoId, isAjudante = false) {
         alerta.className = 'alerta-vencido';
         alerta.style.display = 'block';
         alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
+
         fichaInput.required = true;
+        fichaInput.closest('label').style.display = 'block';
+
         docInput.required = false;
-        fichaLabel.style.display = 'block';
-        docLabel.style.display = 'none';
+        docInput.closest('label').style.display = 'none';
       } else {
         alerta.className = 'alerta-sucesso';
         alerta.style.display = 'block';
         alerta.innerText = '✅ Já cadastrado.';
+
         fichaInput.required = false;
+        fichaInput.closest('label').style.display = 'none';
+
         docInput.required = false;
-        fichaLabel.style.display = 'none';
-        docLabel.style.display = 'none';
+        docInput.closest('label').style.display = 'none';
       }
     }
   } catch (err) {
