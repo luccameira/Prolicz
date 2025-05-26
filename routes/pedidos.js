@@ -191,24 +191,36 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga (com upload de imagem do ticket)
+// PUT /api/pedidos/:id/carga (com upload e peso por item)
 router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
-  const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
+  const { itens, desconto_peso, motivo_desconto } = req.body;
   const nomeArquivo = req.file?.filename || null;
 
   try {
+    // Atualiza a tabela pedidos
     await db.query(
       `UPDATE pedidos
        SET 
-         peso_registrado = ?, 
          desconto_peso = ?, 
          motivo_desconto = ?, 
          ticket_balanca = ?, 
          status = 'Aguardando Conferência do Peso'
        WHERE id = ?`,
-      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
+      [desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
     );
+
+    // Atualiza peso_carregado por item
+    if (Array.isArray(itens)) {
+      for (const item of itens) {
+        await db.query(
+          `UPDATE itens_pedido 
+           SET peso_carregado = ? 
+           WHERE pedido_id = ? AND nome_produto = ?`,
+          [item.peso_carregado, id, item.nome_produto]
+        );
+      }
+    }
 
     res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
   } catch (error) {
