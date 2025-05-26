@@ -1,6 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // ✅ CORREÇÃO AQUI
+const db = require('../db');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// Criar pasta de tickets, se necessário
+const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
+if (!fs.existsSync(pastaTickets)) {
+  fs.mkdirSync(pastaTickets, { recursive: true });
+}
+
+// Configuração do multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, pastaTickets);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const timestamp = Date.now();
+    cb(null, `ticket_${req.params.id}_${timestamp}${ext}`);
+  }
+});
+const upload = multer({ storage });
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
@@ -42,6 +64,7 @@ router.get('/', async (req, res) => {
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.peso_registrado, p.desconto_peso, p.motivo_desconto, p.ticket_balanca,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -174,10 +197,11 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga
-router.put('/:id/carga', async (req, res) => {
+// PUT /api/pedidos/:id/carga — com upload da imagem
+router.put('/:id/carga', upload.single('ticket'), async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
+  const ticketFile = req.file?.filename || null;
 
   try {
     await db.query(
@@ -186,9 +210,11 @@ router.put('/:id/carga', async (req, res) => {
          peso_registrado = ?, 
          desconto_peso = ?, 
          motivo_desconto = ?, 
-         status = 'Aguardando Conferência do Peso'
+         ticket_balanca = ?,
+         status = 'Aguardando Conferência do Peso',
+         data_peso_registrado = NOW()
        WHERE id = ?`,
-      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', id]
+      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', ticketFile, id]
     );
 
     res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
@@ -255,6 +281,4 @@ router.get('/produtos', async (req, res) => {
 });
 
 module.exports = router;
-
-
 
