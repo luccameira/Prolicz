@@ -55,14 +55,18 @@ async function carregarPedidosPortaria() {
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
+      <div class="info">
+        <h3>${pedido.cliente}</h3>
+        <p>Data Prevista: ${dataFormatada}</p>
+      </div>
       ${statusHtml}
-      <h3>${pedido.cliente}</h3>
-      <span>${dataFormatada}</span>
     `;
+    card.appendChild(header);
 
     const form = document.createElement('div');
-    form.className = 'card-body';
+    form.className = 'formulario';
     form.style.display = 'none';
+
     form.innerHTML = `
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
@@ -85,20 +89,14 @@ async function carregarPedidosPortaria() {
           </div>
         </div>
 
-        <label style="margin-top: 12px;">
-          Foto do Caminhão
-          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
-        </label>
+        <label style="margin-top: 12px;">Foto do Caminhão</label>
+        <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
 
-        <label style="margin-top: 12px;">
-          Ficha de Integração Assinada (motorista)
-          <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
-        </label>
+        <label style="margin-top: 12px;">Ficha de Integração Assinada (motorista)</label>
+        <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
 
-        <label style="margin-top: 12px;">
-          Foto do Documento (motorista)
-          <input type="file" id="doc-${pedidoId}" accept="image/*" required>
-        </label>
+        <label style="margin-top: 12px;">Foto do Documento (motorista)</label>
+        <input type="file" id="doc-${pedidoId}" accept="image/*" required>
 
         <label style="margin-top: 12px;">Tem Ajudante?</label>
         <select id="tem-ajudante-${pedidoId}" required>
@@ -120,7 +118,6 @@ async function carregarPedidosPortaria() {
       });
     }
 
-    card.appendChild(header);
     card.appendChild(form);
     lista.appendChild(card);
   });
