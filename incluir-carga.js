@@ -68,33 +68,35 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
     form.className = 'formulario';
     form.id = `form-${p.pedido_id}`;
 
-    if (p.status === 'Coleta Iniciada' && Array.isArray(p.materiais)) {
-      p.materiais.forEach((item, index) => {
-        form.innerHTML += `
-          <div class="material-bloco">
-            <h4>${item.nome_produto}</h4>
-            <p><strong>Peso Previsto:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
-            <span class="tipo-peso">${item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato'}</span>
-            <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
-            <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
-          </div>
-        `;
-      });
-
-      form.innerHTML += `
-        <div class="grupo-descontos" id="grupo-descontos-${p.pedido_id}"></div>
-        <button type="button" class="btn btn-desconto" onclick="adicionarDesconto(${p.pedido_id})">Adicionar Desconto</button>
-        <button class="btn btn-registrar" onclick="registrarPeso(${p.pedido_id})">Registrar Peso</button>
-      `;
-    }
-
-    div.appendChild(form);
-
     if (p.status === 'Coleta Iniciada') {
+      if (Array.isArray(p.materiais) && p.materiais.length > 0) {
+        p.materiais.forEach((item, index) => {
+          form.innerHTML += `
+            <div class="material-bloco">
+              <h4>${item.nome_produto}</h4>
+              <p><strong>Peso Previsto:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
+              <span class="tipo-peso">${item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato'}</span>
+              <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
+              <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
+            </div>
+          `;
+        });
+
+        form.innerHTML += `
+          <div class="grupo-descontos" id="grupo-descontos-${p.pedido_id}"></div>
+          <button type="button" class="btn btn-desconto" onclick="adicionarDesconto(${p.pedido_id})">Adicionar Desconto</button>
+          <button class="btn btn-registrar" onclick="registrarPeso(${p.pedido_id})">Registrar Peso</button>
+        `;
+      } else {
+        form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
+      }
+
       form.style.display = 'none';
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
       });
+
+      div.appendChild(form);
     }
 
     lista.appendChild(div);
