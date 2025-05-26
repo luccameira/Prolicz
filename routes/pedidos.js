@@ -1,28 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-
-// Upload do ticket da balança
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-// Cria a pasta uploads/tickets se não existir
-const pastaUpload = path.join(__dirname, '..', 'uploads', 'tickets');
-if (!fs.existsSync(pastaUpload)) {
-  fs.mkdirSync(pastaUpload, { recursive: true });
+// Criação da pasta uploads/tickets se necessário
+const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
+if (!fs.existsSync(pastaTickets)) {
+  fs.mkdirSync(pastaTickets, { recursive: true });
 }
 
-// Configuração do multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, pastaUpload),
+// Configuração do multer para o ticket da balança
+const storageTickets = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const nome = `ticket_${Date.now()}${ext}`;
     cb(null, nome);
   }
 });
-const upload = multer({ storage });
+const uploadTicket = multer({ storage: storageTickets });
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
@@ -46,7 +44,6 @@ router.get('/carga', async (req, res) => {
     GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta
     ORDER BY p.data_coleta ASC
   `;
-
   try {
     const [results] = await db.query(sql);
     res.json(results);
@@ -101,7 +98,7 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        `SELECT nome_produto, peso AS quantidade, tipo_peso, unidade
+        `SELECT nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
@@ -195,26 +192,11 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga (com upload de imagem)
-const storageTickets = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const pasta = path.join(__dirname, '..', 'uploads', 'tickets');
-    if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
-    cb(null, pasta);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const nome = `ticket_${Date.now()}${ext}`;
-    cb(null, nome);
-  }
-});
-
-const uploadTicket = multer({ storage: storageTickets });
-
-router.put('/:id/carga', uploadTicket.single('ticket_balança'), async (req, res) => {
+// PUT /api/pedidos/:id/carga (com upload de imagem do ticket)
+router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
-  const ticket_balança = req.file?.filename || null;
+  const nomeArquivo = req.file?.filename || null;
 
   try {
     await db.query(
@@ -226,7 +208,7 @@ router.put('/:id/carga', uploadTicket.single('ticket_balança'), async (req, res
          ticket_balanca = ?, 
          status = 'Aguardando Conferência do Peso'
        WHERE id = ?`,
-      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', ticket_balança, id]
+      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
     );
 
     res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
@@ -293,3 +275,4 @@ router.get('/produtos', async (req, res) => {
 });
 
 module.exports = router;
+
