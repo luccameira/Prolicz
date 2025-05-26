@@ -54,29 +54,40 @@ async function carregarPedidosConferencia() {
     form.style.display = 'none';
 
     if (Array.isArray(pedido.materiais)) {
-      pedido.materiais.forEach(item => {
-        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      pedido.materiais.forEach((item, index) => {
+        const tituloPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+        const pesoCarregado = pedido.peso_registrado || 0;
+
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong>Peso Previsto:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
-            <span class="tipo-peso">${tipoPeso}</span>
+            <p><strong>${tituloPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
+            <label for="peso-${idPedido}-${index}">Peso Carregado (kg):</label>
+            <input type="number" id="peso-${idPedido}-${index}" value="${pesoCarregado}" readonly>
           </div>
         `;
       });
     }
 
-    // Peso carregado
-    form.innerHTML += `
-      <p style="margin-top: 12px;"><strong>Peso Carregado:</strong> ${formatarPeso(pedido.peso_registrado)} kg</p>
-    `;
+    // Exibir imagem do ticket, se existir
+    if (pedido.ticket_balanca) {
+      form.innerHTML += `
+        <div class="upload-ticket">
+          <label>Ticket da Balança:</label><br>
+          <a href="/uploads/tickets/${pedido.ticket_balanca}" target="_blank">
+            <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket" style="max-width: 220px; border: 1px solid #ccc; border-radius: 6px; margin-top: 12px;">
+          </a>
+        </div>
+      `;
+    }
 
-    // Desconto (se houver)
-    if (pedido.desconto_peso || pedido.motivo_desconto) {
+    // Exibir desconto apenas se houver valor
+    if (pedido.desconto_peso && pedido.desconto_peso > 0) {
       const sufixo = pedido.motivo_desconto === 'Paletes' ? 'unidade' : 'kg';
       const label = pedido.motivo_desconto === 'Paletes'
         ? 'Desconto (quantidade de paletes)'
         : 'Desconto (em quilos)';
+
       form.innerHTML += `
         <div class="grupo-desconto">
           <p><strong>Motivo do Desconto:</strong> ${pedido.motivo_desconto || '—'}</p>
@@ -85,24 +96,14 @@ async function carregarPedidosConferencia() {
       `;
     }
 
-    // Imagem do ticket da balança
-    if (pedido.ticket_balanca) {
-      form.innerHTML += `
-        <div class="upload-ticket">
-          <label>Ticket da Balança:</label><br>
-          <a href="/uploads/tickets/${pedido.ticket_balanca}" target="_blank">
-            <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket" style="max-width: 220px; border: 1px solid #ccc; border-radius: 6px; margin-top: 8px;">
-          </a>
-        </div>
-      `;
-    }
-
+    // Botão de confirmação
     if (!finalizado) {
       form.innerHTML += `
         <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
       `;
     }
 
+    // Abrir/fechar o formulário ao clicar no cabeçalho
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
@@ -143,4 +144,3 @@ async function confirmarPeso(pedidoId, botao) {
 }
 
 document.addEventListener('DOMContentLoaded', carregarPedidosConferencia);
-
