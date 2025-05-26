@@ -97,7 +97,7 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        `SELECT nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
@@ -191,14 +191,13 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga (com upload e peso por item)
+// PUT /api/pedidos/:id/carga
 router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
   const { itens, desconto_peso, motivo_desconto } = req.body;
   const nomeArquivo = req.file?.filename || null;
 
   try {
-    // Atualiza a tabela pedidos
     await db.query(
       `UPDATE pedidos
        SET 
@@ -210,14 +209,15 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
       [desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
     );
 
-    // Atualiza peso_carregado por item
-    if (Array.isArray(itens)) {
-      for (const item of itens) {
+    const listaItens = JSON.parse(itens || '[]');
+
+    if (Array.isArray(listaItens)) {
+      for (const item of listaItens) {
         await db.query(
           `UPDATE itens_pedido 
            SET peso_carregado = ? 
-           WHERE pedido_id = ? AND nome_produto = ?`,
-          [item.peso_carregado, id, item.nome_produto]
+           WHERE id = ?`,
+          [item.peso_carregado, item.item_id]
         );
       }
     }
