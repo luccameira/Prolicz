@@ -68,7 +68,7 @@ router.get('/:cpf', async (req, res) => {
   }
 });
 
-// POST /api/motoristas → Cadastra motorista e opcionalmente o ajudante
+// POST /api/motoristas → Cadastra motorista ou atualiza se já existir
 router.post('/', upload.fields([
   { name: 'foto_documento', maxCount: 1 },
   { name: 'ficha_integracao', maxCount: 1 },
@@ -90,7 +90,6 @@ router.post('/', upload.fields([
     const [motoristaExistente] = await db.query('SELECT * FROM motoristas WHERE cpf = ?', [cpf]);
 
     if (!motoristaExistente.length) {
-      // Novo motorista → todos os campos obrigatórios
       if (!cpf || !nome || !placa || !fotoDocumento || !fichaMotorista || !fotoCaminhao) {
         return res.status(400).json({ erro: 'Campos obrigatórios do motorista faltando (novo cadastro)' });
       }
@@ -102,7 +101,6 @@ router.post('/', upload.fields([
       `, [cpf, nome, placa, fotoDocumento, fichaMotorista, fotoCaminhao, dataFormulario]);
 
     } else {
-      // Motorista já existe → apenas atualiza placa e foto do caminhão
       if (!placa || !fotoCaminhao) {
         return res.status(400).json({ erro: 'Campos obrigatórios faltando para motorista existente' });
       }
@@ -114,7 +112,6 @@ router.post('/', upload.fields([
       `, [placa, fotoCaminhao, dataFormulario, cpf]);
     }
 
-    // Cadastro do ajudante (opcional)
     if (cpf_ajudante && nome_ajudante) {
       await db.query(`
         INSERT INTO ajudantes (cpf, nome, documento, ficha_integracao)
@@ -133,3 +130,39 @@ router.post('/', upload.fields([
     res.status(500).json({ erro: 'Erro ao salvar os dados' });
   }
 });
+
+// PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
+router.put('/:cpf/formulario', upload.fields([
+  { name: 'ficha_integracao', maxCount: 1 },
+  { name: 'foto_caminhao', maxCount: 1 }
+]), async (req, res) => {
+  const ficha = req.files['ficha_integracao']?.[0]?.filename || null;
+  const caminhao = req.files['foto_caminhao']?.[0]?.filename || null;
+  const dataFormulario = new Date().toISOString().slice(0, 10);
+
+  if (!ficha || !caminhao) {
+    return res.status(400).json({ erro: 'Fotos obrigatórias não enviadas' });
+  }
+
+  try {
+    const [resultado] = await db.query('SELECT * FROM motoristas WHERE cpf = ?', [req.params.cpf]);
+    if (resultado.length === 0) {
+      return res.status(404).json({ erro: 'Motorista não encontrado' });
+    }
+
+    await db.query(`
+      UPDATE motoristas 
+      SET ficha_integracao = ?, foto_caminhao = ?, data_ultimo_formulario = ? 
+      WHERE cpf = ?
+    `, [ficha, caminhao, dataFormulario, req.params.cpf]);
+
+    res.json({ sucesso: true, mensagem: 'Ficha atualizada com sucesso' });
+
+  } catch (err) {
+    console.error('Erro ao atualizar ficha:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar ficha' });
+  }
+});
+
+module.exports = router;
+
