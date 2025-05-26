@@ -85,6 +85,14 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
           `;
         });
 
+        // Upload da foto do ticket da balança (fora dos cards de materiais)
+        form.innerHTML += `
+          <div class="upload-ticket">
+            <label for="ticket-${p.pedido_id}">Foto do Ticket da Balança:</label>
+            <input type="file" id="ticket-${p.pedido_id}" accept="image/*">
+          </div>
+        `;
+
         form.innerHTML += `
           <div class="grupo-descontos" id="grupo-descontos-${p.pedido_id}"></div>
           <button type="button" class="btn btn-desconto" onclick="adicionarDesconto(${p.pedido_id})">Adicionar Desconto</button>
@@ -193,9 +201,16 @@ async function registrarPeso(id) {
 
   const descontoInput = document.querySelector(`#desconto-${id}-0`);
   const motivoSelect = document.querySelector(`#motivo-${id}-0`);
+  const ticketFile = document.getElementById(`ticket-${id}`)?.files[0];
 
   const desconto = descontoInput ? parseFloat(descontoInput.value || 0) : 0;
   const motivo = motivoSelect ? motivoSelect.value || '' : '';
+
+  if (!ticketFile) {
+    return alert("Por favor, selecione a foto do ticket da balança.");
+  }
+
+  // Neste momento, apenas validamos o envio da imagem. O upload real será implementado depois.
 
   try {
     const res = await fetch(`/api/pedidos/${id}/carga`, {
