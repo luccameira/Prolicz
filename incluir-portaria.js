@@ -98,11 +98,15 @@ async function carregarPedidosPortaria() {
         <label style="margin-top: 12px;">Foto do Caminhão</label>
         <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
 
-        <label style="margin-top: 12px;">Ficha de Integração Assinada (motorista)</label>
-        <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+        <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
+          <label>Ficha de Integração Assinada (motorista)</label>
+          <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+        </div>
 
-        <label style="margin-top: 12px;">Foto do Documento (motorista)</label>
-        <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+        <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
+          <label>Foto do Documento (motorista)</label>
+          <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+        </div>
 
         <label style="margin-top: 12px;">Tem Ajudante?</label>
         <select id="tem-ajudante-${pedidoId}" required>
@@ -177,26 +181,24 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
   const docInput = document.getElementById(`${docId}-${pedidoId}`);
   const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
+  const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
+  const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
   const blocoForm = document.getElementById(cardId);
 
-  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !blocoForm) return;
+  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
   blocoForm.style.display = 'block';
 
   try {
     const res = await fetch(`/api/motoristas/${cpf}`);
-    blocoForm.style.display = 'block';
-
-    // Exibe todos os campos por padrão (garantia visual)
-    fichaInput.style.display = 'block';
+    grupoFicha.style.display = 'block';
+    grupoDoc.style.display = 'block';
     fichaInput.required = true;
-    docInput.style.display = 'block';
     docInput.required = true;
 
     if (res.status === 404) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
       alerta.innerText = '🚫 Não possui cadastro.';
-
       nomeInput.disabled = false;
       nomeInput.value = '';
     } else {
@@ -208,21 +210,17 @@ async function verificarCPF(pedidoId, isAjudante = false) {
         alerta.className = 'alerta-vencido';
         alerta.style.display = 'block';
         alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
-
-        fichaInput.style.display = 'block';
+        grupoFicha.style.display = 'block';
         fichaInput.required = true;
-
-        docInput.style.display = 'none';
+        grupoDoc.style.display = 'none';
         docInput.required = false;
       } else {
         alerta.className = 'alerta-sucesso';
         alerta.style.display = 'block';
         alerta.innerText = '✅ Já cadastrado.';
-
-        fichaInput.style.display = 'none';
+        grupoFicha.style.display = 'none';
         fichaInput.required = false;
-
-        docInput.style.display = 'none';
+        grupoDoc.style.display = 'none';
         docInput.required = false;
       }
     }
