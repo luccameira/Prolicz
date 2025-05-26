@@ -46,12 +46,8 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
     const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
 
     const statusHtml = p.status === 'Aguardando Conferência do Peso'
-      ? `<div class="status-badge status-verde">
-           <i class="fa fa-check"></i> Peso Registrado
-         </div>`
-      : `<div class="status-badge status-amarelo">
-           <i class="fa fa-truck"></i> ${p.status}
-         </div>`;
+      ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
+      : `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`;
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -81,8 +77,10 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
                 <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}
                 ${icone}
               </p>
-              <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
-              <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
+              <div class="linha-peso">
+                <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
+                <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
+              </div>
             </div>
           `;
         });
@@ -92,7 +90,8 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
           <button type="button" class="btn btn-desconto" onclick="adicionarDesconto(${p.pedido_id})">Adicionar Desconto</button>
           <button class="btn btn-registrar" onclick="registrarPeso(${p.pedido_id})">Registrar Peso</button>
         `;
-      } else {
+
+              } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
 
