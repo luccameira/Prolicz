@@ -71,15 +71,15 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
     if (p.status === 'Coleta Iniciada') {
       if (Array.isArray(p.materiais) && p.materiais.length > 0) {
         p.materiais.forEach((item, index) => {
-          const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Previsto';
-          const etiqueta = item.tipo_peso === 'Exato' ? '<span class="etiqueta-exato">Peso Exato</span>' : '';
+          const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+          const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
           form.innerHTML += `
             <div class="material-bloco">
               <h4>${item.nome_produto}</h4>
               <p>
                 <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}
-                ${etiqueta}
+                ${icone}
               </p>
               <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
               <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
@@ -228,5 +228,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
-
 
