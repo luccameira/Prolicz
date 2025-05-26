@@ -61,12 +61,17 @@ async function carregarPedidosConferencia() {
             <h4>${item.nome_produto}</h4>
             <p><strong>Peso Previsto:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
             <span class="tipo-peso">${tipoPeso}</span>
-            <p><strong>Peso Carregado:</strong> ${formatarPeso(item.peso_carregado)} kg</p>
           </div>
         `;
       });
     }
 
+    // Peso carregado
+    form.innerHTML += `
+      <p style="margin-top: 12px;"><strong>Peso Carregado:</strong> ${formatarPeso(pedido.peso_registrado)} kg</p>
+    `;
+
+    // Desconto (se houver)
     if (pedido.desconto_peso || pedido.motivo_desconto) {
       const sufixo = pedido.motivo_desconto === 'Paletes' ? 'unidade' : 'kg';
       const label = pedido.motivo_desconto === 'Paletes'
@@ -76,6 +81,18 @@ async function carregarPedidosConferencia() {
         <div class="grupo-desconto">
           <p><strong>Motivo do Desconto:</strong> ${pedido.motivo_desconto || '—'}</p>
           <p><strong>${label}:</strong> ${formatarPeso(pedido.desconto_peso)} ${sufixo}</p>
+        </div>
+      `;
+    }
+
+    // Imagem do ticket da balança
+    if (pedido.ticket_balanca) {
+      form.innerHTML += `
+        <div class="upload-ticket">
+          <label>Ticket da Balança:</label><br>
+          <a href="/uploads/tickets/${pedido.ticket_balanca}" target="_blank">
+            <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket" style="max-width: 220px; border: 1px solid #ccc; border-radius: 6px; margin-top: 8px;">
+          </a>
         </div>
       `;
     }
