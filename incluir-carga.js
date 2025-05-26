@@ -85,7 +85,7 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
           `;
         });
 
-        // Upload da foto do ticket da balança (fora dos cards de materiais)
+        // Upload da imagem do ticket da balança
         form.innerHTML += `
           <div class="upload-ticket">
             <label for="ticket-${p.pedido_id}">Foto do Ticket da Balança:</label>
@@ -133,16 +133,22 @@ function adicionarDesconto(pedidoId) {
   div.id = `grupo-desconto-${pedidoId}-${index}`;
   div.innerHTML = `
     <button class="fechar-desconto" onclick="removerDesconto(${pedidoId}, ${index})">&times;</button>
-    <label for="motivo-${pedidoId}-${index}">Motivo do Desconto:</label>
-    <select id="motivo-${pedidoId}-${index}" onchange="atualizarDescontoLabel(${pedidoId}, ${index})">
-      <option value="">Selecione</option>
-      <option value="Paletes">Paletes</option>
-      <option value="Devolução de material">Devolução de material</option>
-    </select>
-    <label id="label-desconto-${pedidoId}-${index}" for="desconto-${pedidoId}-${index}">Desconto</label>
-    <div class="desconto-container">
-      <input type="number" id="desconto-${pedidoId}-${index}" placeholder="Informe o desconto">
-      <span class="sufixo-unidade" id="sufixo-${pedidoId}-${index}">kg</span>
+    <div class="linha-desconto">
+      <div class="coluna-motivo">
+        <label for="motivo-${pedidoId}-${index}">Motivo do Desconto:</label>
+        <select id="motivo-${pedidoId}-${index}" onchange="atualizarDescontoLabel(${pedidoId}, ${index})">
+          <option value="">Selecione</option>
+          <option value="Paletes">Paletes</option>
+          <option value="Devolução de material">Devolução de material</option>
+        </select>
+      </div>
+      <div class="coluna-desconto">
+        <label id="label-desconto-${pedidoId}-${index}" for="desconto-${pedidoId}-${index}">Desconto</label>
+        <div class="desconto-container">
+          <input type="number" id="desconto-${pedidoId}-${index}" placeholder="Informe o desconto">
+          <span class="sufixo-unidade" id="sufixo-${pedidoId}-${index}">kg</span>
+        </div>
+      </div>
     </div>
   `;
   container.appendChild(div);
@@ -209,8 +215,6 @@ async function registrarPeso(id) {
   if (!ticketFile) {
     return alert("Por favor, selecione a foto do ticket da balança.");
   }
-
-  // Neste momento, apenas validamos o envio da imagem. O upload real será implementado depois.
 
   try {
     const res = await fetch(`/api/pedidos/${id}/carga`, {
