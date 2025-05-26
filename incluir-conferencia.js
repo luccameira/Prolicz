@@ -137,4 +137,4 @@ async function confirmarPeso(pedidoId, botao) {
 }
 
 document.addEventListener('DOMContentLoaded', carregarPedidosConferencia);
-DOMContentLoaded', carregarPedidosConferencia);
+
