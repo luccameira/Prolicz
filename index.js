@@ -10,6 +10,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
+// ✅ Torna pública a pasta onde os tickets da balança são salvos
+app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads', 'tickets')));
+
 // Rotas com conexão injetada
 function withConnection(routePath) {
   const router = require(routePath);
