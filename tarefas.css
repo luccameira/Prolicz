@@ -375,3 +375,18 @@ input[type="file"]::file-selector-button:hover {
   margin-bottom: 8px;
   font-size: 15px;
 }
+
+.ticket-preview {
+  margin-top: 20px;
+  background-color: #f9f9f9;
+  border: 1px dashed #ccc;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.ticket-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
