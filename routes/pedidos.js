@@ -1,19 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
 
-// Cria a pasta uploads/tickets se necessário
-const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
-if (!fs.existsSync(pastaTickets)) {
-  fs.mkdirSync(pastaTickets, { recursive: true });
+// Upload do ticket da balança
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// Cria a pasta uploads/tickets se não existir
+const pastaUpload = path.join(__dirname, '..', 'uploads', 'tickets');
+if (!fs.existsSync(pastaUpload)) {
+  fs.mkdirSync(pastaUpload, { recursive: true });
 }
 
-// Configuração do multer para salvar imagem do ticket da balança
+// Configuração do multer
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, pastaTickets),
+  destination: (req, file, cb) => cb(null, pastaUpload),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const nome = `ticket_${Date.now()}${ext}`;
@@ -62,7 +64,7 @@ router.get('/', async (req, res) => {
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca, p.desconto_peso, p.motivo_desconto, p.peso_registrado,
+      p.peso_registrado, p.desconto_peso, p.motivo_desconto, p.ticket_balanca,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -106,7 +108,6 @@ router.get('/', async (req, res) => {
       );
 
       pedido.materiais = materiais;
-      pedido.valor_total = materiais.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
       pedido.observacoes = pedido.observacao || '';
       pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
         .split('|')
@@ -118,6 +119,21 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar pedidos:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos' });
+  }
+});
+
+// GET /api/clientes/:id/produtos
+router.get('/clientes/:id/produtos', async (req, res) => {
+  const clienteId = req.params.id;
+  try {
+    const [produtos] = await db.query(
+      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
+      [clienteId]
+    );
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos do cliente:', error);
+    res.status(500).json({ erro: 'Erro ao buscar produtos do cliente.' });
   }
 });
 
@@ -179,11 +195,26 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// ✅ PUT /api/pedidos/:id/carga — com upload da imagem do ticket
-router.put('/:id/carga', upload.single('ticket_balanca'), async (req, res) => {
+// PUT /api/pedidos/:id/carga (com upload de imagem)
+const storageTickets = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const pasta = path.join(__dirname, '..', 'uploads', 'tickets');
+    if (!fs.existsSync(pasta)) fs.mkdirSync(pasta, { recursive: true });
+    cb(null, pasta);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nome = `ticket_${Date.now()}${ext}`;
+    cb(null, nome);
+  }
+});
+
+const uploadTicket = multer({ storage: storageTickets });
+
+router.put('/:id/carga', uploadTicket.single('ticket_balança'), async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
-  const nomeArquivo = req.file?.filename || null;
+  const ticket_balança = req.file?.filename || null;
 
   try {
     await db.query(
@@ -195,7 +226,7 @@ router.put('/:id/carga', upload.single('ticket_balanca'), async (req, res) => {
          ticket_balanca = ?, 
          status = 'Aguardando Conferência do Peso'
        WHERE id = ?`,
-      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
+      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', ticket_balança, id]
     );
 
     res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
