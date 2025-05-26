@@ -85,7 +85,6 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
           `;
         });
 
-        // Upload da imagem do ticket da balança
         form.innerHTML += `
           <div class="upload-ticket">
             <label for="ticket-${p.pedido_id}">Foto do Ticket da Balança:</label>
@@ -98,8 +97,7 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
           <button type="button" class="btn btn-desconto" onclick="adicionarDesconto(${p.pedido_id})">Adicionar Desconto</button>
           <button class="btn btn-registrar" onclick="registrarPeso(${p.pedido_id})">Registrar Peso</button>
         `;
-
-              } else {
+      } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
 
@@ -198,33 +196,48 @@ function atualizarDescontoLabel(pedidoId, index) {
 }
 
 async function registrarPeso(id) {
-  const pesoInput = document.getElementById(`peso-${id}-0`);
-  if (!pesoInput || !pesoInput.value) {
-    return alert("Informe o peso carregado.");
-  }
+  const pedido = pedidos.find(p => p.pedido_id === id);
+  if (!pedido) return alert("Pedido não encontrado.");
 
-  const peso = parseFloat(pesoInput.value);
+  const form = document.getElementById(`form-${id}`);
+  if (!form) return alert("Formulário não encontrado.");
+
+  const itens = [];
+  const blocos = form.querySelectorAll('.material-bloco');
+
+  blocos.forEach((bloco, index) => {
+    const input = bloco.querySelector('input[type="number"]');
+    const nomeProduto = pedido.materiais[index]?.nome_produto || '';
+    const valor = parseFloat(input.value);
+    if (!isNaN(valor)) {
+      itens.push({
+        nome_produto: nomeProduto,
+        peso_carregado: valor
+      });
+    }
+  });
+
+  if (!itens.length) return alert("Informe ao menos um peso carregado.");
+
+  const ticketFile = document.getElementById(`ticket-${id}`)?.files[0];
+  if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
 
   const descontoInput = document.querySelector(`#desconto-${id}-0`);
   const motivoSelect = document.querySelector(`#motivo-${id}-0`);
-  const ticketFile = document.getElementById(`ticket-${id}`)?.files[0];
 
   const desconto = descontoInput ? parseFloat(descontoInput.value || 0) : 0;
   const motivo = motivoSelect ? motivoSelect.value || '' : '';
 
-  if (!ticketFile) {
-    return alert("Por favor, selecione a foto do ticket da balança.");
-  }
+  const formData = new FormData();
+  formData.append('itens', JSON.stringify(itens));
+  formData.append('desconto_peso', desconto || 0);
+  formData.append('motivo_desconto', motivo);
+  formData.append('ticket_balanca', ticketFile);
 
   try {
     const res = await fetch(`/api/pedidos/${id}/carga`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        peso_registrado: peso,
-        desconto_peso: desconto,
-        motivo_desconto: motivo
-      })
+      body: formData
     });
 
     const data = await res.json();
@@ -246,4 +259,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
-
