@@ -1,4 +1,7 @@
-document.addEventListener('DOMContentLoaded', carregarPedidosPortaria);
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosPortaria();
+  monitorarUploads();
+});
 
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
@@ -67,7 +70,7 @@ async function carregarPedidosPortaria() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    form.innerHTML = `
+        form.innerHTML = `
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
@@ -89,16 +92,22 @@ async function carregarPedidosPortaria() {
         </div>
 
         <label style="margin-top: 12px;">Foto do Caminhão</label>
-        <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+        </div>
 
         <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
           <label>Ficha de Integração Assinada (motorista)</label>
-          <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+          <div class="upload-wrapper" style="position: relative;">
+            <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
 
         <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
           <label>Foto do Documento (motorista)</label>
-          <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+          <div class="upload-wrapper" style="position: relative;">
+            <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
 
         <label style="margin-top: 12px;">Tem Ajudante?</label>
@@ -145,12 +154,16 @@ function exibirCardAjudante(pedidoId) {
 
         <div id="grupo-ficha-ajudante-${pedidoId}" style="margin-top: 12px;">
           <label>Ficha de Integração Assinada (ajudante)</label>
-          <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
+          <div class="upload-wrapper" style="position: relative;">
+            <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
 
         <div id="grupo-doc-ajudante-${pedidoId}" style="margin-top: 12px;">
           <label>Foto do Documento (ajudante)</label>
-          <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
+          <div class="upload-wrapper" style="position: relative;">
+            <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
       </div>
     </div>
@@ -299,4 +312,28 @@ async function registrarColeta(pedidoId, botao) {
     botao.disabled = false;
     botao.innerText = 'Iniciar Coleta';
   }
+}
+
+function monitorarUploads() {
+  document.body.addEventListener('change', function (e) {
+    if (e.target.type === 'file') {
+      const wrapper = e.target.closest('.upload-wrapper');
+      if (!wrapper) return;
+
+      let checkIcon = wrapper.querySelector('.check-icon');
+      if (!checkIcon) {
+        checkIcon = document.createElement('i');
+        checkIcon.className = 'fa fa-check check-icon';
+        checkIcon.style.position = 'absolute';
+        checkIcon.style.right = '12px';
+        checkIcon.style.top = '50%';
+        checkIcon.style.transform = 'translateY(-50%)';
+        checkIcon.style.color = '#28a745';
+        checkIcon.style.fontSize = '16px';
+        wrapper.appendChild(checkIcon);
+      }
+
+      checkIcon.style.display = e.target.files.length ? 'block' : 'none';
+    }
+  });
 }
