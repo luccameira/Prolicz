@@ -2,24 +2,22 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
+const fs = require('fs');
 
-// Criar pasta de tickets, se necessário
+// Cria a pasta uploads/tickets se necessário
 const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
 if (!fs.existsSync(pastaTickets)) {
   fs.mkdirSync(pastaTickets, { recursive: true });
 }
 
-// Configuração do multer
+// Configuração do multer para salvar imagem do ticket da balança
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, pastaTickets);
-  },
+  destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const timestamp = Date.now();
-    cb(null, `ticket_${req.params.id}_${timestamp}${ext}`);
+    const nome = `ticket_${Date.now()}${ext}`;
+    cb(null, nome);
   }
 });
 const upload = multer({ storage });
@@ -64,7 +62,7 @@ router.get('/', async (req, res) => {
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.peso_registrado, p.desconto_peso, p.motivo_desconto, p.ticket_balanca,
+      p.ticket_balanca, p.desconto_peso, p.motivo_desconto, p.peso_registrado,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -108,7 +106,6 @@ router.get('/', async (req, res) => {
       );
 
       pedido.materiais = materiais;
-
       pedido.valor_total = materiais.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
       pedido.observacoes = pedido.observacao || '';
       pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
@@ -121,21 +118,6 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar pedidos:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos' });
-  }
-});
-
-// GET /api/clientes/:id/produtos
-router.get('/clientes/:id/produtos', async (req, res) => {
-  const clienteId = req.params.id;
-  try {
-    const [produtos] = await db.query(
-      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
-      [clienteId]
-    );
-    res.json(produtos);
-  } catch (error) {
-    console.error('Erro ao buscar produtos do cliente:', error);
-    res.status(500).json({ erro: 'Erro ao buscar produtos do cliente.' });
   }
 });
 
@@ -197,11 +179,11 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/carga — com upload da imagem
-router.put('/:id/carga', upload.single('ticket'), async (req, res) => {
+// ✅ PUT /api/pedidos/:id/carga — com upload da imagem do ticket
+router.put('/:id/carga', upload.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
   const { peso_registrado, desconto_peso, motivo_desconto } = req.body;
-  const ticketFile = req.file?.filename || null;
+  const nomeArquivo = req.file?.filename || null;
 
   try {
     await db.query(
@@ -210,11 +192,10 @@ router.put('/:id/carga', upload.single('ticket'), async (req, res) => {
          peso_registrado = ?, 
          desconto_peso = ?, 
          motivo_desconto = ?, 
-         ticket_balanca = ?,
-         status = 'Aguardando Conferência do Peso',
-         data_peso_registrado = NOW()
+         ticket_balanca = ?, 
+         status = 'Aguardando Conferência do Peso'
        WHERE id = ?`,
-      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', ticketFile, id]
+      [peso_registrado || 0, desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
     );
 
     res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
@@ -281,4 +262,3 @@ router.get('/produtos', async (req, res) => {
 });
 
 module.exports = router;
-
