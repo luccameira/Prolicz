@@ -76,9 +76,8 @@ router.get('/', async (req, res) => {
   }
 
   if (status) {
-    const statusList = status.split(',').map(s => s.trim());
-    sqlPedidos += ` AND p.status IN (${statusList.map(() => '?').join(',')})`;
-    params.push(...statusList);
+    sqlPedidos += " AND p.status = ?";
+    params.push(status);
   }
 
   if (tipo) {
