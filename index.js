@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// ✅ Torna pública a pasta onde os tickets da balança são salvos
-app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads', 'tickets')));
+// ✅ Permite acesso à pasta uploads/tickets (para visualizar imagens do ticket da balança)
+app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
 
 // Rotas com conexão injetada
 function withConnection(routePath) {
@@ -25,10 +25,10 @@ app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos')); // se necessário
 app.use('/api/usuarios', withConnection('./routes/usuarios')); // se necessário
 
-// Nova rota para motoristas (sem conexão manual, pois não é necessário)
+// Rota para motoristas (sem injeção manual de conexão)
 app.use('/api/motoristas', require('./routes/motoristas'));
 
-// Redirecionamentos para páginas HTML (existentes)
+// Redirecionamentos para páginas HTML
 app.get('/visualizar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
@@ -42,7 +42,7 @@ app.get('/editar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
 
-// Redirecionamentos para novas páginas de tarefas
+// Redirecionamentos para páginas de tarefas
 app.get('/tarefas-portaria.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'tarefas-portaria.html'));
 });
@@ -68,3 +68,4 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
+
