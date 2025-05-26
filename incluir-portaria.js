@@ -22,8 +22,6 @@ function formatarData(data) {
 }
 
 async function carregarPedidosPortaria() {
-  console.log('🔍 Função carregarPedidosPortaria executando...');
-
   const [resPendentes, resIniciados] = await Promise.all([
     fetch('/api/pedidos?status=Aguardando%20In%C3%ADcio%20da%20Coleta'),
     fetch('/api/pedidos?status=Coleta%20Iniciada')
@@ -31,10 +29,6 @@ async function carregarPedidosPortaria() {
 
   const pendentes = await resPendentes.json();
   const iniciados = await resIniciados.json();
-
-  console.log('📦 Pendentes:', pendentes);
-  console.log('📦 Iniciados:', iniciados);
-
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
@@ -82,8 +76,7 @@ async function carregarPedidosPortaria() {
         <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
       </div>
 
-      <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
-        <h4 style="margin-bottom: 15px;">Motorista</h4>
+      <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
         <div style="display: flex; gap: 20px;">
           <div style="flex: 1;">
             <label>Nome do Motorista</label>
@@ -137,8 +130,7 @@ function exibirCardAjudante(pedidoId) {
   const card = document.getElementById(`card-ajudante-${pedidoId}`);
   card.style.display = 'block';
   card.innerHTML = `
-    <div class="subcard" style="padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
-      <h4 style="margin-bottom: 15px;">Ajudante</h4>
+    <div class="subcard" style="padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Ajudante</label>
@@ -151,11 +143,15 @@ function exibirCardAjudante(pedidoId) {
         <label>Nome do Ajudante</label>
         <input type="text" id="nome-ajudante-${pedidoId}" placeholder="Nome completo do ajudante" required>
 
-        <label style="margin-top: 12px;">Ficha de Integração Assinada (ajudante)</label>
-        <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
+        <div id="grupo-ficha-ajudante-${pedidoId}" style="margin-top: 12px;">
+          <label>Ficha de Integração Assinada (ajudante)</label>
+          <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
+        </div>
 
-        <label style="margin-top: 12px;">Foto do Documento (ajudante)</label>
-        <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
+        <div id="grupo-doc-ajudante-${pedidoId}" style="margin-top: 12px;">
+          <label>Foto do Documento (ajudante)</label>
+          <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
+        </div>
       </div>
     </div>
   `;
@@ -174,6 +170,8 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   const alertaPrefix = isAjudante ? 'status-cadastro-ajudante' : 'status-cadastro';
   const docId = isAjudante ? 'doc-ajudante' : 'doc';
   const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
+  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${pedidoId}` : `grupo-ficha-${pedidoId}`;
+  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${pedidoId}` : `grupo-doc-${pedidoId}`;
   const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
 
   const cpf = document.getElementById(`${prefix}-${pedidoId}`)?.value.trim();
@@ -181,8 +179,8 @@ async function verificarCPF(pedidoId, isAjudante = false) {
   const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
   const docInput = document.getElementById(`${docId}-${pedidoId}`);
   const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
-  const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
-  const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
+  const grupoFicha = document.getElementById(grupoFichaId);
+  const grupoDoc = document.getElementById(grupoDocId);
   const blocoForm = document.getElementById(cardId);
 
   if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
