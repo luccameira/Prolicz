@@ -34,21 +34,6 @@ router.get('/carga', async (req, res) => {
   }
 });
 
-// GET /api/clientes/:id/produtos
-router.get('/clientes/:id/produtos', async (req, res) => {
-  const clienteId = req.params.id;
-  try {
-    const [produtos] = await db.query(
-      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
-      [clienteId]
-    );
-    res.json(produtos);
-  } catch (error) {
-    console.error('Erro ao buscar produtos do cliente:', error);
-    res.status(500).json({ erro: 'Erro ao buscar produtos do cliente.' });
-  }
-});
-
 // GET /api/pedidos
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
@@ -92,15 +77,16 @@ router.get('/', async (req, res) => {
     const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-      const [itens] = await db.query(
-        `SELECT nome_produto, peso, valor_unitario, (peso * valor_unitario) AS valor_total
+      const [materiais] = await db.query(
+        `SELECT nome_produto, peso AS quantidade, tipo_peso, unidade
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
 
-      pedido.itens = itens;
-      pedido.valor_total = itens.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
+      pedido.materiais = materiais;
+
+      pedido.valor_total = materiais.reduce((acc, item) => acc + Number(item.valor_total || 0), 0);
       pedido.observacoes = pedido.observacao || '';
       pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
         .split('|')
@@ -112,6 +98,21 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar pedidos:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos' });
+  }
+});
+
+// GET /api/clientes/:id/produtos
+router.get('/clientes/:id/produtos', async (req, res) => {
+  const clienteId = req.params.id;
+  try {
+    const [produtos] = await db.query(
+      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
+      [clienteId]
+    );
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos do cliente:', error);
+    res.status(500).json({ erro: 'Erro ao buscar produtos do cliente.' });
   }
 });
 
@@ -173,69 +174,6 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
-// PUT /api/pedidos/:id/registrar-peso
-router.put('/:id/registrar-peso', async (req, res) => {
-  const pedidoId = req.params.id;
-  const { peso, desconto, motivo } = req.body;
-
-  if (!peso || isNaN(peso) || peso <= 0) {
-    return res.status(400).json({ erro: 'Peso inválido.' });
-  }
-
-  try {
-    await db.query(
-      `UPDATE pedidos 
-       SET peso_registrado = ?, 
-           desconto_peso = ?, 
-           motivo_desconto = ?,
-           data_peso_registrado = NOW(), 
-           status = 'Aguardando Conferência do Peso' 
-       WHERE id = ?`,
-      [peso, desconto || 0, motivo || '', pedidoId]
-    );
-
-    res.status(200).json({ mensagem: 'Peso registrado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao registrar peso:', error);
-    res.status(500).json({ erro: 'Erro ao registrar peso.' });
-  }
-});
-
-// POST /api/pedidos/produtos/novo
-router.post('/produtos/novo', async (req, res) => {
-  const { nome_produto, unidade } = req.body;
-
-  if (!nome_produto || !unidade) {
-    return res.status(400).json({ erro: 'Nome do produto e unidade são obrigatórios.' });
-  }
-
-  try {
-    await db.query(
-      `INSERT INTO produtos (nome, unidade) VALUES (?, ?)`,
-      [nome_produto, unidade]
-    );
-
-    res.status(201).json({ mensagem: 'Produto cadastrado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao cadastrar produto:', error);
-    res.status(500).json({ erro: 'Erro ao cadastrar produto.' });
-  }
-});
-
-// GET /api/pedidos/produtos
-router.get('/produtos', async (req, res) => {
-  try {
-    const [produtos] = await db.query(
-      `SELECT nome AS nome_produto, unidade, criado_em AS data_cadastro FROM produtos ORDER BY criado_em DESC`
-    );
-
-    res.json(produtos);
-  } catch (error) {
-    console.error('Erro ao buscar produtos:', error);
-    res.status(500).json({ erro: 'Erro ao buscar produtos.' });
-  }
-});
-
 // PUT /api/pedidos/:id/carga
 router.put('/:id/carga', async (req, res) => {
   const { id } = req.params;
@@ -278,6 +216,41 @@ router.put('/:id/conferencia', async (req, res) => {
   } catch (error) {
     console.error('Erro ao confirmar peso:', error);
     res.status(500).json({ erro: 'Erro ao confirmar peso.' });
+  }
+});
+
+// POST /api/pedidos/produtos/novo
+router.post('/produtos/novo', async (req, res) => {
+  const { nome_produto, unidade } = req.body;
+
+  if (!nome_produto || !unidade) {
+    return res.status(400).json({ erro: 'Nome do produto e unidade são obrigatórios.' });
+  }
+
+  try {
+    await db.query(
+      `INSERT INTO produtos (nome, unidade) VALUES (?, ?)`,
+      [nome_produto, unidade]
+    );
+
+    res.status(201).json({ mensagem: 'Produto cadastrado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao cadastrar produto:', error);
+    res.status(500).json({ erro: 'Erro ao cadastrar produto.' });
+  }
+});
+
+// GET /api/pedidos/produtos
+router.get('/produtos', async (req, res) => {
+  try {
+    const [produtos] = await db.query(
+      `SELECT nome AS nome_produto, unidade, criado_em AS data_cadastro FROM produtos ORDER BY criado_em DESC`
+    );
+
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
+    res.status(500).json({ erro: 'Erro ao buscar produtos.' });
   }
 });
 
