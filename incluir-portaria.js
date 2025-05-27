@@ -42,14 +42,14 @@ function diferencaDias(dataInicial, dataFinal) {
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
-  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf`;
-  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome`;
-  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro`;
-  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc`;
-  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha`;
+  const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro-${pedidoId}`;
+  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc-${pedidoId}`;
+  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha-${pedidoId}`;
   const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${indice}` : `grupo-ficha-${pedidoId}`;
   const grupoDocId = isAjudante ? `grupo-doc-ajudante-${indice}` : `grupo-doc-${pedidoId}`;
-  const cardId = isAjudante ? `card-ajudante-${indice}` : `bloco-form-${pedidoId}`;
+  const cardId = isAjudante ? `card-ajudante-${pedidoId}-${indice}` : `bloco-form-${pedidoId}`;
 
   const cpf = document.getElementById(prefix)?.value.trim();
   const nomeInput = document.getElementById(nomePrefix);
@@ -157,7 +157,7 @@ async function carregarPedidosPortaria() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    form.innerHTML = `
+        form.innerHTML = `
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
@@ -375,5 +375,4 @@ function monitorarUploads() {
     }
   });
 }
-
 
