@@ -24,6 +24,81 @@ function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
 
+function diferencaDias(dataInicial, dataFinal) {
+  const umDia = 24 * 60 * 60 * 1000;
+  return Math.floor((dataFinal - dataInicial) / umDia);
+}
+
+async function verificarCPF(pedidoId, isAjudante = false) {
+  const prefix = isAjudante ? 'cpf-ajudante' : 'cpf';
+  const nomePrefix = isAjudante ? 'nome-ajudante' : 'nome';
+  const alertaPrefix = isAjudante ? 'status-cadastro-ajudante' : 'status-cadastro';
+  const docId = isAjudante ? 'doc-ajudante' : 'doc';
+  const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
+  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${pedidoId}` : `grupo-ficha-${pedidoId}`;
+  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${pedidoId}` : `grupo-doc-${pedidoId}`;
+  const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
+
+  const cpf = document.getElementById(`${prefix}-${pedidoId}`)?.value.trim();
+  const nomeInput = document.getElementById(`${nomePrefix}-${pedidoId}`);
+  const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
+  const docInput = document.getElementById(`${docId}-${pedidoId}`);
+  const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
+  const grupoFicha = document.getElementById(grupoFichaId);
+  const grupoDoc = document.getElementById(grupoDocId);
+  const blocoForm = document.getElementById(cardId);
+
+  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
+  blocoForm.style.display = 'block';
+
+  try {
+    const res = await fetch(`/api/motoristas/${cpf}`);
+    grupoFicha.style.display = 'block';
+    grupoDoc.style.display = 'block';
+    fichaInput.required = true;
+    docInput.required = true;
+
+    if (res.status === 404) {
+      alerta.className = 'alerta-vencido';
+      alerta.style.display = 'block';
+      alerta.innerText = '🚫 Não possui cadastro.';
+      nomeInput.disabled = false;
+      nomeInput.value = '';
+    } else {
+      const dados = await res.json();
+      nomeInput.value = dados.nome;
+      nomeInput.disabled = true;
+
+      let vencido = false;
+      if (dados.data_permissao) {
+        const dataPermissao = new Date(dados.data_permissao);
+        const dias = diferencaDias(dataPermissao, new Date());
+        vencido = dias > 90;
+      }
+
+      if (vencido) {
+        alerta.className = 'alerta-vencido';
+        alerta.style.display = 'block';
+        alerta.innerText = '⚠️ Permissão expirada. Reenvie a ficha de integração.';
+        grupoFicha.style.display = 'block';
+        fichaInput.required = true;
+        grupoDoc.style.display = 'none';
+        docInput.required = false;
+      } else {
+        alerta.className = 'alerta-sucesso';
+        alerta.style.display = 'block';
+        alerta.innerText = '✅ Já cadastrado';
+        grupoFicha.style.display = 'none';
+        fichaInput.required = false;
+        grupoDoc.style.display = 'none';
+        docInput.required = false;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao verificar CPF:', err);
+  }
+}
+
 async function carregarPedidosPortaria() {
   const [resPendentes, resIniciados] = await Promise.all([
     fetch('/api/pedidos?status=Aguardando%20In%C3%ADcio%20da%20Coleta'),
@@ -70,7 +145,7 @@ async function carregarPedidosPortaria() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-        form.innerHTML = `
+    form.innerHTML = `
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
@@ -177,69 +252,6 @@ function exibirCardAjudante(pedidoId) {
   });
 }
 
-async function verificarCPF(pedidoId, isAjudante = false) {
-  const prefix = isAjudante ? 'cpf-ajudante' : 'cpf';
-  const nomePrefix = isAjudante ? 'nome-ajudante' : 'nome';
-  const alertaPrefix = isAjudante ? 'status-cadastro-ajudante' : 'status-cadastro';
-  const docId = isAjudante ? 'doc-ajudante' : 'doc';
-  const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
-  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${pedidoId}` : `grupo-ficha-${pedidoId}`;
-  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${pedidoId}` : `grupo-doc-${pedidoId}`;
-  const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
-
-  const cpf = document.getElementById(`${prefix}-${pedidoId}`)?.value.trim();
-  const nomeInput = document.getElementById(`${nomePrefix}-${pedidoId}`);
-  const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
-  const docInput = document.getElementById(`${docId}-${pedidoId}`);
-  const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
-  const grupoFicha = document.getElementById(grupoFichaId);
-  const grupoDoc = document.getElementById(grupoDocId);
-  const blocoForm = document.getElementById(cardId);
-
-  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
-  blocoForm.style.display = 'block';
-
-  try {
-    const res = await fetch(`/api/motoristas/${cpf}`);
-    grupoFicha.style.display = 'block';
-    grupoDoc.style.display = 'block';
-    fichaInput.required = true;
-    docInput.required = true;
-
-    if (res.status === 404) {
-      alerta.className = 'alerta-vencido';
-      alerta.style.display = 'block';
-      alerta.innerText = '🚫 Não possui cadastro.';
-      nomeInput.disabled = false;
-      nomeInput.value = '';
-    } else {
-      const dados = await res.json();
-      nomeInput.value = dados.nome;
-      nomeInput.disabled = true;
-
-      if (dados.cadastroVencido) {
-        alerta.className = 'alerta-vencido';
-        alerta.style.display = 'block';
-        alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
-        grupoFicha.style.display = 'block';
-        fichaInput.required = true;
-        grupoDoc.style.display = 'none';
-        docInput.required = false;
-      } else {
-        alerta.className = 'alerta-sucesso';
-        alerta.style.display = 'block';
-        alerta.innerText = '✅ Já cadastrado.';
-        grupoFicha.style.display = 'none';
-        fichaInput.required = false;
-        grupoDoc.style.display = 'none';
-        docInput.required = false;
-      }
-    }
-  } catch (err) {
-    console.error('Erro ao verificar CPF:', err);
-  }
-}
-
 document.addEventListener('change', function (e) {
   if (e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.id.split('-')[2];
@@ -337,3 +349,4 @@ function monitorarUploads() {
     }
   });
 }
+
