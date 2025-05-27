@@ -214,7 +214,9 @@ async function carregarPedidosPortaria() {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
         const cpfInput = form.querySelector(`#cpf-${pedidoId}`);
+        const placaInput = form.querySelector(`#placa-${pedidoId}`);
         aplicarMascaraCPF(cpfInput);
+        aplicarMascaraPlaca(placaInput);
       });
     }
 
