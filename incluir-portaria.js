@@ -272,9 +272,9 @@ document.addEventListener('change', function (e) {
       container.appendChild(div);
       const cpfInput = div.querySelector(`#cpf-ajudante-${idSuffix}`);
       aplicarMascaraCPF(cpfInput);
-    } else if (valor === 'nao') {
-      container.innerHTML = '';
-    }
+   } else if (valor === 'nao') {
+  // Não faz nada — só fecha a possibilidade de adicionar outro
+}
   }
 });
 
