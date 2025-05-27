@@ -123,8 +123,6 @@ router.get('/', async (req, res) => {
     .map(str => str.trim())
     .filter(str => str.length > 0);
 }
-;
-    }
 
     res.json(pedidos);
   } catch (err) {
