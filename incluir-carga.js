@@ -81,7 +81,7 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
               </p>
               <div class="linha-peso">
                 <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
-                <input type="number" id="peso-${p.pedido_id}-${index}" placeholder="Insira o peso carregado aqui">
+                <input type="number" id="peso-${p.pedido_id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
               </div>
 
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
@@ -143,7 +143,7 @@ function adicionarDescontoMaterial(itemId) {
       <div class="coluna-desconto" style="display:none;">
         <label id="${idLabel}" for="${idQtd}">Quantidade</label>
         <div class="desconto-container">
-          <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})">
+          <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
           <span class="sufixo-unidade">-</span>
         </div>
       </div>
@@ -178,11 +178,11 @@ function atualizarDescontoItem(itemId, index) {
 
   if (motivo === 'Palete Pequeno') {
     unidade = 'unidade';
-    labelTexto = 'Quantidade de Paletes Pequenos';
+    labelTexto = 'Qtd. Paletes Pequenos';
     pesoPorUnidade = 6;
   } else if (motivo === 'Palete Grande') {
     unidade = 'unidade';
-    labelTexto = 'Quantidade de Paletes Grandes';
+    labelTexto = 'Qtd. Paletes Grandes';
     pesoPorUnidade = 14.37;
   } else {
     pesoPorUnidade = 1;
@@ -259,4 +259,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
+
 
