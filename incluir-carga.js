@@ -59,7 +59,6 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
       ${statusHtml}
     `;
     div.appendChild(header);
-
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.pedido_id}`;
@@ -140,7 +139,7 @@ function adicionarDesconto(pedidoId) {
           <option value="Devolução de material">Devolução de material</option>
         </select>
       </div>
-      <div class="coluna-desconto">
+      <div class="coluna-desconto" id="coluna-desconto-${pedidoId}-${index}" style="display: none;">
         <label id="label-desconto-${pedidoId}-${index}" for="desconto-${pedidoId}-${index}">Desconto</label>
         <div class="desconto-container">
           <input type="number" id="desconto-${pedidoId}-${index}" placeholder="Informe o desconto">
@@ -150,14 +149,6 @@ function adicionarDesconto(pedidoId) {
     </div>
   `;
   container.appendChild(div);
-
-  atualizarDescontoLabel(pedidoId, index);
-
-  const total = container.querySelectorAll('.grupo-desconto').length;
-  if (total >= 2) {
-    botao.disabled = true;
-    botao.style.opacity = 0.5;
-  }
 }
 
 function removerDesconto(pedidoId, index) {
@@ -176,6 +167,15 @@ function atualizarDescontoLabel(pedidoId, index) {
   const campo = document.getElementById(`desconto-${pedidoId}-${index}`);
   const sufixo = document.getElementById(`sufixo-${pedidoId}-${index}`);
   const label = document.getElementById(`label-desconto-${pedidoId}-${index}`);
+  const colunaDesconto = document.getElementById(`coluna-desconto-${pedidoId}-${index}`);
+
+  if (!motivo) {
+    // Nenhum motivo selecionado, esconde o campo
+    colunaDesconto.style.display = 'none';
+    return;
+  }
+
+  colunaDesconto.style.display = 'block';
 
   if (motivo === "Paletes") {
     campo.placeholder = "Desconto em unidades";
@@ -227,6 +227,10 @@ async function registrarPeso(id) {
 
   const desconto = descontoInput ? parseFloat(descontoInput.value || 0) : 0;
   const motivo = motivoSelect ? motivoSelect.value || '' : '';
+
+  if (desconto > 0 && !motivo) {
+    return alert("Selecione o motivo do desconto antes de registrar.");
+  }
 
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
