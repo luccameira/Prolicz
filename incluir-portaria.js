@@ -274,24 +274,28 @@ function exibirCardAjudante(pedidoId, indice) {
 
   const dropdownMais = novoCard.querySelector(`#tem-mais-ajudante-${indice}`);
   dropdownMais.addEventListener('change', e => {
-    if (e.target.value === 'sim') {
-      const proximoIndice = parseInt(indice) + 1;
+    const valor = e.target.value;
+    const proximoIndice = parseInt(indice) + 1;
+
+    if (valor === 'sim') {
       exibirCardAjudante(pedidoId, proximoIndice);
+    } else if (valor === 'nao') {
+      // Remove todos os ajudantes após este índice
+      let remover = true;
+      let atual = proximoIndice;
+
+      while (remover) {
+        const proximoCard = document.getElementById(`card-ajudante-${atual}`);
+        if (proximoCard) {
+          proximoCard.remove();
+          atual++;
+        } else {
+          remover = false;
+        }
+      }
     }
   });
 }
-
-document.addEventListener('change', function (e) {
-  if (e.target.id.startsWith('tem-ajudante-')) {
-    const pedidoId = e.target.id.split('-')[2];
-    const valor = e.target.value;
-    const cardContainer = document.getElementById(`card-ajudante-container-${pedidoId}`);
-    cardContainer.innerHTML = '';
-    if (valor === 'sim') {
-      exibirCardAjudante(pedidoId, 0);
-    }
-  }
-});
 
 async function registrarColeta(pedidoId, botao) {
   if (!confirm("Tem certeza que deseja iniciar a coleta?")) return;
