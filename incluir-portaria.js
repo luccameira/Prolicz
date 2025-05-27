@@ -13,10 +13,25 @@ function aplicarMascaraCPF(input) {
     input.value = v;
 
     if (v.length === 14) {
-      const id = input.id.split('-')[1];
-      if (input.id.startsWith("cpf-ajudante")) return;
-      verificarCPF(id);
+      const id = input.dataset.index || '0';
+      const pedidoId = input.dataset.pedido;
+      if (input.id.startsWith("cpf-ajudante")) {
+        verificarCPF(pedidoId, true, id);
+      } else {
+        verificarCPF(pedidoId);
+      }
     }
+  });
+}
+
+function aplicarMascaraPlaca(input) {
+  input.addEventListener('input', () => {
+    let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.length > 7) v = v.slice(0, 7);
+    if (v.length > 3) {
+      v = v.slice(0, 3) + '-' + v.slice(3);
+    }
+    input.value = v;
   });
 }
 
@@ -29,21 +44,21 @@ function diferencaDias(dataInicial, dataFinal) {
   return Math.floor((dataFinal - dataInicial) / umDia);
 }
 
-async function verificarCPF(pedidoId, isAjudante = false) {
-  const prefix = isAjudante ? 'cpf-ajudante' : 'cpf';
-  const nomePrefix = isAjudante ? 'nome-ajudante' : 'nome';
-  const alertaPrefix = isAjudante ? 'status-cadastro-ajudante' : 'status-cadastro';
-  const docId = isAjudante ? 'doc-ajudante' : 'doc';
-  const fichaId = isAjudante ? 'ficha-ajudante' : 'ficha';
-  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${pedidoId}` : `grupo-ficha-${pedidoId}`;
-  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${pedidoId}` : `grupo-doc-${pedidoId}`;
-  const cardId = isAjudante ? `card-ajudante-${pedidoId}` : `bloco-form-${pedidoId}`;
+async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
+  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro`;
+  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc`;
+  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha`;
+  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${indice}` : `grupo-ficha-${pedidoId}`;
+  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${indice}` : `grupo-doc-${pedidoId}`;
+  const cardId = isAjudante ? `card-ajudante-${indice}` : `bloco-form-${pedidoId}`;
 
-  const cpf = document.getElementById(`${prefix}-${pedidoId}`)?.value.trim();
-  const nomeInput = document.getElementById(`${nomePrefix}-${pedidoId}`);
-  const alerta = document.getElementById(`${alertaPrefix}-${pedidoId}`);
-  const docInput = document.getElementById(`${docId}-${pedidoId}`);
-  const fichaInput = document.getElementById(`${fichaId}-${pedidoId}`);
+  const cpf = document.getElementById(prefix)?.value.trim();
+  const nomeInput = document.getElementById(nomePrefix);
+  const alerta = document.getElementById(alertaPrefix);
+  const docInput = document.getElementById(docId);
+  const fichaInput = document.getElementById(fichaId);
   const grupoFicha = document.getElementById(grupoFichaId);
   const grupoDoc = document.getElementById(grupoDocId);
   const blocoForm = document.getElementById(cardId);
@@ -149,7 +164,7 @@ async function carregarPedidosPortaria() {
       <div style="display: flex; align-items: flex-end; gap: 12px;">
         <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" required placeholder="Digite o CPF">
+          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
         </div>
         <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
       </div>
@@ -192,7 +207,7 @@ async function carregarPedidosPortaria() {
           <option value="nao">Não</option>
         </select>
 
-        <div id="card-ajudante-${pedidoId}" style="display: none; margin-top: 25px;"></div>
+        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
         <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
       </div>
@@ -202,6 +217,7 @@ async function carregarPedidosPortaria() {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
         aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
+        aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
       });
     }
 
@@ -210,45 +226,61 @@ async function carregarPedidosPortaria() {
   });
 }
 
-function exibirCardAjudante(pedidoId) {
-  const card = document.getElementById(`card-ajudante-${pedidoId}`);
-  card.style.display = 'block';
-  card.innerHTML = `
-    <div class="subcard" style="padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
-      <div style="display: flex; align-items: flex-end; gap: 12px;">
-        <div style="max-width: 300px; flex: none;">
-          <label>CPF do Ajudante</label>
-          <input type="text" id="cpf-ajudante-${pedidoId}" required placeholder="Digite o CPF do ajudante">
+function exibirCardAjudante(pedidoId, indice) {
+  const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+  const novoCard = document.createElement('div');
+  novoCard.className = 'subcard';
+  novoCard.style.cssText = 'padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-top: 20px;';
+  novoCard.id = `card-ajudante-${indice}`;
+
+  novoCard.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 12px;">
+      <div style="max-width: 300px; flex: none;">
+        <label>CPF do Ajudante</label>
+        <input type="text" id="cpf-ajudante-${indice}" data-pedido="${pedidoId}" data-index="${indice}" placeholder="Digite o CPF do ajudante" required>
+      </div>
+      <div id="status-cadastro-ajudante-${indice}" style="display: none; flex: 1;"></div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <label>Nome do Ajudante</label>
+      <input type="text" id="nome-ajudante-${indice}" placeholder="Nome completo do ajudante" required>
+
+      <div id="grupo-ficha-ajudante-${indice}" style="margin-top: 12px;">
+        <label>Ficha de Integração Assinada (ajudante)</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="ficha-ajudante-${indice}" accept="image/*" required>
         </div>
-        <div id="status-cadastro-ajudante-${pedidoId}" style="display: none; flex: 1;"></div>
       </div>
 
-      <div style="margin-top: 20px;">
-        <label>Nome do Ajudante</label>
-        <input type="text" id="nome-ajudante-${pedidoId}" placeholder="Nome completo do ajudante" required>
-
-        <div id="grupo-ficha-ajudante-${pedidoId}" style="margin-top: 12px;">
-          <label>Ficha de Integração Assinada (ajudante)</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="ficha-ajudante-${pedidoId}" accept="image/*" required>
-          </div>
-        </div>
-
-        <div id="grupo-doc-ajudante-${pedidoId}" style="margin-top: 12px;">
-          <label>Foto do Documento (ajudante)</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="doc-ajudante-${pedidoId}" accept="image/*" required>
-          </div>
+      <div id="grupo-doc-ajudante-${indice}" style="margin-top: 12px;">
+        <label>Foto do Documento (ajudante)</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="doc-ajudante-${indice}" accept="image/*" required>
         </div>
       </div>
     </div>
+
+    <div class="mais-ajudante" style="margin-top: 20px;">
+      <label>Tem mais um ajudante?</label>
+      <select id="tem-mais-ajudante-${indice}" data-pedido="${pedidoId}" data-indice="${indice}" required>
+        <option value="">Selecione</option>
+        <option value="sim">Sim</option>
+        <option value="nao">Não</option>
+      </select>
+    </div>
   `;
 
-  const cpfInput = document.getElementById(`cpf-ajudante-${pedidoId}`);
-  aplicarMascaraCPF(cpfInput);
-  cpfInput.addEventListener('input', () => {
-    const cpf = cpfInput.value.replace(/\D/g, '');
-    if (cpf.length === 11) verificarCPF(pedidoId, true);
+  container.appendChild(novoCard);
+
+  aplicarMascaraCPF(novoCard.querySelector(`#cpf-ajudante-${indice}`));
+
+  const dropdownMais = novoCard.querySelector(`#tem-mais-ajudante-${indice}`);
+  dropdownMais.addEventListener('change', e => {
+    if (e.target.value === 'sim') {
+      const proximoIndice = parseInt(indice) + 1;
+      exibirCardAjudante(pedidoId, proximoIndice);
+    }
   });
 }
 
@@ -256,29 +288,23 @@ document.addEventListener('change', function (e) {
   if (e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.id.split('-')[2];
     const valor = e.target.value;
-    const card = document.getElementById(`card-ajudante-${pedidoId}`);
+    const cardContainer = document.getElementById(`card-ajudante-container-${pedidoId}`);
+    cardContainer.innerHTML = '';
     if (valor === 'sim') {
-      exibirCardAjudante(pedidoId);
-    } else {
-      card.style.display = 'none';
-      card.innerHTML = '';
+      exibirCardAjudante(pedidoId, 0);
     }
   }
 });
 
 async function registrarColeta(pedidoId, botao) {
+  if (!confirm("Tem certeza que deseja iniciar a coleta?")) return;
+
   const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
   const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
   const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
   const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
   const fichaInput = document.getElementById(`ficha-${pedidoId}`);
   const docInput = document.getElementById(`doc-${pedidoId}`);
-
-  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`)?.value === 'sim';
-  const cpfAjudante = document.getElementById(`cpf-ajudante-${pedidoId}`)?.value.trim();
-  const nomeAjudante = document.getElementById(`nome-ajudante-${pedidoId}`)?.value.trim();
-  const fichaAjudante = document.getElementById(`ficha-ajudante-${pedidoId}`);
-  const docAjudante = document.getElementById(`doc-ajudante-${pedidoId}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
@@ -296,11 +322,22 @@ async function registrarColeta(pedidoId, botao) {
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
   if (docInput?.files.length) formData.append('documento', docInput.files[0]);
 
-  if (temAjudante && cpfAjudante && nomeAjudante) {
-    formData.append('cpf_ajudante', cpfAjudante);
-    formData.append('nome_ajudante', nomeAjudante);
-    if (docAjudante?.files.length) formData.append('documento_ajudante', docAjudante.files[0]);
-    if (fichaAjudante?.files.length) formData.append('ficha_ajudante', fichaAjudante.files[0]);
+  // Processar ajudantes dinamicamente
+  let indice = 0;
+  while (document.getElementById(`cpf-ajudante-${indice}`)) {
+    const cpfA = document.getElementById(`cpf-ajudante-${indice}`)?.value.trim();
+    const nomeA = document.getElementById(`nome-ajudante-${indice}`)?.value.trim();
+    const docA = document.getElementById(`doc-ajudante-${indice}`)?.files[0];
+    const fichaA = document.getElementById(`ficha-ajudante-${indice}`)?.files[0];
+
+    if (cpfA && nomeA) {
+      formData.append(`cpf_ajudante_${indice}`, cpfA);
+      formData.append(`nome_ajudante_${indice}`, nomeA);
+      if (docA) formData.append(`documento_ajudante_${indice}`, docA);
+      if (fichaA) formData.append(`ficha_ajudante_${indice}`, fichaA);
+    }
+
+    indice++;
   }
 
   try {
@@ -313,7 +350,7 @@ async function registrarColeta(pedidoId, botao) {
     await fetch(`/api/pedidos/${pedidoId}/coleta`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante || '' })
+      body: JSON.stringify({ placa, motorista: nome })
     });
 
     alert('Coleta iniciada com sucesso!');
@@ -349,4 +386,3 @@ function monitorarUploads() {
     }
   });
 }
-
