@@ -431,3 +431,40 @@ input[type="file"]::file-selector-button:hover {
 .input-sem-seta {
   appearance: textfield; /* Firefox */
 }
+
+.descontos-container {
+  margin-top: 15px;
+  padding: 10px 0;
+  border-top: 1px solid #ddd;
+}
+
+.descontos-aplicados {
+  margin-left: 20px;
+  margin-top: 8px;
+  color: #333;
+  font-size: 15px;
+  padding-left: 0;
+  list-style: disc;
+}
+
+.descontos-aplicados li {
+  margin-bottom: 4px;
+}
+
+.desconto-kg {
+  color: #c0392b;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.peso-final {
+  margin-top: 12px;
+  font-size: 15px;
+}
+
+.peso-destaque {
+  font-weight: bold;
+  font-size: 16px;
+  color: #27ae60;
+  margin-left: 6px;
+}
