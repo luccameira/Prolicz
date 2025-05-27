@@ -69,10 +69,12 @@ router.get('/:cpf', async (req, res) => {
 });
 
 // POST /api/motoristas → Cadastra motorista ou atualiza se já existir
-router.post('/', upload.fields([
+upload.fields([
   { name: 'foto_documento', maxCount: 1 },
   { name: 'ficha_integracao', maxCount: 1 },
   { name: 'foto_caminhao', maxCount: 1 },
+  { name: 'documento', maxCount: 1 }, // alias para foto_documento
+  { name: 'ficha', maxCount: 1 },     // alias para ficha_integracao
   { name: 'documento_ajudante', maxCount: 1 },
   { name: 'ficha_ajudante', maxCount: 1 }
 ]), async (req, res) => {
