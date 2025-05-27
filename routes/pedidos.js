@@ -61,30 +61,26 @@ router.get('/', async (req, res) => {
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.peso_registrado, p.desconto_peso, p.motivo_desconto, p.ticket_balanca,
+      p.ticket_balanca,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE 1 = 1
   `;
-
   const params = [];
 
   if (cliente) {
     sqlPedidos += " AND c.id = ?";
     params.push(cliente);
   }
-
   if (status) {
     sqlPedidos += " AND p.status = ?";
     params.push(status);
   }
-
   if (tipo) {
     sqlPedidos += " AND p.tipo = ?";
     params.push(tipo);
   }
-
   if (de && ate) {
     sqlPedidos += " AND DATE(p.data_criacao) BETWEEN ? AND ?";
     params.push(de, ate);
@@ -96,33 +92,30 @@ router.get('/', async (req, res) => {
     const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-  const [materiais] = await db.query(
-    `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
-     FROM itens_pedido
-     WHERE pedido_id = ?`,
-    [pedido.pedido_id]
-  );
+      const [materiais] = await db.query(
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
+         FROM itens_pedido
+         WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
 
-  // Para cada material, buscar seus descontos aplicados
-  for (const item of materiais) {
-    const [descontos] = await db.query(
-      `SELECT motivo, quantidade, peso_calculado
-       FROM descontos_item_pedido
-       WHERE item_id = ?`,
-      [item.id]
-    );
-    item.descontos = descontos || [];
-  }
+      for (const item of materiais) {
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
 
-  pedido.materiais = materiais;
-
-  // Mantém os dados adicionais que você já tinha
-  pedido.observacoes = pedido.observacao || '';
-  pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
-    .split('|')
-    .map(str => str.trim())
-    .filter(str => str.length > 0);
-}
+      pedido.materiais = materiais;
+      pedido.observacoes = pedido.observacao || '';
+      pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
+        .split('|')
+        .map(str => str.trim())
+        .filter(str => str.length > 0);
+    }
 
     res.json(pedidos);
   } catch (err) {
@@ -207,49 +200,10 @@ router.put('/:id/coleta', async (req, res) => {
 // PUT /api/pedidos/:id/carga
 router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
-  const { itens, desconto_peso, motivo_desconto } = req.body;
-  const nomeArquivo = req.file?.filename || null;
-
-  try {
-    await db.query(
-      `UPDATE pedidos
-       SET 
-         desconto_peso = ?, 
-         motivo_desconto = ?, 
-         ticket_balanca = ?, 
-         status = 'Aguardando Conferência do Peso'
-       WHERE id = ?`,
-      [desconto_peso || 0, motivo_desconto || '', nomeArquivo, id]
-    );
-
-    const listaItens = JSON.parse(itens || '[]');
-
-    if (Array.isArray(listaItens)) {
-      for (const item of listaItens) {
-        await db.query(
-          `UPDATE itens_pedido 
-           SET peso_carregado = ? 
-           WHERE id = ?`,
-          [item.peso_carregado, item.item_id]
-        );
-      }
-    }
-
-    res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao finalizar tarefa de carga:', error);
-    res.status(500).json({ erro: 'Erro ao finalizar tarefa de carga.' });
-  }
-});
-
-// PUT /api/pedidos/:id/carga
-router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
-  const { id } = req.params;
   const { itens } = req.body;
   const nomeArquivo = req.file?.filename || null;
 
   try {
-    // Atualiza status do pedido e anexa o ticket
     await db.query(
       `UPDATE pedidos
        SET 
@@ -263,7 +217,6 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
 
     if (Array.isArray(listaItens)) {
       for (const item of listaItens) {
-        // Atualiza o peso carregado
         await db.query(
           `UPDATE itens_pedido 
            SET peso_carregado = ? 
@@ -271,13 +224,11 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
           [item.peso_carregado, item.item_id]
         );
 
-        // Remove descontos anteriores para evitar duplicações
         await db.query(
           `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
           [item.item_id]
         );
 
-        // Insere novos descontos, se houver
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
             await db.query(
@@ -312,4 +263,3 @@ router.get('/produtos', async (req, res) => {
 });
 
 module.exports = router;
-
