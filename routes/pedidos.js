@@ -229,45 +229,58 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
   }
 });
 
-// PUT /api/pedidos/:id/conferencia
-router.put('/:id/conferencia', async (req, res) => {
-  const pedidoId = req.params.id;
+// PUT /api/pedidos/:id/carga
+router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
+  const { id } = req.params;
+  const { itens } = req.body;
+  const nomeArquivo = req.file?.filename || null;
 
   try {
-    const [result] = await db.query(
-      'UPDATE pedidos SET status = ? WHERE id = ?',
-      ['Em Análise pelo Financeiro', pedidoId]
+    // Atualiza status do pedido e anexa o ticket
+    await db.query(
+      `UPDATE pedidos
+       SET 
+         ticket_balanca = ?, 
+         status = 'Aguardando Conferência do Peso'
+       WHERE id = ?`,
+      [nomeArquivo, id]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ erro: 'Pedido não encontrado.' });
+    const listaItens = JSON.parse(itens || '[]');
+
+    if (Array.isArray(listaItens)) {
+      for (const item of listaItens) {
+        // Atualiza o peso carregado
+        await db.query(
+          `UPDATE itens_pedido 
+           SET peso_carregado = ? 
+           WHERE id = ?`,
+          [item.peso_carregado, item.item_id]
+        );
+
+        // Remove descontos anteriores para evitar duplicações
+        await db.query(
+          `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
+          [item.item_id]
+        );
+
+        // Insere novos descontos, se houver
+        if (Array.isArray(item.descontos)) {
+          for (const desc of item.descontos) {
+            await db.query(
+              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
+               VALUES (?, ?, ?, ?)`,
+              [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
+            );
+          }
+        }
+      }
     }
 
-    res.json({ sucesso: true, mensagem: 'Peso confirmado e enviado para o financeiro.' });
+    res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
   } catch (error) {
-    console.error('Erro ao confirmar peso:', error);
-    res.status(500).json({ erro: 'Erro ao confirmar peso.' });
-  }
-});
-
-// POST /api/pedidos/produtos/novo
-router.post('/produtos/novo', async (req, res) => {
-  const { nome_produto, unidade } = req.body;
-
-  if (!nome_produto || !unidade) {
-    return res.status(400).json({ erro: 'Nome do produto e unidade são obrigatórios.' });
-  }
-
-  try {
-    await db.query(
-      `INSERT INTO produtos (nome, unidade) VALUES (?, ?)`,
-      [nome_produto, unidade]
-    );
-
-    res.status(201).json({ mensagem: 'Produto cadastrado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao cadastrar produto:', error);
-    res.status(500).json({ erro: 'Erro ao cadastrar produto.' });
+    console.error('Erro ao finalizar tarefa de carga:', error);
+    res.status(500).json({ erro: 'Erro ao finalizar tarefa de carga.' });
   }
 });
 
