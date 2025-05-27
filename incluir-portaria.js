@@ -81,12 +81,7 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
       nomeInput.value = dados.nome;
       nomeInput.disabled = true;
 
-      let vencido = false;
-      if (dados.data_permissao) {
-        const dataPermissao = new Date(dados.data_permissao);
-        const dias = diferencaDias(dataPermissao, new Date());
-        vencido = dias > 90;
-      }
+      let vencido = dados.cadastroVencido === true;
 
       if (vencido) {
         alerta.className = 'alerta-vencido';
