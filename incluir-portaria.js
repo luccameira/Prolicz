@@ -42,11 +42,11 @@ function diferencaDias(dataInicial, dataFinal) {
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
-  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf-${pedidoId}`;
-  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
-  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro-${pedidoId}`;
-  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc-${pedidoId}`;
-  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha-${pedidoId}`;
+  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro`;
+  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc`;
+  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha`;
   const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${indice}` : `grupo-ficha-${pedidoId}`;
   const grupoDocId = isAjudante ? `grupo-doc-ajudante-${indice}` : `grupo-doc-${pedidoId}`;
   const cardId = isAjudante ? `card-ajudante-${indice}` : `bloco-form-${pedidoId}`;
@@ -64,8 +64,7 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   blocoForm.style.display = 'block';
 
   try {
-    const cpfLimpo = cpf.replace(/\D/g, '');
-    const res = await fetch(`/api/motoristas/${cpfLimpo}`);
+    const res = await fetch(`/api/motoristas/${cpf.replace(/\D/g, '')}`);
     grupoFicha.style.display = 'block';
     grupoDoc.style.display = 'block';
     fichaInput.required = true;
@@ -214,10 +213,8 @@ async function carregarPedidosPortaria() {
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
-        const cpfInput = form.querySelector(`#cpf-${pedidoId}`);
-        const placaInput = form.querySelector(`#placa-${pedidoId}`);
-        aplicarMascaraCPF(cpfInput);
-        aplicarMascaraPlaca(placaInput);
+        aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
+        aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
       });
     }
 
@@ -231,81 +228,65 @@ document.addEventListener('change', function (e) {
     const pedidoId = e.target.dataset.pedido;
     const valor = e.target.value;
     const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-    container.innerHTML = '';
+
     if (valor === 'sim') {
-      exibirCardAjudante(pedidoId, 0);
+      const index = container.children.length;
+      const idSuffix = `${pedidoId}-${index}`;
+      const div = document.createElement('div');
+      div.className = 'subcard';
+      div.id = `card-ajudante-${idSuffix}`;
+      div.style = "padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
+
+      div.innerHTML = `
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante ${index + 1}</label>
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="max-width: 300px; flex: none;">
+            <label>CPF do Ajudante</label>
+            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
+          </div>
+          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label>Nome do Ajudante</label>
+          <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
+
+          <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
+            <label>Ficha de Integração Assinada (ajudante)</label>
+            <div class="upload-wrapper" style="position: relative;">
+              <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
+            </div>
+          </div>
+
+          <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
+            <label>Foto do Documento (ajudante)</label>
+            <div class="upload-wrapper" style="position: relative;">
+              <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
+            </div>
+          </div>
+
+          <label style="margin-top: 12px;">Tem mais um ajudante?</label>
+          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
+            <option value="">Selecione</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+      `;
+
+      container.appendChild(div);
+      const cpfInput = div.querySelector(`#cpf-ajudante-${idSuffix}`);
+      aplicarMascaraCPF(cpfInput);
+    } else if (valor === 'nao') {
+      container.innerHTML = '';
     }
   }
 });
 
-function exibirCardAjudante(pedidoId, indice) {
-  const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-  const novoCard = document.createElement('div');
-  novoCard.className = 'subcard';
-  novoCard.style.cssText = 'padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-top: 20px;';
-  novoCard.id = `card-ajudante-${indice}`;
-
-  novoCard.innerHTML = `
-    <div style="display: flex; align-items: flex-end; gap: 12px;">
-      <div style="max-width: 300px; flex: none;">
-        <label>CPF do Ajudante</label>
-        <input type="text" id="cpf-ajudante-${indice}" data-pedido="${pedidoId}" data-index="${indice}" placeholder="Digite o CPF do ajudante" required>
-      </div>
-      <div id="status-cadastro-ajudante-${indice}" style="display: none; flex: 1;"></div>
-    </div>
-
-    <div style="margin-top: 20px;">
-      <label>Nome do Ajudante</label>
-      <input type="text" id="nome-ajudante-${indice}" placeholder="Nome completo do ajudante" required>
-
-      <div id="grupo-ficha-ajudante-${indice}" style="margin-top: 12px;">
-        <label>Ficha de Integração Assinada (ajudante)</label>
-        <div class="upload-wrapper" style="position: relative;">
-          <input type="file" id="ficha-ajudante-${indice}" accept="image/*" required>
-        </div>
-      </div>
-
-      <div id="grupo-doc-ajudante-${indice}" style="margin-top: 12px;">
-        <label>Foto do Documento (ajudante)</label>
-        <div class="upload-wrapper" style="position: relative;">
-          <input type="file" id="doc-ajudante-${indice}" accept="image/*" required>
-        </div>
-      </div>
-    </div>
-
-    <div class="mais-ajudante" style="margin-top: 20px;">
-      <label>Tem mais um ajudante?</label>
-      <select id="tem-mais-ajudante-${indice}" data-pedido="${pedidoId}" data-indice="${indice}" required>
-        <option value="">Selecione</option>
-        <option value="sim">Sim</option>
-        <option value="nao">Não</option>
-      </select>
-    </div>
-  `;
-
-  container.appendChild(novoCard);
-
-  aplicarMascaraCPF(novoCard.querySelector(`#cpf-ajudante-${indice}`));
-
-  const dropdownMais = novoCard.querySelector(`#tem-mais-ajudante-${indice}`);
-  dropdownMais.addEventListener('change', e => {
-    const valor = e.target.value;
-    const proximoIndice = parseInt(indice) + 1;
-
-    if (valor === 'sim') {
-      exibirCardAjudante(pedidoId, proximoIndice);
-    } else if (valor === 'nao') {
-      // Remove todos os ajudantes após este índice
-      let atual = proximoIndice;
-      while (document.getElementById(`card-ajudante-${atual}`)) {
-        document.getElementById(`card-ajudante-${atual}`).remove();
-        atual++;
-      }
-    }
-  });
-}
-
 async function registrarColeta(pedidoId, botao) {
+  const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
+  if (!confirmar) return;
+
   const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
   const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
   const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
@@ -318,31 +299,32 @@ async function registrarColeta(pedidoId, botao) {
     return;
   }
 
-  if (!confirm('Tem certeza que deseja iniciar a coleta?')) return;
-
   botao.disabled = true;
   botao.innerText = 'Enviando...';
 
   const formData = new FormData();
   formData.append('cpf', cpf);
   formData.append('placa', placa);
-  formData.append('foto_caminhao', caminhaoInput.files[0]);
   if (nome) formData.append('nome', nome);
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
-  if (docInput?.files.length) formData.append('documento', docInput.files[0]);
+  if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
+  formData.append('foto_caminhao', caminhaoInput.files[0]);
 
-  const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-  const ajudantes = container.querySelectorAll('[id^="card-ajudante-"]');
-  ajudantes.forEach((card, i) => {
-    const cpfAj = card.querySelector(`#cpf-ajudante-${i}`)?.value.trim();
-    const nomeAj = card.querySelector(`#nome-ajudante-${i}`)?.value.trim();
-    const fichaAj = card.querySelector(`#ficha-ajudante-${i}`)?.files[0];
-    const docAj = card.querySelector(`#doc-ajudante-${i}`)?.files[0];
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  const nomeAjudante = [];
+
+  ajudantes.forEach((card, index) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
+
     if (cpfAj && nomeAj) {
-      formData.append(`cpf_ajudante_${i}`, cpfAj);
-      formData.append(`nome_ajudante_${i}`, nomeAj);
-      if (fichaAj) formData.append(`ficha_ajudante_${i}`, fichaAj);
-      if (docAj) formData.append(`documento_ajudante_${i}`, docAj);
+      formData.append('cpf_ajudante', cpfAj);
+      formData.append('nome_ajudante', nomeAj);
+      if (fichaAj) formData.append('ficha_ajudante', fichaAj);
+      if (docAj) formData.append('documento_ajudante', docAj);
+      nomeAjudante.push(nomeAj);
     }
   });
 
@@ -351,12 +333,13 @@ async function registrarColeta(pedidoId, botao) {
       method: 'POST',
       body: formData
     });
+
     if (!res.ok) throw new Error();
 
     await fetch(`/api/pedidos/${pedidoId}/coleta`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placa, motorista: nome, ajudante: '' })
+      body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante.join(', ') })
     });
 
     alert('Coleta iniciada com sucesso!');
