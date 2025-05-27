@@ -49,44 +49,58 @@ async function carregarPedidosConferencia() {
     `;
     card.appendChild(header);
 
-    const form = document.createElement('div');
+        const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
     if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
         const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-        form.innerHTML += `
+        const pesoCarregado = parseFloat(item.peso_carregado || 0);
+        const descontos = item.descontos || [];
+
+        // Soma dos pesos dos descontos aplicados
+        const totalDescontos = descontos.reduce((acc, d) => acc + (parseFloat(d.peso_calculado) || 0), 0);
+        const pesoFinal = pesoCarregado - totalDescontos;
+
+        let bloco = `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
             <p><strong>${tipoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
-            <label for="peso-carregado-${idPedido}">Peso Carregado (kg):</label>
-            <input type="number" id="peso-carregado-${idPedido}" value="${item.peso_carregado || ''}" readonly>
+            <label>Peso Carregado (kg):</label>
+            <input type="number" value="${pesoCarregado}" readonly>
+        `;
+
+        // Exibir descontos aplicados (se houver)
+        if (descontos.length > 0) {
+          bloco += `<div style="margin-top: 12px;"><strong>Descontos Aplicados:</strong><ul>`;
+          descontos.forEach(desc => {
+            bloco += `
+              <li>
+                ${desc.motivo}: 
+                ${desc.quantidade} ${desc.motivo.includes('Palete') ? 'unid.' : 'kg'} 
+                (−${formatarPeso(desc.peso_calculado)} kg)
+              </li>
+            `;
+          });
+          bloco += `</ul></div>`;
+        }
+
+        bloco += `
+            <p style="margin-top: 10px;"><strong>Peso Final:</strong> ${formatarPeso(pesoFinal)} kg</p>
           </div>
         `;
+
+        form.innerHTML += bloco;
       });
     }
 
-    // Exibe imagem do ticket da balança se existir
+        // Exibe imagem do ticket da balança se existir
     if (pedido.ticket_balanca) {
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
           <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px;">
-        </div>
-      `;
-    }
-
-    // Exibe desconto somente se houver
-    if (pedido.desconto_peso > 0 || pedido.motivo_desconto) {
-      const sufixo = pedido.motivo_desconto === 'Paletes' ? 'unidade' : 'kg';
-      const label = pedido.motivo_desconto === 'Paletes'
-        ? 'Desconto (quantidade de paletes)'
-        : 'Desconto (em quilos)';
-      form.innerHTML += `
-        <div class="grupo-desconto" style="margin-top: 20px;">
-          <p><strong>Motivo do Desconto:</strong> ${pedido.motivo_desconto || '—'}</p>
-          <p><strong>${label}:</strong> ${formatarPeso(pedido.desconto_peso)} ${sufixo}</p>
         </div>
       `;
     }
@@ -137,4 +151,5 @@ async function confirmarPeso(pedidoId, botao) {
 }
 
 document.addEventListener('DOMContentLoaded', carregarPedidosConferencia);
+
 
