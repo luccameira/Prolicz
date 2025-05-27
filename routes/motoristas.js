@@ -131,7 +131,7 @@ upload.fields([
     console.error('Erro ao cadastrar motorista ou ajudante:', err);
     res.status(500).json({ erro: 'Erro ao salvar os dados' });
   }
-});
+}
 
 // PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
 router.put('/:cpf/formulario', upload.fields([
