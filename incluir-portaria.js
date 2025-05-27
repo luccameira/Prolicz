@@ -198,13 +198,13 @@ async function carregarPedidosPortaria() {
         </div>
 
         <label style="margin-top: 12px;">Tem Ajudante?</label>
-        <select id="tem-ajudante-${pedidoId}" required>
+        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
           <option value="">Selecione</option>
           <option value="sim">Sim</option>
           <option value="nao">Não</option>
         </select>
 
-        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
+        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
 
         <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
       </div>
@@ -213,8 +213,8 @@ async function carregarPedidosPortaria() {
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
-        aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
-        aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
+        const cpfInput = form.querySelector(`#cpf-${pedidoId}`);
+        aplicarMascaraCPF(cpfInput);
       });
     }
 
@@ -222,6 +222,18 @@ async function carregarPedidosPortaria() {
     lista.appendChild(card);
   });
 }
+
+document.addEventListener('change', function (e) {
+  if (e.target.id.startsWith('tem-ajudante-')) {
+    const pedidoId = e.target.dataset.pedido;
+    const valor = e.target.value;
+    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+    container.innerHTML = '';
+    if (valor === 'sim') {
+      exibirCardAjudante(pedidoId, 0);
+    }
+  }
+});
 
 function exibirCardAjudante(pedidoId, indice) {
   const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
@@ -281,25 +293,16 @@ function exibirCardAjudante(pedidoId, indice) {
       exibirCardAjudante(pedidoId, proximoIndice);
     } else if (valor === 'nao') {
       // Remove todos os ajudantes após este índice
-      let remover = true;
       let atual = proximoIndice;
-
-      while (remover) {
-        const proximoCard = document.getElementById(`card-ajudante-${atual}`);
-        if (proximoCard) {
-          proximoCard.remove();
-          atual++;
-        } else {
-          remover = false;
-        }
+      while (document.getElementById(`card-ajudante-${atual}`)) {
+        document.getElementById(`card-ajudante-${atual}`).remove();
+        atual++;
       }
     }
   });
 }
 
 async function registrarColeta(pedidoId, botao) {
-  if (!confirm("Tem certeza que deseja iniciar a coleta?")) return;
-
   const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
   const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
   const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
@@ -312,6 +315,8 @@ async function registrarColeta(pedidoId, botao) {
     return;
   }
 
+  if (!confirm('Tem certeza que deseja iniciar a coleta?')) return;
+
   botao.disabled = true;
   botao.innerText = 'Enviando...';
 
@@ -323,23 +328,20 @@ async function registrarColeta(pedidoId, botao) {
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
   if (docInput?.files.length) formData.append('documento', docInput.files[0]);
 
-  // Processar ajudantes dinamicamente
-  let indice = 0;
-  while (document.getElementById(`cpf-ajudante-${indice}`)) {
-    const cpfA = document.getElementById(`cpf-ajudante-${indice}`)?.value.trim();
-    const nomeA = document.getElementById(`nome-ajudante-${indice}`)?.value.trim();
-    const docA = document.getElementById(`doc-ajudante-${indice}`)?.files[0];
-    const fichaA = document.getElementById(`ficha-ajudante-${indice}`)?.files[0];
-
-    if (cpfA && nomeA) {
-      formData.append(`cpf_ajudante_${indice}`, cpfA);
-      formData.append(`nome_ajudante_${indice}`, nomeA);
-      if (docA) formData.append(`documento_ajudante_${indice}`, docA);
-      if (fichaA) formData.append(`ficha_ajudante_${indice}`, fichaA);
+  const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+  const ajudantes = container.querySelectorAll('[id^="card-ajudante-"]');
+  ajudantes.forEach((card, i) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${i}`)?.value.trim();
+    const nomeAj = card.querySelector(`#nome-ajudante-${i}`)?.value.trim();
+    const fichaAj = card.querySelector(`#ficha-ajudante-${i}`)?.files[0];
+    const docAj = card.querySelector(`#doc-ajudante-${i}`)?.files[0];
+    if (cpfAj && nomeAj) {
+      formData.append(`cpf_ajudante_${i}`, cpfAj);
+      formData.append(`nome_ajudante_${i}`, nomeAj);
+      if (fichaAj) formData.append(`ficha_ajudante_${i}`, fichaAj);
+      if (docAj) formData.append(`documento_ajudante_${i}`, docAj);
     }
-
-    indice++;
-  }
+  });
 
   try {
     const res = await fetch('/api/motoristas', {
@@ -351,7 +353,7 @@ async function registrarColeta(pedidoId, botao) {
     await fetch(`/api/pedidos/${pedidoId}/coleta`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placa, motorista: nome })
+      body: JSON.stringify({ placa, motorista: nome, ajudante: '' })
     });
 
     alert('Coleta iniciada com sucesso!');
