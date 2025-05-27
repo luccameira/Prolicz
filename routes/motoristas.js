@@ -42,8 +42,9 @@ router.get('/:cpf', async (req, res) => {
 
     const [resultado] = await db.query(`
       SELECT * FROM motoristas 
-      WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ?
-    `, [cpfLimpo]);
+      WHERE cpf = ? 
+         OR REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = ?
+    `, [cpfLimpo, cpfLimpo]);
 
     if (!resultado || resultado.length === 0) {
       return res.status(404).json({ encontrado: false });
@@ -69,7 +70,7 @@ router.get('/:cpf', async (req, res) => {
 });
 
 // POST /api/motoristas → Cadastra motorista ou atualiza se já existir
-upload.fields([
+router.post('/', upload.fields([
   { name: 'foto_documento', maxCount: 1 },
   { name: 'ficha_integracao', maxCount: 1 },
   { name: 'foto_caminhao', maxCount: 1 },
@@ -131,7 +132,7 @@ upload.fields([
     console.error('Erro ao cadastrar motorista ou ajudante:', err);
     res.status(500).json({ erro: 'Erro ao salvar os dados' });
   }
-}
+});
 
 // PUT /api/motoristas/:cpf/formulario → Atualiza ficha e caminhão
 router.put('/:cpf/formulario', upload.fields([
