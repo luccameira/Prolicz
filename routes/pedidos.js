@@ -96,19 +96,34 @@ router.get('/', async (req, res) => {
     const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-      const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
-         FROM itens_pedido
-         WHERE pedido_id = ?`,
-        [pedido.pedido_id]
-      );
+  const [materiais] = await db.query(
+    `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
+     FROM itens_pedido
+     WHERE pedido_id = ?`,
+    [pedido.pedido_id]
+  );
 
-      pedido.materiais = materiais;
-      pedido.observacoes = pedido.observacao || '';
-      pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
-        .split('|')
-        .map(str => str.trim())
-        .filter(str => str.length > 0);
+  // Para cada material, buscar seus descontos aplicados
+  for (const item of materiais) {
+    const [descontos] = await db.query(
+      `SELECT motivo, quantidade, peso_calculado
+       FROM descontos_item_pedido
+       WHERE item_id = ?`,
+      [item.id]
+    );
+    item.descontos = descontos || [];
+  }
+
+  pedido.materiais = materiais;
+
+  // Mantém os dados adicionais que você já tinha
+  pedido.observacoes = pedido.observacao || '';
+  pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
+    .split('|')
+    .map(str => str.trim())
+    .filter(str => str.length > 0);
+}
+;
     }
 
     res.json(pedidos);
