@@ -13,13 +13,10 @@ function aplicarMascaraCPF(input) {
     input.value = v;
 
     if (v.length === 14) {
-      const id = input.dataset.index || '0';
-      const pedidoId = input.dataset.pedido;
-      if (input.id.startsWith("cpf-ajudante")) {
-        verificarCPF(pedidoId, true, id);
-      } else {
-        verificarCPF(pedidoId);
-      }
+      const isAjudante = input.id.startsWith("cpf-ajudante");
+      const pedidoId = input.dataset.pedido || '';
+      const index = input.dataset.index || '0';
+      verificarCPF(pedidoId, isAjudante, index);
     }
   });
 }
@@ -45,11 +42,11 @@ function diferencaDias(dataInicial, dataFinal) {
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
-  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf`;
-  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome`;
-  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro`;
-  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc`;
-  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha`;
+  const prefix = isAjudante ? `cpf-ajudante-${indice}` : `cpf-${pedidoId}`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro-${pedidoId}`;
+  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc-${pedidoId}`;
+  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha-${pedidoId}`;
   const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${indice}` : `grupo-ficha-${pedidoId}`;
   const grupoDocId = isAjudante ? `grupo-doc-ajudante-${indice}` : `grupo-doc-${pedidoId}`;
   const cardId = isAjudante ? `card-ajudante-${indice}` : `bloco-form-${pedidoId}`;
