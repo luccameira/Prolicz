@@ -3,14 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
   monitorarUploads();
 });
 
-function aplicarMascaraCPF(input) {
+function aplicarMascaraPlaca(input) {
   input.addEventListener('input', () => {
-    let v = input.value.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    v = v.replace(/(\d{3})(\d)/, '$1.$2');
-    v = v.replace(/(\d{3})(\d)/, '$1.$2');
-    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.length > 7) v = v.slice(0, 7);
+    if (v.length > 3) {
+      v = v.slice(0, 3) + '-' + v.slice(3);
+    }
     input.value = v;
+  });
+}
 
     if (v.length === 14) {
       const isAjudante = input.id.startsWith("cpf-ajudante");
