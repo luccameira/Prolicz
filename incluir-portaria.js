@@ -64,7 +64,8 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   blocoForm.style.display = 'block';
 
   try {
-    const res = await fetch(`/api/motoristas/${cpf}`);
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    const res = await fetch(`/api/motoristas/${cpfLimpo}`);
     grupoFicha.style.display = 'block';
     grupoDoc.style.display = 'block';
     fichaInput.required = true;
