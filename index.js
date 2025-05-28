@@ -3,29 +3,28 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-const connection = require('./db').promise(); // ✅ corrigido aqui
+const connection = require('./db'); // ✅ conexão com callback
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// Permite acesso à pasta uploads/tickets
+// ✅ Permite acesso à pasta uploads/tickets (para visualizar imagens do ticket da balança)
 app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
 
-// Rotas com conexão injetada (promise)
+// Rotas com conexão injetada
 function withConnection(routePath) {
   const router = require(routePath);
-  router.connection = connection;
+  router.connection = connection; // ✅ conexão callback
   return router;
 }
 
-// Registro das rotas
 app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos'));
 app.use('/api/usuarios', withConnection('./routes/usuarios'));
-app.use('/api/motoristas', require('./routes/motoristas')); // sem injeção
+app.use('/api/motoristas', require('./routes/motoristas')); // rota sem injeção
 
 // Redirecionamentos para páginas HTML
 app.get('/visualizar-venda', (req, res) => {
