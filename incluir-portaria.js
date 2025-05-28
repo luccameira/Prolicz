@@ -70,7 +70,7 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
     fichaInput.required = true;
     docInput.required = true;
 
-    if (res.status === 404) {
+        if (res.status === 404) {
       alerta.className = 'alerta-vencido';
       alerta.style.display = 'block';
       alerta.innerText = '🚫 Não possui cadastro.';
@@ -107,23 +107,17 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
 }
 
 async function carregarPedidosPortaria() {
-  const [resPendentes, resIniciados] = await Promise.all([
-    fetch('/api/pedidos?status=Aguardando%20In%C3%ADcio%20da%20Coleta'),
-    fetch('/api/pedidos?status=Coleta%20Iniciada')
-  ]);
-
-  const pendentes = await resPendentes.json();
-  const iniciados = await resIniciados.json();
+  const res = await fetch('/api/pedidos/portaria');
+  const pedidos = await res.json();
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
-  const todos = [...pendentes, ...iniciados];
-  if (!todos.length) {
+  if (!pedidos.length) {
     lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido encontrado.</p>";
     return;
   }
 
-  todos.forEach(pedido => {
+  pedidos.forEach(pedido => {
     const pedidoId = pedido.pedido_id || pedido.id;
     const finalizado = pedido.status === 'Coleta Iniciada';
 
@@ -152,59 +146,8 @@ async function carregarPedidosPortaria() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-        form.innerHTML = `
-      <div style="display: flex; align-items: flex-end; gap: 12px;">
-        <div style="max-width: 300px; flex: none;">
-          <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
-        </div>
-        <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
-      </div>
-
-      <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
-        <div style="display: flex; gap: 20px;">
-          <div style="flex: 1;">
-            <label>Nome do Motorista</label>
-            <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
-          </div>
-          <div style="flex: 1;">
-            <label>Placa do Veículo</label>
-            <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
-          </div>
-        </div>
-
-        <label style="margin-top: 12px;">Foto do Caminhão</label>
-        <div class="upload-wrapper" style="position: relative;">
-          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
-        </div>
-
-        <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
-          <label>Ficha de Integração Assinada (motorista)</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
-          </div>
-        </div>
-
-        <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
-          <label>Foto do Documento (motorista)</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="doc-${pedidoId}" accept="image/*" required>
-          </div>
-        </div>
-
-        <label style="margin-top: 12px;">Tem Ajudante?</label>
-        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
-          <option value="">Selecione</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
-
-        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
-
-        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
-      </div>
-    `;
-
+    form.innerHTML = gerarFormularioPortaria(pedidoId);
+    
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
@@ -218,58 +161,62 @@ async function carregarPedidosPortaria() {
   });
 }
 
-document.addEventListener('change', function (e) {
-  if (e.target.id.startsWith('tem-ajudante-')) {
-    const pedidoId = e.target.dataset.pedido;
-    const valor = e.target.value;
-    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+function gerarFormularioPortaria(pedidoId) {
+  return `
+    <div style="display: flex; align-items: flex-end; gap: 12px;">
+      <div style="max-width: 300px; flex: none;">
+        <label>CPF do Motorista</label>
+        <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
+      </div>
+      <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
+    </div>
 
-    if (valor === 'sim') {
-      const index = container.children.length;
-      const idSuffix = `${pedidoId}-${index}`;
-      const div = document.createElement('div');
-      div.className = 'subcard';
-      div.id = `card-ajudante-${idSuffix}`;
-      div.style = "padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
-
-      div.innerHTML = `
-        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante ${index + 1}</label>
-        <div style="display: flex; align-items: flex-end; gap: 12px;">
-          <div style="max-width: 300px; flex: none;">
-            <label>CPF do Ajudante</label>
-            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
-          </div>
-          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
+    <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
+      <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+          <label>Nome do Motorista</label>
+          <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
         </div>
-
-        <div style="margin-top: 20px;">
-          <label>Nome do Ajudante</label>
-          <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
-
-          <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
-            <label>Ficha de Integração Assinada (ajudante)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
-            </div>
-          </div>
-
-          <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
-            <label>Foto do Documento (ajudante)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
-            </div>
-          </div>
-
-          <label style="margin-top: 12px;">Tem mais um ajudante?</label>
-          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
+        <div style="flex: 1;">
+          <label>Placa do Veículo</label>
+          <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
         </div>
-      `;
+      </div>
 
-      container.appendChild(div);
+      <label style="margin-top: 12px;">Foto do Caminhão</label>
+      <div class="upload-wrapper" style="position: relative;">
+        <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+      </div>
+
+      <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
+        <label>Ficha de Integração Assinada (motorista)</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+        </div>
+      </div>
+
+      <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
+        <label>Foto do Documento (motorista)</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+        </div>
+      </div>
+
+      <label style="margin-top: 12px;">Tem Ajudante?</label>
+      <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
+        <option value="">Selecione</option>
+        <option value="sim">Sim</option>
+        <option value="nao">Não</option>
+      </select>
+
+      <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
+
+      <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
+    </div>
+  `;
+}
+
+ container.appendChild(div);
       const cpfInput = div.querySelector(`#cpf-ajudante-${idSuffix}`);
       aplicarMascaraCPF(cpfInput);
    } else if (valor === 'nao') {
