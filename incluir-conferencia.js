@@ -43,12 +43,12 @@ async function carregarPedidosConferencia() {
     header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
-        <p>Da`
-       <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
+        <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
       </div>
       ${statusHtml}
     `;
-    card.appendChild(header);
+
+        card.appendChild(header);
 
     const form = document.createElement('div');
     form.className = 'formulario';
@@ -153,3 +153,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+
