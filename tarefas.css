@@ -602,3 +602,13 @@ input[type="file"]::file-selector-button:hover {
   gap: 6px;
 }
 
+.etiqueta-peso-final {
+  display: inline-block;
+  background-color: #e6f4ea;
+  color: #1e7e34;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 15px;
+}
+
