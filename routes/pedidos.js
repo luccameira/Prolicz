@@ -5,13 +5,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-// Criação da pasta uploads/tickets se necessário
 const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
 if (!fs.existsSync(pastaTickets)) {
   fs.mkdirSync(pastaTickets, { recursive: true });
 }
 
-// Configuração do multer para o ticket da balança
 const storageTickets = multer.diskStorage({
   destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
@@ -27,7 +25,6 @@ function formatarDataBRparaISO(dataBR) {
   return `${ano}-${mes}-${dia}`;
 }
 
-// GET /api/pedidos/carga
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
@@ -61,7 +58,7 @@ router.get('/', async (req, res) => {
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
+      p.ticket_balanca, p.valor_total,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -93,7 +90,7 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
@@ -248,20 +245,6 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
   }
 });
 
-// GET /api/pedidos/produtos
-router.get('/produtos', async (req, res) => {
-  try {
-    const [produtos] = await db.query(
-      `SELECT nome AS nome_produto, unidade, criado_em AS data_cadastro FROM produtos ORDER BY criado_em DESC`
-    );
-
-    res.json(produtos);
-  } catch (error) {
-    console.error('Erro ao buscar produtos:', error);
-    res.status(500).json({ erro: 'Erro ao buscar produtos.' });
-  }
-});
-
 // PUT /api/pedidos/:id/conferencia
 router.put('/:id/conferencia', async (req, res) => {
   const { id } = req.params;
@@ -280,6 +263,24 @@ router.put('/:id/conferencia', async (req, res) => {
   } catch (erro) {
     console.error('Erro ao confirmar peso:', erro);
     res.status(500).json({ erro: 'Erro ao confirmar peso' });
+  }
+});
+
+// PUT /api/pedidos/:id/financeiro
+router.put('/:id/financeiro', async (req, res) => {
+  const { id } = req.params;
+  const { observacoes_financeiro } = req.body;
+
+  try {
+    await db.query(
+      `UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?`,
+      ['Aguardando Emissão de NF', observacoes_financeiro, id]
+    );
+
+    res.json({ mensagem: 'Cliente liberado com sucesso!' });
+  } catch (erro) {
+    console.error('Erro ao atualizar status financeiro:', erro);
+    res.status(500).json({ erro: 'Erro ao liberar cliente.' });
   }
 });
 
