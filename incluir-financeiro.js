@@ -53,14 +53,16 @@ async function carregarPedidosFinanceiro() {
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginBottom = '20px';
 
-    const valorParcela = pedido.valor_total / (pedido.prazos_pagamento?.length || 1);
+    const valorParcela = (pedido.valor_total || 0) / (pedido.prazos_pagamento?.length || 1);
+
     const vencimentosHTML = (pedido.prazos_pagamento || []).map((data, index) => {
+      const dataValida = !isNaN(new Date(data));
       return `
         <p style="margin-bottom: 6px;">
           <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; margin-right:6px; font-weight: 500;">
             Vencimento ${index + 1}
           </span>
-          ${formatarData(data)} - Valor: R$ ${valorParcela.toFixed(2)}
+          ${dataValida ? formatarData(data) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
         </p>
       `;
     }).join('');
@@ -89,8 +91,8 @@ async function carregarPedidosFinanceiro() {
       cardMaterial.style.marginBottom = '16px';
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
-        <p>Peso Carregado: ${item.peso} kg</p>
-        <p>Valor do Item: R$ ${item.valor_total?.toFixed(2)}</p>
+        <p>Peso Carregado: ${item.quantidade || item.peso_carregado || '—'} kg</p>
+        <p>Valor do Item: R$ ${item.valor_total?.toFixed(2) || '—'}</p>
       `;
       form.appendChild(cardMaterial);
     });
