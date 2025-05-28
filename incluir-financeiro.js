@@ -92,7 +92,7 @@ async function carregarPedidosFinanceiro() {
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
         <p>Peso Carregado: ${item.quantidade || item.peso_carregado || '—'} kg</p>
-        <p>Valor do Item: R$ ${item.valor_total?.toFixed(2) || '—'}</p>
+        <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
       `;
       form.appendChild(cardMaterial);
     });
