@@ -542,3 +542,63 @@ input[type="file"]::file-selector-button:hover {
   align-items: center;
   gap: 6px;
 }
+
+.material-bloco {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 18px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.material-bloco h4 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+}
+
+.material-bloco p {
+  font-size: 15px;
+  margin: 6px 0;
+  color: #333;
+}
+
+.material-bloco ul {
+  margin-top: 6px;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #444;
+}
+
+.material-bloco ul li {
+  margin-bottom: 4px;
+}
+
+/* Bloco amarelo de desconto */
+.material-bloco .descontos-aplicados {
+  background-color: #fff9e6;
+  border: 1px solid #ffe08a;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 14px;
+}
+
+.material-bloco .descontos-aplicados p {
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #000;
+}
+
+.material-bloco .linha-final {
+  font-size: 15px;
+  font-weight: bold;
+  color: #000;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
