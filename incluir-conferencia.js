@@ -81,6 +81,7 @@ async function carregarPedidosConferencia() {
         }
 
         const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
+        const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
 
         form.innerHTML += `
           <div class="material-bloco">
@@ -88,22 +89,58 @@ async function carregarPedidosConferencia() {
             <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
             <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
             ${descontosHTML}
-           <div style="margin-top: 14px;">
-             <span class="etiqueta-peso-final">
-              Peso Final: ${pesoFinal} ${item.unidade || 'Kg'}
-             </span>
+            <div style="margin-top: 14px;">
+              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+            </div>
           </div>
         `;
       });
     }
 
     if (pedido.ticket_balanca) {
+      const ticketId = `ticket-${pedido.id}`;
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
-          <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px;">
+          <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
         </div>
       `;
+      setTimeout(() => {
+        document.getElementById(ticketId)?.addEventListener('click', () => {
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.top = '0';
+          overlay.style.left = '0';
+          overlay.style.width = '100%';
+          overlay.style.height = '100%';
+          overlay.style.background = 'rgba(0,0,0,0.7)';
+          overlay.style.display = 'flex';
+          overlay.style.alignItems = 'center';
+          overlay.style.justifyContent = 'center';
+          overlay.style.zIndex = '9999';
+
+          const modalImg = document.createElement('img');
+          modalImg.src = `/uploads/tickets/${pedido.ticket_balanca}`;
+          modalImg.style.maxWidth = '90%';
+          modalImg.style.maxHeight = '90%';
+          modalImg.style.borderRadius = '8px';
+
+          const closeBtn = document.createElement('div');
+          closeBtn.innerHTML = '&times;';
+          closeBtn.style.position = 'absolute';
+          closeBtn.style.top = '20px';
+          closeBtn.style.right = '30px';
+          closeBtn.style.fontSize = '40px';
+          closeBtn.style.color = '#fff';
+          closeBtn.style.cursor = 'pointer';
+
+          overlay.appendChild(modalImg);
+          overlay.appendChild(closeBtn);
+          document.body.appendChild(overlay);
+
+          closeBtn.onclick = () => document.body.removeChild(overlay);
+        });
+      }, 100);
     }
 
     if (!finalizado) {
@@ -124,7 +161,8 @@ async function carregarPedidosConferencia() {
 }
 
 async function confirmarPeso(pedidoId, botao) {
-  if (!confirm("Tem certeza que deseja confirmar o peso deste pedido?")) return;
+  const confirmar = confirm("Tem certeza que deseja confirmar o peso deste pedido?");
+  if (!confirmar) return;
 
   botao.disabled = true;
   botao.innerText = 'Enviando...';
@@ -160,3 +198,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+    
