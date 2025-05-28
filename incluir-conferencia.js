@@ -134,8 +134,10 @@ async function confirmarPeso(pedidoId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidos();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidos);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidos);
+  carregarPedidosConferencia();
 });
+
+document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
+document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
+
 
