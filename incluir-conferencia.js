@@ -43,7 +43,8 @@ async function carregarPedidosConferencia() {
     header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
-        <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
+        <p>Da`
+       <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
       </div>
       ${statusHtml}
     `;
@@ -53,91 +54,102 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-      if (Array.isArray(pedido.materiais)) {
-      pedido.materiais.forEach(material => {
-        const pesoCarregado = formatarPeso(material.peso_carregado);
-        const pesoOriginal = formatarPeso(material.quantidade);
-        const unidade = material.unidade || 'kg';
-        const tipoPeso = material.tipo_peso === 'Exato' ? 'Peso Exato' : 'Peso Aproximado';
-        const icone = material.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
+    if (Array.isArray(pedido.materiais)) {
+      pedido.materiais.forEach(item => {
+        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+        const pesoCarregado = formatarPeso(item.peso_carregado);
+        let descontosHTML = '';
+        let totalDescontos = 0;
 
-        let descontoHtml = '';
-        let pesoDescontadoTotal = 0;
+        if (item.descontos && item.descontos.length > 0) {
+          const linhas = item.descontos.map(desc => {
+            const qtd = formatarPeso(desc.quantidade);
+            const peso = formatarPeso(desc.peso_calculado);
+            totalDescontos += Number(desc.peso_calculado || 0);
 
-        if (Array.isArray(material.descontos) && material.descontos.length > 0) {
-          descontoHtml += `<div class="descontos-lista">`;
-          material.descontos.forEach(desc => {
-            pesoDescontadoTotal += Number(desc.peso_calculado || 0);
-            descontoHtml += `
-              <div class="linha-desconto-item">
-                <span class="badge-motivo">${desc.motivo}</span>
-                <span class="quantidade-desconto">${desc.quantidade} ${desc.motivo.includes('Palete') ? 'un' : 'kg'}</span>
-                <span class="peso-calculado">(-${formatarPeso(desc.peso_calculado)} kg)</span>
-              </div>
-            `;
-          });
-          descontoHtml += `</div>`;
+            const sufixo = desc.motivo.includes('Palete') ? 'unid.' : 'kg';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} kg)</li>`;
+          }).join('');
+
+          descontosHTML = `
+            <p style="margin: 10px 0 0;"><strong>Descontos Aplicados:</strong></p>
+            <ul style="margin-top: 4px; padding-left: 18px;">${linhas}</ul>
+          `;
         }
 
-        const pesoFinal = Math.max(0, Number(material.peso_carregado || 0) - pesoDescontadoTotal);
-        const pesoFinalFormatado = formatarPeso(pesoFinal);
+        const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
 
         form.innerHTML += `
           <div class="material-bloco">
-            <h4>${material.nome_produto}</h4>
-            <p><strong>${tipoPeso}:</strong> ${pesoOriginal} ${unidade} ${icone}</p>
-            <p><strong>Peso Carregado:</strong> ${pesoCarregado} kg</p>
-            ${descontoHtml}
-            <p class="peso-final">
-              <strong>Peso Final Considerado:</strong> <span class="badge-final">${pesoFinalFormatado} kg</span>
-            </p>
+            <h4>${item.nome_produto}</h4>
+            <p><strong>${tipoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
+            <label>Peso Carregado (kg):</label>
+            <input type="number" value="${pesoCarregado}" readonly>
+            ${descontosHTML}
+            <p style="margin-top: 10px;"><strong>Peso Final:</strong> ${pesoFinal} kg</p>
           </div>
         `;
       });
-
-      if (!finalizado) {
-        form.innerHTML += `
-          <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido})">Confirmar Peso</button>
-        `;
-      }
     }
 
-        form.style.display = 'none';
-    header.addEventListener('click', () => {
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+    if (pedido.ticket_balanca) {
+      form.innerHTML += `
+        <div style="margin-top: 20px;">
+          <label style="font-weight: bold;">Ticket da Balança:</label><br>
+          <img src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px;">
+        </div>
+      `;
+    }
 
-    div.appendChild(form);
-    lista.appendChild(div);
+    if (!finalizado) {
+      form.innerHTML += `
+        <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
+      `;
+    }
+
+    if (!finalizado) {
+      header.addEventListener('click', () => {
+        form.style.display = form.style.display === 'block' ? 'none' : 'block';
+      });
+    }
+
+    card.appendChild(form);
+    lista.appendChild(card);
   });
 }
 
-async function confirmarPeso(pedidoId) {
-  if (!confirm('Tem certeza que deseja confirmar o peso deste pedido?')) return;
+async function confirmarPeso(pedidoId, botao) {
+  if (!confirm("Tem certeza que deseja confirmar o peso deste pedido?")) return;
+
+  botao.disabled = true;
+  botao.innerText = 'Enviando...';
 
   try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/confirmar-peso`, {
-      method: 'PUT'
+    const res = await fetch(`/api/pedidos/${pedidoId}/conferencia`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
     });
 
     const data = await res.json();
+
     if (res.ok) {
       alert('Peso confirmado com sucesso!');
-      carregarPedidos();
+      carregarPedidosConferencia();
     } else {
       alert(data.erro || 'Erro ao confirmar peso.');
+      botao.disabled = false;
+      botao.innerText = 'Confirmar Peso';
     }
   } catch (error) {
     console.error('Erro ao confirmar peso:', error);
-    alert('Erro de conexão ao confirmar peso.');
+    alert('Erro de comunicação com o servidor.');
+    botao.disabled = false;
+    botao.innerText = 'Confirmar Peso';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
+  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
+  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-
-document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
-document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
-
-
