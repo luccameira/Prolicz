@@ -3,408 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <title>Novo Cliente</title>
-  <link rel="stylesheet" href="layout.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-  <script defer src="incluir-layout.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f6fa;
-    }
-
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
-    .container {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 800px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
-    label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      font-size: 14px;
-    }
-
-    .telefone-group, .email-group, .contato-group, .produto-group, .prazo-group {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .remover-btn {
-      background-color: #e0e0e0;
-      color: black;
-      border: none;
-      border-radius: 8px;
-      width: 28px;
-      height: 28px;
-      font-size: 16px;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .remover-btn:hover {
-      background-color: #d0d0d0;
-    }
-
-    .btn-adicionar {
-      background-color: #007bff;
-      color: white;
-      width: auto;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .hidden { display: none; }
-  </style>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="formulario.css">
+  <script src="incluir-layout.js" defer></script>
+  <script src="novo-cliente.js" defer></script>
 </head>
 <body>
   <div class="topbar"></div>
   <div class="sidebar"></div>
-  <div class="main-content">
-    <div class="container">
-      <h1>Novo Cliente</h1>
-      <form id="formCliente">
-        <label for="tipoPessoa">Tipo de Pessoa</label>
-        <select id="tipoPessoa" required onchange="atualizarCamposPessoa()">
-          <option value="juridica">Jurídica</option>
-          <option value="fisica">Física</option>
-        </select>
 
-        <label id="labelDocumento" for="documento">CNPJ</label>
-        <input type="text" id="documento" required>
-
-        <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
-        <input type="text" id="nomeFantasia" required>
-
-                <div id="divSituacaoTributaria">
-          <label for="situacaoTributaria">Situação Tributária</label>
-          <select id="situacaoTributaria">
-            <option value="">Selecione</option>
-            <option value="simples">Simples Nacional</option>
-            <option value="lucroPresumido">Lucro Presumido</option>
-            <option value="lucroReal">Lucro Real</option>
-          </select>
-        </div>
-
-        <label for="codigoFiscal">Código Fiscal</label>
-        <select id="codigoFiscal" required>
-          <option value="">Selecione</option>
-          <option value="GA1">GA1</option>
-          <option value="GA2">GA2</option>
-          <option value="GAX">GAX</option>
-        </select>
-
-        <h3>Produtos Autorizados</h3>
-        <div id="produtosAutorizados"></div>
-        <button type="button" class="btn-adicionar" onclick="adicionarProdutoAutorizado()">+ Adicionar Produto</button>
-
-        <h3>Prazos de Pagamento Permitidos</h3>
-        <div id="prazosPagamento">
-          <div class="prazo-group">
-            <input type="text" class="prazo-descricao" placeholder="Ex: À vista" required>
-            <input type="number" class="prazo-dias" placeholder="Dias após a coleta" required min="0">
-            <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+  <div class="content">
+    <h1 class="titulo-pagina">Novo Cliente</h1>
+    <form id="form-cliente">
+      <div class="form-section">
+        <h2>Dados Básicos</h2>
+        <div class="linha">
+          <div class="campo">
+            <label for="tipo_pessoa">Tipo de Pessoa</label>
+            <select id="tipo_pessoa" name="tipo_pessoa" required>
+              <option value="">Selecione</option>
+              <option value="Física">Física</option>
+              <option value="Jurídica">Jurídica</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="documento">CPF/CNPJ</label>
+            <input type="text" id="documento" name="documento" required>
           </div>
         </div>
-        <button type="button" class="btn-adicionar" onclick="adicionarPrazoPagamento()">+ Adicionar Prazo</button>
 
-        <h3>Endereço</h3>
-        <label for="cep">CEP</label>
-        <input type="text" id="cep" required onblur="buscarEndereco()">
-
-        <label for="logradouro">Logradouro</label>
-        <input type="text" id="logradouro" required>
-
-        <label for="numero">Número</label>
-        <input type="text" id="numero" required>
-
-        <label for="bairro">Bairro</label>
-        <input type="text" id="bairro" required>
-
-        <label for="cidade">Cidade</label>
-        <input type="text" id="cidade" required>
-
-        <label for="estado">Estado</label>
-        <select id="estado" required>
-          <option value="">Selecione</option>
-          <option value="SP">SP</option>
-          <option value="RJ">RJ</option>
-          <option value="MG">MG</option>
-          <option value="RS">RS</option>
-        </select>
-
-        <h3>Contato</h3>
-        <div id="contatos">
-          <div class="contato-group">
-            <input type="text" class="nome-contato" placeholder="Nome do contato" required>
-            <input type="text" class="telefone-contato" placeholder="Telefone" required>
-            <input type="email" class="email-contato" placeholder="E-mail" required>
-            <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+        <div class="linha">
+          <div class="campo">
+            <label for="nome_fantasia">Nome Fantasia</label>
+            <input type="text" id="nome_fantasia" name="nome_fantasia" required>
+          </div>
+          <div class="campo">
+            <label for="codigo_fiscal">Código Fiscal</label>
+            <select id="codigo_fiscal" name="codigo_fiscal" required>
+              <option value="">Selecione</option>
+              <option value="GA1">GA1</option>
+              <option value="GA2">GA2</option>
+              <option value="GX">GX</option>
+              <option value="Outros">Outros</option>
+            </select>
           </div>
         </div>
-        <button type="button" class="btn-adicionar" onclick="adicionarContato()">+ Adicionar Contato</button>
 
-        <button type="submit" style="background-color: #28a745; color: white; margin-top: 20px;">Salvar</button>
-      </form>
-    </div>
+        <div class="linha">
+          <div class="campo">
+            <label for="situacao_tributaria">Situação Tributária</label>
+            <input type="text" id="situacao_tributaria" name="situacao_tributaria" required>
+          </div>
+          <div class="campo">
+            <label for="meio_pagamento">Meio de Pagamento</label>
+            <select id="meio_pagamento" name="meio_pagamento" required>
+              <option value="">Selecione</option>
+              <option value="Transferência">Transferência</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Endereço</h2>
+        <div class="linha">
+          <div class="campo">
+            <label for="cep">CEP</label>
+            <input type="text" id="cep" name="cep">
+          </div>
+          <div class="campo">
+            <label for="logradouro">Logradouro</label>
+            <input type="text" id="logradouro" name="logradouro">
+          </div>
+          <div class="campo">
+            <label for="numero">Número</label>
+            <input type="text" id="numero" name="numero">
+          </div>
+        </div>
+
+        <div class="linha">
+          <div class="campo">
+            <label for="bairro">Bairro</label>
+            <input type="text" id="bairro" name="bairro">
+          </div>
+          <div class="campo">
+            <label for="cidade">Cidade</label>
+            <input type="text" id="cidade" name="cidade">
+          </div>
+          <div class="campo">
+            <label for="estado">Estado</label>
+            <input type="text" id="estado" name="estado">
+          </div>
+        </div>
+      </div>
+
+            <div class="form-section">
+        <h2>Contatos</h2>
+        <div id="lista-contatos"></div>
+        <button type="button" class="btn-secundario" onclick="adicionarContato()">Adicionar Contato</button>
+      </div>
+
+      <div class="form-section">
+        <h2>Produtos Autorizados</h2>
+        <div class="linha">
+          <div class="campo" style="flex: 2;">
+            <label for="produto">Produto</label>
+            <select id="produto"></select>
+          </div>
+          <div class="campo">
+            <label for="valor_unitario">Valor Unitário</label>
+            <input type="text" id="valor_unitario">
+          </div>
+          <div class="campo">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-secundario" onclick="adicionarProduto()">Adicionar</button>
+          </div>
+        </div>
+        <div id="lista-produtos"></div>
+      </div>
+
+      <div class="form-section">
+        <h2>Prazos de Pagamento</h2>
+        <div class="linha">
+          <div class="campo">
+            <label for="descricao_prazo">Descrição</label>
+            <input type="text" id="descricao_prazo" placeholder="Ex: À vista, 7 dias">
+          </div>
+          <div class="campo">
+            <label for="dias_prazo">Dias após coleta</label>
+            <input type="number" id="dias_prazo" placeholder="Ex: 0, 7, 30">
+          </div>
+          <div class="campo">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-secundario" onclick="adicionarPrazo()">Adicionar</button>
+          </div>
+        </div>
+        <div id="lista-prazos"></div>
+      </div>
+
+      <div class="form-section">
+        <button type="submit" class="btn-principal">Salvar Cliente</button>
+      </div>
+    </form>
   </div>
 
-  <script>
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado')) || { nome: 'Visitante', permissoes: [] };
-  document.getElementById('usuario-nome').textContent = usuarioLogado.nome;
+    <template id="template-contato">
+    <div class="linha grupo-contato">
+      <div class="campo">
+        <label>Nome</label>
+        <input type="text" name="contato_nome[]" required>
+      </div>
+      <div class="campo">
+        <label>Telefone</label>
+        <input type="text" name="contato_telefone[]" required>
+      </div>
+      <div class="campo">
+        <label>Email</label>
+        <input type="email" name="contato_email[]" required>
+      </div>
+      <div class="campo">
+        <label>&nbsp;</label>
+        <button type="button" onclick="this.parentElement.parentElement.remove()">Remover</button>
+      </div>
+    </div>
+  </template>
 
-  function logout() {
-    localStorage.removeItem('usuarioLogado');
-    window.location.href = 'login.html';
-  }
+  <template id="template-produto">
+    <div class="linha grupo-produto">
+      <div class="campo" style="flex: 2;">
+        <input type="text" class="produto-nome" readonly>
+        <input type="hidden" name="produto_id[]">
+      </div>
+      <div class="campo">
+        <input type="text" name="valor_unitario[]" required>
+      </div>
+      <div class="campo">
+        <button type="button" onclick="this.parentElement.parentElement.remove()">Remover</button>
+      </div>
+    </div>
+  </template>
 
-  function atualizarCamposPessoa() {
-    const tipo = document.getElementById("tipoPessoa").value;
-    const labelDoc = document.getElementById("labelDocumento");
-    const inputDoc = document.getElementById("documento");
-    const divSit = document.getElementById("divSituacaoTributaria");
-    const labelNome = document.getElementById("labelNomeFantasia");
+  <template id="template-prazo">
+    <div class="linha grupo-prazo">
+      <div class="campo">
+        <input type="text" name="prazo_descricao[]" class="descricao-prazo" required readonly>
+      </div>
+      <div class="campo">
+        <input type="number" name="prazo_dias[]" class="dias-prazo" required readonly>
+      </div>
+      <div class="campo">
+        <button type="button" onclick="this.parentElement.parentElement.remove()">Remover</button>
+      </div>
+    </div>
+  </template>
 
-    if (tipo === "fisica") {
-      labelDoc.textContent = "CPF";
-      $(inputDoc).unmask().mask("000.000.000-00");
-      divSit.classList.add("hidden");
-      labelNome.textContent = "Nome";
-    } else {
-      labelDoc.textContent = "CNPJ";
-      $(inputDoc).unmask().mask("00.000.000/0000-00");
-      divSit.classList.remove("hidden");
-      labelNome.textContent = "Nome Fantasia";
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarProdutos();
+      document.getElementById('form-cliente').addEventListener('submit', salvarCliente);
+    });
+
+    function adicionarContato() {
+      const template = document.getElementById('template-contato').content.cloneNode(true);
+      document.getElementById('lista-contatos').appendChild(template);
     }
-  }
 
-  function buscarEndereco() {
-    const cep = document.getElementById("cep").value.replace(/\D/g, "");
-    if (cep.length !== 8) return;
-    fetch(`https://viacep.com.br/ws/${cep}/json/`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.erro) {
-          document.getElementById("logradouro").value = data.logradouro;
-          document.getElementById("bairro").value = data.bairro;
-          document.getElementById("cidade").value = data.localidade;
-          document.getElementById("estado").value = data.uf;
-        }
-      });
-  }
+    function adicionarProduto() {
+      const select = document.getElementById('produto');
+      const produtoId = select.value;
+      const nomeProduto = select.options[select.selectedIndex].text;
+      const valor = document.getElementById('valor_unitario').value;
 
-  let listaProdutos = [];
+      if (!produtoId || !valor) return;
 
-  async function carregarProdutos() {
-    try {
+      const template = document.getElementById('template-produto').content.cloneNode(true);
+      template.querySelector('.produto-nome').value = nomeProduto;
+      template.querySelector('input[name="produto_id[]"]').value = produtoId;
+      template.querySelector('input[name="valor_unitario[]"]').value = valor;
+      document.getElementById('lista-produtos').appendChild(template);
+
+      document.getElementById('produto').value = '';
+      document.getElementById('valor_unitario').value = '';
+    }
+
+    function adicionarPrazo() {
+      const descricao = document.getElementById('descricao_prazo').value;
+      const dias = document.getElementById('dias_prazo').value;
+
+      if (!descricao || dias === '') return;
+
+      const template = document.getElementById('template-prazo').content.cloneNode(true);
+      template.querySelector('.descricao-prazo').value = descricao;
+      template.querySelector('.dias-prazo').value = dias;
+      document.getElementById('lista-prazos').appendChild(template);
+
+      document.getElementById('descricao_prazo').value = '';
+      document.getElementById('dias_prazo').value = '';
+    }
+
+    async function carregarProdutos() {
       const res = await fetch('/api/clientes/produtos');
-      const data = await res.json();
-      listaProdutos = data;
-    } catch (error) {
-      console.error("Erro ao buscar produtos:", error);
+      const produtos = await res.json();
+      const select = document.getElementById('produto');
+      produtos.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.nome} (${p.unidade})`;
+        select.appendChild(opt);
+      });
     }
-  }
 
-  function adicionarProdutoAutorizado() {
-    if (!listaProdutos.length) return;
+    async function salvarCliente(e) {
+      e.preventDefault();
 
-    const container = document.getElementById("produtosAutorizados");
-    if (container.children.length >= 10) return;
+      const contatos = [...document.querySelectorAll('.grupo-contato')].map(grupo => ({
+        nome: grupo.querySelector('[name="contato_nome[]"]').value,
+        telefone: grupo.querySelector('[name="contato_telefone[]"]').value,
+        email: grupo.querySelector('[name="contato_email[]"]').value
+      }));
 
-    const div = document.createElement("div");
-    div.className = "produto-group";
+      const produtos = [...document.querySelectorAll('.grupo-produto')].map(grupo => ({
+        id: grupo.querySelector('[name="produto_id[]"]').value,
+        valor: grupo.querySelector('[name="valor_unitario[]"]').value
+      }));
 
-    const select = document.createElement("select");
-    select.className = "produto-select";
-    select.required = true;
+      const prazos = [...document.querySelectorAll('.grupo-prazo')].map(grupo => ({
+        descricao: grupo.querySelector('[name="prazo_descricao[]"]').value,
+        dias: grupo.querySelector('[name="prazo_dias[]"]').value
+      }));
 
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione um produto";
-    select.appendChild(defaultOption);
+      const dados = {
+        tipo_pessoa: document.getElementById('tipo_pessoa').value,
+        documento: document.getElementById('documento').value,
+        nome_fantasia: document.getElementById('nome_fantasia').value,
+        situacao_tributaria: document.getElementById('situacao_tributaria').value,
+        codigo_fiscal: document.getElementById('codigo_fiscal').value,
+        cep: document.getElementById('cep').value,
+        logradouro: document.getElementById('logradouro').value,
+        numero: document.getElementById('numero').value,
+        bairro: document.getElementById('bairro').value,
+        cidade: document.getElementById('cidade').value,
+        estado: document.getElementById('estado').value,
+        meio_pagamento: document.getElementById('meio_pagamento').value,
+        contatos,
+        produtos,
+        prazos
+      };
 
-        listaProdutos.forEach(p => {
-      const option = document.createElement("option");
-      option.value = p.id;
-      option.textContent = p.nome;
-      select.appendChild(option);
-    });
-
-    const inputValor = document.createElement("input");
-    inputValor.type = "number";
-    inputValor.placeholder = "Valor unitário (R$)";
-    inputValor.required = true;
-
-    const btnRemover = document.createElement("button");
-    btnRemover.type = "button";
-    btnRemover.className = "remover-btn";
-    btnRemover.innerHTML = "&times;";
-    btnRemover.onclick = () => div.remove();
-
-    div.appendChild(select);
-    div.appendChild(inputValor);
-    div.appendChild(btnRemover);
-    container.appendChild(div);
-  }
-
-  function adicionarPrazoPagamento() {
-    const container = document.getElementById("prazosPagamento");
-
-    const div = document.createElement("div");
-    div.className = "prazo-group";
-
-    const descricao = document.createElement("input");
-    descricao.type = "text";
-    descricao.placeholder = "Ex: 7 dias, À vista";
-    descricao.className = "prazo-descricao";
-    descricao.required = true;
-
-    const dias = document.createElement("input");
-    dias.type = "number";
-    dias.placeholder = "Dias após a coleta";
-    dias.className = "prazo-dias";
-    dias.required = true;
-    dias.min = 0;
-
-    const btnRemover = document.createElement("button");
-    btnRemover.type = "button";
-    btnRemover.className = "remover-btn";
-    btnRemover.innerHTML = "&times;";
-    btnRemover.onclick = () => div.remove();
-
-    div.appendChild(descricao);
-    div.appendChild(dias);
-    div.appendChild(btnRemover);
-    container.appendChild(div);
-  }
-
-  function adicionarContato() {
-    const container = document.getElementById("contatos");
-
-    const div = document.createElement("div");
-    div.className = "contato-group";
-
-    const nome = document.createElement("input");
-    nome.type = "text";
-    nome.placeholder = "Nome do contato";
-    nome.className = "nome-contato";
-    nome.required = true;
-
-    const telefone = document.createElement("input");
-    telefone.type = "text";
-    telefone.placeholder = "Telefone";
-    telefone.className = "telefone-contato";
-    telefone.required = true;
-
-    const email = document.createElement("input");
-    email.type = "email";
-    email.placeholder = "E-mail";
-    email.className = "email-contato";
-    email.required = true;
-
-    const btnRemover = document.createElement("button");
-    btnRemover.type = "button";
-    btnRemover.className = "remover-btn";
-    btnRemover.innerHTML = "&times;";
-    btnRemover.onclick = () => div.remove();
-
-    div.appendChild(nome);
-    div.appendChild(telefone);
-    div.appendChild(email);
-    div.appendChild(btnRemover);
-    container.appendChild(div);
-  }
-
-  document.getElementById("formCliente").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const cliente = {
-      tipo_pessoa: document.getElementById("tipoPessoa").value,
-      documento: document.getElementById("documento").value,
-      nome_fantasia: document.getElementById("nomeFantasia").value,
-      situacao_tributaria: document.getElementById("situacaoTributaria")?.value || null,
-      codigo_fiscal: document.getElementById("codigoFiscal").value,
-      cep: document.getElementById("cep").value,
-      logradouro: document.getElementById("logradouro").value,
-      numero: document.getElementById("numero").value,
-      bairro: document.getElementById("bairro").value,
-      cidade: document.getElementById("cidade").value,
-      estado: document.getElementById("estado").value,
-      contatos: [],
-      produtos: [],
-      prazos_pagamento: []
-    };
-
-    document.querySelectorAll(".contato-group").forEach(c => {
-      cliente.contatos.push({
-        nome: c.querySelector(".nome-contato").value,
-        telefone: c.querySelector(".telefone-contato").value,
-        email: c.querySelector(".email-contato").value
-      });
-    });
-
-    document.querySelectorAll(".produto-group").forEach(p => {
-      cliente.produtos.push({
-        produto_id: p.querySelector("select").value,
-        valor: parseFloat(p.querySelector("input").value)
-      });
-    });
-
-    document.querySelectorAll(".prazo-group").forEach(p => {
-      cliente.prazos_pagamento.push({
-        descricao: p.querySelector(".prazo-descricao").value,
-        dias: parseInt(p.querySelector(".prazo-dias").value)
-      });
-    });
-
-    try {
-      const res = await fetch("/api/clientes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cliente)
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
       });
 
-      const data = await res.json();
+      const resposta = await res.json();
       if (res.ok) {
-        alert("Cliente cadastrado com sucesso!");
-        location.href = "clientes.html";
+        alert('Cliente cadastrado com sucesso!');
+        location.reload();
       } else {
-        alert(data.erro || "Erro ao cadastrar cliente.");
+        alert(resposta.erro || 'Erro ao salvar cliente.');
       }
-    } catch (error) {
-      console.error("Erro:", error);
-      alert("Erro ao comunicar com o servidor.");
     }
-  });
-
-  window.onload = () => {
-    atualizarCamposPessoa();
-    carregarProdutos();
-  };
-</script>
+  </script>
 </body>
 </html>
+
+
 
