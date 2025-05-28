@@ -107,6 +107,35 @@
     .btn-voltar:hover {
       background-color: #5a6268;
     }
+
+    /* Estilo para os prazos dinâmicos */
+    #lista-prazos {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .prazo-tag {
+      background-color: #ffc107;
+      padding: 6px 10px;
+      border-radius: 16px;
+      font-weight: bold;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .prazo-tag button {
+      background: none;
+      border: none;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -145,12 +174,20 @@
         <label for="codigo">Código Fiscal</label>
         <input type="text" id="codigo" readonly class="readonly">
       </div>
-      <div class="form-group">
-        <label for="prazo-pagamento">Prazo de Pagamento</label>
-        <select id="prazo-pagamento" multiple size="3" required>
-          <!-- opções carregadas dinamicamente -->
-        </select>
+
+      <!-- Bloco dinâmico para Prazos de Pagamento -->
+      <div class="form-group" id="prazo-pagamento-container">
+        <label>Prazos de Pagamento</label>
+        <div id="lista-prazos"></div>
+        <button type="button" id="btn-adicionar-prazo" class="btn" style="width: 100%; max-width: 250px; margin-top: 8px;">Adicionar prazo de pagamento</button>
+        <div id="seletor-prazos" style="margin-top: 8px; display:none;">
+          <select id="select-prazo" style="width: 100%; max-width: 250px;">
+            <option value="">Selecione um prazo</option>
+          </select>
+          <button type="button" id="btn-confirmar-prazo" class="btn" style="margin-top: 5px; max-width: 250px;">Adicionar</button>
+        </div>
       </div>
+
       <div id="produtos"></div>
       <div id="valor-total"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
@@ -167,6 +204,63 @@
     flatpickr("#data-coleta", {
       locale: "pt",
       dateFormat: "d/m/Y"
+    });
+
+    // Variável para armazenar prazos selecionados
+    let prazosSelecionados = [];
+
+    // Função para atualizar a lista visual de prazos
+    function atualizarListaPrazos() {
+      const lista = $('#lista-prazos');
+      lista.empty();
+      prazosSelecionados.forEach((prazo, idx) => {
+        const tag = $(`
+          <div class="prazo-tag" data-index="${idx}">
+            ${prazo}
+            <button type="button" title="Remover prazo">&times;</button>
+          </div>
+        `);
+        tag.find('button').on('click', function () {
+          prazosSelecionados.splice(idx, 1);
+          atualizarListaPrazos();
+          carregarOpcoesPrazos(window.todosPrazos);
+        });
+        lista.append(tag);
+      });
+    }
+
+    // Função para carregar opções no select de prazos
+    function carregarOpcoesPrazos(prazos) {
+      window.todosPrazos = prazos; // salvar globalmente para reuso
+      const select = $('#select-prazo');
+      select.empty();
+      select.append('<option value="">Selecione um prazo</option>');
+      prazos.forEach(p => {
+        if (!prazosSelecionados.includes(p.descricao)) {
+          select.append(`<option value="${p.descricao}">${p.descricao}</option>`);
+        }
+      });
+    }
+
+    // Evento botão adicionar prazo - mostra o select
+    $('#btn-adicionar-prazo').on('click', function () {
+      $('#seletor-prazos').show();
+      $('#select-prazo').val('');
+      $(this).hide();
+    });
+
+    // Evento botão confirmar prazo - adiciona prazo e esconde select
+    $('#btn-confirmar-prazo').on('click', function () {
+      const val = $('#select-prazo').val();
+      if (!val) {
+        alert('Selecione um prazo válido antes de adicionar.');
+        return;
+      }
+      prazosSelecionados.push(val);
+      atualizarListaPrazos();
+      $('#seletor-prazos').hide();
+      $('#btn-adicionar-prazo').show();
+      carregarOpcoesPrazos(window.todosPrazos);
     });
 
     function atualizarValorTotal() {
@@ -259,17 +353,15 @@
       });
     });
 
-    // Ao selecionar cliente, carregar código fiscal, prazos e produtos autorizados
+    // Quando cliente mudar, carrega código fiscal, prazos e produtos autorizados
     $('#cliente').on('change', function () {
       const clienteId = $(this).val();
       if (clienteId) {
         $.get(`/api/clientes/${clienteId}`, function (cliente) {
           $('#codigo').val(cliente.codigo_fiscal || '');
-          const prazoSelect = $('#prazo-pagamento');
-          prazoSelect.empty();
-          cliente.prazos_pagamento.forEach(p => {
-            prazoSelect.append(`<option value="${p.descricao}">${p.descricao}</option>`);
-          });
+          prazosSelecionados = [];
+          atualizarListaPrazos();
+          carregarOpcoesPrazos(cliente.prazos_pagamento || []);
           window.produtosAutorizados = cliente.produtos_autorizados || [];
           $('#produtos').empty();
           adicionarProduto();
@@ -277,9 +369,11 @@
         });
       } else {
         $('#codigo').val('');
-        $('#prazo-pagamento').empty();
-        $('#produtos').empty();
+        prazosSelecionados = [];
+        atualizarListaPrazos();
+        carregarOpcoesPrazos([]);
         window.produtosAutorizados = [];
+        $('#produtos').empty();
         atualizarValorTotal();
       }
     });
@@ -293,10 +387,8 @@
     $('#form-pedido').on('submit', function (e) {
       e.preventDefault();
 
-      const prazosSelecionados = $('#prazo-pagamento').val();
-
-      if (!prazosSelecionados || prazosSelecionados.length === 0) {
-        alert('Por favor, selecione pelo menos um prazo de pagamento.');
+      if (prazosSelecionados.length === 0) {
+        alert('Por favor, adicione pelo menos um prazo de pagamento.');
         return;
       }
 
