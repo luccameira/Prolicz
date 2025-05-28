@@ -3,15 +3,15 @@ const router = express.Router();
 
 // POST /api/produtos/novo
 router.post('/novo', async (req, res) => {
-  const { nome_produto, unidade } = req.body;
+  const { nome, unidade } = req.body;
 
-  if (!nome_produto || !unidade) {
+  if (!nome || !unidade) {
     return res.status(400).json({ erro: 'Nome e unidade são obrigatórios.' });
   }
 
   try {
-    const sql = `INSERT INTO produtos (nome_produto, unidade, data_cadastro) VALUES (?, ?, NOW())`;
-    await router.connection.query(sql, [nome_produto, unidade]);
+    const sql = `INSERT INTO produtos (nome, unidade, data_cadastro) VALUES (?, ?, NOW())`;
+    await router.connection.query(sql, [nome, unidade]);
     res.status(201).json({ mensagem: 'Produto cadastrado com sucesso.' });
   } catch (err) {
     console.error('Erro ao cadastrar produto:', err);
@@ -38,4 +38,5 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+
 
