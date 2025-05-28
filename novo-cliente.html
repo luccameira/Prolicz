@@ -29,6 +29,21 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
+    .btn-voltar {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .btn-voltar:hover {
+      background-color: #5a6268;
+    }
+
     h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
     label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
     input, select, button {
@@ -86,6 +101,7 @@
 
   <div class="main-content">
     <div class="container">
+      <button onclick="window.history.back()" class="btn-voltar">Voltar</button>
       <h1>Novo Cliente</h1>
       <form id="formCliente">
         <label for="tipoPessoa">Tipo de Pessoa</label>
@@ -262,13 +278,11 @@
       const container = document.getElementById("prazosPagamento");
       const div = document.createElement("div");
       div.className = "prazo-group";
-      div.style.marginBottom = "10px";
-
       div.innerHTML = `
-        <input type="number" class="prazo-dias" placeholder="Quantidade de dias" required style="width: 150px; margin-right: 10px;">
+        <input type="text" class="prazo-descricao" placeholder="Descrição (ex: À vista)" required>
+        <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
         <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
       `;
-
       container.appendChild(div);
     }
 
@@ -283,7 +297,8 @@
         console.error("Erro ao buscar produtos:", err);
       }
     }
-
+  </script>
+  <script>
     document.addEventListener("DOMContentLoaded", async () => {
       atualizarCamposPessoa();
       $("#cep").mask("00000-000");
@@ -327,9 +342,10 @@
         });
       });
 
-      document.querySelectorAll(".prazo-dias").forEach(input => {
+      document.querySelectorAll(".prazo-group").forEach(div => {
         cliente.prazos.push({
-          dias: input.value
+          descricao: div.querySelector(".prazo-descricao").value,
+          dias: div.querySelector(".prazo-dias").value
         });
       });
 
@@ -355,4 +371,5 @@
   </script>
 </body>
 </html>
+
 
