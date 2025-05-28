@@ -108,7 +108,7 @@
         const resposta = await fetch('/api/produtos/novo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome_produto: nome, unidade })  // nome corrigido aqui
+          body: JSON.stringify({ nome, unidade })  // nome corrigido aqui
         });
 
         if (resposta.ok) {
