@@ -98,8 +98,7 @@ async function carregarPedidosConferencia() {
     }
 
     if (pedido.ticket_balanca) {
-      const idPedido = pedido.pedido_id || pedido.id;
-      const ticketId = `ticket-${idPedido}`;
+      const ticketId = `ticket-${pedido.pedido_id || pedido.id}`;
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
@@ -125,9 +124,8 @@ async function carregarPedidosConferencia() {
 
             const modalImg = document.createElement('img');
             modalImg.src = img.src;
-            modalImg.style.width = 'auto';
+            modalImg.style.width = '95vw';
             modalImg.style.height = 'auto';
-            modalImg.style.maxWidth = '95vw';
             modalImg.style.maxHeight = '95vh';
             modalImg.style.borderRadius = '8px';
             modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
@@ -152,7 +150,7 @@ async function carregarPedidosConferencia() {
 
     if (!finalizado) {
       form.innerHTML += `
-        <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
+        <button class="btn btn-registrar" onclick="confirmarPeso(${pedido.pedido_id || pedido.id}, this)">Confirmar Peso</button>
       `;
     }
 
