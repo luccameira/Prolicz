@@ -54,7 +54,7 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    if (Array.isArray(pedido.materiais)) {
+        if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
         const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
@@ -66,14 +66,15 @@ async function carregarPedidosConferencia() {
             const qtd = formatarPeso(desc.quantidade);
             const peso = formatarPeso(desc.peso_calculado);
             totalDescontos += Number(desc.peso_calculado || 0);
-            const sufixo = desc.motivo.includes('Palete') ? 'unid.' : 'kg';
-            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} kg)</li>`;
+
+            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'KG';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} KG)</li>`;
           }).join('');
 
           descontosHTML = `
-            <div class="bloco-descontos">
-              <p><strong><i class="fa fa-scissors"></i> Descontos Aplicados:</strong></p>
-              <ul>${linhas}</ul>
+            <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
+              <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+              <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
             </div>
           `;
         }
@@ -81,21 +82,12 @@ async function carregarPedidosConferencia() {
         const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
 
         form.innerHTML += `
-          <div class="material-bloco melhorado">
-            <div class="topo-material">
-              <h4><i class="fa fa-box"></i> ${item.nome_produto}</h4>
-            </div>
-
-            <div class="linha-info">
-              <span><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento:</strong> ${pesoPrevisto} ${item.unidade || 'kg'}</span>
-              <span><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'kg'}</span>
-            </div>
-
+          <div class="material-bloco">
+            <h4>${item.nome_produto}</h4>
+            <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento:</strong> ${pesoPrevisto} ${item.unidade || 'KG'}</p>
+            <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'KG'}</p>
             ${descontosHTML}
-
-            <div class="linha-final">
-              <strong><i class="fa fa-equals"></i> Peso Final:</strong> ${pesoFinal} ${item.unidade || 'kg'}
-            </div>
+            <p style="margin-top: 12px;"><strong><i class="fa fa-equals"></i> Peso Final:</strong> ${pesoFinal} ${item.unidade || 'KG'}</p>
           </div>
         `;
       });
