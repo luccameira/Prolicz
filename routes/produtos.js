@@ -25,11 +25,11 @@ router.get('/', async (req, res) => {
   let orderBy = 'data_cadastro DESC';
 
   if (ordenar === 'mais_antigo') orderBy = 'data_cadastro ASC';
-  else if (ordenar === 'nome_az') orderBy = 'nome_produto ASC';
-  else if (ordenar === 'nome_za') orderBy = 'nome_produto DESC';
+  else if (ordenar === 'nome_az') orderBy = 'nome ASC';
+  else if (ordenar === 'nome_za') orderBy = 'nome DESC';
 
   try {
-    const [produtos] = await router.connection.query(`SELECT * FROM produtos ORDER BY ${orderBy}`);
+    const [produtos] = await router.connection.query(`SELECT id, nome, unidade, data_cadastro FROM produtos ORDER BY ${orderBy}`);
     res.json(produtos);
   } catch (err) {
     console.error('Erro ao buscar produtos:', err);
