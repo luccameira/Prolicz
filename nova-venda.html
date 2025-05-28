@@ -147,8 +147,8 @@
       </div>
       <div class="form-group">
         <label for="prazo-pagamento">Prazo de Pagamento</label>
-        <select id="prazo-pagamento" required>
-          <option value="">Selecione</option>
+        <select id="prazo-pagamento" multiple size="3" required>
+          <!-- opções carregadas dinamicamente -->
         </select>
       </div>
       <div id="produtos"></div>
@@ -250,6 +250,7 @@
       atualizarRemocoes();
     }
 
+    // Carregar clientes
     $.get('/api/clientes', function (clientes) {
       const clienteSelect = $('#cliente');
       clienteSelect.empty().append('<option value="">Selecione</option>');
@@ -258,13 +259,14 @@
       });
     });
 
+    // Ao selecionar cliente, carregar código fiscal, prazos e produtos autorizados
     $('#cliente').on('change', function () {
       const clienteId = $(this).val();
       if (clienteId) {
         $.get(`/api/clientes/${clienteId}`, function (cliente) {
           $('#codigo').val(cliente.codigo_fiscal || '');
           const prazoSelect = $('#prazo-pagamento');
-          prazoSelect.empty().append('<option value="">Selecione</option>');
+          prazoSelect.empty();
           cliente.prazos_pagamento.forEach(p => {
             prazoSelect.append(`<option value="${p.descricao}">${p.descricao}</option>`);
           });
@@ -273,23 +275,40 @@
           adicionarProduto();
           atualizarValorTotal();
         });
+      } else {
+        $('#codigo').val('');
+        $('#prazo-pagamento').empty();
+        $('#produtos').empty();
+        window.produtosAutorizados = [];
+        atualizarValorTotal();
       }
     });
 
+    // Botão adicionar produto
     $('#adicionar-produto').on('click', function () {
       adicionarProduto();
     });
 
+    // Enviar formulário
     $('#form-pedido').on('submit', function (e) {
       e.preventDefault();
+
+      const prazosSelecionados = $('#prazo-pagamento').val();
+
+      if (!prazosSelecionados || prazosSelecionados.length === 0) {
+        alert('Por favor, selecione pelo menos um prazo de pagamento.');
+        return;
+      }
+
       const dados = {
         cliente_id: $('#cliente').val(),
         tipo: $('#pedido-para').val(),
         data_coleta: $('#data-coleta').val(),
-        prazo_pagamento: $('#prazo-pagamento').val(),
+        prazo_pagamento: prazosSelecionados,
         observacao: $('#observacao').val(),
         itens: []
       };
+
       $('.produto-bloco').each(function () {
         const nome_produto = $(this).find('select.select-produto').val();
         const valor_unitario = parseFloat($(this).find('.valor').val().replace('R$', '').replace(',', '.'));
@@ -299,6 +318,7 @@
           dados.itens.push({ nome_produto, valor_unitario, peso, tipo_peso });
         }
       });
+
       fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
