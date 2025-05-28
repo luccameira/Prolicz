@@ -3,11 +3,17 @@ function formatarData(data) {
 }
 
 async function carregarPedidosFinanceiro() {
-  const res = await fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro');
+  const [resPendentes, resAnteriores] = await Promise.all([
+    fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
+    fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso')
+  ]);
+
   let pedidos = [];
 
   try {
-    pedidos = await res.json();
+    const pendentes = await resPendentes.json();
+    const anteriores = await resAnteriores.json();
+    pedidos = [...pendentes, ...anteriores];
     if (!Array.isArray(pedidos)) throw new Error('Resposta inválida');
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
@@ -30,7 +36,7 @@ async function carregarPedidosFinanceiro() {
   lista.innerHTML = '';
 
   if (!filtrados.length) {
-    lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido em análise pelo financeiro.</p>";
+    lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido disponível no momento.</p>";
     return;
   }
 
@@ -56,7 +62,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    const containerCinza = document.createElement('div');
+        const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
@@ -80,7 +86,7 @@ async function carregarPedidosFinanceiro() {
       `;
     }).join('');
 
-        containerCinza.innerHTML = `
+    containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
       <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
       ${vencimentosHTML}
