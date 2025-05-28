@@ -10,8 +10,7 @@ router.post('/', async (req, res) => {
     contatos = [], produtos = [], prazos = []
   } = req.body;
 
-  console.log('Recebido novo cliente:');
-  console.log('Prazos:', prazos);
+  console.log('POST - Prazos recebidos:', prazos);
 
   const sql = `
     INSERT INTO clientes (
@@ -44,17 +43,11 @@ router.post('/', async (req, res) => {
       ));
     });
 
-    console.log(`Inserindo ${prazos.length} prazos para cliente ${clienteId}`);
     prazos.forEach(p => {
-      promises.push(
-        connection.query(
-          'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
-          [clienteId, p.descricao, p.dias]
-        ).catch(err => {
-          console.error('Erro ao inserir prazo:', err, 'Prazo:', p);
-          throw err; // Para abortar caso erro
-        })
-      );
+      promises.push(connection.query(
+        'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
+        [clienteId, p.descricao, p.dias]
+      ));
     });
 
     await Promise.all(promises);
@@ -149,8 +142,7 @@ router.put('/:id', async (req, res) => {
     contatos = [], produtos = [], prazos = []
   } = req.body;
 
-  console.log(`Atualizando cliente ${id}`);
-  console.log('Prazos recebidos:', prazos);
+  console.log('PUT - Prazos recebidos:', prazos);
 
   try {
     await connection.query(`
@@ -183,15 +175,10 @@ router.put('/:id', async (req, res) => {
     });
 
     prazos.forEach(p => {
-      promises.push(
-        connection.query(
-          'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
-          [id, p.descricao, p.dias]
-        ).catch(err => {
-          console.error('Erro ao inserir prazo:', err, 'Prazo:', p);
-          throw err;
-        })
-      );
+      promises.push(connection.query(
+        'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
+        [id, p.descricao, p.dias]
+      ));
     });
 
     await Promise.all(promises);
