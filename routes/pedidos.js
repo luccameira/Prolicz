@@ -307,4 +307,70 @@ router.put('/:id/financeiro', async (req, res) => {
   }
 });
 
+// GET /api/pedidos/conferencia
+router.get('/conferencia', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.ticket_balanca,
+      c.nome_fantasia AS cliente
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    WHERE p.status = 'Aguardando Conferência do Peso'
+    ORDER BY p.data_coleta ASC
+  `;
+  try {
+    const [pedidos] = await db.query(sql);
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos para conferência:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos para conferência' });
+  }
+});
+
+// GET /api/pedidos/financeiro
+router.get('/financeiro', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.ticket_balanca,
+      c.nome_fantasia AS cliente
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    WHERE p.status = 'Em Análise pelo Financeiro'
+    ORDER BY p.data_coleta ASC
+  `;
+  try {
+    const [pedidos] = await db.query(sql);
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos para financeiro:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos para financeiro' });
+  }
+});
+
+// GET /api/pedidos/nf
+router.get('/nf', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.ticket_balanca,
+      c.nome_fantasia AS cliente
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    WHERE p.status = 'Aguardando Emissão de NF'
+    ORDER BY p.data_coleta ASC
+  `;
+  try {
+    const [pedidos] = await db.query(sql);
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos para emissão de NF:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos para emissão de NF' });
+  }
+});
+
 module.exports = router;
