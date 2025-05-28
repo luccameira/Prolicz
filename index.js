@@ -3,30 +3,29 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-const connection = require('./db');
+const connection = require('./db').promise(); // ✅ corrigido aqui
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
-// ✅ Permite acesso à pasta uploads/tickets (para visualizar imagens do ticket da balança)
+// Permite acesso à pasta uploads/tickets
 app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
 
-// Rotas com conexão injetada
+// Rotas com conexão injetada (promise)
 function withConnection(routePath) {
   const router = require(routePath);
   router.connection = connection;
   return router;
 }
 
+// Registro das rotas
 app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
-app.use('/api/produtos', withConnection('./routes/produtos')); // se necessário
-app.use('/api/usuarios', withConnection('./routes/usuarios')); // se necessário
-
-// Rota para motoristas (sem injeção manual de conexão)
-app.use('/api/motoristas', require('./routes/motoristas'));
+app.use('/api/produtos', withConnection('./routes/produtos'));
+app.use('/api/usuarios', withConnection('./routes/usuarios'));
+app.use('/api/motoristas', require('./routes/motoristas')); // sem injeção
 
 // Redirecionamentos para páginas HTML
 app.get('/visualizar-venda', (req, res) => {
@@ -41,8 +40,6 @@ app.get('/nova-venda', (req, res) => {
 app.get('/editar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
-
-// Redirecionamentos para páginas de tarefas
 app.get('/tarefas-portaria.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'tarefas-portaria.html'));
 });
@@ -68,4 +65,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${port}`);
 });
-
