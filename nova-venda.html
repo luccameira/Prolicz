@@ -108,7 +108,7 @@
       background-color: #5a6268;
     }
 
-    /* Estilo para os prazos dinâmicos */
+    /* Estilo para as tags de prazos */
     #lista-prazos {
       margin-top: 6px;
       display: flex;
@@ -122,7 +122,7 @@
       border-radius: 16px;
       font-weight: bold;
       cursor: default;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
     }
@@ -179,13 +179,17 @@
       <div class="form-group" id="prazo-pagamento-container">
         <label>Prazos de Pagamento</label>
         <div id="lista-prazos"></div>
-        <button type="button" id="btn-adicionar-prazo" class="btn" style="width: 100%; max-width: 250px; margin-top: 8px;">Adicionar prazo de pagamento</button>
-        <div id="seletor-prazos" style="margin-top: 8px; display:none;">
-          <select id="select-prazo" style="width: 100%; max-width: 250px;">
+
+        <div id="seletor-prazos" style="display: flex; gap: 8px; align-items: center;">
+          <select id="select-prazo" style="flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
             <option value="">Selecione um prazo</option>
           </select>
-          <button type="button" id="btn-confirmar-prazo" class="btn" style="margin-top: 5px; max-width: 250px;">Adicionar</button>
+          <button type="button" id="btn-adicionar-prazo" class="btn" style="padding: 8px 12px; display: none;">Adicionar</button>
         </div>
+
+        <button type="button" id="btn-adicionar-outro" class="btn" style="margin-top: 10px; display: none; max-width: 250px;">
+          Adicionar outro prazo de pagamento
+        </button>
       </div>
 
       <div id="produtos"></div>
@@ -224,6 +228,7 @@
           prazosSelecionados.splice(idx, 1);
           atualizarListaPrazos();
           carregarOpcoesPrazos(window.todosPrazos);
+          ajustarVisibilidadeBotoes();
         });
         lista.append(tag);
       });
@@ -240,17 +245,33 @@
           select.append(`<option value="${p.descricao}">${p.descricao}</option>`);
         }
       });
+      $('#btn-adicionar-prazo').hide();
+      $('#select-prazo').val('');
     }
 
-    // Evento botão adicionar prazo - mostra o select
-    $('#btn-adicionar-prazo').on('click', function () {
-      $('#seletor-prazos').show();
-      $('#select-prazo').val('');
-      $(this).hide();
+    // Ajusta a visibilidade dos botões de adicionar
+    function ajustarVisibilidadeBotoes() {
+      if (prazosSelecionados.length === 0) {
+        $('#btn-adicionar-outro').hide();
+        $('#seletor-prazos').show();
+      } else {
+        $('#btn-adicionar-outro').show();
+        $('#seletor-prazos').hide();
+      }
+    }
+
+    // Mostrar botão adicionar quando um prazo válido for selecionado
+    $('#select-prazo').on('change', function () {
+      const val = $(this).val();
+      if (val) {
+        $('#btn-adicionar-prazo').show();
+      } else {
+        $('#btn-adicionar-prazo').hide();
+      }
     });
 
-    // Evento botão confirmar prazo - adiciona prazo e esconde select
-    $('#btn-confirmar-prazo').on('click', function () {
+    // Botão para adicionar prazo selecionado
+    $('#btn-adicionar-prazo').on('click', function () {
       const val = $('#select-prazo').val();
       if (!val) {
         alert('Selecione um prazo válido antes de adicionar.');
@@ -258,9 +279,16 @@
       }
       prazosSelecionados.push(val);
       atualizarListaPrazos();
-      $('#seletor-prazos').hide();
-      $('#btn-adicionar-prazo').show();
       carregarOpcoesPrazos(window.todosPrazos);
+      ajustarVisibilidadeBotoes();
+    });
+
+    // Botão para adicionar outro prazo (mostra o seletor)
+    $('#btn-adicionar-outro').on('click', function () {
+      $('#seletor-prazos').show();
+      $('#btn-adicionar-outro').hide();
+      $('#select-prazo').val('');
+      $('#btn-adicionar-prazo').hide();
     });
 
     function atualizarValorTotal() {
@@ -353,7 +381,7 @@
       });
     });
 
-    // Quando cliente mudar, carrega código fiscal, prazos e produtos autorizados
+    // Quando cliente mudar, carrega dados, prazos e produtos
     $('#cliente').on('change', function () {
       const clienteId = $(this).val();
       if (clienteId) {
@@ -362,6 +390,7 @@
           prazosSelecionados = [];
           atualizarListaPrazos();
           carregarOpcoesPrazos(cliente.prazos_pagamento || []);
+          ajustarVisibilidadeBotoes();
           window.produtosAutorizados = cliente.produtos_autorizados || [];
           $('#produtos').empty();
           adicionarProduto();
@@ -372,15 +401,11 @@
         prazosSelecionados = [];
         atualizarListaPrazos();
         carregarOpcoesPrazos([]);
+        ajustarVisibilidadeBotoes();
         window.produtosAutorizados = [];
         $('#produtos').empty();
         atualizarValorTotal();
       }
-    });
-
-    // Botão adicionar produto
-    $('#adicionar-produto').on('click', function () {
-      adicionarProduto();
     });
 
     // Enviar formulário
