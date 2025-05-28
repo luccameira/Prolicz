@@ -125,8 +125,10 @@ async function carregarPedidosConferencia() {
 
             const modalImg = document.createElement('img');
             modalImg.src = img.src;
-            modalImg.style.maxWidth = '90%';
-            modalImg.style.maxHeight = '90%';
+            modalImg.style.width = 'auto';
+            modalImg.style.height = 'auto';
+            modalImg.style.maxWidth = '95vw';
+            modalImg.style.maxHeight = '95vh';
             modalImg.style.borderRadius = '8px';
             modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
 
