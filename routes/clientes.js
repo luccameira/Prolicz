@@ -43,8 +43,8 @@ router.post('/', async (req, res) => {
 
     prazos.forEach(p => {
       promises.push(connection.query(
-        'INSERT INTO prazos_pagamento (cliente_id, descricao) VALUES (?, ?)',
-        [clienteId, p]
+        'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
+        [clienteId, p.descricao, p.dias]
       ));
     });
 
@@ -107,7 +107,7 @@ router.get('/:id', async (req, res) => {
     FROM produtos_autorizados pa
     JOIN produtos p ON p.id = pa.produto_id
     WHERE pa.cliente_id = ?`;
-  const queryPrazos = `SELECT descricao FROM prazos_pagamento WHERE cliente_id = ?`;
+  const queryPrazos = `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?`;
 
   try {
     const [clienteRes] = await connection.query(queryCliente, [id]);
@@ -172,8 +172,8 @@ router.put('/:id', async (req, res) => {
 
     prazos.forEach(p => {
       promises.push(connection.query(
-        'INSERT INTO prazos_pagamento (cliente_id, descricao) VALUES (?, ?)',
-        [id, p]
+        'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
+        [id, p.descricao, p.dias]
       ));
     });
 
