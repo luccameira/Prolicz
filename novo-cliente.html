@@ -29,23 +29,6 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    #btn-voltar {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 12px 20px; /* aumentei a altura */
-      cursor: pointer;
-      margin-bottom: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      transition: background-color 0.3s ease;
-    }
-
-    #btn-voltar:hover {
-      background-color: #5a6268;
-    }
-
     h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
     label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
     input, select, button {
@@ -95,6 +78,25 @@
     }
 
     .hidden { display: none; }
+
+    /* Estilo do botão Voltar ajustado */
+    #btn-voltar {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 7px 20px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      width: 80px;
+      box-shadow: none;
+      transition: background-color 0.3s ease;
+    }
+    #btn-voltar:hover {
+      background-color: #5a6268;
+    }
   </style>
 </head>
 <body>
@@ -103,7 +105,7 @@
 
   <div class="main-content">
     <div class="container">
-      <button id="btn-voltar">Voltar</button>
+      <button id="btn-voltar" onclick="window.location.href='clientes.html'">Voltar</button>
 
       <h1>Novo Cliente</h1>
       <form id="formCliente">
