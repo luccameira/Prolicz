@@ -98,7 +98,8 @@ async function carregarPedidosConferencia() {
     }
 
     if (pedido.ticket_balanca) {
-      const ticketId = `ticket-${pedido.id}`;
+      const idPedido = pedido.pedido_id || pedido.id;
+      const ticketId = `ticket-${idPedido}`;
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
@@ -201,4 +202,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
 
+    
     
