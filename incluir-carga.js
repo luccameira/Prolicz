@@ -16,8 +16,23 @@ async function carregarPedidos() {
   const pendentes = await resPendentes.json();
   const finalizados = await resFinalizados.json();
 
-  pedidos = [...pendentes, ...finalizados];
-  renderizarPedidosSeparados(pendentes, finalizados);
+  const hoje = new Date();
+  const amanha = new Date();
+  amanha.setDate(hoje.getDate() + 1);
+
+  const apenasHojeOuAmanha = pedido => {
+    const data = new Date(pedido.data_coleta);
+    return (
+      data.toDateString() === hoje.toDateString() ||
+      data.toDateString() === amanha.toDateString()
+    );
+  };
+
+  const pendentesFiltrados = pendentes.filter(apenasHojeOuAmanha);
+  const finalizadosFiltrados = finalizados.filter(apenasHojeOuAmanha);
+
+  pedidos = [...pendentesFiltrados, ...finalizadosFiltrados];
+  renderizarPedidosSeparados(pendentesFiltrados, finalizadosFiltrados);
 }
 
 function renderizarPedidosSeparados(pendentes, finalizados) {
@@ -59,11 +74,11 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
     `;
     div.appendChild(header);
 
-        const form = document.createElement('div');
+    const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.pedido_id}`;
 
-    if (p.status === 'Coleta Iniciada') {
+        if (p.status === 'Coleta Iniciada') {
       if (Array.isArray(p.materiais) && p.materiais.length > 0) {
         p.materiais.forEach((item, index) => {
           const itemId = item.id;
@@ -259,5 +274,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
-
 
