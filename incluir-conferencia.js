@@ -58,6 +58,8 @@ async function carregarPedidosConferencia() {
       pedido.materiais.forEach(item => {
         const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
+        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
+
         let descontosHTML = '';
         let totalDescontos = 0;
 
@@ -66,9 +68,8 @@ async function carregarPedidosConferencia() {
             const qtd = formatarPeso(desc.quantidade);
             const peso = formatarPeso(desc.peso_calculado);
             totalDescontos += Number(desc.peso_calculado || 0);
-
-            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'KG';
-            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} KG)</li>`;
+            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'Kg';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
           }).join('');
 
           descontosHTML = `
@@ -84,10 +85,14 @@ async function carregarPedidosConferencia() {
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento:</strong> ${pesoPrevisto} ${item.unidade || 'KG'}</p>
-            <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'KG'}</p>
+            <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+            <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
             ${descontosHTML}
-            <p style="margin-top: 12px;"><strong><i class="fa fa-equals"></i> Peso Final:</strong> ${pesoFinal} ${item.unidade || 'KG'}</p>
+            <div style="margin-top: 14px;">
+              <span style="display: inline-block; background-color: #e6f4ea; color: #1e7e34; padding: 8px 14px; border-radius: 20px; font-weight: bold;">
+                Peso Final: ${pesoFinal} ${item.unidade || 'Kg'}
+              </span>
+            </div>
           </div>
         `;
       });
@@ -154,4 +159,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+
 
