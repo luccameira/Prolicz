@@ -86,8 +86,8 @@ async function carregarPedidosConferencia() {
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-            <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
             ${descontosHTML}
             <div style="margin-top: 14px;">
               <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
@@ -105,41 +105,45 @@ async function carregarPedidosConferencia() {
           <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
         </div>
       `;
+
       setTimeout(() => {
-        document.getElementById(ticketId)?.addEventListener('click', () => {
-          const overlay = document.createElement('div');
-          overlay.style.position = 'fixed';
-          overlay.style.top = '0';
-          overlay.style.left = '0';
-          overlay.style.width = '100%';
-          overlay.style.height = '100%';
-          overlay.style.background = 'rgba(0,0,0,0.7)';
-          overlay.style.display = 'flex';
-          overlay.style.alignItems = 'center';
-          overlay.style.justifyContent = 'center';
-          overlay.style.zIndex = '9999';
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
 
-          const modalImg = document.createElement('img');
-          modalImg.src = `/uploads/tickets/${pedido.ticket_balanca}`;
-          modalImg.style.maxWidth = '90%';
-          modalImg.style.maxHeight = '90%';
-          modalImg.style.borderRadius = '8px';
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.maxWidth = '90%';
+            modalImg.style.maxHeight = '90%';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
 
-          const closeBtn = document.createElement('div');
-          closeBtn.innerHTML = '&times;';
-          closeBtn.style.position = 'absolute';
-          closeBtn.style.top = '20px';
-          closeBtn.style.right = '30px';
-          closeBtn.style.fontSize = '40px';
-          closeBtn.style.color = '#fff';
-          closeBtn.style.cursor = 'pointer';
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
 
-          overlay.appendChild(modalImg);
-          overlay.appendChild(closeBtn);
-          document.body.appendChild(overlay);
-
-          closeBtn.onclick = () => document.body.removeChild(overlay);
-        });
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
       }, 100);
     }
 
@@ -196,6 +200,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-
 
     
