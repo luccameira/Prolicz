@@ -262,4 +262,25 @@ router.get('/produtos', async (req, res) => {
   }
 });
 
+// PUT /api/pedidos/:id/conferencia
+router.put('/:id/conferencia', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [resultado] = await db.query(
+      'UPDATE pedidos SET status = ? WHERE id = ?',
+      ['Em Análise pelo Financeiro', id]
+    );
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ erro: 'Pedido não encontrado' });
+    }
+
+    res.json({ mensagem: 'Peso confirmado com sucesso!' });
+  } catch (erro) {
+    console.error('Erro ao confirmar peso:', erro);
+    res.status(500).json({ erro: 'Erro ao confirmar peso' });
+  }
+});
+
 module.exports = router;
