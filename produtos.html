@@ -153,42 +153,42 @@
   </div>
 
   <script>
-    let dadosProdutos = [];
+  let dadosProdutos = [];
 
-    async function carregarProdutos() {
-      try {
-        const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
-        const resposta = await fetch(`/api/produtos?ordenar=${ordem}`);
-        dadosProdutos = await resposta.json();
-        renderizarTabela(dadosProdutos);
-      } catch (erro) {
-        console.error('Erro ao carregar produtos:', erro);
-      }
+  async function carregarProdutos() {
+    try {
+      const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
+      const resposta = await fetch(`/api/produtos?ordenar=${ordem}`);
+      dadosProdutos = await resposta.json();
+      renderizarTabela(dadosProdutos);
+    } catch (erro) {
+      console.error('Erro ao carregar produtos:', erro);
     }
+  }
 
-    function renderizarTabela(lista) {
-      const tabela = document.getElementById('tabela-produtos');
-      tabela.innerHTML = '';
-      lista.forEach(produto => {
-        const linha = document.createElement('tr');
-        linha.innerHTML = `
-          <td>${produto.nome_produto}</td>
-          <td>${produto.unidade}</td>
-          <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
-        `;
-        tabela.appendChild(linha);
-      });
-    }
-
-    function filtrarTabela() {
-      const filtro = document.getElementById('filtroNome').value.toLowerCase();
-      const filtrados = dadosProdutos.filter(p => p.nome_produto.toLowerCase().includes(filtro));
-      renderizarTabela(filtrados);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      carregarProdutos();
+  function renderizarTabela(lista) {
+    const tabela = document.getElementById('tabela-produtos');
+    tabela.innerHTML = '';
+    lista.forEach(produto => {
+      const linha = document.createElement('tr');
+      linha.innerHTML = `
+        <td>${produto.nome}</td>
+        <td>${produto.unidade}</td>
+        <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
+      `;
+      tabela.appendChild(linha);
     });
-  </script>
+  }
+
+  function filtrarTabela() {
+    const filtro = document.getElementById('filtroNome').value.toLowerCase();
+    const filtrados = dadosProdutos.filter(p => p.nome.toLowerCase().includes(filtro));
+    renderizarTabela(filtrados);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    carregarProdutos();
+  });
+</script>
 </body>
 </html>
