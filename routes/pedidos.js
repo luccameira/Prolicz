@@ -308,4 +308,3 @@ router.put('/:id/financeiro', async (req, res) => {
 });
 
 module.exports = router;
-
