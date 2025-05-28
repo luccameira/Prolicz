@@ -48,7 +48,7 @@ async function carregarPedidosConferencia() {
       ${statusHtml}
     `;
 
-        card.appendChild(header);
+    card.appendChild(header);
 
     const form = document.createElement('div');
     form.className = 'formulario';
@@ -56,7 +56,7 @@ async function carregarPedidosConferencia() {
 
     if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
-        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+        const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
         let descontosHTML = '';
         let totalDescontos = 0;
@@ -66,27 +66,36 @@ async function carregarPedidosConferencia() {
             const qtd = formatarPeso(desc.quantidade);
             const peso = formatarPeso(desc.peso_calculado);
             totalDescontos += Number(desc.peso_calculado || 0);
-
             const sufixo = desc.motivo.includes('Palete') ? 'unid.' : 'kg';
             return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} kg)</li>`;
           }).join('');
 
           descontosHTML = `
-            <p style="margin: 10px 0 0;"><strong>Descontos Aplicados:</strong></p>
-            <ul style="margin-top: 4px; padding-left: 18px;">${linhas}</ul>
+            <div class="bloco-descontos">
+              <p><strong><i class="fa fa-scissors"></i> Descontos Aplicados:</strong></p>
+              <ul>${linhas}</ul>
+            </div>
           `;
         }
 
         const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
 
         form.innerHTML += `
-          <div class="material-bloco">
-            <h4>${item.nome_produto}</h4>
-            <p><strong>${tipoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
-            <label>Peso Carregado (kg):</label>
-            <input type="number" value="${pesoCarregado}" readonly>
+          <div class="material-bloco melhorado">
+            <div class="topo-material">
+              <h4><i class="fa fa-box"></i> ${item.nome_produto}</h4>
+            </div>
+
+            <div class="linha-info">
+              <span><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento:</strong> ${pesoPrevisto} ${item.unidade || 'kg'}</span>
+              <span><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'kg'}</span>
+            </div>
+
             ${descontosHTML}
-            <p style="margin-top: 10px;"><strong>Peso Final:</strong> ${pesoFinal} kg</p>
+
+            <div class="linha-final">
+              <strong><i class="fa fa-equals"></i> Peso Final:</strong> ${pesoFinal} ${item.unidade || 'kg'}
+            </div>
           </div>
         `;
       });
