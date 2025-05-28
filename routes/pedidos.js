@@ -25,6 +25,29 @@ function formatarDataBRparaISO(dataBR) {
   return `${ano}-${mes}-${dia}`;
 }
 
+// NOVA ROTA - GET /api/pedidos/portaria
+router.get('/portaria', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.ticket_balanca,
+      c.nome_fantasia AS cliente
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    WHERE DATE(p.data_coleta) = CURDATE()
+    ORDER BY p.data_coleta ASC
+  `;
+  try {
+    const [pedidos] = await db.query(sql);
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos da portaria:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
+  }
+});
+
+// ROTA CARGA
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
@@ -285,3 +308,4 @@ router.put('/:id/financeiro', async (req, res) => {
 });
 
 module.exports = router;
+
