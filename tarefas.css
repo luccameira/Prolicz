@@ -468,3 +468,40 @@ input[type="file"]::file-selector-button:hover {
   color: #27ae60;
   margin-left: 6px;
 }
+
+.bloco-descontos {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.bloco-descontos h5 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.lista-descontos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-desconto {
+  display: flex;
+  justify-content: space-between;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #444;
+}
+
+.item-desconto span {
+  display: block;
+  font-weight: 500;
+}
