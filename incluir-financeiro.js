@@ -65,7 +65,7 @@ async function carregarPedidosFinanceiro() {
       `;
     }).join('');
 
-    containerCinza.innerHTML = `
+        containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
       <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${pedido.valor_total?.toFixed(2) || '0,00'}</p>
       ${vencimentosHTML}
@@ -80,7 +80,7 @@ async function carregarPedidosFinanceiro() {
     tituloMateriais.style.margin = '30px 0 10px';
     form.appendChild(tituloMateriais);
 
-    (pedido.itens || []).forEach(item => {
+    (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
       cardMaterial.style.background = '#f5f5f5';
       cardMaterial.style.border = '1px dashed #ccc';
