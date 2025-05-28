@@ -4,7 +4,16 @@ function formatarData(data) {
 
 async function carregarPedidosFinanceiro() {
   const res = await fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro');
-  const pedidos = await res.json();
+  let pedidos = [];
+
+  try {
+    pedidos = await res.json();
+    if (!Array.isArray(pedidos)) throw new Error('Resposta inválida');
+  } catch (erro) {
+    console.error('Erro ao carregar pedidos:', erro);
+    document.getElementById('lista-pedidos').innerHTML = "<p style='padding: 0 25px;'>Erro ao carregar tarefas financeiras.</p>";
+    return;
+  }
 
   const lista = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente')?.value.toLowerCase() || '';
@@ -53,23 +62,27 @@ async function carregarPedidosFinanceiro() {
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginBottom = '20px';
 
-    const valorParcela = (pedido.valor_total || 0) / (pedido.prazos_pagamento?.length || 1);
+    const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
+      return soma + (Number(item.valor_total) || 0);
+    }, 0);
 
+    const valorParcela = totalVenda / (pedido.prazos_pagamento?.length || 1);
     const vencimentosHTML = (pedido.prazos_pagamento || []).map((data, index) => {
-      const dataValida = !isNaN(new Date(data));
+      const dataFormatada = new Date(data);
+      const dataValida = !isNaN(dataFormatada.getTime());
       return `
         <p style="margin-bottom: 6px;">
           <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; margin-right:6px; font-weight: 500;">
             Vencimento ${index + 1}
           </span>
-          ${dataValida ? formatarData(data) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
+          ${dataValida ? formatarData(dataFormatada) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
         </p>
       `;
     }).join('');
 
         containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${pedido.valor_total?.toFixed(2) || '0,00'}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
       ${vencimentosHTML}
       <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:20px;">
         <strong>Observações:</strong> ${pedido.observacoes || '—'}
