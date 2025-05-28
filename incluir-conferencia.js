@@ -88,11 +88,10 @@ async function carregarPedidosConferencia() {
             <p><strong><i class="fa fa-scale-balanced"></i> Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
             <p><strong><i class="fa fa-truck"></i> Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
             ${descontosHTML}
-            <div style="margin-top: 14px;">
-              <span style="display: inline-block; background-color: #e6f4ea; color: #1e7e34; padding: 8px 14px; border-radius: 20px; font-weight: bold;">
-                Peso Final: ${pesoFinal} ${item.unidade || 'Kg'}
-              </span>
-            </div>
+           <div style="margin-top: 14px;">
+             <span class="etiqueta-peso-final">
+              Peso Final: ${pesoFinal} ${item.unidade || 'Kg'}
+             </span>
           </div>
         `;
       });
