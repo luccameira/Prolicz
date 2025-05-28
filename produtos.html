@@ -158,7 +158,7 @@
     async function carregarProdutos() {
       try {
         const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
-        const resposta = await fetch(`/api/pedidos/produtos?ordenar=${ordem}`);
+        const resposta = await fetch(`/api/produtos?ordenar=${ordem}`);
         dadosProdutos = await resposta.json();
         renderizarTabela(dadosProdutos);
       } catch (erro) {
