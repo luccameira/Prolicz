@@ -131,9 +131,8 @@
           </select>
         </div>
 
-        <label for="codigoFiscal">Código Fiscal</label>
-        <select id="codigoFiscal" required>
-          <option value="">Selecione</option>
+        <label for="codigosFiscais">Códigos Fiscais Permitidos</label>
+        <select id="codigosFiscais" multiple required size="5">
           <option value="GA1">GA1</option>
           <option value="GA2">GA2</option>
           <option value="GX">GX</option>
@@ -144,6 +143,7 @@
           <option value="AX">AX</option>
           <option value="Personalizar">Personalizar</option>
         </select>
+        <small>Use Ctrl/Cmd para selecionar múltiplos códigos.</small>
 
         <h3>Produtos Autorizados</h3>
         <div id="produtosAutorizados"></div>
@@ -327,7 +327,7 @@
       documento: document.getElementById("documento").value,
       nome_fantasia: document.getElementById("nomeFantasia").value,
       situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
-      codigo_fiscal: document.getElementById("codigoFiscal").value,
+      codigosFiscais: Array.from(document.getElementById("codigosFiscais").selectedOptions).map(o => o.value),
       cep: document.getElementById("cep").value,
       logradouro: document.getElementById("logradouro").value,
       numero: document.getElementById("numero").value,
@@ -383,4 +383,3 @@
   </script>
 </body>
 </html>
-
