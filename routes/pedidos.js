@@ -20,7 +20,6 @@ const storageTickets = multer.diskStorage({
 });
 const uploadTicket = multer({ storage: storageTickets });
 
-// Função para formatar data do formato BR (dd/mm/yyyy) para ISO (yyyy-mm-dd)
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
   return `${ano}-${mes}-${dia}`;
@@ -137,7 +136,6 @@ router.get('/', async (req, res) => {
         `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
-      // Calcula as datas reais dos prazos com base na data_coleta
       pedido.prazos_pagamento = prazosPedido.map(prazo => {
         let dataVencimento = null;
         if (pedido.data_coleta) {
@@ -171,17 +169,17 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   }
 });
 
-// POST /api/pedidos - criar pedido
+// POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, codigo_fiscal, itens } = req.body;
+  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens } = req.body;
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
-    // Inserir pedido na tabela pedidos, sem campo prazos_pagamento
+    // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, codigo_fiscal, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta', codigo_fiscal || '']
+      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta']
     );
 
     const pedido_id = pedidoResult.insertId;
@@ -190,9 +188,17 @@ router.post('/', async (req, res) => {
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
-          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [pedido_id, item.nome_produto, item.valor_unitario, item.peso, item.tipo_peso, item.unidade]
+          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            pedido_id,
+            item.nome_produto,
+            item.valor_unitario,
+            item.peso,
+            item.tipo_peso,
+            item.unidade || '',
+            item.codigo_fiscal || ''
+          ]
         );
       }
     }
@@ -372,7 +378,6 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao excluir pedido' });
   }
 });
-
 
 // GET /api/pedidos/conferencia
 router.get('/conferencia', async (req, res) => {
