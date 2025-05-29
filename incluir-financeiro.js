@@ -12,10 +12,6 @@ function formatarEmpresa(nomeEmpresa) {
   return nomeEmpresa.charAt(0).toUpperCase() + nomeEmpresa.slice(1);
 }
 
-function formatarMoeda(valor) {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 function formatarPesoSemDecimal(valor) {
   if (valor == null) return '—';
   const numero = Number(valor);
@@ -38,7 +34,7 @@ async function carregarPedidosFinanceiro() {
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
     document.getElementById('lista-pedidos').innerHTML =
-      "<p style='padding: 0 25px;'>Erro ao carregar tarefas financeiras.</p>";
+      `<p style="padding: 0 25px;">Erro ao carregar tarefas financeiras.</p>`;
     return;
   }
 
@@ -55,7 +51,7 @@ async function carregarPedidosFinanceiro() {
 
   lista.innerHTML = '';
   if (!filtrados.length) {
-    lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido disponível no momento.</p>";
+    lista.innerHTML = `<p style="padding: 0 25px;">Nenhum pedido disponível no momento.</p>`;
     return;
   }
 
@@ -78,7 +74,7 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    // Form oculto
+    // Formulário oculto
     const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
@@ -112,14 +108,12 @@ async function carregarPedidosFinanceiro() {
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
-          <div class="descontos-aplicados" style="margin-top: 14px;">
+          <div class="descontos-aplicados" style="margin-top: 16px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos
                 .map(d => `
-                  <li>${formatarPesoSemDecimal(d.quantidade)} ${
-                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
-                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
+                  <li>${formatarPesoSemDecimal(d.quantidade)} ${d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'} (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
                 `)
                 .join('')}
             </ul>
@@ -129,11 +123,11 @@ async function carregarPedidosFinanceiro() {
 
       cardMaterial.innerHTML = `
         <h4>${item.nome_produto}</h4>
-        <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} kg</p>
-        <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
+        <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
+        <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
-        <p style="margin-top: 14px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} kg</p>
-        <p style="margin-top: 8px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-peso-final">${valorTotalFormatado}</span></p>
+        <p style="margin-top: 16px;">Peso Final com Desconto: ${pesoFinal} Kg</p>
+        <p style="margin-top: 12px;">Valor Total do Item: <span class="etiqueta-valor-item">${valorTotalFormatado}</span></p>
       `;
       form.appendChild(cardMaterial);
     });
@@ -149,7 +143,7 @@ async function carregarPedidosFinanceiro() {
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginTop = '20px';
-    containerCinza.style.border = '1px solid #ddd'; // borda neutra adicionada
+    containerCinza.style.border = '1px solid #ddd'; // borda neutra
 
     // Recalcula totalVenda pelo peso final
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
@@ -162,25 +156,16 @@ async function carregarPedidosFinanceiro() {
     }, 0);
 
     containerCinza.innerHTML = `
-      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${
-        pedido.codigo_interno || '—'
-      }</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(
-      2
-    )}</p>
+      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
+      <div class="obs-pedido" style="background:#fff3cd;padding:10px;border-radius:6px;margin-top:20px;">
+        <strong>Observações:</strong> ${pedido.observacoes || '—'}
+      </div>
+      <div class="vencimentos-container" style="margin-top:20px;"></div>
     `;
 
-    // Observações do pedido (vendedor)
-    const obsPedidoDiv = document.createElement('div');
-    obsPedidoDiv.style.background = '#fff3cd';
-    obsPedidoDiv.style.padding = '10px';
-    obsPedidoDiv.style.borderRadius = '6px';
-    obsPedidoDiv.style.marginTop = '20px';
-    obsPedidoDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
-    containerCinza.appendChild(obsPedidoDiv);
-
     // Vencimentos
-    const vencContainer = document.createElement('div');
+    const vencContainer = containerCinza.querySelector('.vencimentos-container');
     pedido.vencimentosValores = [];
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
 
@@ -241,10 +226,9 @@ async function carregarPedidosFinanceiro() {
       vencContainer.appendChild(dv);
     });
 
-    containerCinza.appendChild(vencContainer);
     form.appendChild(containerCinza);
 
-    // ---- observações do financeiro e botão ----
+    // ---- Observações do Financeiro e botão ----
     const blocoFin = document.createElement('div');
     blocoFin.style.marginTop = '20px';
 
@@ -309,3 +293,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+
