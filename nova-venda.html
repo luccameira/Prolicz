@@ -14,37 +14,25 @@
   <style>
     .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
-    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; overflow: visible; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    .produto-bloco {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 15px;
-      background: #f9f9f9;
-      position: relative;
-      overflow: visible !important;    /* <-- liberado para dropdown */
-    }
+    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; position: relative; }
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     #valor-total { font-weight: bold; text-align: right; padding-top: 10px; font-size: 16px; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
+
     /* prazos como checkboxes */
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
+
     /* personalizar */
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
-
-    /* garante que o próprio select fique acima */
-    .select-codigo-fiscal {
-      position: relative;
-      z-index: 1000;
-    }
   </style>
 </head>
 <body>
@@ -87,6 +75,9 @@
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
 
+      <!-- datalist global para códigos -->
+      <datalist id="lista-codigos"></datalist>
+
       <!-- itens -->
       <div id="produtos"></div>
       <div id="valor-total">Valor total do pedido: R$ 0,00</div>
@@ -106,14 +97,13 @@
 
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      function atualizarCodigoFiscalOptions() {
-        $(".select-codigo-fiscal").each(function(){
-          const sel = $(this).empty().append('<option value="">Código Fiscal</option>');
-          windowCodigos.forEach(c => sel.append(`<option value="${c}">${c}</option>`));
-        });
+      // popula o datalist de códigos
+      function atualizarDatalistCodigos(){
+        const dl = $("#lista-codigos").empty();
+        windowCodigos.forEach(c => dl.append(`<option value="${c}">`));
       }
 
-      // carrega clientes
+      // carrega dropdown de clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
@@ -122,51 +112,49 @@
       // ao mudar cliente
       $("#cliente").change(function(){
         const id = $(this).val();
-        $("#prazosCheckboxes").empty();
-        $("#produtos").empty();
+        $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("Valor total do pedido: R$ 0,00");
         $(".error-prazos").hide();
-        if (!id) return;
+        if(!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
           // prazos
-          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
+          windowPrazos = cli.prazos_pagamento.map(p=>p.descricao);
           windowPrazos.forEach(pr => {
             $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pr}"> ${pr}</label>`);
           });
           // códigos e produtos
-          windowCodigos = cli.codigosFiscais || [];
-          windowProdutos = cli.produtos_autorizados || [];
-          console.log('>> codigosFiscais vindos do back:', windowCodigos);
-          atualizarCodigoFiscalOptions();
+          windowCodigos = cli.codigosFiscais||[];
+          windowProdutos = cli.produtos_autorizados||[];
+          atualizarDatalistCodigos();
           adicionarProduto();
         });
       });
 
       function adicionarProduto(){
-        if (!windowProdutos.length) return;
+        if(!windowProdutos.length) return;
+        // evita duplicar mesmo produto
         const usados = $(".produto-bloco")
-          .map((i, el) => $(el).find(".select-produto").val()).get().filter(Boolean);
-        const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
-        if (!dispon.length) return;
+          .map((i,el)=>$(el).find(".select-produto").val()).get().filter(Boolean);
+        const dispon = windowProdutos.filter(p=>!usados.includes(p.nome));
+        if(!dispon.length) return;
 
-        const bloco = $('<div class="produto-bloco"></div>');
+        const bloco = $(`<div class="produto-bloco"></div>`);
 
-        // Código Fiscal
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
+        // Código Fiscal → input + datalist
+        const inCod = $(`<input list="lista-codigos" class="input-codigo-fiscal" required>`);
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
-             .children().last().append(selCod);
-        atualizarCodigoFiscalOptions();
+             .children().last().append(inCod);
 
         // Produto
-        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+        const selProd = $(`<select class="select-produto" required><option value="">Produto</option></select>`);
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>')
              .children().last().append(selProd);
 
         // Valor Unitário
         bloco.append('<div class="form-group"><label>Valor Unitário</label><input readonly class="valor-unitario"></div>');
-        bloco.find(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
+        bloco.find(".valor-unitario").mask("R$ 000.000.000,00",{reverse:true});
 
         // Peso
         bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
@@ -185,37 +173,35 @@
             <p class="error-soma">A soma deve igualar ao subtotal</p>
           </div>`);
         bloco.append(gp);
-        gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
+        gp.find("input").mask("R$ 000.000.000,00",{reverse:true});
 
-        // Eventos
-        selCod.change(function(){
-          $(this).val() === "Personalizar"
-            ? gp.show()
-            : gp.hide().find("input").val("");
+        // eventos
+        inCod.on("change", ()=> {
+          // nada extra necessário, o usuário digita ou escolhe
         });
         selProd.change(function(){
-          const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
+          const v = parseFloat($(this).find("option:selected").data("valor"))||0;
           bloco.find(".valor-unitario").val(`R$ ${v.toFixed(2).replace(".",",")}`);
           atualizarSub(); atualizarTotal();
         });
-        bloco.find(".peso").on("input", () => { atualizarSub(); atualizarTotal(); });
-        gp.on("input blur","input", () => {
+        bloco.find(".peso").on("input", ()=>{ atualizarSub(); atualizarTotal(); });
+        gp.on("input blur","input", ()=> {
           const vc = parseMask(gp.find(".valor-com-nota").val()),
                 vs = parseMask(gp.find(".valor-sem-nota").val()),
                 st = parseMask(bloco.find(".subtotal").val());
-          gp.find(".error-soma").toggle(Math.abs(vc + vs - st) > 0.005);
+          gp.find(".error-soma").toggle(Math.abs(vc+vs-st)>0.005);
         });
 
         function atualizarSub(){
           const v = parseMask(bloco.find(".valor-unitario").val()),
-                p = parseFloat(bloco.find(".peso").val()) || 0;
-          bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
+                p = parseFloat(bloco.find(".peso").val())||0;
+          bloco.find(".subtotal").val(`R$ ${(v*p).toFixed(2).replace(".",",")}`);
         }
 
-        // Remover
-        if ($(".produto-bloco").length) {
-          const btn = $('<button type="button" class="btn-remove">Remover</button>');
-          btn.click(() => { bloco.remove(); atualizarTotal(); });
+        // remover
+        if($(".produto-bloco").length){
+          const btn = $('<button type="button" class="btn-remove">Remover</button>')
+            .click(()=>{ bloco.remove(); atualizarTotal(); });
           bloco.append(btn);
         }
 
@@ -231,16 +217,13 @@
       }
 
       function parseMask(str){
-        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",",".")) || 0;
+        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",","."))||0;
       }
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
-        const prSel = $("#prazosCheckboxes input:checked").map((i, c) => c.value).get();
-        if (!prSel.length) {
-          $(".error-prazos").show();
-          return;
-        }
+        const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
+        if(!prSel.length){ $(".error-prazos").show(); return; }
         const dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
@@ -253,40 +236,41 @@
         $(".produto-bloco").each(function(){
           const nome = $(this).find(".select-produto").val(),
                 valor = parseMask($(this).find(".valor-unitario").val()),
-                peso  = parseFloat($(this).find(".peso").val()) || 0,
+                peso  = parseFloat($(this).find(".peso").val())||0,
                 tpeso = $(this).find(".tipo-peso").val(),
-                cod   = $(this).find(".select-codigo-fiscal").val(),
+                cod   = $(this).find(".input-codigo-fiscal").val(),
                 vcn   = parseMask($(this).find(".valor-com-nota").val()),
                 vsn   = parseMask($(this).find(".valor-sem-nota").val());
-          if (nome && valor && peso) {
+          if(nome && valor && peso){
             dados.itens.push({
               nome_produto: nome,
               valor_unitario: valor,
               peso,
               tipo_peso: tpeso,
               codigo_fiscal: cod,
-              valor_com_nota: cod === "Personalizar" ? vcn : null,
-              valor_sem_nota: cod === "Personalizar" ? vsn : null
+              valor_com_nota: cod==="Personalizar"? vcn:null,
+              valor_sem_nota: cod==="Personalizar"? vsn:null
             });
           }
         });
         fetch("/api/pedidos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dados)
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(dados)
         })
-        .then(r => r.json())
-        .then(r => {
-          if (r.mensagem) location.href = "vendas.html?sucesso=1";
-          else alert("Erro ao salvar o pedido.");
-        })
-        .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
+        .then(r=>r.json())
+        .then(r=> r.mensagem
+           ? location.href="vendas.html?sucesso=1"
+           : alert("Erro ao salvar o pedido.")
+        )
+        .catch(err=>{ console.error(err); alert("Erro ao salvar o pedido."); });
       });
 
-      // Inicializa
+      // inicializa
       adicionarProduto();
     });
   </script>
 </body>
 </html>
+
 
