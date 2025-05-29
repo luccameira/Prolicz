@@ -44,6 +44,7 @@ router.post('/', async (req, res) => {
     });
 
     prazos.forEach(p => {
+      console.log('Inserindo prazo no banco:', p);
       promises.push(connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
         [clienteId, p.descricao, p.dias]
@@ -175,6 +176,7 @@ router.put('/:id', async (req, res) => {
     });
 
     prazos.forEach(p => {
+      console.log('Inserindo prazo no banco:', p);
       promises.push(connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
         [id, p.descricao, p.dias]
