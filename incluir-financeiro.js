@@ -102,7 +102,7 @@ async function carregarPedidosFinanceiro() {
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
       const valorTotalFmt = formatarMoeda(valorTotalCalc);
 
-      // descontos aplicados (motivo e quantidade)
+      // descontos aplicados (motivo, quantidade e peso)
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
@@ -110,7 +110,7 @@ async function carregarPedidosFinanceiro() {
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${d.quantidade} unidades (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+                `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
               ).join('')}
             </ul>
           </div>
