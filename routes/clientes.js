@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 let connection;
@@ -9,7 +10,6 @@ router.post('/', async (req, res) => {
     documento,
     nome_fantasia,
     situacao_tributaria,
-    codigo_fiscal,
     cep,
     logradouro,
     numero,
@@ -26,16 +26,15 @@ router.post('/', async (req, res) => {
   const sql = `
     INSERT INTO clientes (
       tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
-      codigo_fiscal, cep, logradouro, numero, bairro, cidade, estado,
+      cep, logradouro, numero, bairro, cidade, estado,
       meio_pagamento, codigos_fiscais
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = [
     tipo_pessoa,
     documento,
     nome_fantasia,
     situacao_tributaria,
-    codigo_fiscal,
     cep,
     logradouro,
     numero,
@@ -60,7 +59,11 @@ router.post('/', async (req, res) => {
     });
 
     produtos.forEach(p => {
-      const valor = parseFloat(p.valor.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+      const valor = parseFloat(
+        typeof p.valor === "string"
+          ? p.valor.replace(/[^\d,-]/g, '').replace(',', '.')
+          : p.valor
+      ) || 0;
       promises.push(connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
         [clienteId, p.id, valor]
@@ -78,8 +81,8 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ mensagem: 'Cliente cadastrado com sucesso!', id: clienteId });
   } catch (err) {
-    console.error('Erro ao cadastrar cliente:', err);
-    res.status(500).json({ erro: 'Erro ao cadastrar cliente.' });
+    console.error('Erro ao cadastrar cliente:', err, req.body);
+    res.status(500).json({ erro: 'Erro ao cadastrar cliente.', detalhes: err.message });
   }
 });
 
@@ -169,7 +172,6 @@ router.put('/:id', async (req, res) => {
     documento,
     nome_fantasia,
     situacao_tributaria,
-    codigo_fiscal,
     cep,
     logradouro,
     numero,
@@ -190,7 +192,6 @@ router.put('/:id', async (req, res) => {
         documento          = ?,
         nome_fantasia      = ?,
         situacao_tributaria= ?,
-        codigo_fiscal      = ?,
         cep                = ?,
         logradouro         = ?,
         numero             = ?,
@@ -205,7 +206,6 @@ router.put('/:id', async (req, res) => {
       documento,
       nome_fantasia,
       situacao_tributaria,
-      codigo_fiscal,
       cep,
       logradouro,
       numero,
@@ -233,7 +233,11 @@ router.put('/:id', async (req, res) => {
     });
 
     produtos.forEach(p => {
-      const valor = parseFloat(p.valor.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+      const valor = parseFloat(
+        typeof p.valor === "string"
+          ? p.valor.replace(/[^\d,-]/g, '').replace(',', '.')
+          : p.valor
+      ) || 0;
       promises.push(connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
         [id, p.id, valor]
@@ -264,4 +268,3 @@ Object.defineProperty(router, 'connection', {
 });
 
 module.exports = router;
-
