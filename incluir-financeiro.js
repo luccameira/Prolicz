@@ -30,9 +30,7 @@ async function carregarPedidosFinanceiro() {
   ]);
   let pedidos = [];
   try {
-    const pendentes = await resPendentes.json();
-    const anteriores = await resAnteriores.json();
-    pedidos = [...pendentes, ...anteriores];
+    pedidos = [...await resPendentes.json(), ...await resAnteriores.json()];
     if (!Array.isArray(pedidos)) throw new Error('Resposta inválida');
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
@@ -44,6 +42,7 @@ async function carregarPedidosFinanceiro() {
   const lista = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente')?.value.toLowerCase() || '';
   const ordenar = document.getElementById('ordenar')?.value || 'data';
+
   let filtrados = pedidos.filter(p => p.cliente.toLowerCase().includes(filtro));
   if (ordenar === 'cliente') {
     filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
@@ -81,8 +80,8 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- Materiais da venda ----
-    pedido.materiais?.forEach(item => {
+    // Materiais da venda
+    (pedido.materiais || []).forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -130,14 +129,16 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // ---- separador visual ----
+    // separador visual
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // ---- Resumo Financeiro ----
+    // resumo financeiro
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
+
+    // total da venda
     const totalVenda = (pedido.materiais || []).reduce((sum, item) => {
       let dkg = 0;
       if (item.descontos?.length) {
@@ -153,15 +154,16 @@ async function carregarPedidosFinanceiro() {
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
       <div class="vencimentos-container"></div>
+      <p class="venc-soma-error"></p>
     `;
 
-    // ---- Vencimentos com máscara e confirmação ----
+    // vencimentos com máscara e confirmação
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     pedido.prazos_pagamento?.forEach((iso, i) => {
       const dt = new Date(iso);
       const ok = !isNaN(dt.getTime());
       const valorSug = totalVenda / (pedido.prazos_pagamento.length || 1);
-      const valorSugFmt = valorSug.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+      const valorSugFmt = valorSug.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       const row = document.createElement('div');
       row.className = 'vencimento-row';
@@ -180,25 +182,36 @@ async function carregarPedidosFinanceiro() {
       etiquetaConfirmado.textContent = 'CONFIRMADO';
       etiquetaConfirmado.style.cursor = 'pointer';
 
-      // máscara ao blur
+      // máscara ao blur + recalcular soma
       inp.addEventListener('blur', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
         if (!isNaN(num)) {
-          inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+          inp.value = num.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
         }
-        atualizarBotaoLiberar(); 
+        atualizarBotaoLiberar();
       });
 
-      // alterna confirmação
+      // alterna confirmação + recalcular soma/erro
       function toggleConfirmacao() {
         const isConf = row.dataset.confirmado === 'true';
         if (!isConf) {
-          // confirmar
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
           if (isNaN(num) || num < 0) {
-            alert('Digite um valor válido.');
+            // inline error abaixo do campo
+            let err = row.querySelector('.row-error');
+            if (!err) {
+              err = document.createElement('div');
+              err.className = 'row-error';
+              err.style.color = 'red';
+              err.style.fontSize = '13px';
+              err.textContent = 'Valor inválido.';
+              row.appendChild(err);
+            }
             inp.focus();
             return;
           }
@@ -208,7 +221,6 @@ async function carregarPedidosFinanceiro() {
           inp.disabled = true;
           btn.replaceWith(etiquetaConfirmado);
         } else {
-          // desconfirmar
           row.dataset.confirmado = 'false';
           inp.disabled = false;
           etiquetaConfirmado.replaceWith(btn);
@@ -224,7 +236,7 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
-    // ---- Observações do Financeiro e botão ----
+    // observações do financeiro e botão
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
@@ -237,7 +249,7 @@ async function carregarPedidosFinanceiro() {
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
 
-    // função para validar soma dos vencimentos
+    // valida soma e exibe erro inline
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
@@ -247,14 +259,18 @@ async function carregarPedidosFinanceiro() {
         const num = parseFloat(raw);
         if (!isNaN(num)) soma += num;
       });
-      // compara soma com totalVenda
+      const erroEl = containerCinza.querySelector('.venc-soma-error');
+      if (Math.abs(soma - totalVenda) > 0.005) {
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}) difere do total R$ ${totalVendaFmt}.`;
+      } else {
+        erroEl.textContent = '';
+      }
       btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
     }
 
-    // exibe inicialmente e bloqueia botão
     atualizarBotaoLiberar();
 
-    // toggle form visibility
+    // toggle form
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
