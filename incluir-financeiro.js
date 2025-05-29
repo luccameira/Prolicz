@@ -12,6 +12,10 @@ function formatarEmpresa(nomeEmpresa) {
   return nomeEmpresa.charAt(0).toUpperCase() + nomeEmpresa.slice(1);
 }
 
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 function formatarPesoSemDecimal(valor) {
   if (valor == null) return '—';
   const numero = Number(valor);
@@ -43,7 +47,6 @@ async function carregarPedidosFinanceiro() {
   const ordenar = document.getElementById('ordenar')?.value || 'data';
 
   let filtrados = pedidos.filter(p => p.cliente.toLowerCase().includes(filtro));
-
   if (ordenar === 'cliente') {
     filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
   } else {
@@ -95,16 +98,16 @@ async function carregarPedidosFinanceiro() {
       const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
 
       let totalDescontosKg = 0;
-      if (item.descontos && item.descontos.length > 0) {
+      if (item.descontos?.length) {
         totalDescontosKg = item.descontos.reduce(
-          (soma, desc) => soma + Number(desc.peso_calculado || 0),
+          (soma, d) => soma + Number(d.peso_calculado || 0),
           0
         );
       }
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // Calcular valor total do item
+      // Valor total do item com base no peso final e valor unitário
       const valorUnitarioNum = Number(item.valor_unitario) || 0;
       const valorTotalCalculado = pesoFinalNum * valorUnitarioNum;
       const valorTotalFormatado = valorTotalCalculado.toLocaleString('pt-BR', {
@@ -112,18 +115,19 @@ async function carregarPedidosFinanceiro() {
         currency: 'BRL'
       });
 
+      // Descontos
       let descontosHTML = '';
-      if (item.descontos && item.descontos.length > 0) {
+      if (item.descontos?.length) {
         descontosHTML = `
           <div class="descontos-aplicados" style="margin-top: 14px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos
-                .map(desc => `
-                <li>${formatarPesoSemDecimal(desc.quantidade)} ${
-                  desc.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
-                } (${formatarPesoSemDecimal(desc.peso_calculado)} Kg)</li>
-              `)
+                .map(d => `
+                  <li>${formatarPesoSemDecimal(d.quantidade)} ${
+                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
+                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
+                `)
                 .join('')}
             </ul>
           </div>
@@ -136,9 +140,8 @@ async function carregarPedidosFinanceiro() {
         <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
         ${descontosHTML}
         <p style="margin-top: 14px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} kg</p>
-        <p><strong>Valor Total do Item:</strong> <span class="etiqueta-peso-final">${valorTotalFormatado}</span></p>
+        <p style="margin-top: 8px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-peso-final">${valorTotalFormatado}</span></p>
       `;
-
       form.appendChild(cardMaterial);
     });
 
@@ -152,7 +155,7 @@ async function carregarPedidosFinanceiro() {
     // Recalcular totalVenda pelo peso final
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
       let desconto = 0;
-      if (item.descontos && item.descontos.length > 0) {
+      if (item.descontos?.length) {
         desconto = item.descontos.reduce(
           (sum, d) => sum + Number(d.peso_calculado || 0),
           0
@@ -163,15 +166,11 @@ async function carregarPedidosFinanceiro() {
     }, 0);
 
     containerCinza.innerHTML = `
-      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${
-        pedido.codigo_interno || '—'
-      }</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(
-      2
-    )}</p>
+      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
     `;
 
-    // Vencimentos baseado no totalVenda recalculado
+    // Vencimentos
     const vencimentosContainer = document.createElement('div');
     pedido.vencimentosValores = [];
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
@@ -235,28 +234,41 @@ async function carregarPedidosFinanceiro() {
 
     containerCinza.appendChild(vencimentosContainer);
 
-    // Observações
-    const obsDiv = document.createElement('div');
-    obsDiv.style.background = '#fff3cd';
-    obsDiv.style.padding = '10px';
-    obsDiv.style.borderRadius = '6px';
-    obsDiv.style.marginTop = '20px';
-    obsDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
-    containerCinza.appendChild(obsDiv);
+    // Observações do Financeiro
+    const blocoObservacao = document.createElement('div');
+    blocoObservacao.style.marginTop = '20px';
+
+    const labelObs = document.createElement('label');
+    labelObs.textContent = 'Observações do Financeiro:';
+    labelObs.style.display = 'block';
+    labelObs.style.marginBottom = '6px';
+    labelObs.style.fontWeight = '500';
+
+    const textareaObs = document.createElement('textarea');
+    textareaObs.placeholder = 'Digite suas observações aqui...';
+    textareaObs.style.width = '100%';
+    textareaObs.style.padding = '10px';
+    textareaObs.style.border = '1px solid #ccc';
+    textareaObs.style.borderRadius = '6px';
+    textareaObs.style.fontSize = '14px';
+    textareaObs.style.minHeight = '80px';
+
+    blocoObservacao.append(labelObs, textareaObs);
+    containerCinza.appendChild(blocoObservacao);
 
     form.appendChild(containerCinza);
 
-    // 3) Botão de confirmação
-    const btnCont = document.createElement('div');
-    btnCont.style.marginTop = '20px';
+    // Botão confirmar liberação
+    const btnContainer = document.createElement('div');
+    btnContainer.style.marginTop = '20px';
 
     const botao = document.createElement('button');
     botao.textContent = 'Confirmar Liberação do Cliente';
     botao.className = 'btn btn-registrar';
-    botao.onclick = () => confirmarFinanceiro(id, obsDiv.textContent);
-    btnCont.appendChild(botao);
+    botao.onclick = () => confirmarFinanceiro(id, textareaObs.value);
+    btnContainer.appendChild(botao);
 
-    form.appendChild(btnCont);
+    form.appendChild(btnContainer);
     card.appendChild(form);
 
     header.addEventListener('click', () => {
