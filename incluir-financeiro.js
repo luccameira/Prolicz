@@ -2,19 +2,6 @@ function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
 
-function formatarEmpresa(nomeEmpresa) {
-  if (!nomeEmpresa) return '—';
-  const nome = nomeEmpresa.toLowerCase();
-  if (nome === 'mellicz') return 'Mellicz Ambiental';
-  if (nome === 'pronasa') return 'Pronasa';
-  // Caso queira outros nomes, pode adicionar aqui
-  return nomeEmpresa.charAt(0).toUpperCase() + nomeEmpresa.slice(1);
-}
-
-function formatarMoeda(valor) {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 async function carregarPedidosFinanceiro() {
   const [resPendentes, resAnteriores] = await Promise.all([
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
@@ -58,13 +45,12 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Header com cliente e empresa formatada
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
-        <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
+        <p>Empresa: ${pedido.empresa ? (pedido.empresa.charAt(0).toUpperCase() + pedido.empresa.slice(1)) : '—'}</p>
       </div>
       <div class="status-badge status-amarelo">
         <i class="fa fa-money-bill"></i> ${pedido.status}
@@ -72,157 +58,86 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    // Formulário escondido
     const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // Container cinza com código interno, valor total, vencimentos editáveis e observações
     const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginBottom = '20px';
 
-    // Total da venda
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
       return soma + (Number(item.valor_total) || 0);
     }, 0);
 
-    // Monta a área de vencimentos com inputs e botão confirmar
-    const vencimentosContainer = document.createElement('div');
+    const valorParcela = totalVenda / (pedido.prazos_pagamento?.length || 1);
+    const vencimentosHTML = (pedido.prazos_pagamento || []).map((data, index) => {
+      const dataFormatada = new Date(data);
+      const dataValida = !isNaN(dataFormatada.getTime());
+      return `
+        <p style="margin-bottom: 6px;">
+          <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; margin-right:6px; font-weight: 500;">
+            Vencimento ${index + 1}
+          </span>
+          ${dataValida ? formatarData(dataFormatada) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
+          <button class="btn-confirmar-vencimento" data-pedido="${id}" data-parcela="${index}" style="margin-left:10px; padding: 2px 8px; font-size: 12px; cursor:pointer;">✓ Confirmar</button>
+          <input type="number" step="0.01" value="${valorParcela.toFixed(2)}" class="input-vencimento" data-pedido="${id}" data-parcela="${index}" style="width:100px; margin-left:5px;">
+        </p>
+      `;
+    }).join('');
 
-    pedido.vencimentosValores = []; // para armazenar os valores confirmados por vencimento
-
-    pedido.prazos_pagamento = pedido.prazos_pagamento || []; // proteção
-
-    pedido.prazos_pagamento.forEach((dataVencimentoISO, index) => {
-      const dataVencimento = new Date(dataVencimentoISO);
-      const dataValida = !isNaN(dataVencimento.getTime());
-      const valorSugerido = totalVenda / pedido.prazos_pagamento.length;
-
-      // Criar div para cada vencimento
-      const vencimentoDiv = document.createElement('div');
-      vencimentoDiv.style.display = 'flex';
-      vencimentoDiv.style.alignItems = 'center';
-      vencimentoDiv.style.marginBottom = '6px';
-      vencimentoDiv.style.gap = '8px';
-
-      // Label Vencimento 1, 2...
-      const label = document.createElement('span');
-      label.style.background = '#eee';
-      label.style.color = '#555';
-      label.style.padding = '5px 10px';
-      label.style.borderRadius = '20px';
-      label.style.fontSize = '13px';
-      label.style.fontWeight = '500';
-      label.textContent = `Vencimento ${index + 1}`;
-
-      // Data do vencimento
-      const spanData = document.createElement('span');
-      spanData.style.minWidth = '105px';
-      spanData.textContent = dataValida ? formatarData(dataVencimento) : 'Data inválida';
-
-      // Input valor editável
-      const inputValor = document.createElement('input');
-      inputValor.type = 'text';
-      inputValor.value = valorSugerido.toFixed(2).replace('.', ',');
-      inputValor.style.width = '80px';
-      inputValor.style.padding = '4px 8px';
-      inputValor.style.border = '1px solid #ccc';
-      inputValor.style.borderRadius = '4px';
-      inputValor.style.textAlign = 'right';
-      inputValor.pattern = '^[0-9]+([,\\.][0-9]{1,2})?$';
-      inputValor.title = 'Digite um valor válido';
-
-      // Botão confirmar
-      const btnConfirmar = document.createElement('button');
-      btnConfirmar.type = 'button';
-      btnConfirmar.textContent = '✓';
-      btnConfirmar.title = 'Confirmar valor';
-      btnConfirmar.style.backgroundColor = '#28a745';
-      btnConfirmar.style.color = 'white';
-      btnConfirmar.style.border = 'none';
-      btnConfirmar.style.borderRadius = '4px';
-      btnConfirmar.style.padding = '5px 10px';
-      btnConfirmar.style.cursor = 'pointer';
-
-      // Evento botão confirmar: valida valor e salva no array pedido.vencimentosValores
-      btnConfirmar.onclick = () => {
-        let val = inputValor.value.replace(',', '.').trim();
-        const valNum = parseFloat(val);
-        if (isNaN(valNum) || valNum < 0) {
-          alert('Por favor, digite um valor válido maior ou igual a zero.');
-          inputValor.focus();
-          return;
-        }
-        pedido.vencimentosValores[index] = valNum;
-        btnConfirmar.textContent = '✓';
-        btnConfirmar.style.backgroundColor = '#28a745';
-        alert(`Valor do vencimento ${index + 1} confirmado: R$ ${valNum.toFixed(2)}`);
-      };
-
-      vencimentoDiv.appendChild(label);
-      vencimentoDiv.appendChild(spanData);
-      vencimentoDiv.appendChild(inputValor);
-      vencimentoDiv.appendChild(btnConfirmar);
-
-      vencimentosContainer.appendChild(vencimentoDiv);
-    });
-
-    // Monta o HTML do container cinza, com código interno, total, vencimentos e observações
     containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
+      ${vencimentosHTML}
+      <p style="margin-bottom: 10px; font-weight:bold;">Valor Total da Venda: R$ ${totalVenda.toFixed(2)}</p>
+      <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:20px;">
+        <strong>Observações:</strong> ${pedido.observacoes || '—'}
+      </div>
     `;
-    containerCinza.appendChild(vencimentosContainer);
-
-    // Observações
-    const observacoesDiv = document.createElement('div');
-    observacoesDiv.style.background = '#fff3cd';
-    observacoesDiv.style.padding = '10px';
-    observacoesDiv.style.borderRadius = '6px';
-    observacoesDiv.style.marginTop = '20px';
-    observacoesDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
-    containerCinza.appendChild(observacoesDiv);
-
     form.appendChild(containerCinza);
 
-    // Título Materiais da Venda
     const tituloMateriais = document.createElement('h4');
     tituloMateriais.textContent = 'Materiais da Venda';
     tituloMateriais.style.margin = '30px 0 10px';
     form.appendChild(tituloMateriais);
 
-    // Materiais e descontos no estilo conferência
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
-      cardMaterial.className = 'material-bloco'; // Para aplicar o CSS do print
+      cardMaterial.style.background = '#f5f5f5';
+      cardMaterial.style.border = '1px dashed #ccc';
+      cardMaterial.style.borderRadius = '8px';
+      cardMaterial.style.padding = '16px';
+      cardMaterial.style.marginBottom = '16px';
 
-      let descontosHTML = '';
-      if (item.descontos && item.descontos.length > 0) {
-        descontosHTML = `
-          <div class="descontos-aplicados">
-            <p>Descontos Aplicados:</p>
-            <ul>
-              ${item.descontos.map(desc => `
-                <li>${desc.motivo}: ${desc.quantidade} UNIDADES (${parseFloat(desc.peso_calculado).toFixed(2)} Kg)</li>
-              `).join('')}
-            </ul>
-          </div>
-        `;
-      }
+      // Peso previsto - exato ou aproximado (igual conferência)
+      const pesoPrevistoTexto = item.tipo_peso === 'Exato' ?
+        `Peso Previsto para Carregamento (Exato): ${item.peso} Kg` :
+        `Peso Previsto para Carregamento (Aproximado): ${item.peso} Kg`;
+
+      // Descontos aplicados (com ícone igual conferência)
+      const descontosHTML = (item.descontos && item.descontos.length > 0) ? `
+        <div class="descontos-aplicados" style="background-color: #fff9e6; border: 1px solid #ffe08a; padding: 12px; border-radius: 6px; margin-top: 14px;">
+          <p style="font-weight: 600; margin: 0 0 6px; color: #000;">
+            <i class="fa fa-tag" aria-hidden="true" style="margin-right: 8px;"></i> Descontos Aplicados:
+          </p>
+          <ul>
+            ${item.descontos.map(d => `<li>${d.motivo}: ${d.quantidade} UNIDADES (${d.peso_calculado} Kg)</li>`).join('')}
+          </ul>
+        </div>
+      ` : '';
 
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
-        <p>Peso Carregado: ${item.peso_carregado || item.quantidade || '—'} kg</p>
-        <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
+        <p>${pesoPrevistoTexto}</p>
+        <p>Peso Registrado na Carga: ${item.peso_carregado || '—'} Kg</p>
         ${descontosHTML}
+        <p style="margin-top: 10px; font-weight: bold;">Valor do Item: R$ ${item.valor_total.toFixed(2)}</p>
       `;
       form.appendChild(cardMaterial);
     });
 
-    // Observações do Financeiro
     const blocoObservacao = document.createElement('div');
     blocoObservacao.style.marginTop = '30px';
 
@@ -245,18 +160,13 @@ async function carregarPedidosFinanceiro() {
     blocoObservacao.appendChild(textareaObs);
     form.appendChild(blocoObservacao);
 
-    // Botão confirmar liberação
     const btnContainer = document.createElement('div');
     btnContainer.style.marginTop = '20px';
 
     const botao = document.createElement('button');
     botao.textContent = 'Confirmar Liberação do Cliente';
     botao.className = 'btn btn-registrar';
-    botao.onclick = () => {
-      // Aqui deve coletar os valores confirmados de vencimentos para enviar ao backend,
-      // por enquanto, só enviando as observações
-      confirmarFinanceiro(id, textareaObs.value);
-    };
+    botao.onclick = () => confirmarFinanceiro(id, textareaObs.value);
     btnContainer.appendChild(botao);
 
     form.appendChild(btnContainer);
@@ -267,6 +177,29 @@ async function carregarPedidosFinanceiro() {
     });
 
     lista.appendChild(card);
+  });
+
+  // Event delegation para confirmação de vencimentos editáveis
+  lista.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-confirmar-vencimento')) {
+      const pedidoId = e.target.dataset.pedido;
+      const parcelaIndex = parseInt(e.target.dataset.parcela);
+      const input = lista.querySelector(`input.input-vencimento[data-pedido="${pedidoId}"][data-parcela="${parcelaIndex}"]`);
+      if (input) {
+        const novoValor = parseFloat(input.value);
+        if (isNaN(novoValor) || novoValor < 0) {
+          alert('Valor inválido para a parcela.');
+          return;
+        }
+        // Aqui você pode implementar lógica para salvar a alteração no backend se desejar
+        alert(`Parcela ${parcelaIndex + 1} do pedido ${pedidoId} confirmada com valor: R$ ${novoValor.toFixed(2)}`);
+        // Desabilitar o input após confirmação
+        input.disabled = true;
+        // Alterar o botão para indicar confirmação
+        e.target.textContent = '✔ Confirmado';
+        e.target.disabled = true;
+      }
+    }
   });
 }
 
@@ -297,3 +230,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+
