@@ -348,6 +348,32 @@ router.put('/:id/financeiro', async (req, res) => {
   }
 });
 
+// DELETE /api/pedidos/:id - Excluir pedido
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Apagar descontos relacionados
+    await db.query('DELETE FROM descontos_item_pedido WHERE item_id IN (SELECT id FROM itens_pedido WHERE pedido_id = ?)', [id]);
+    // Apagar itens do pedido
+    await db.query('DELETE FROM itens_pedido WHERE pedido_id = ?', [id]);
+    // Apagar prazos de pagamento do pedido
+    await db.query('DELETE FROM prazos_pedido WHERE pedido_id = ?', [id]);
+    // Apagar o pedido
+    const [resultado] = await db.query('DELETE FROM pedidos WHERE id = ?', [id]);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ erro: 'Pedido não encontrado' });
+    }
+
+    res.json({ mensagem: 'Pedido excluído com sucesso!' });
+  } catch (erro) {
+    console.error('Erro ao excluir pedido:', erro);
+    res.status(500).json({ erro: 'Erro ao excluir pedido' });
+  }
+});
+
+
 // GET /api/pedidos/conferencia
 router.get('/conferencia', async (req, res) => {
   const sql = `
@@ -412,3 +438,4 @@ router.get('/nf', async (req, res) => {
 });
 
 module.exports = router;
+
