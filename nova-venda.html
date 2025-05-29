@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Novo Pedido</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
   <script defer src="incluir-layout.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
   <style>
-   .main-content {
+    .main-content {
       margin-left: 280px;
       padding: 100px 40px 40px;
     }
@@ -21,7 +24,7 @@
       background: white;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       max-width: 600px;
     }
 
@@ -36,7 +39,9 @@
       margin-bottom: 5px;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -160,7 +165,7 @@
       </div>
       <div class="form-group">
         <label for="data-coleta">Data da Coleta</label>
-        <input type="text" id="data-coleta" required>
+        <input type="text" id="data-coleta" required />
       </div>
       <div class="form-group">
         <label for="pedido-para">Pedido para</label>
@@ -172,7 +177,7 @@
       </div>
       <div class="form-group">
         <label for="codigo">Código Fiscal</label>
-        <input type="text" id="codigo" readonly class="readonly">
+        <input type="text" id="codigo" readonly class="readonly" />
       </div>
 
       <!-- Bloco dinâmico para Prazos de Pagamento -->
@@ -180,21 +185,46 @@
         <label>Prazos de Pagamento</label>
         <div id="lista-prazos"></div>
 
-        <div id="seletor-prazos" style="display: flex; gap: 8px; align-items: center;">
-          <select id="select-prazo" style="flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <div
+          id="seletor-prazos"
+          style="display: flex; gap: 8px; align-items: center"
+        >
+          <select
+            id="select-prazo"
+            style="
+              flex-grow: 1;
+              padding: 8px;
+              border-radius: 4px;
+              border: 1px solid #ccc;
+            "
+          >
             <option value="">Selecione um prazo</option>
           </select>
-          <button type="button" id="btn-adicionar-prazo" class="btn" style="padding: 8px 12px; display: none;">Adicionar</button>
+          <button
+            type="button"
+            id="btn-adicionar-prazo"
+            class="btn"
+            style="padding: 8px 12px; display: none"
+          >
+            Adicionar
+          </button>
         </div>
 
-        <button type="button" id="btn-adicionar-outro" class="btn" style="margin-top: 10px; display: none; max-width: 250px;">
+        <button
+          type="button"
+          id="btn-adicionar-outro"
+          class="btn"
+          style="margin-top: 10px; display: none; max-width: 250px"
+        >
           Adicionar outro prazo de pagamento
         </button>
       </div>
 
       <div id="produtos"></div>
       <div id="valor-total"></div>
-      <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
+      <button type="button" id="adicionar-produto" class="btn">
+        Adicionar outro produto
+      </button>
       <div class="form-group">
         <label for="observacao">Observação</label>
         <textarea id="observacao"></textarea>
@@ -204,254 +234,263 @@
   </div>
 
   <script>
-  $(document).ready(function () {
-    flatpickr("#data-coleta", {
-      locale: "pt",
-      dateFormat: "d/m/Y"
-    });
+    $(document).ready(function () {
+      flatpickr("#data-coleta", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+      });
 
-    let prazosSelecionados = [];
+      let prazosSelecionados = [];
 
-    function atualizarListaPrazos() {
-      const lista = $('#lista-prazos');
-      lista.empty();
-      prazosSelecionados.forEach((prazo, idx) => {
-        const tag = $(`
+      function atualizarListaPrazos() {
+        const lista = $("#lista-prazos");
+        lista.empty();
+        prazosSelecionados.forEach((prazo, idx) => {
+          const tag = $(`
           <div class="prazo-tag" data-index="${idx}">
             ${prazo}
             <button type="button" title="Remover prazo">&times;</button>
           </div>
         `);
-        tag.find('button').on('click', function () {
-          prazosSelecionados.splice(idx, 1);
-          atualizarListaPrazos();
-          carregarOpcoesPrazos(window.todosPrazos);
-          ajustarVisibilidadeBotoes();
+          tag.find("button").on("click", function () {
+            prazosSelecionados.splice(idx, 1);
+            atualizarListaPrazos();
+            carregarOpcoesPrazos(window.todosPrazos);
+            ajustarVisibilidadeBotoes();
+          });
+          lista.append(tag);
         });
-        lista.append(tag);
-      });
-    }
-
-    function carregarOpcoesPrazos(prazos) {
-      window.todosPrazos = prazos;
-      const select = $('#select-prazo');
-      select.empty();
-      select.append('<option value="">Selecione um prazo</option>');
-      prazos.forEach(p => {
-        if (!prazosSelecionados.includes(p.descricao)) {
-          select.append(`<option value="${p.descricao}">${p.descricao}</option>`);
-        }
-      });
-      $('#btn-adicionar-prazo').hide();
-      $('#select-prazo').val('');
-    }
-
-    function ajustarVisibilidadeBotoes() {
-      if (prazosSelecionados.length === 0) {
-        $('#btn-adicionar-outro').hide();
-        $('#seletor-prazos').show();
-      } else {
-        $('#btn-adicionar-outro').show();
-        $('#seletor-prazos').hide();
       }
-    }
 
-    $('#select-prazo').on('change', function () {
-      const val = $(this).val();
-      if (val) {
-        $('#btn-adicionar-prazo').show();
-      } else {
-        $('#btn-adicionar-prazo').hide();
-      }
-    });
-
-    $('#btn-adicionar-prazo').on('click', function () {
-      const val = $('#select-prazo').val();
-      if (!val) {
-        alert('Selecione um prazo válido antes de adicionar.');
-        return;
-      }
-      prazosSelecionados.push(val);
-      atualizarListaPrazos();
-      carregarOpcoesPrazos(window.todosPrazos);
-      ajustarVisibilidadeBotoes();
-    });
-
-    $('#btn-adicionar-outro').on('click', function () {
-      $('#seletor-prazos').show();
-      $('#btn-adicionar-outro').hide();
-      $('#select-prazo').val('');
-      $('#btn-adicionar-prazo').hide();
-    });
-
-    function atualizarValorTotal() {
-      let total = 0;
-      $('.produto-bloco').each(function () {
-        const subtotal = parseFloat($(this).find('.subtotal').val().replace('R$', '').replace(',', '.')) || 0;
-        total += subtotal;
-      });
-      $('#valor-total').text(`Valor total do pedido: R$ ${total.toFixed(2).replace('.', ',')}`);
-    }
-
-    function atualizarRemocoes() {
-      const blocos = $('.produto-bloco');
-      if (blocos.length <= 1) {
-        blocos.find('.btn-remove').remove();
-      } else {
-        blocos.each(function () {
-          if (!$(this).find('.btn-remove').length) {
-            const botao = $('<button type="button" class="btn-remove">Remover</button>');
-            botao.on('click', function () {
-              $(this).closest('.produto-bloco').remove();
-              atualizarRemocoes();
-              atualizarValorTotal();
-            });
-            $(this).append(botao);
+      function carregarOpcoesPrazos(prazos) {
+        window.todosPrazos = prazos;
+        const select = $("#select-prazo");
+        select.empty();
+        select.append('<option value="">Selecione um prazo</option>');
+        prazos.forEach((p) => {
+          if (!prazosSelecionados.includes(p.descricao)) {
+            select.append(`<option value="${p.descricao}">${p.descricao}</option>`);
           }
         });
+        $("#btn-adicionar-prazo").hide();
+        $("#select-prazo").val("");
       }
-    }
 
-    function adicionarProduto() {
-      if (!window.produtosAutorizados || window.produtosAutorizados.length === 0) return;
-      const usados = [];
-      $('.produto-bloco').each(function () {
-        const nome = $(this).find('select.select-produto').val();
-        if (nome) usados.push(nome);
+      function ajustarVisibilidadeBotoes() {
+        if (prazosSelecionados.length === 0) {
+          $("#btn-adicionar-outro").hide();
+          $("#seletor-prazos").show();
+        } else {
+          $("#btn-adicionar-outro").show();
+          $("#seletor-prazos").hide();
+        }
+      }
+
+      $("#select-prazo").on("change", function () {
+        const val = $(this).val();
+        if (val) {
+          $("#btn-adicionar-prazo").show();
+        } else {
+          $("#btn-adicionar-prazo").hide();
+        }
       });
-      const disponiveis = window.produtosAutorizados.filter(p => !usados.includes(p.nome));
-      if (disponiveis.length === 0) return;
 
-      const bloco = $('<div class="produto-bloco"></div>');
-      const select = $('<select class="select-produto"></select>').append('<option value="">Selecione</option>');
-      disponiveis.forEach(p => {
-        select.append(`<option value="${p.nome}" data-valor="${p.valor_unitario}">${p.nome}</option>`);
-      });
-
-      bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(select);
-      bloco.append('<div class="form-group"><label>Valor Unitário</label><input type="text" class="valor" readonly></div>');
-      bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
-      bloco.append('<div class="form-group"><label>Tipo de Peso</label><select><option>Exato</option><option>Aproximado</option></select></div>');
-      bloco.append('<div class="form-group"><label>Subtotal</label><input type="text" class="subtotal" readonly></div>');
-
-      $('#produtos').append(bloco);
-
-      select.on('change', function () {
-        const nomeSelecionado = $(this).val();
-        const usadoAntes = $('.produto-bloco').filter(function () {
-          return $(this).find('select.select-produto').val() === nomeSelecionado;
-        }).length > 1;
-        if (usadoAntes) {
-          alert('Este produto já foi selecionado em outro card. Por favor, escolha outro.');
-          $(this).val('');
-          bloco.find('.valor').val('');
-          bloco.find('.subtotal').val('');
-          atualizarValorTotal();
+      $("#btn-adicionar-prazo").on("click", function () {
+        const val = $("#select-prazo").val();
+        if (!val) {
+          alert("Selecione um prazo válido antes de adicionar.");
           return;
         }
-        const valor = $('option:selected', this).data('valor') || 0;
-        bloco.find('.valor').val(`R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`);
-        atualizarValorTotal();
+        prazosSelecionados.push(val);
+        atualizarListaPrazos();
+        carregarOpcoesPrazos(window.todosPrazos);
+        ajustarVisibilidadeBotoes();
       });
 
-      bloco.find('.peso').on('input', function () {
-        const valor = parseFloat((bloco.find('.valor').val() || '').replace('R$', '').replace(',', '.')) || 0;
-        const peso = parseFloat($(this).val().replace(',', '.')) || 0;
-        const subtotal = valor * peso;
-        bloco.find('.subtotal').val(`R$ ${subtotal.toFixed(2).replace('.', ',')}`);
-        atualizarValorTotal();
+      $("#btn-adicionar-outro").on("click", function () {
+        $("#seletor-prazos").show();
+        $("#btn-adicionar-outro").hide();
+        $("#select-prazo").val("");
+        $("#btn-adicionar-prazo").hide();
       });
 
-      atualizarRemocoes();
-    }
+      function atualizarValorTotal() {
+        let total = 0;
+        $(".produto-bloco").each(function () {
+          const subtotal =
+            parseFloat(
+              $(this)
+                .find(".subtotal")
+                .val()
+                .replace("R$", "")
+                .replace(",", ".")
+            ) || 0;
+          total += subtotal;
+        });
+        $("#valor-total").text(`Valor total do pedido: R$ ${total.toFixed(2).replace(".", ",")}`);
+      }
 
-    // Carregar clientes
-    $.get('/api/clientes', function (clientes) {
-      const clienteSelect = $('#cliente');
-      clienteSelect.empty().append('<option value="">Selecione</option>');
-      clientes.forEach(cliente => {
-        clienteSelect.append(`<option value="${cliente.id}">${cliente.nome_fantasia}</option>`);
-      });
-    });
+      function atualizarRemocoes() {
+        const blocos = $(".produto-bloco");
+        if (blocos.length <= 1) {
+          blocos.find(".btn-remove").remove();
+        } else {
+          blocos.each(function () {
+            if (!$(this).find(".btn-remove").length) {
+              const botao = $('<button type="button" class="btn-remove">Remover</button>');
+              botao.on("click", function () {
+                $(this).closest(".produto-bloco").remove();
+                atualizarRemocoes();
+                atualizarValorTotal();
+              });
+              $(this).append(botao);
+            }
+          });
+        }
+      }
 
-    // Quando cliente mudar, carrega dados, prazos e produtos
-    $('#cliente').on('change', function () {
-      const clienteId = $(this).val();
-      if (clienteId) {
-        $.get(`/api/clientes/${clienteId}`, function (cliente) {
-          $('#codigo').val(cliente.codigo_fiscal || '');
-          prazosSelecionados = [];
-          atualizarListaPrazos();
-          carregarOpcoesPrazos(cliente.prazos_pagamento || []);
-          ajustarVisibilidadeBotoes();
-          window.produtosAutorizados = cliente.produtos_autorizados || [];
-          $('#produtos').empty();
-          adicionarProduto();
+      function adicionarProduto() {
+        if (!window.produtosAutorizados || window.produtosAutorizados.length === 0) return;
+        const usados = [];
+        $(".produto-bloco").each(function () {
+          const nome = $(this).find("select.select-produto").val();
+          if (nome) usados.push(nome);
+        });
+        const disponiveis = window.produtosAutorizados.filter((p) => !usados.includes(p.nome));
+        if (disponiveis.length === 0) return;
+
+        const bloco = $('<div class="produto-bloco"></div>');
+        const select = $('<select class="select-produto"></select>').append('<option value="">Selecione</option>');
+        disponiveis.forEach((p) => {
+          select.append(`<option value="${p.nome}" data-valor="${p.valor_unitario}">${p.nome}</option>`);
+        });
+
+        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(select);
+        bloco.append('<div class="form-group"><label>Valor Unitário</label><input type="text" class="valor" readonly></div>');
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
+        bloco.append('<div class="form-group"><label>Tipo de Peso</label><select><option>Exato</option><option>Aproximado</option></select></div>');
+        bloco.append('<div class="form-group"><label>Subtotal</label><input type="text" class="subtotal" readonly></div>');
+
+        $("#produtos").append(bloco);
+
+        select.on("change", function () {
+          const nomeSelecionado = $(this).val();
+          const usadoAntes = $(".produto-bloco").filter(function () {
+            return $(this).find("select.select-produto").val() === nomeSelecionado;
+          }).length > 1;
+          if (usadoAntes) {
+            alert("Este produto já foi selecionado em outro card. Por favor, escolha outro.");
+            $(this).val("");
+            bloco.find(".valor").val("");
+            bloco.find(".subtotal").val("");
+            atualizarValorTotal();
+            return;
+          }
+          const valor = $("option:selected", this).data("valor") || 0;
+          bloco.find(".valor").val(`R$ ${parseFloat(valor).toFixed(2).replace(".", ",")}`);
           atualizarValorTotal();
         });
-      } else {
-        $('#codigo').val('');
-        prazosSelecionados = [];
-        atualizarListaPrazos();
-        carregarOpcoesPrazos([]);
-        ajustarVisibilidadeBotoes();
-        window.produtosAutorizados = [];
-        $('#produtos').empty();
-        atualizarValorTotal();
-      }
-    });
 
-    // Enviar formulário
-    $('#form-pedido').on('submit', function (e) {
-      e.preventDefault();
+        bloco.find(".peso").on("input", function () {
+          const valor = parseFloat((bloco.find(".valor").val() || "").replace("R$", "").replace(",", ".")) || 0;
+          const peso = parseFloat($(this).val().replace(",", ".")) || 0;
+          const subtotal = valor * peso;
+          bloco.find(".subtotal").val(`R$ ${subtotal.toFixed(2).replace(".", ",")}`);
+          atualizarValorTotal();
+        });
 
-      if (prazosSelecionados.length === 0) {
-        alert('Por favor, adicione pelo menos um prazo de pagamento.');
-        return;
+        atualizarRemocoes();
       }
 
-      const dados = {
-        cliente_id: $('#cliente').val(),
-        empresa: $('#empresa').val(), // campo corrigido para enviar empresa
-        tipo: $('#pedido-para').val(),
-        data_coleta: $('#data-coleta').val(),
-        prazos: prazosSelecionados,   // campo corrigido para enviar array de prazos
-        observacao: $('#observacao').val(),
-        itens: []
-      };
-
-      $('.produto-bloco').each(function () {
-        const nome_produto = $(this).find('select.select-produto').val();
-        const valor_unitario = parseFloat($(this).find('.valor').val().replace('R$', '').replace(',', '.'));
-        const peso = parseFloat($(this).find('.peso').val().replace(',', '.'));
-        const tipo_peso = $(this).find('select').eq(1).val();
-        if (nome_produto && valor_unitario && peso) {
-          dados.itens.push({ nome_produto, valor_unitario, peso, tipo_peso });
-        }
+      // Carregar clientes
+      $.get("/api/clientes", function (clientes) {
+        const clienteSelect = $("#cliente");
+        clienteSelect.empty().append('<option value="">Selecione</option>');
+        clientes.forEach((cliente) => {
+          clienteSelect.append(`<option value="${cliente.id}">${cliente.nome_fantasia}</option>`);
+        });
       });
 
-      fetch('/api/pedidos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dados)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.mensagem) {
-          window.location.href = 'vendas.html?sucesso=1';
+      // Quando cliente mudar, carrega dados, prazos e produtos
+      $("#cliente").on("change", function () {
+        const clienteId = $(this).val();
+        if (clienteId) {
+          $.get(`/api/clientes/${clienteId}`, function (cliente) {
+            $("#codigo").val(cliente.codigo_fiscal || "");
+            prazosSelecionados = [];
+            atualizarListaPrazos();
+            carregarOpcoesPrazos(cliente.prazos_pagamento || []);
+            ajustarVisibilidadeBotoes();
+            window.produtosAutorizados = cliente.produtos_autorizados || [];
+            $("#produtos").empty();
+            adicionarProduto();
+            atualizarValorTotal();
+          });
         } else {
-          alert('Erro ao salvar o pedido.');
+          $("#codigo").val("");
+          prazosSelecionados = [];
+          atualizarListaPrazos();
+          carregarOpcoesPrazos([]);
+          ajustarVisibilidadeBotoes();
+          window.produtosAutorizados = [];
+          $("#produtos").empty();
+          atualizarValorTotal();
         }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Erro ao salvar o pedido.');
       });
-    });
 
-    // Inicializa adicionando um produto já na tela
-    adicionarProduto();
-  });
+      // Enviar formulário
+      $("#form-pedido").on("submit", function (e) {
+        e.preventDefault();
+
+        if (prazosSelecionados.length === 0) {
+          alert("Por favor, adicione pelo menos um prazo de pagamento.");
+          return;
+        }
+
+        const dados = {
+          cliente_id: $("#cliente").val(),
+          empresa: $("#empresa").val(),
+          tipo: $("#pedido-para").val(),
+          data_coleta: $("#data-coleta").val(),
+          prazos: prazosSelecionados,
+          observacao: $("#observacao").val(),
+          itens: [],
+        };
+
+        $(".produto-bloco").each(function () {
+          const nome_produto = $(this).find("select.select-produto").val();
+          const valor_unitario = parseFloat(
+            $(this).find(".valor").val().replace("R$", "").replace(",", ".")
+          );
+          const peso = parseFloat($(this).find(".peso").val().replace(",", "."));
+          const tipo_peso = $(this).find("select").eq(1).val();
+          if (nome_produto && valor_unitario && peso) {
+            dados.itens.push({ nome_produto, valor_unitario, peso, tipo_peso });
+          }
+        });
+
+        fetch("/api/pedidos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados),
+        })
+          .then((res) => res.json())
+          .then((res) => {
+            if (res.mensagem) {
+              window.location.href = "vendas.html?sucesso=1";
+            } else {
+              alert("Erro ao salvar o pedido.");
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            alert("Erro ao salvar o pedido.");
+          });
+      });
+
+      // Inicializa adicionando um produto já na tela
+      adicionarProduto();
+    });
   </script>
 </body>
 </html>
