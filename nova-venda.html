@@ -25,10 +25,9 @@
       background: #f9f9f9;
       position: relative;
       overflow: visible !important;
-      z-index: 1; /* base */
+      z-index: 1 !important;
     }
-    /* quando o bloco estiver com foco dentro (ex: select focado), sobe na pilha */
-    .produto-bloco:focus-within { z-index: 1000 !important; }
+    .produto-bloco:focus-within { z-index: 100 !important; }
 
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
@@ -46,20 +45,29 @@
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    /*==== CORREÇÃO FINAL PARA O SELECT DE CÓDIGO FISCAL ====*/
+    /* ==== CORREÇÃO FINAL PARA O SELECT DE CÓDIGO FISCAL ==== */
     .select-codigo-fiscal {
       position: relative !important;
-      z-index: 1001 !important;
-      appearance: menulist !important;
-      -webkit-appearance: menulist !important;
-      -moz-appearance: menulist !important;
+      z-index: 10 !important;
       background-color: #fff !important;
       color: #000 !important;
       pointer-events: auto !important;
+      appearance: menulist !important;
+      -webkit-appearance: menulist !important;
+      -moz-appearance: menulist !important;
+    }
+    .select-codigo-fiscal:focus {
+      z-index: 9999 !important;
+      position: relative !important;
     }
     .select-codigo-fiscal option {
       color: #000 !important;
       background-color: #fff !important;
+    }
+
+    /* Remove qualquer overflow:hidden dos pais */
+    form, .main-content, body {
+      overflow: visible !important;
     }
   </style>
 </head>
@@ -143,11 +151,9 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // aceita codigosFiscais ou codigos_fiscais no JSON
           windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
-          // popula
           atualizarCodigoFiscalOptions();
           adicionarProduto();
         });
