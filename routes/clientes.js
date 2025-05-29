@@ -5,22 +5,45 @@ let connection;
 // POST /api/clientes - Cadastrar novo cliente
 router.post('/', async (req, res) => {
   const {
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria, codigo_fiscal,
-    cep, logradouro, numero, bairro, cidade, estado, meio_pagamento,
-    contatos = [], produtos = [], prazos = []
+    tipo_pessoa,
+    documento,
+    nome_fantasia,
+    situacao_tributaria,
+    codigo_fiscal,
+    cep,
+    logradouro,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    meio_pagamento,
+    codigosFiscais = [],
+    contatos = [],
+    produtos = [],
+    prazos = []
   } = req.body;
-
-  console.log('POST - Prazos recebidos:', prazos);
 
   const sql = `
     INSERT INTO clientes (
       tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
-      codigo_fiscal, cep, logradouro, numero, bairro, cidade, estado, meio_pagamento
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      codigo_fiscal, cep, logradouro, numero, bairro, cidade, estado,
+      meio_pagamento, codigos_fiscais
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = [
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
-    codigo_fiscal, cep, logradouro, numero, bairro, cidade, estado, meio_pagamento
+    tipo_pessoa,
+    documento,
+    nome_fantasia,
+    situacao_tributaria,
+    codigo_fiscal,
+    cep,
+    logradouro,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    meio_pagamento,
+    JSON.stringify(codigosFiscais)
   ];
 
   try {
@@ -37,14 +60,14 @@ router.post('/', async (req, res) => {
     });
 
     produtos.forEach(p => {
+      const valor = parseFloat(p.valor.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
       promises.push(connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
-        [clienteId, p.id, parseFloat(p.valor.replace(/[^\d,-]/g, '').replace(',', '.')) || 0]
+        [clienteId, p.id, valor]
       ));
     });
 
     prazos.forEach(p => {
-      console.log('Inserindo prazo no banco:', p);
       promises.push(connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
         [clienteId, p.descricao, p.dias]
@@ -123,6 +146,10 @@ router.get('/:id', async (req, res) => {
     const [prazosRes] = await connection.query(queryPrazos, [id]);
 
     const cliente = clienteRes[0];
+    // converte o campo snake_case para camelCase para o front-end
+    cliente.codigosFiscais = cliente.codigos_fiscais || [];
+    delete cliente.codigos_fiscais;
+
     cliente.contatos = contatosRes;
     cliente.produtos_autorizados = produtosRes;
     cliente.prazos_pagamento = prazosRes;
@@ -138,26 +165,64 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
   const {
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria, codigo_fiscal,
-    cep, logradouro, numero, bairro, cidade, estado, meio_pagamento,
-    contatos = [], produtos = [], prazos = []
+    tipo_pessoa,
+    documento,
+    nome_fantasia,
+    situacao_tributaria,
+    codigo_fiscal,
+    cep,
+    logradouro,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    meio_pagamento,
+    codigosFiscais = [],
+    contatos = [],
+    produtos = [],
+    prazos = []
   } = req.body;
-
-  console.log('PUT - Prazos recebidos:', prazos);
 
   try {
     await connection.query(`
       UPDATE clientes SET
-        tipo_pessoa = ?, documento = ?, nome_fantasia = ?, situacao_tributaria = ?,
-        codigo_fiscal = ?, cep = ?, logradouro = ?, numero = ?, bairro = ?, cidade = ?, estado = ?, meio_pagamento = ?
+        tipo_pessoa        = ?,
+        documento          = ?,
+        nome_fantasia      = ?,
+        situacao_tributaria= ?,
+        codigo_fiscal      = ?,
+        cep                = ?,
+        logradouro         = ?,
+        numero             = ?,
+        bairro             = ?,
+        cidade             = ?,
+        estado             = ?,
+        meio_pagamento     = ?,
+        codigos_fiscais    = ?
       WHERE id = ?
-    `, [tipo_pessoa, documento, nome_fantasia, situacao_tributaria, codigo_fiscal, cep,
-        logradouro, numero, bairro, cidade, estado, meio_pagamento, id]);
+    `, [
+      tipo_pessoa,
+      documento,
+      nome_fantasia,
+      situacao_tributaria,
+      codigo_fiscal,
+      cep,
+      logradouro,
+      numero,
+      bairro,
+      cidade,
+      estado,
+      meio_pagamento,
+      JSON.stringify(codigosFiscais),
+      id
+    ]);
 
-    await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
-    await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
-    await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
+    // Limpa relacionamentos antigos
+    await connection.query('DELETE FROM contatos_cliente       WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM produtos_autorizados   WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM prazos_pagamento       WHERE cliente_id = ?', [id]);
 
+    // Reinsere novos
     const promises = [];
 
     contatos.forEach(c => {
@@ -176,7 +241,6 @@ router.put('/:id', async (req, res) => {
     });
 
     prazos.forEach(p => {
-      console.log('Inserindo prazo no banco:', p);
       promises.push(connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
         [id, p.descricao, p.dias]
@@ -184,6 +248,7 @@ router.put('/:id', async (req, res) => {
     });
 
     await Promise.all(promises);
+
     res.status(200).json({ mensagem: 'Cliente atualizado com sucesso!' });
   } catch (err) {
     console.error("Erro ao atualizar cliente:", err);
@@ -199,3 +264,4 @@ Object.defineProperty(router, 'connection', {
 });
 
 module.exports = router;
+
