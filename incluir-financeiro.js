@@ -100,22 +100,20 @@ async function carregarPedidosFinanceiro() {
       let totalDescontosKg = 0;
       if (item.descontos?.length) {
         totalDescontosKg = item.descontos.reduce(
-          (soma, d) => soma + Number(d.peso_calculado || 0),
+          (s, d) => s + Number(d.peso_calculado || 0),
           0
         );
       }
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // Valor total do item com base no peso final e valor unitário
       const valorUnitarioNum = Number(item.valor_unitario) || 0;
-      const valorTotalCalculado = pesoFinalNum * valorUnitarioNum;
-      const valorTotalFormatado = valorTotalCalculado.toLocaleString('pt-BR', {
+      const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
+      const valorTotalFormatado = valorTotalCalc.toLocaleString('pt-BR', {
         style: 'currency',
         currency: 'BRL'
       });
 
-      // Descontos
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
@@ -145,136 +143,137 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(cardMaterial);
     });
 
-    // 2) Código interno, vencimentos e observações
+    // 2) Código interno, total da venda, vencimentos e observações do pedido
     const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginTop = '20px';
 
-    // Recalcular totalVenda pelo peso final
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
-      let desconto = 0;
+      let desc = 0;
       if (item.descontos?.length) {
-        desconto = item.descontos.reduce(
-          (sum, d) => sum + Number(d.peso_calculado || 0),
-          0
-        );
+        desc = item.descontos.reduce((sm, d) => sm + Number(d.peso_calculado || 0), 0);
       }
-      const pesoFinalItem = (Number(item.peso_carregado) || 0) - desconto;
-      return soma + pesoFinalItem * (Number(item.valor_unitario) || 0);
+      const pf = (Number(item.peso_carregado) || 0) - desc;
+      return soma + pf * (Number(item.valor_unitario) || 0);
     }, 0);
 
     containerCinza.innerHTML = `
-      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
+      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${
+        pedido.codigo_interno || '—'
+      }</p>
       <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
     `;
 
+    // Observações do pedido (vendedor)
+    const obsPedidoDiv = document.createElement('div');
+    obsPedidoDiv.style.background = '#fff3cd';
+    obsPedidoDiv.style.padding = '10px';
+    obsPedidoDiv.style.borderRadius = '6px';
+    obsPedidoDiv.style.marginTop = '20px';
+    obsPedidoDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
+    containerCinza.appendChild(obsPedidoDiv);
+
     // Vencimentos
-    const vencimentosContainer = document.createElement('div');
+    const vencContainer = document.createElement('div');
     pedido.vencimentosValores = [];
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
 
-    pedido.prazos_pagamento.forEach((dataISO, idx) => {
-      const dataVenc = new Date(dataISO);
-      const ok = !isNaN(dataVenc.getTime());
-      const valorSug = totalVenda / pedido.prazos_pagamento.length;
+    pedido.prazos_pagamento.forEach((iso, i) => {
+      const dt = new Date(iso);
+      const ok = !isNaN(dt.getTime());
+      const valSug = totalVenda / pedido.prazos_pagamento.length;
 
-      const divV = document.createElement('div');
-      divV.style.display = 'flex';
-      divV.style.alignItems = 'center';
-      divV.style.marginBottom = '6px';
-      divV.style.gap = '8px';
+      const dv = document.createElement('div');
+      dv.style.display = 'flex';
+      dv.style.alignItems = 'center';
+      dv.style.marginBottom = '6px';
+      dv.style.gap = '8px';
 
-      const lbl = document.createElement('span');
-      lbl.style.background = '#eee';
-      lbl.style.color = '#555';
-      lbl.style.padding = '5px 10px';
-      lbl.style.borderRadius = '20px';
-      lbl.style.fontSize = '13px';
-      lbl.style.fontWeight = '500';
-      lbl.textContent = `Vencimento ${idx + 1}`;
+      const lb = document.createElement('span');
+      lb.style.background = '#eee';
+      lb.style.color = '#555';
+      lb.style.padding = '5px 10px';
+      lb.style.borderRadius = '20px';
+      lb.style.fontSize = '13px';
+      lb.style.fontWeight = '500';
+      lb.textContent = `Vencimento ${i + 1}`;
 
-      const spanD = document.createElement('span');
-      spanD.style.minWidth = '105px';
-      spanD.textContent = ok ? formatarData(dataVenc) : 'Data inválida';
+      const sp = document.createElement('span');
+      sp.style.minWidth = '105px';
+      sp.textContent = ok ? formatarData(dt) : 'Data inválida';
 
       const inp = document.createElement('input');
       inp.type = 'text';
-      inp.value = valorSug.toFixed(2).replace('.', ',');
+      inp.value = valSug.toFixed(2).replace('.', ',');
       inp.style.width = '80px';
       inp.style.padding = '4px 8px';
       inp.style.border = '1px solid #ccc';
       inp.style.borderRadius = '4px';
       inp.style.textAlign = 'right';
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.innerHTML = '✓';
-      btn.style.backgroundColor = '#28a745';
-      btn.style.color = 'white';
-      btn.style.border = 'none';
-      btn.style.borderRadius = '4px';
-      btn.style.padding = '5px 10px';
-      btn.style.cursor = 'pointer';
-      btn.onclick = () => {
+      const bt = document.createElement('button');
+      bt.type = 'button';
+      bt.innerHTML = '✓';
+      bt.style.backgroundColor = '#28a745';
+      bt.style.color = 'white';
+      bt.style.border = 'none';
+      bt.style.borderRadius = '4px';
+      bt.style.padding = '5px 10px';
+      bt.style.cursor = 'pointer';
+      bt.onclick = () => {
         const v = parseFloat(inp.value.replace(',', '.'));
         if (isNaN(v) || v < 0) {
           alert('Digite um valor válido.');
           inp.focus();
           return;
         }
-        pedido.vencimentosValores[idx] = v;
-        btn.innerHTML = '✓';
+        pedido.vencimentosValores[i] = v;
+        bt.innerHTML = '✓';
       };
 
-      divV.append(lbl, spanD, inp, btn);
-      vencimentosContainer.appendChild(divV);
+      dv.append(lb, sp, inp, bt);
+      vencContainer.appendChild(dv);
     });
 
-    containerCinza.appendChild(vencimentosContainer);
-
-    // Observações do Financeiro
-    const blocoObservacao = document.createElement('div');
-    blocoObservacao.style.marginTop = '20px';
-
-    const labelObs = document.createElement('label');
-    labelObs.textContent = 'Observações do Financeiro:';
-    labelObs.style.display = 'block';
-    labelObs.style.marginBottom = '6px';
-    labelObs.style.fontWeight = '500';
-
-    const textareaObs = document.createElement('textarea');
-    textareaObs.placeholder = 'Digite suas observações aqui...';
-    textareaObs.style.width = '100%';
-    textareaObs.style.padding = '10px';
-    textareaObs.style.border = '1px solid #ccc';
-    textareaObs.style.borderRadius = '6px';
-    textareaObs.style.fontSize = '14px';
-    textareaObs.style.minHeight = '80px';
-
-    blocoObservacao.append(labelObs, textareaObs);
-    containerCinza.appendChild(blocoObservacao);
-
+    containerCinza.appendChild(vencContainer);
     form.appendChild(containerCinza);
 
-    // Botão confirmar liberação
-    const btnContainer = document.createElement('div');
-    btnContainer.style.marginTop = '20px';
+    // 3) Observações do Financeiro e botão
+    const blocoFin = document.createElement('div');
+    blocoFin.style.marginTop = '20px';
 
-    const botao = document.createElement('button');
-    botao.textContent = 'Confirmar Liberação do Cliente';
-    botao.className = 'btn btn-registrar';
-    botao.onclick = () => confirmarFinanceiro(id, textareaObs.value);
-    btnContainer.appendChild(botao);
+    const lblFin = document.createElement('label');
+    lblFin.textContent = 'Observações do Financeiro:';
+    lblFin.style.display = 'block';
+    lblFin.style.marginBottom = '6px';
+    lblFin.style.fontWeight = '500';
 
-    form.appendChild(btnContainer);
+    const taFin = document.createElement('textarea');
+    taFin.placeholder = 'Digite suas observações aqui...';
+    taFin.style.width = '100%';
+    taFin.style.padding = '10px';
+    taFin.style.border = '1px solid #ccc';
+    taFin.style.borderRadius = '6px';
+    taFin.style.fontSize = '14px';
+    taFin.style.minHeight = '80px';
+
+    const btnWrap = document.createElement('div');
+    btnWrap.style.marginTop = '20px';
+
+    const btnFin = document.createElement('button');
+    btnFin.textContent = 'Confirmar Liberação do Cliente';
+    btnFin.className = 'btn btn-registrar';
+    btnFin.onclick = () => confirmarFinanceiro(id, taFin.value);
+
+    blocoFin.append(lblFin, taFin, btnWrap.appendChild(btnFin));
+    form.appendChild(blocoFin);
+
     card.appendChild(form);
-
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
-
     lista.appendChild(card);
   });
 }
