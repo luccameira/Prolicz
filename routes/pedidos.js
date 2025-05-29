@@ -74,7 +74,7 @@ router.get('/carga', async (req, res) => {
   }
 });
 
-// GET /api/pedidos - listagem com filtros e prazos de pagamento incluídos
+// GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
@@ -112,7 +112,6 @@ router.get('/', async (req, res) => {
     const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
-      // Materiais do pedido
       const [materiais] = await db.query(
         `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
@@ -133,17 +132,20 @@ router.get('/', async (req, res) => {
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
 
-      // Prazos de pagamento do pedido
-      const [prazos] = await db.query(
-        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ? ORDER BY id ASC`,
+      // Ajuste para buscar os prazos do pedido
+      const [prazosPedido] = await db.query(
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
-
-      // Montar um array com as datas de vencimento calculadas com base na data_coleta + dias
-      pedido.prazos_pagamento = prazos.map(p => {
-        const dataColeta = new Date(pedido.data_coleta);
-        dataColeta.setDate(dataColeta.getDate() + p.dias);
-        return dataColeta.toISOString();
+      // Calcula as datas reais dos prazos com base na data_coleta
+      pedido.prazos_pagamento = prazosPedido.map(prazo => {
+        let dataVencimento = null;
+        if (pedido.data_coleta) {
+          const dataColeta = new Date(pedido.data_coleta);
+          dataColeta.setDate(dataColeta.getDate() + prazo.dias);
+          dataVencimento = dataColeta.toISOString();
+        }
+        return dataVencimento;
       });
     }
 
@@ -175,6 +177,7 @@ router.post('/', async (req, res) => {
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
+    // Inserir pedido na tabela pedidos, sem campo prazos_pagamento
     const [pedidoResult] = await db.query(
       `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, codigo_fiscal, data_criacao)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -183,6 +186,7 @@ router.post('/', async (req, res) => {
 
     const pedido_id = pedidoResult.insertId;
 
+    // Inserir itens do pedido
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
@@ -193,11 +197,28 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Inserir prazos do pedido na tabela prazos_pedido
     if (Array.isArray(prazos)) {
       for (const prazo of prazos) {
+        let descricao = '';
+        let dias = 0;
+
+        if (typeof prazo === 'string') {
+          descricao = prazo;
+          if (prazo.toLowerCase() === 'à vista') {
+            dias = 0;
+          } else {
+            const match = prazo.match(/\d+/);
+            dias = match ? parseInt(match[0], 10) : 0;
+          }
+        } else if (typeof prazo === 'object' && prazo !== null) {
+          descricao = prazo.descricao || '';
+          dias = prazo.dias || 0;
+        }
+
         await db.query(
           `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
-          [pedido_id, prazo.descricao.trim(), prazo.dias]
+          [pedido_id, descricao.trim(), dias]
         );
       }
     }
@@ -390,26 +411,4 @@ router.get('/nf', async (req, res) => {
   }
 });
 
-
-// DELETE /api/pedidos/:id - Excluir pedido
-router.delete('/:id', async (req, res) => {
-  const id = req.params.id;
-
-  try {
-    const [result] = await db.query('DELETE FROM pedidos WHERE id = ?', [id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ erro: 'Pedido não encontrado' });
-    }
-
-    res.json({ mensagem: 'Pedido excluído com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir pedido:', error);
-    res.status(500).json({ erro: 'Erro ao excluir pedido' });
-  }
-});
-
-
 module.exports = router;
-
-
