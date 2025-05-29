@@ -50,7 +50,7 @@ async function carregarPedidosFinanceiro() {
     header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
-        <p>Empresa: ${pedido.empresa ? (pedido.empresa.charAt(0).toUpperCase() + pedido.empresa.slice(1)) : '—'}</p>
+        <p>Empresa: ${pedido.empresa ? capitalizeWords(pedido.empresa) : '—'}</p>
       </div>
       <div class="status-badge status-amarelo">
         <i class="fa fa-money-bill"></i> ${pedido.status}
@@ -72,26 +72,26 @@ async function carregarPedidosFinanceiro() {
       return soma + (Number(item.valor_total) || 0);
     }, 0);
 
-    const valorParcela = totalVenda / (pedido.prazos_pagamento?.length || 1);
+    // Exibe vencimentos com campos editáveis e botão confirmar
     const vencimentosHTML = (pedido.prazos_pagamento || []).map((data, index) => {
       const dataFormatada = new Date(data);
       const dataValida = !isNaN(dataFormatada.getTime());
       return `
-        <p style="margin-bottom: 6px;">
-          <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; margin-right:6px; font-weight: 500;">
+        <p style="margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
+          <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; font-weight: 500;">
             Vencimento ${index + 1}
           </span>
-          ${dataValida ? formatarData(dataFormatada) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
-          <button class="btn-confirmar-vencimento" data-pedido="${id}" data-parcela="${index}" style="margin-left:10px; padding: 2px 8px; font-size: 12px; cursor:pointer;">✓ Confirmar</button>
-          <input type="number" step="0.01" value="${valorParcela.toFixed(2)}" class="input-vencimento" data-pedido="${id}" data-parcela="${index}" style="width:100px; margin-left:5px;">
+          <span>${dataValida ? formatarData(dataFormatada) : 'Data inválida'}</span>
+          <input type="text" value="${(totalVenda / (pedido.prazos_pagamento.length)).toFixed(2)}" style="width: 80px; padding: 4px; font-size: 14px;" />
+          <button type="button" style="background: #28a745; border: none; color: white; padding: 4px 10px; border-radius: 5px; cursor: pointer;">✔️</button>
         </p>
       `;
     }).join('');
 
     containerCinza.innerHTML = `
-      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
       ${vencimentosHTML}
-      <p style="margin-bottom: 10px; font-weight:bold;">Valor Total da Venda: R$ ${totalVenda.toFixed(2)}</p>
+      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
       <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:20px;">
         <strong>Observações:</strong> ${pedido.observacoes || '—'}
       </div>
@@ -111,30 +111,27 @@ async function carregarPedidosFinanceiro() {
       cardMaterial.style.padding = '16px';
       cardMaterial.style.marginBottom = '16px';
 
-      // Peso previsto - exato ou aproximado (igual conferência)
-      const pesoPrevistoTexto = item.tipo_peso === 'Exato' ?
-        `Peso Previsto para Carregamento (Exato): ${item.peso} Kg` :
-        `Peso Previsto para Carregamento (Aproximado): ${item.peso} Kg`;
-
-      // Descontos aplicados (com ícone igual conferência)
-      const descontosHTML = (item.descontos && item.descontos.length > 0) ? `
-        <div class="descontos-aplicados" style="background-color: #fff9e6; border: 1px solid #ffe08a; padding: 12px; border-radius: 6px; margin-top: 14px;">
-          <p style="font-weight: 600; margin: 0 0 6px; color: #000;">
-            <i class="fa fa-tag" aria-hidden="true" style="margin-right: 8px;"></i> Descontos Aplicados:
-          </p>
-          <ul>
-            ${item.descontos.map(d => `<li>${d.motivo}: ${d.quantidade} UNIDADES (${d.peso_calculado} Kg)</li>`).join('')}
-          </ul>
-        </div>
-      ` : '';
+      // Construindo HTML similar à conferência de peso, incluindo descontos com ícone
+      let descontosHtml = '';
+      if (item.descontos && item.descontos.length > 0) {
+        descontosHtml = `
+          <div class="descontos-aplicados" style="background-color: #fff9e6; border: 1px solid #ffe08a; padding: 12px; border-radius: 6px; margin-top: 14px;">
+            <p><strong><i class="fa fa-tags"></i> Descontos Aplicados:</strong></p>
+            <ul>
+              ${item.descontos.map(d => `<li>${d.motivo}: ${d.quantidade} UNIDADES (${d.peso_calculado} Kg)</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
 
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
-        <p>${pesoPrevistoTexto}</p>
-        <p>Peso Registrado na Carga: ${item.peso_carregado || '—'} Kg</p>
-        ${descontosHTML}
-        <p style="margin-top: 10px; font-weight: bold;">Valor do Item: R$ ${item.valor_total.toFixed(2)}</p>
+        <p><strong>Peso Previsto para Carregamento (Aproximado):</strong> ${item.peso || '—'} Kg</p>
+        <p><strong>Peso Carregado:</strong> ${item.peso_carregado || '—'} Kg</p>
+        ${descontosHtml}
+        <p><strong>Valor Total do Item:</strong> R$ ${!isNaN(Number(item.valor_total)) ? Number(item.valor_total).toFixed(2) : '—'}</p>
       `;
+
       form.appendChild(cardMaterial);
     });
 
@@ -173,33 +170,10 @@ async function carregarPedidosFinanceiro() {
     card.appendChild(form);
 
     header.addEventListener('click', () => {
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+      form.style.display = form.style.display === 'block' ? 'none' : 'none';
     });
 
     lista.appendChild(card);
-  });
-
-  // Event delegation para confirmação de vencimentos editáveis
-  lista.addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-confirmar-vencimento')) {
-      const pedidoId = e.target.dataset.pedido;
-      const parcelaIndex = parseInt(e.target.dataset.parcela);
-      const input = lista.querySelector(`input.input-vencimento[data-pedido="${pedidoId}"][data-parcela="${parcelaIndex}"]`);
-      if (input) {
-        const novoValor = parseFloat(input.value);
-        if (isNaN(novoValor) || novoValor < 0) {
-          alert('Valor inválido para a parcela.');
-          return;
-        }
-        // Aqui você pode implementar lógica para salvar a alteração no backend se desejar
-        alert(`Parcela ${parcelaIndex + 1} do pedido ${pedidoId} confirmada com valor: R$ ${novoValor.toFixed(2)}`);
-        // Desabilitar o input após confirmação
-        input.disabled = true;
-        // Alterar o botão para indicar confirmação
-        e.target.textContent = '✔ Confirmado';
-        e.target.disabled = true;
-      }
-    }
   });
 }
 
@@ -225,9 +199,12 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
   }
 }
 
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
-
