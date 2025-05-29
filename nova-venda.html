@@ -40,7 +40,6 @@
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    /* Garantir selects padrão e sem interferência de z-index */
     select, .produto-bloco select {
       z-index: auto !important;
       position: static !important;
@@ -64,16 +63,6 @@
   <div class="main-content">
     <h1>Novo Pedido</h1>
     <a href="vendas.html" class="btn-voltar">Voltar</a>
-    <!-- Select puro de teste para diagnóstico -->
-    <!--
-    <label for="codigo-fiscal-teste">Select TESTE puro</label>
-    <select id="codigo-fiscal-teste">
-      <option value="">Selecione</option>
-      <option value="GA1">GA1</option>
-      <option value="GA2">GA2</option>
-      <option value="GX">GX</option>
-    </select>
-    -->
     <form id="form-pedido">
       <div class="form-group">
         <label for="empresa">Empresa</label>
@@ -147,7 +136,25 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
+          // --- RESOLUÇÃO DO BUG DO SELECT DE CÓDIGO FISCAL ---
+          let codigos = [];
+          if (cli.codigosFiscais && Array.isArray(cli.codigosFiscais)) {
+            codigos = cli.codigosFiscais;
+          } else if (cli.codigosFiscais && typeof cli.codigosFiscais === "string") {
+            try {
+              codigos = JSON.parse(cli.codigosFiscais);
+            } catch (e) { codigos = []; }
+          } else if (cli.codigos_fiscais && Array.isArray(cli.codigos_fiscais)) {
+            codigos = cli.codigos_fiscais;
+          } else if (cli.codigos_fiscais && typeof cli.codigos_fiscais === "string") {
+            try {
+              codigos = JSON.parse(cli.codigos_fiscais);
+            } catch (e) { codigos = []; }
+          }
+          windowCodigos = codigos;
+          console.log("DEBUG códigos fiscais recebidos:", windowCodigos, cli.codigosFiscais, cli.codigos_fiscais);
+          // --------------------------------------------------
+
           windowPrazos = cli.prazos_pagamento ? cli.prazos_pagamento.map(p => p.descricao) : [];
           windowProdutos = cli.produtos_autorizados || [];
 
@@ -309,4 +316,3 @@
   </script>
 </body>
 </html>
-
