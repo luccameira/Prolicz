@@ -83,11 +83,12 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // Materiais da venda
+    // ---- blocos de materiais ----
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
       cardMaterial.className = 'material-bloco';
 
+      // Preparar dados
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
       const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
@@ -95,7 +96,7 @@ async function carregarPedidosFinanceiro() {
       let totalDescontosKg = 0;
       if (item.descontos?.length) {
         totalDescontosKg = item.descontos.reduce(
-          (acc, d) => acc + Number(d.peso_calculado || 0),
+          (sum, d) => sum + Number(d.peso_calculado || 0),
           0
         );
       }
@@ -103,12 +104,11 @@ async function carregarPedidosFinanceiro() {
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
       const valorUnitarioNum = Number(item.valor_unitario) || 0;
+      const valorUnitarioFmt = formatarMoeda(valorUnitarioNum);
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
-      const valorTotalFormatado = valorTotalCalc.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
+      const valorTotalFmt = formatarMoeda(valorTotalCalc);
 
+      // Descontos HTML
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
@@ -117,9 +117,7 @@ async function carregarPedidosFinanceiro() {
             <ul>
               ${item.descontos
                 .map(d => `
-                  <li>${formatarPesoSemDecimal(d.quantidade)} ${
-                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
-                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
+                  <li>${formatarPesoSemDecimal(d.quantidade)} ${d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'} (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
                 `)
                 .join('')}
             </ul>
@@ -127,134 +125,107 @@ async function carregarPedidosFinanceiro() {
         `;
       }
 
+      // Montar bloco
       cardMaterial.innerHTML = `
-        <h4>${item.nome_produto}</h4>
+        <h4>${item.nome_produto} (${valorUnitarioFmt}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
         <p style="margin-top: 16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
-        <p style="margin-top: 12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFormatado}</span></p>
+        <p style="margin-top: 12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFmt}</span></p>
       `;
       form.appendChild(cardMaterial);
     });
 
-    // Separador visual
+    // ---- separador visual ----
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // Resumo Financeiro
+    // ---- resumo financeiro ----
     const containerCinza = document.createElement('div');
-    containerCinza.style.background = '#f8f9fa';
-    containerCinza.style.padding = '20px';
-    containerCinza.style.borderRadius = '8px';
-    containerCinza.style.marginTop = '20px';
-    containerCinza.style.border = '1px solid #ddd';
+    containerCinza.className = 'resumo-financeiro';
 
-    const totalVenda = (pedido.materiais || []).reduce((acc, item) => {
-      let d = 0;
+    // Calcular total da venda
+    const totalVenda = (pedido.materiais || []).reduce((sum, item) => {
+      let dkg = 0;
       if (item.descontos?.length) {
-        d = item.descontos.reduce((s, desc) => s + Number(desc.peso_calculado || 0), 0);
+        dkg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
       }
-      const pf = (Number(item.peso_carregado) || 0) - d;
-      return acc + pf * (Number(item.valor_unitario) || 0);
+      const pf = (Number(item.peso_carregado) || 0) - dkg;
+      return sum + pf * (Number(item.valor_unitario) || 0);
     }, 0);
+    const totalVendaFmt = formatarMoeda(totalVenda);
 
     containerCinza.innerHTML = `
-      <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> ${totalVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-      <div class="obs-pedido" style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 20px;">
-        <strong>Observações:</strong> ${pedido.observacoes || '—'}
-      </div>
-      <div class="vencimentos-container" style="margin-top: 20px;"></div>
+      <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
+      <p><strong>Valor Total da Venda:</strong> ${totalVendaFmt}</p>
+      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
+      <div class="vencimentos-container"></div>
     `;
 
-    // Vencimentos
+    // ---- vencimentos com máscara ----
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
-    pedido.vencimentosValores = [];
-    pedido.prazos_pagamento = pedido.prazos_pagamento || [];
+    (pedido.prazos_pagamento || []).forEach((iso, i) => {
+      const dt = new Date(iso);
+      const ok = !isNaN(dt.getTime());
+      const valorSug = totalVenda / (pedido.prazos_pagamento.length || 1);
 
-    pedido.prazos_pagamento.forEach((iso, i) => {
-      const d = new Date(iso);
-      const ok = !isNaN(d.getTime());
-      const valSug = totalVenda / pedido.prazos_pagamento.length;
+      const row = document.createElement('div');
+      row.className = 'vencimento-row';
+      row.innerHTML = `
+        <span class="venc-label">Vencimento ${i + 1}</span>
+        <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+        <input type="text" value="${valorSug.toFixed(2).replace('.', ',')}" />
+        <button type="button">✓</button>
+      `;
 
-      const dv = document.createElement('div');
-      dv.style.display = 'flex';
-      dv.style.alignItems = 'center';
-      dv.style.gap = '8px';
-      dv.style.marginBottom = '6px';
+      const inp = row.querySelector('input');
+      const btn = row.querySelector('button');
 
-      const lb = document.createElement('span');
-      lb.className = 'venc-label';
-      lb.textContent = `Vencimento ${i + 1}`;
+      // Máscara ao perder foco
+      inp.addEventListener('blur', () => {
+        const raw = inp.value.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+          inp.value = num.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        } else {
+          inp.value = '';
+        }
+      });
 
-      const sp = document.createElement('span');
-      sp.className = 'venc-data';
-      sp.textContent = ok ? formatarData(d) : 'Data inválida';
-
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.value = valSug.toFixed(2).replace('.', ',');
-      inp.style.width = '80px';
-      inp.style.padding = '4px 8px';
-      inp.style.border = '1px solid #ccc';
-      inp.style.borderRadius = '4px';
-      inp.style.textAlign = 'right';
-
-      const bt = document.createElement('button');
-      bt.textContent = '✓';
-      bt.style.backgroundColor = '#28a745';
-      bt.style.color = '#fff';
-      bt.style.border = 'none';
-      bt.style.borderRadius = '4px';
-      bt.style.padding = '5px 10px';
-      bt.style.cursor = 'pointer';
-      bt.addEventListener('click', () => {
-        const v = parseFloat(inp.value.replace(',', '.'));
-        if (isNaN(v) || v < 0) {
+      // Confirmar valor
+      btn.addEventListener('click', () => {
+        const raw = inp.value.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(raw);
+        if (isNaN(num) || num < 0) {
           alert('Digite um valor válido.');
           inp.focus();
           return;
         }
-        pedido.vencimentosValores[i] = v;
+        pedido.vencimentosValores = pedido.vencimentosValores || [];
+        pedido.vencimentosValores[i] = num;
       });
 
-      dv.append(lb, sp, inp, bt);
-      vencContainer.appendChild(dv);
+      vencContainer.appendChild(row);
     });
 
     form.appendChild(containerCinza);
 
-    // Observações do Financeiro e Botão
+    // ---- Observações do Financeiro e botão ----
     const blocoFin = document.createElement('div');
-    blocoFin.style.marginTop = '20px';
-
-    const lblFin = document.createElement('label');
-    lblFin.textContent = 'Observações do Financeiro:';
-    lblFin.style.display = 'block';
-    lblFin.style.marginBottom = '6px';
-    lblFin.style.fontWeight = '500';
-
-    const taFin = document.createElement('textarea');
-    taFin.placeholder = 'Digite suas observações aqui...';
-    taFin.style.width = '100%';
-    taFin.style.padding = '10px';
-    taFin.style.border = '1px solid #ccc';
-    taFin.style.borderRadius = '6px';
-    taFin.style.fontSize = '14px';
-    taFin.style.minHeight = '80px';
-
-    const btnWrap = document.createElement('div');
-    btnWrap.style.marginTop = '20px';
-
-    const btnFin = document.createElement('button');
-    btnFin.textContent = 'Confirmar Liberação do Cliente';
-    btnFin.className = 'btn btn-registrar';
+    blocoFin.className = 'bloco-fin';
+    blocoFin.innerHTML = `
+      <label>Observações do Financeiro:</label>
+      <textarea placeholder="Digite suas observações aqui..."></textarea>
+      <button class="btn btn-registrar">Confirmar Liberação do Cliente</button>
+    `;
+    const taFin = blocoFin.querySelector('textarea');
+    const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-
-    btnWrap.appendChild(btnFin);
-    blocoFin.append(lblFin, taFin, btnWrap);
     form.appendChild(blocoFin);
 
     card.appendChild(form);
