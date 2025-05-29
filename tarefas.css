@@ -612,3 +612,37 @@ input[type="file"]::file-selector-button:hover {
   font-size: 15px;
 }
 
+/* Botão de confirmação ao lado do input de valor */
+.btn-confirmar-vencimento {
+  background-color: #28a745; /* Verde */
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  margin-left: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+.btn-confirmar-vencimento:hover {
+  background-color: #218838; /* Verde escuro no hover */
+}
+
+/* Ícone de check dentro do botão */
+.btn-confirmar-vencimento i {
+  margin-left: 4px;
+}
+
+/* Input do valor com largura ajustada para caber junto ao botão */
+.input-valor-vencimento {
+  width: 120px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: right;
+}
