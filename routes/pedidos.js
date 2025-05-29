@@ -382,5 +382,23 @@ router.get('/nf', async (req, res) => {
   }
 });
 
+// DELETE /api/pedidos/:id - Excluir pedido
+router.delete('/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const [result] = await db.query('DELETE FROM pedidos WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ erro: 'Pedido não encontrado' });
+    }
+
+    res.json({ mensagem: 'Pedido excluído com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir pedido:', error);
+    res.status(500).json({ erro: 'Erro ao excluir pedido' });
+  }
+});
+
 module.exports = router;
 
