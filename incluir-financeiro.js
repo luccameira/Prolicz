@@ -28,7 +28,6 @@ async function carregarPedidosFinanceiro() {
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
     fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso')
   ]);
-
   let pedidos = [];
   try {
     const pendentes = await resPendentes.json();
@@ -38,14 +37,13 @@ async function carregarPedidosFinanceiro() {
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
     document.getElementById('lista-pedidos').innerHTML =
-      `<p style="padding: 0 25px;">Erro ao carregar tarefas financeiras.</p>`;
+      `<p style="padding:0 25px;">Erro ao carregar tarefas financeiras.</p>`;
     return;
   }
 
   const lista = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente')?.value.toLowerCase() || '';
   const ordenar = document.getElementById('ordenar')?.value || 'data';
-
   let filtrados = pedidos.filter(p => p.cliente.toLowerCase().includes(filtro));
   if (ordenar === 'cliente') {
     filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
@@ -55,7 +53,7 @@ async function carregarPedidosFinanceiro() {
 
   lista.innerHTML = '';
   if (!filtrados.length) {
-    lista.innerHTML = `<p style="padding: 0 25px;">Nenhum pedido disponível no momento.</p>`;
+    lista.innerHTML = `<p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>`;
     return;
   }
 
@@ -83,18 +81,18 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // Materiais da venda
-    (pedido.materiais || []).forEach(item => {
+    // ---- Materiais da venda ----
+    pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
+      // dados do item
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
       const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
-
       let descontosKg = 0;
       if (item.descontos?.length) {
-        descontosKg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
+        descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       }
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
@@ -104,17 +102,18 @@ async function carregarPedidosFinanceiro() {
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
       const valorTotalFmt = formatarMoeda(valorTotalCalc);
 
+      // descontos aplicados
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
           <div class="descontos-aplicados" style="margin-top:16px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
-              ${item.descontos
-                .map(d => `<li>${formatarPesoSemDecimal(d.quantidade)} ${
+              ${item.descontos.map(d =>
+                `<li>${formatarPesoSemDecimal(d.quantidade)} ${
                   d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
-                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`)
-                .join('')}
+                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+              ).join('')}
             </ul>
           </div>
         `;
@@ -131,15 +130,14 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // Separador visual
+    // ---- separador visual ----
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // Resumo Financeiro
+    // ---- Resumo Financeiro ----
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
-
     const totalVenda = (pedido.materiais || []).reduce((sum, item) => {
       let dkg = 0;
       if (item.descontos?.length) {
@@ -157,17 +155,17 @@ async function carregarPedidosFinanceiro() {
       <div class="vencimentos-container"></div>
     `;
 
-    // Vencimentos com máscara e confirmação
+    // ---- Vencimentos com máscara e confirmação ----
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
-    (pedido.prazos_pagamento || []).forEach((iso, i) => {
+    pedido.prazos_pagamento?.forEach((iso, i) => {
       const dt = new Date(iso);
       const ok = !isNaN(dt.getTime());
       const valorSug = totalVenda / (pedido.prazos_pagamento.length || 1);
-      const valorSugFmt = valorSug
-        .toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const valorSugFmt = valorSug.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
 
       const row = document.createElement('div');
       row.className = 'vencimento-row';
+      row.dataset.confirmado = 'false';
       row.innerHTML = `
         <span class="venc-label">Vencimento ${i + 1}</span>
         <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
@@ -177,56 +175,86 @@ async function carregarPedidosFinanceiro() {
 
       const inp = row.querySelector('input');
       const btn = row.querySelector('button');
+      const etiquetaConfirmado = document.createElement('span');
+      etiquetaConfirmado.className = 'etiqueta-valor-item';
+      etiquetaConfirmado.textContent = 'CONFIRMADO';
+      etiquetaConfirmado.style.cursor = 'pointer';
 
-      // máscara ativa já no load e ao sair do campo
+      // máscara ao blur
       inp.addEventListener('blur', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
         if (!isNaN(num)) {
-          inp.value = num.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
+          inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
         }
+        atualizarBotaoLiberar(); 
       });
 
-      // ao confirmar, substitui check por etiqueta "CONFIRMADO"
-      btn.addEventListener('click', () => {
-        const raw = inp.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        if (isNaN(num) || num < 0) {
-          alert('Digite um valor válido.');
-          inp.focus();
-          return;
+      // alterna confirmação
+      function toggleConfirmacao() {
+        const isConf = row.dataset.confirmado === 'true';
+        if (!isConf) {
+          // confirmar
+          const raw = inp.value.replace(/\./g, '').replace(',', '.');
+          const num = parseFloat(raw);
+          if (isNaN(num) || num < 0) {
+            alert('Digite um valor válido.');
+            inp.focus();
+            return;
+          }
+          pedido.vencimentosValores = pedido.vencimentosValores || [];
+          pedido.vencimentosValores[i] = num;
+          row.dataset.confirmado = 'true';
+          inp.disabled = true;
+          btn.replaceWith(etiquetaConfirmado);
+        } else {
+          // desconfirmar
+          row.dataset.confirmado = 'false';
+          inp.disabled = false;
+          etiquetaConfirmado.replaceWith(btn);
         }
-        pedido.vencimentosValores = pedido.vencimentosValores || [];
-        pedido.vencimentosValores[i] = num;
+        atualizarBotaoLiberar();
+      }
 
-        const etiqueta = document.createElement('span');
-        etiqueta.className = 'etiqueta-valor-item';
-        etiqueta.textContent = 'CONFIRMADO';
-        btn.replaceWith(etiqueta);
-      });
+      btn.addEventListener('click', toggleConfirmacao);
+      etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
 
       vencContainer.appendChild(row);
     });
 
     form.appendChild(containerCinza);
 
-    // Observações do Financeiro e botão
+    // ---- Observações do Financeiro e botão ----
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
       <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar">Confirmar Liberação do Cliente</button>
+      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
     `;
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
 
-    // toggle form
+    // função para validar soma dos vencimentos
+    function atualizarBotaoLiberar() {
+      const rows = containerCinza.querySelectorAll('.vencimento-row');
+      let soma = 0;
+      rows.forEach(r => {
+        const inp = r.querySelector('input');
+        const raw = inp.value.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(raw);
+        if (!isNaN(num)) soma += num;
+      });
+      // compara soma com totalVenda
+      btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
+    }
+
+    // exibe inicialmente e bloqueia botão
+    atualizarBotaoLiberar();
+
+    // toggle form visibility
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
