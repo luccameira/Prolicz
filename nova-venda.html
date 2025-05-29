@@ -14,10 +14,18 @@
   <style>
     .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
-    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 16px; overflow: visible; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; position: relative; }
+    .produto-bloco {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      background: #f9f9f9;
+      position: relative;
+      overflow: visible !important;    /* <-- liberado para dropdown */
+    }
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
@@ -31,6 +39,12 @@
     /* personalizar */
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
+
+    /* garante que o próprio select fique acima */
+    .select-codigo-fiscal {
+      position: relative;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -65,16 +79,19 @@
           <option value="entregar">Entregar</option>
         </select>
       </div>
+
       <!-- prazos como checkboxes -->
       <div class="form-group">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
+
       <!-- itens -->
       <div id="produtos"></div>
       <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
+
       <div class="form-group">
         <label for="observacao">Observação</label>
         <textarea id="observacao"></textarea>
@@ -96,13 +113,13 @@
         });
       }
 
-      // Carrega dropdown de clientes
+      // carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
       });
 
-      // Ao mudar cliente, busca dados
+      // ao mudar cliente
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
@@ -112,12 +129,12 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // Prazos
+          // prazos
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowPrazos.forEach(pr => {
             $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pr}"> ${pr}</label>`);
           });
-          // Códigos e produtos
+          // códigos e produtos
           windowCodigos = cli.codigosFiscais || [];
           windowProdutos = cli.produtos_autorizados || [];
           console.log('>> codigosFiscais vindos do back:', windowCodigos);
@@ -128,7 +145,8 @@
 
       function adicionarProduto(){
         if (!windowProdutos.length) return;
-        const usados = $(".produto-bloco").map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+        const usados = $(".produto-bloco")
+          .map((i, el) => $(el).find(".select-produto").val()).get().filter(Boolean);
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
 
@@ -171,7 +189,9 @@
 
         // Eventos
         selCod.change(function(){
-          $(this).val() === "Personalizar" ? gp.show() : gp.hide().find("input").val("");
+          $(this).val() === "Personalizar"
+            ? gp.show()
+            : gp.hide().find("input").val("");
         });
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
@@ -216,7 +236,7 @@
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
-        const prSel = $("#prazosCheckboxes input:checked").map((i,c) => c.value).get();
+        const prSel = $("#prazosCheckboxes input:checked").map((i, c) => c.value).get();
         if (!prSel.length) {
           $(".error-prazos").show();
           return;
@@ -263,7 +283,7 @@
         .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
       });
 
-      // Inicializa com um produto
+      // Inicializa
       adicionarProduto();
     });
   </script>
