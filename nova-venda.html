@@ -12,7 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
   <style>
-    .main-content {
+   .main-content {
       margin-left: 280px;
       padding: 100px 40px 40px;
     }
@@ -210,15 +210,13 @@
       dateFormat: "d/m/Y"
     });
 
-    // Variável para armazenar prazos selecionados
     let prazosSelecionados = [];
 
-    // Função para atualizar a lista visual de prazos
     function atualizarListaPrazos() {
       const lista = $('#lista-prazos');
       lista.empty();
       prazosSelecionados.forEach((prazo, idx) => {
-        const tag = $(`  
+        const tag = $(`
           <div class="prazo-tag" data-index="${idx}">
             ${prazo}
             <button type="button" title="Remover prazo">&times;</button>
@@ -234,9 +232,8 @@
       });
     }
 
-    // Função para carregar opções no select de prazos
     function carregarOpcoesPrazos(prazos) {
-      window.todosPrazos = prazos; // salvar globalmente para reuso
+      window.todosPrazos = prazos;
       const select = $('#select-prazo');
       select.empty();
       select.append('<option value="">Selecione um prazo</option>');
@@ -249,7 +246,6 @@
       $('#select-prazo').val('');
     }
 
-    // Ajusta a visibilidade dos botões de adicionar
     function ajustarVisibilidadeBotoes() {
       if (prazosSelecionados.length === 0) {
         $('#btn-adicionar-outro').hide();
@@ -260,7 +256,6 @@
       }
     }
 
-    // Mostrar botão adicionar quando um prazo válido for selecionado
     $('#select-prazo').on('change', function () {
       const val = $(this).val();
       if (val) {
@@ -270,7 +265,6 @@
       }
     });
 
-    // Botão para adicionar prazo selecionado
     $('#btn-adicionar-prazo').on('click', function () {
       const val = $('#select-prazo').val();
       if (!val) {
@@ -283,7 +277,6 @@
       ajustarVisibilidadeBotoes();
     });
 
-    // Botão para adicionar outro prazo (mostra o seletor)
     $('#btn-adicionar-outro').on('click', function () {
       $('#seletor-prazos').show();
       $('#btn-adicionar-outro').hide();
@@ -419,9 +412,10 @@
 
       const dados = {
         cliente_id: $('#cliente').val(),
+        empresa: $('#empresa').val(), // campo corrigido para enviar empresa
         tipo: $('#pedido-para').val(),
         data_coleta: $('#data-coleta').val(),
-        prazo_pagamento: prazosSelecionados.join(' | '), // converte array para string separada por pipe
+        prazos: prazosSelecionados,   // campo corrigido para enviar array de prazos
         observacao: $('#observacao').val(),
         itens: []
       };
@@ -454,9 +448,10 @@
         alert('Erro ao salvar o pedido.');
       });
     });
+
+    // Inicializa adicionando um produto já na tela
+    adicionarProduto();
   });
   </script>
 </body>
 </html>
-
-
