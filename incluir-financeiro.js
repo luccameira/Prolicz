@@ -7,12 +7,18 @@ function formatarEmpresa(nomeEmpresa) {
   const nome = nomeEmpresa.toLowerCase();
   if (nome === 'mellicz') return 'Mellicz Ambiental';
   if (nome === 'pronasa') return 'Pronasa';
-  // Caso queira outros nomes, pode adicionar aqui
   return nomeEmpresa.charAt(0).toUpperCase() + nomeEmpresa.slice(1);
 }
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarPesoSemDecimal(valor) {
+  if (valor == null) return '—';
+  const numero = Number(valor);
+  if (Number.isInteger(numero)) return numero.toString();
+  return numero.toFixed(2).replace('.', ',');
 }
 
 async function carregarPedidosFinanceiro() {
@@ -199,6 +205,13 @@ async function carregarPedidosFinanceiro() {
       const cardMaterial = document.createElement('div');
       cardMaterial.className = 'material-bloco'; // Para aplicar o CSS do print
 
+      // Peso previsto para carregamento e tipo (aproximado ou exato)
+      const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
+      const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
+
+      // Peso registrado na carga
+      const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
+
       let descontosHTML = '';
       if (item.descontos && item.descontos.length > 0) {
         descontosHTML = `
@@ -206,7 +219,7 @@ async function carregarPedidosFinanceiro() {
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(desc => `
-                <li>${desc.motivo}: ${desc.quantidade} UNIDADES (${parseFloat(desc.peso_calculado).toFixed(2)} Kg)</li>
+                <li>${desc.motivo}: ${formatarPesoSemDecimal(desc.quantidade)} UNIDADES (${formatarPesoSemDecimal(desc.peso_calculado)} Kg)</li>
               `).join('')}
             </ul>
           </div>
@@ -215,8 +228,8 @@ async function carregarPedidosFinanceiro() {
 
       cardMaterial.innerHTML = `
         <h4>${item.nome_produto}</h4>
-        <p><strong>Peso Carregado:</strong> ${item.peso_carregado || item.quantidade || '—'} kg</p>
-        <p><strong>Valor do Item:</strong> R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
+        <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} kg</p>
+        <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
         ${descontosHTML}
       `;
       form.appendChild(cardMaterial);
@@ -253,8 +266,6 @@ async function carregarPedidosFinanceiro() {
     botao.textContent = 'Confirmar Liberação do Cliente';
     botao.className = 'btn btn-registrar';
     botao.onclick = () => {
-      // Aqui deve coletar os valores confirmados de vencimentos para enviar ao backend,
-      // por enquanto, só enviando as observações
       confirmarFinanceiro(id, textareaObs.value);
     };
     btnContainer.appendChild(botao);
@@ -297,5 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+
 
 
