@@ -2,14 +2,6 @@ function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
 
-function formatarEmpresa(empresa) {
-  if (!empresa) return '—';
-  empresa = empresa.toLowerCase();
-  if (empresa === 'mellicz') return 'Mellicz Ambiental';
-  if (empresa === 'pronasa') return 'Pronasa';
-  return empresa.charAt(0).toUpperCase() + empresa.slice(1);
-}
-
 async function carregarPedidosFinanceiro() {
   const [resPendentes, resAnteriores] = await Promise.all([
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
@@ -58,7 +50,7 @@ async function carregarPedidosFinanceiro() {
     header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
-        <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
+        <p>Empresa: ${pedido.empresa ? capitalizeEmpresa(pedido.empresa) : '—'}</p>
       </div>
       <div class="status-badge status-amarelo">
         <i class="fa fa-money-bill"></i> ${pedido.status}
@@ -80,21 +72,19 @@ async function carregarPedidosFinanceiro() {
       return soma + (Number(item.valor_total) || 0);
     }, 0);
 
-    // Aqui criamos os inputs editáveis para os vencimentos
+    // Vencimentos com campos editáveis e confirmação
     const vencimentosHTML = (pedido.prazos_pagamento || []).map((data, index) => {
       const dataFormatada = new Date(data);
       const dataValida = !isNaN(dataFormatada.getTime());
-      const valorSugestao = (totalVenda / (pedido.prazos_pagamento.length || 1)).toFixed(2);
-
       return `
-        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-          <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; font-weight: 500; min-width: 90px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; font-weight: 500;">
             Vencimento ${index + 1}
           </span>
-          <span style="min-width: 120px;">${dataValida ? formatarData(dataFormatada) : 'Data inválida'}</span>
-          <input type="number" step="0.01" value="${valorSugestao}" style="padding:5px 8px; border-radius:6px; border:1px solid #ccc; width: 110px;" />
-          <button type="button" style="padding: 5px 10px; border:none; background:#28a745; color:#fff; border-radius:6px; cursor:pointer;" title="Confirmar valor">
-            ✔️
+          <span>${dataValida ? formatarData(dataFormatada) : 'Data inválida'}</span>
+          <input type="text" value="${(totalVenda / (pedido.prazos_pagamento.length || 1)).toFixed(2)}" style="width: 100px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;" id="input-venc-${id}-${index}" />
+          <button type="button" style="background: #28a745; border: none; color: white; border-radius: 4px; padding: 4px 8px; cursor: pointer;" onclick="confirmarValorVencimento(${id}, ${index})">
+            ✓
           </button>
         </div>
       `;
@@ -102,7 +92,7 @@ async function carregarPedidosFinanceiro() {
 
     containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px; font-weight: 600;">${vencimentosHTML}</p>
+      ${vencimentosHTML}
       <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
       <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:20px;">
         <strong>Observações:</strong> ${pedido.observacoes || '—'}
@@ -117,27 +107,32 @@ async function carregarPedidosFinanceiro() {
 
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
+      cardMaterial.className = 'material-bloco';
       cardMaterial.style.background = '#f5f5f5';
       cardMaterial.style.border = '1px dashed #ccc';
       cardMaterial.style.borderRadius = '8px';
       cardMaterial.style.padding = '16px';
       cardMaterial.style.marginBottom = '16px';
 
-      // Monta os descontos aplicados, se existirem
-      const descontosHTML = item.descontos.map(d => `
-        <li>${d.motivo}: ${d.quantidade} UNIDADES (-${d.peso_calculado} Kg)</li>
-      `).join('');
+      let descontosHTML = '';
+      if (item.descontos && item.descontos.length > 0) {
+        descontosHTML = `
+          <div class="descontos-aplicados">
+            <p>Descontos Aplicados:</p>
+            <ul>
+              ${item.descontos.map(desc => `
+                <li>${desc.motivo}: ${desc.quantidade} UNIDADES (-${desc.peso_calculado.toFixed(2)} Kg)</li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
 
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
         <p>Peso Carregado: ${item.quantidade || item.peso_carregado || '—'} kg</p>
         <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
-        ${descontosHTML ? `
-          <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:10px;">
-            <strong>Descontos Aplicados:</strong>
-            <ul style="margin-top: 6px;">${descontosHTML}</ul>
-          </div>` : ''
-        }
+        ${descontosHTML}
       `;
 
       form.appendChild(cardMaterial);
@@ -187,10 +182,20 @@ async function carregarPedidosFinanceiro() {
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
+    // Aqui você pode capturar os valores dos vencimentos editados para enviar ao backend
+    const vencimentosElementos = document.querySelectorAll(`[id^="input-venc-${pedidoId}-"]`);
+    const valoresVencimentos = [];
+    vencimentosElementos.forEach((input, idx) => {
+      valoresVencimentos[idx] = input.value;
+    });
+
+    // Aqui você pode montar o corpo da requisição para incluir os valores editados,
+    // além das observações, e enviar para o backend. Vou enviar só as observações por enquanto.
+
     const res = await fetch(`/api/pedidos/${pedidoId}/financeiro`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ observacoes_financeiro: observacoes })
+      body: JSON.stringify({ observacoes_financeiro: observacoes /*, valoresVencimentos */ })
     });
 
     const data = await res.json();
@@ -205,6 +210,14 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
     console.error('Erro ao confirmar liberação:', error);
     alert('Erro de comunicação com o servidor.');
   }
+}
+
+function capitalizeEmpresa(nome) {
+  if (!nome) return '';
+  // Ajusta para o texto esperado, só exemplos possíveis, pode expandir aqui
+  if (nome.toLowerCase() === 'mellicz') return 'Mellicz Ambiental';
+  if (nome.toLowerCase() === 'pronasa') return 'Pronasa';
+  return nome.charAt(0).toUpperCase() + nome.slice(1);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
