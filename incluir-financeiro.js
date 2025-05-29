@@ -138,7 +138,7 @@ async function carregarPedidosFinanceiro() {
       // Botão confirmar
       const btnConfirmar = document.createElement('button');
       btnConfirmar.type = 'button';
-      btnConfirmar.textContent = '✓';
+      btnConfirmar.innerHTML = '✓';
       btnConfirmar.title = 'Confirmar valor';
       btnConfirmar.style.backgroundColor = '#28a745';
       btnConfirmar.style.color = 'white';
@@ -157,7 +157,7 @@ async function carregarPedidosFinanceiro() {
           return;
         }
         pedido.vencimentosValores[index] = valNum;
-        btnConfirmar.textContent = '✓';
+        btnConfirmar.innerHTML = '✓';
         btnConfirmar.style.backgroundColor = '#28a745';
         alert(`Valor do vencimento ${index + 1} confirmado: R$ ${valNum.toFixed(2)}`);
       };
@@ -203,7 +203,7 @@ async function carregarPedidosFinanceiro() {
       if (item.descontos && item.descontos.length > 0) {
         descontosHTML = `
           <div class="descontos-aplicados">
-            <p>Descontos Aplicados:</p>
+            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(desc => `
                 <li>${desc.motivo}: ${desc.quantidade} UNIDADES (${parseFloat(desc.peso_calculado).toFixed(2)} Kg)</li>
@@ -214,9 +214,9 @@ async function carregarPedidosFinanceiro() {
       }
 
       cardMaterial.innerHTML = `
-        <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
-        <p>Peso Carregado: ${item.peso_carregado || item.quantidade || '—'} kg</p>
-        <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
+        <h4>${item.nome_produto}</h4>
+        <p><strong>Peso Carregado:</strong> ${item.peso_carregado || item.quantidade || '—'} kg</p>
+        <p><strong>Valor do Item:</strong> R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
         ${descontosHTML}
       `;
       form.appendChild(cardMaterial);
@@ -297,4 +297,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+
 
