@@ -74,7 +74,7 @@ router.get('/carga', async (req, res) => {
   }
 });
 
-// GET /api/pedidos - listagem com filtros
+// GET /api/pedidos - listagem com filtros e prazos de pagamento incluídos
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
@@ -112,6 +112,7 @@ router.get('/', async (req, res) => {
     const [pedidos] = await db.query(sqlPedidos, params);
 
     for (const pedido of pedidos) {
+      // Materiais do pedido
       const [materiais] = await db.query(
         `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
@@ -132,8 +133,18 @@ router.get('/', async (req, res) => {
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
 
-      // Removi o campo prazos_pagamento do pedido, pois agora vamos buscar prazos específicos da tabela prazos_pedido
-      // Se precisar incluir prazos, deve criar rota específica para buscar os prazos de um pedido
+      // Prazos de pagamento do pedido
+      const [prazos] = await db.query(
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ? ORDER BY id ASC`,
+        [pedido.pedido_id]
+      );
+
+      // Montar um array com as datas de vencimento calculadas com base na data_coleta + dias
+      pedido.prazos_pagamento = prazos.map(p => {
+        const dataColeta = new Date(pedido.data_coleta);
+        dataColeta.setDate(dataColeta.getDate() + p.dias);
+        return dataColeta.toISOString();
+      });
     }
 
     res.json(pedidos);
@@ -164,7 +175,6 @@ router.post('/', async (req, res) => {
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
-    // Inserir pedido na tabela pedidos, sem campo prazos_pagamento
     const [pedidoResult] = await db.query(
       `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, codigo_fiscal, data_criacao)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -173,7 +183,6 @@ router.post('/', async (req, res) => {
 
     const pedido_id = pedidoResult.insertId;
 
-    // Inserir itens do pedido
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
@@ -184,7 +193,6 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Inserir prazos do pedido na tabela prazos_pedido
     if (Array.isArray(prazos)) {
       for (const prazo of prazos) {
         await db.query(
@@ -382,6 +390,7 @@ router.get('/nf', async (req, res) => {
   }
 });
 
+
 // DELETE /api/pedidos/:id - Excluir pedido
 router.delete('/:id', async (req, res) => {
   const id = req.params.id;
@@ -400,5 +409,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
 module.exports = router;
+
 
