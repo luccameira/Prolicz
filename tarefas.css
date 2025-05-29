@@ -647,7 +647,12 @@ input[type="file"]::file-selector-button:hover {
   text-align: right;
 }
 
-/* Estilo para os parágrafos de materiais (remove negrito e ajusta espaçamento) */
+/* Ajuste: manter em negrito os labels que estão dentro de <strong> */
+.material-bloco p strong {
+  font-weight: 600;
+}
+
+/* Estilo para os parágrafos de materiais (texto normal) */
 .material-bloco p {
   font-weight: 400;
   margin: 6px 0;
