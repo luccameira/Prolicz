@@ -218,7 +218,7 @@
       const lista = $('#lista-prazos');
       lista.empty();
       prazosSelecionados.forEach((prazo, idx) => {
-        const tag = $(`
+        const tag = $(`  
           <div class="prazo-tag" data-index="${idx}">
             ${prazo}
             <button type="button" title="Remover prazo">&times;</button>
@@ -421,7 +421,7 @@
         cliente_id: $('#cliente').val(),
         tipo: $('#pedido-para').val(),
         data_coleta: $('#data-coleta').val(),
-        prazo_pagamento: prazosSelecionados,
+        prazo_pagamento: prazosSelecionados.join(' | '), // converte array para string separada por pipe
         observacao: $('#observacao').val(),
         itens: []
       };
@@ -458,4 +458,5 @@
   </script>
 </body>
 </html>
+
 
