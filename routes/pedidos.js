@@ -20,12 +20,13 @@ const storageTickets = multer.diskStorage({
 });
 const uploadTicket = multer({ storage: storageTickets });
 
+// Função para formatar data do formato BR (dd/mm/yyyy) para ISO (yyyy-mm-dd)
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
   return `${ano}-${mes}-${dia}`;
 }
 
-// NOVA ROTA - GET /api/pedidos/portaria
+// Rota GET /api/pedidos/portaria
 router.get('/portaria', async (req, res) => {
   const sql = `
     SELECT 
@@ -73,15 +74,14 @@ router.get('/carga', async (req, res) => {
   }
 });
 
-// GET /api/pedidos
+// GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
+      p.codigo_interno, p.observacao, p.empresa,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -131,10 +131,9 @@ router.get('/', async (req, res) => {
 
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
-      pedido.prazos_pagamento = (pedido.prazo_pagamento || '')
-        .split('|')
-        .map(str => str.trim())
-        .filter(str => str.length > 0);
+
+      // Removi o campo prazos_pagamento do pedido, pois agora vamos buscar prazos específicos da tabela prazos_pedido
+      // Se precisar incluir prazos, deve criar rota específica para buscar os prazos de um pedido
     }
 
     res.json(pedidos);
@@ -144,7 +143,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/clientes/:id/produtos
+// GET produtos autorizados por cliente
 router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
@@ -159,27 +158,40 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   }
 });
 
-// POST /api/pedidos
+// POST /api/pedidos - criar pedido
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazo_pagamento, codigo_fiscal } = req.body;
+  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, codigo_fiscal, itens } = req.body;
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
+    // Inserir pedido na tabela pedidos, sem campo prazos_pagamento
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, prazo_pagamento, codigo_fiscal, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta', prazo_pagamento, codigo_fiscal || '']
+      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, codigo_fiscal, data_criacao)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta', codigo_fiscal || '']
     );
 
     const pedido_id = pedidoResult.insertId;
-    const itens = req.body.itens || [];
 
-    for (const item of itens) {
-      await db.query(
-        `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [pedido_id, item.nome_produto, item.valor_unitario, item.peso, item.tipo_peso, item.unidade]
-      );
+    // Inserir itens do pedido
+    if (Array.isArray(itens)) {
+      for (const item of itens) {
+        await db.query(
+          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [pedido_id, item.nome_produto, item.valor_unitario, item.peso, item.tipo_peso, item.unidade]
+        );
+      }
+    }
+
+    // Inserir prazos do pedido na tabela prazos_pedido
+    if (Array.isArray(prazos)) {
+      for (const prazo of prazos) {
+        await db.query(
+          `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
+          [pedido_id, prazo.descricao.trim(), prazo.dias]
+        );
+      }
     }
 
     res.status(201).json({ mensagem: 'Pedido criado com sucesso', pedido_id });
@@ -312,8 +324,7 @@ router.get('/conferencia', async (req, res) => {
   const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
+      p.codigo_interno, p.observacao, p.empresa,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -334,8 +345,7 @@ router.get('/financeiro', async (req, res) => {
   const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
+      p.codigo_interno, p.observacao, p.empresa,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -356,8 +366,7 @@ router.get('/nf', async (req, res) => {
   const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
+      p.codigo_interno, p.observacao, p.empresa,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -374,3 +383,4 @@ router.get('/nf', async (req, res) => {
 });
 
 module.exports = router;
+
