@@ -83,12 +83,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // 1) Materiais da Venda
-    const tituloMateriais = document.createElement('h4');
-    tituloMateriais.textContent = 'Materiais da Venda';
-    tituloMateriais.style.margin = '30px 0 10px';
-    form.appendChild(tituloMateriais);
-
+    // ---- blocos de materiais ----
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
       cardMaterial.className = 'material-bloco';
@@ -100,7 +95,7 @@ async function carregarPedidosFinanceiro() {
       let totalDescontosKg = 0;
       if (item.descontos?.length) {
         totalDescontosKg = item.descontos.reduce(
-          (s, d) => s + Number(d.peso_calculado || 0),
+          (soma, d) => soma + Number(d.peso_calculado || 0),
           0
         );
       }
@@ -143,13 +138,19 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(cardMaterial);
     });
 
-    // 2) Código interno, total da venda, vencimentos e observações do pedido
+    // ---- separador visual ----
+    const separador = document.createElement('div');
+    separador.className = 'divider-financeiro';
+    form.appendChild(separador);
+
+    // ---- resumo financeiro ----
     const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginTop = '20px';
 
+    // recalcula totalVenda pelo peso final
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
       let desc = 0;
       if (item.descontos?.length) {
@@ -163,10 +164,12 @@ async function carregarPedidosFinanceiro() {
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${
         pedido.codigo_interno || '—'
       }</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(
+      2
+    )}</p>
     `;
 
-    // Observações do pedido (vendedor)
+    // observações do pedido (vendedor)
     const obsPedidoDiv = document.createElement('div');
     obsPedidoDiv.style.background = '#fff3cd';
     obsPedidoDiv.style.padding = '10px';
@@ -175,7 +178,7 @@ async function carregarPedidosFinanceiro() {
     obsPedidoDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
     containerCinza.appendChild(obsPedidoDiv);
 
-    // Vencimentos
+    // vencimentos
     const vencContainer = document.createElement('div');
     pedido.vencimentosValores = [];
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
@@ -240,7 +243,7 @@ async function carregarPedidosFinanceiro() {
     containerCinza.appendChild(vencContainer);
     form.appendChild(containerCinza);
 
-    // 3) Observações do Financeiro e botão
+    // ---- observações do financeiro e botão ----
     const blocoFin = document.createElement('div');
     blocoFin.style.marginTop = '20px';
 
@@ -267,13 +270,15 @@ async function carregarPedidosFinanceiro() {
     btnFin.className = 'btn btn-registrar';
     btnFin.onclick = () => confirmarFinanceiro(id, taFin.value);
 
-    blocoFin.append(lblFin, taFin, btnWrap.appendChild(btnFin));
+    btnWrap.appendChild(btnFin);
+    blocoFin.append(lblFin, taFin, btnWrap);
     form.appendChild(blocoFin);
 
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
+
     lista.appendChild(card);
   });
 }
