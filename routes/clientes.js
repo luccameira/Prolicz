@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 let connection;
@@ -149,8 +148,16 @@ router.get('/:id', async (req, res) => {
     const [prazosRes] = await connection.query(queryPrazos, [id]);
 
     const cliente = clienteRes[0];
-    // converte o campo snake_case para camelCase para o front-end
+
+    // CORREÇÃO PRINCIPAL: sempre envie array para o frontend
     cliente.codigosFiscais = cliente.codigos_fiscais || [];
+    if (typeof cliente.codigosFiscais === "string") {
+      try {
+        cliente.codigosFiscais = JSON.parse(cliente.codigosFiscais);
+      } catch {
+        cliente.codigosFiscais = [];
+      }
+    }
     delete cliente.codigos_fiscais;
 
     cliente.contatos = contatosRes;
