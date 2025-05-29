@@ -25,10 +25,7 @@
       background: #f9f9f9;
       position: relative;
       overflow: visible !important;
-      z-index: 1 !important;
     }
-    .produto-bloco:focus-within { z-index: 100 !important; }
-
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
@@ -36,19 +33,17 @@
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
 
-    /* prazos como checkboxes */
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
 
-    /* personalizar */
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    /* ==== CORREÇÃO FINAL PARA O SELECT DE CÓDIGO FISCAL ==== */
-    .select-codigo-fiscal {
-      position: relative !important;
-      z-index: 10 !important;
+    /* Garantir selects padrão e sem interferência de z-index */
+    select, .produto-bloco select {
+      z-index: auto !important;
+      position: static !important;
       background-color: #fff !important;
       color: #000 !important;
       pointer-events: auto !important;
@@ -56,16 +51,7 @@
       -webkit-appearance: menulist !important;
       -moz-appearance: menulist !important;
     }
-    .select-codigo-fiscal:focus {
-      z-index: 9999 !important;
-      position: relative !important;
-    }
-    .select-codigo-fiscal option {
-      color: #000 !important;
-      background-color: #fff !important;
-    }
 
-    /* Remove qualquer overflow:hidden dos pais */
     form, .main-content, body {
       overflow: visible !important;
     }
@@ -78,6 +64,16 @@
   <div class="main-content">
     <h1>Novo Pedido</h1>
     <a href="vendas.html" class="btn-voltar">Voltar</a>
+    <!-- Select puro de teste para diagnóstico -->
+    <!--
+    <label for="codigo-fiscal-teste">Select TESTE puro</label>
+    <select id="codigo-fiscal-teste">
+      <option value="">Selecione</option>
+      <option value="GA1">GA1</option>
+      <option value="GA2">GA2</option>
+      <option value="GX">GX</option>
+    </select>
+    -->
     <form id="form-pedido">
       <div class="form-group">
         <label for="empresa">Empresa</label>
@@ -129,7 +125,7 @@
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
       function atualizarCodigoFiscalOptions() {
-        $(".select-codigo-fiscal").each(function(){
+        $(".codigo-fiscal-select").each(function(){
           const sel = $(this).empty().append('<option value="">Código Fiscal</option>');
           windowCodigos.forEach(c => sel.append(`<option value="${c}">${c}</option>`));
         });
@@ -152,8 +148,20 @@
 
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
-          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
+          windowPrazos = cli.prazos_pagamento ? cli.prazos_pagamento.map(p => p.descricao) : [];
           windowProdutos = cli.produtos_autorizados || [];
+
+          // Popular os prazos de pagamento na tela
+          $("#prazosCheckboxes").empty();
+          windowPrazos.forEach(function(prazo, i){
+            $("#prazosCheckboxes").append(`
+              <label>
+                <input type="checkbox" name="prazo-pagamento" value="${prazo}" />
+                ${prazo}
+              </label>
+            `);
+          });
+
           atualizarCodigoFiscalOptions();
           adicionarProduto();
         });
@@ -163,20 +171,20 @@
       function adicionarProduto(){
         if (!windowProdutos.length) return;
         const usados = $(".produto-bloco")
-          .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+          .map((i,el) => $(el).find(".produto-select").val()).get().filter(Boolean);
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
 
         const bloco = $('<div class="produto-bloco"></div>');
 
         // Código Fiscal
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
+        const selCod = $('<select class="codigo-fiscal-select" required></select>');
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
              .children().last().append(selCod);
         atualizarCodigoFiscalOptions();
 
         // Produto
-        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+        const selProd = $('<select class="produto-select" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>')
              .children().last().append(selProd);
@@ -267,11 +275,11 @@
           itens: []
         };
         $(".produto-bloco").each(function(){
-          const nome = $(this).find(".select-produto").val(),
+          const nome = $(this).find(".produto-select").val(),
                 valor = parseMask($(this).find(".valor-unitario").val()),
                 peso  = parseFloat($(this).find(".peso").val()) || 0,
                 tpeso = $(this).find(".tipo-peso").val(),
-                cod   = $(this).find(".select-codigo-fiscal").val(),
+                cod   = $(this).find(".codigo-fiscal-select").val(),
                 vcn   = parseMask($(this).find(".valor-com-nota").val()),
                 vsn   = parseMask($(this).find(".valor-sem-nota").val());
           if (nome && valor && peso) {
@@ -301,5 +309,4 @@
   </script>
 </body>
 </html>
-
 
