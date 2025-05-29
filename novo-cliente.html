@@ -31,7 +31,7 @@
 
     h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
     label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
-    input, select, button {
+    input[type="text"], input[type="email"], input[type="number"], select, button {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
@@ -39,6 +39,21 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
       font-size: 14px;
+    }
+
+    .checkbox-group {
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
     }
 
     .telefone-group, .email-group, .contato-group, .produto-group, .prazo-group {
@@ -131,19 +146,18 @@
           </select>
         </div>
 
-        <label for="codigosFiscais">Códigos Fiscais Permitidos</label>
-        <select id="codigosFiscais" multiple required size="5">
-          <option value="GA1">GA1</option>
-          <option value="GA2">GA2</option>
-          <option value="GX">GX</option>
-          <option value="GG1">GG1</option>
-          <option value="GG2">GG2</option>
-          <option value="A1">A1</option>
-          <option value="A2">A2</option>
-          <option value="AX">AX</option>
-          <option value="Personalizar">Personalizar</option>
-        </select>
-        <small>Use Ctrl/Cmd para selecionar múltiplos códigos.</small>
+        <label>Códigos Fiscais Permitidos</label>
+        <div id="codigosFiscaisCheckboxes" class="checkbox-group">
+          <label><input type="checkbox" value="GA1">GA1</label>
+          <label><input type="checkbox" value="GA2">GA2</label>
+          <label><input type="checkbox" value="GX">GX</label>
+          <label><input type="checkbox" value="GG1">GG1</label>
+          <label><input type="checkbox" value="GG2">GG2</label>
+          <label><input type="checkbox" value="A1">A1</label>
+          <label><input type="checkbox" value="A2">A2</label>
+          <label><input type="checkbox" value="AX">AX</label>
+          <label><input type="checkbox" value="Personalizar">Personalizar</label>
+        </div>
 
         <h3>Produtos Autorizados</h3>
         <div id="produtosAutorizados"></div>
@@ -260,7 +274,7 @@
     select.appendChild(defaultOption);
 
     listaProdutos.forEach(p => {
-      const option = document.createElement("option");
+      const option =	document.createElement("option");
       option.value = p.id;
       option.textContent = `${p.nome} (${p.unidade})`;
       select.appendChild(option);
@@ -288,10 +302,10 @@
   function adicionarPrazoPagamento() {
     const container = document.getElementById("prazosPagamento");
     const div = document.createElement("div");
-    div.className = "prazo-group";
+    div.className =	"prazo-group";
     div.innerHTML = `
       <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
-      <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
+      <input type="number" class="prazo-dias" placeholder="Dias após coleta"	required>
       <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
     `;
     container.appendChild(div);
@@ -308,57 +322,40 @@
       console.error("Erro ao buscar produtos:", err);
     }
   }
-  </script>
-
-  <script>
-  document.addEventListener("DOMContentLoaded", async () => {
-    atualizarCamposPessoa();
-    $("#cep").mask("00000-000");
-    $(".telefone-contato").mask("(00) 00000-0000");
-    $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
-    await carregarProdutos();
-  });
 
   document.getElementById("formCliente").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const cliente = {
-      tipo_pessoa: document.getElementById("tipoPessoa").value,
-      documento: document.getElementById("documento").value,
+      tipo_pessoa:	document.getElementById("tipoPessoa").value,
+      documento:	document.getElementById("documento").value,
       nome_fantasia: document.getElementById("nomeFantasia").value,
       situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
-      codigosFiscais: Array.from(document.getElementById("codigosFiscais").selectedOptions).map(o => o.value),
+      codigosFiscais: Array.from(document.querySelectorAll('#codigosFiscaisCheckboxes input[type="checkbox"]:checked'))
+        .map(cb => cb.value),
       cep: document.getElementById("cep").value,
       logradouro: document.getElementById("logradouro").value,
       numero: document.getElementById("numero").value,
       bairro: document.getElementById("bairro").value,
       cidade: document.getElementById("cidade").value,
       estado: document.getElementById("estado").value,
-      contatos: [],
-      produtos: [],
-      prazos: []
+      contatos: [], produtos: [], prazos: []
     };
 
     document.querySelectorAll(".contato-group").forEach(div => {
-      cliente.contatos.push({
-        nome: div.querySelector(".nome-contato").value,
+      cliente.contatos.push({ nome: div.querySelector(".nome-contato").value,
         telefone: div.querySelector(".telefone-contato").value,
-        email: div.querySelector(".email-contato").value
-      });
+        email: div.querySelector(".email-contato").value });
     });
 
     document.querySelectorAll(".produto-group").forEach(div => {
-      cliente.produtos.push({
-        id: div.querySelector(".produto-select").value,
-        valor: div.querySelector(".valor-unitario").value
-      });
+      cliente.produtos.push({ id: div.querySelector(".produto-select").value,
+        valor: div.querySelector(".valor-unitario").value });
     });
 
     document.querySelectorAll(".prazo-group").forEach(div => {
-      cliente.prazos.push({
-        descricao: div.querySelector(".prazo-descricao").value,
-        dias: div.querySelector(".prazo-dias").value
-      });
+      cliente.prazos.push({ descricao: div.querySelector(".prazo-descricao").value,
+        dias: div.querySelector(".prazo-dias").value });
     });
 
     try {
@@ -367,18 +364,18 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cliente)
       });
-
       const result = await response.json();
-      if (response.ok) {
-        alert("Cliente cadastrado com sucesso!");
-        window.location.href = "clientes.html";
-      } else {
-        alert("Erro: " + (result.erro || "Erro desconhecido"));
-      }
-    } catch (err) {
-      alert("Erro ao enviar dados para o servidor.");
-      console.error(err);
-    }
+      if (response.ok) { alert("Cliente cadastrado com sucesso!"); window.location.href = "clientes.html"; }
+      else { alert("Erro: " + (result.erro || "Erro desconhecido")); }
+    } catch (err) { alert("Erro ao enviar dados para o servidor."); console.error(err); }
+  });
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    atualizarCamposPessoa();
+    $("#cep").mask("00000-000");
+    $(".telefone-contato").mask("(00) 00000-0000");
+    $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
+    await carregarProdutos();
   });
   </script>
 </body>
