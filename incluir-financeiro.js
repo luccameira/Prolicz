@@ -102,7 +102,7 @@ async function carregarPedidosFinanceiro() {
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
       const valorTotalFmt = formatarMoeda(valorTotalCalc);
 
-      // descontos aplicados
+      // descontos aplicados (motivo e quantidade)
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
@@ -110,9 +110,7 @@ async function carregarPedidosFinanceiro() {
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(d =>
-                `<li>${formatarPesoSemDecimal(d.quantidade)} ${
-                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
-                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+                `<li>${d.motivo}: ${d.quantidade} unidades (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
               ).join('')}
             </ul>
           </div>
@@ -125,7 +123,7 @@ async function carregarPedidosFinanceiro() {
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
         <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
-        <p style="margin-top:12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFmt}</span></p>
+        <p style="margin-top:12px;"><strong>Valor Total do Item:</strong> <span style="color: green;">${valorTotalFmt}</span></p>
       `;
       form.appendChild(bloco);
     });
@@ -153,9 +151,9 @@ async function carregarPedidosFinanceiro() {
     containerCinza.innerHTML = `
       <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
-      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
+      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
     `;
 
     // vencimentos com máscara e confirmação
@@ -186,7 +184,6 @@ async function carregarPedidosFinanceiro() {
       etiquetaConfirmado.textContent = 'CONFIRMADO';
       etiquetaConfirmado.style.cursor = 'pointer';
 
-      // máscara ao blur e recalculação automática do último
       inp.addEventListener('blur', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
@@ -194,16 +191,13 @@ async function carregarPedidosFinanceiro() {
           inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // auto-ajusta último se não for o último input
         const lastIndex = inputs.length - 1;
         const curIndex = inputs.indexOf(inp);
         if (curIndex !== lastIndex) {
-          // soma até o penúltimo
           const somaExcUlt = inputs.slice(0, lastIndex)
             .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
             .reduce((s, v) => s + v, 0);
           const restante = totalVenda - somaExcUlt;
-          // mostra erro inline se negativo
           let rowErr = row.querySelector('.row-error');
           if (restante < 0) {
             if (!rowErr) {
@@ -224,7 +218,6 @@ async function carregarPedidosFinanceiro() {
         atualizarBotaoLiberar();
       });
 
-      // alterna confirmação e recalcula soma/erro
       function toggleConfirmacao() {
         const isConf = row.dataset.confirmado === 'true';
         if (!isConf) {
@@ -277,7 +270,6 @@ async function carregarPedidosFinanceiro() {
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
 
-    // valida soma e exibe erro inline
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
