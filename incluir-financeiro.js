@@ -149,11 +149,11 @@ async function carregarPedidosFinanceiro() {
     const totalVendaFmt = formatarMoeda(totalVenda);
 
     containerCinza.innerHTML = `
-      <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
+      <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
     `;
 
     // vencimentos com máscara e confirmação
@@ -179,6 +179,7 @@ async function carregarPedidosFinanceiro() {
       const btn = row.querySelector('button');
       inputs.push(inp);
 
+      // elemento de confirmação alternável
       const etiquetaConfirmado = document.createElement('span');
       etiquetaConfirmado.className = 'etiqueta-valor-item';
       etiquetaConfirmado.textContent = 'CONFIRMADO';
@@ -190,7 +191,6 @@ async function carregarPedidosFinanceiro() {
         if (!isNaN(num)) {
           inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
-
         const lastIndex = inputs.length - 1;
         const curIndex = inputs.indexOf(inp);
         if (curIndex !== lastIndex) {
@@ -210,11 +210,9 @@ async function carregarPedidosFinanceiro() {
             }
           } else {
             if (rowErr) row.removeChild(rowErr);
-            const lastInp = inputs[lastIndex];
-            lastInp.value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            inputs[lastIndex].value = restante.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
           }
         }
-
         atualizarBotaoLiberar();
       });
 
@@ -251,7 +249,6 @@ async function carregarPedidosFinanceiro() {
 
       btn.addEventListener('click', toggleConfirmacao);
       etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-
       vencContainer.appendChild(row);
     });
 
@@ -274,9 +271,7 @@ async function carregarPedidosFinanceiro() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
       rows.forEach(r => {
-        const val = parseFloat(
-          r.querySelector('input').value.replace(/\./g, '').replace(',', '.')
-        );
+        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
         if (!isNaN(val)) soma += val;
       });
       const erroEl = containerCinza.querySelector('.venc-soma-error');
