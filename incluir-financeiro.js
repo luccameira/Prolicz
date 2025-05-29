@@ -80,8 +80,8 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // Materiais da venda
-    (pedido.materiais || []).forEach(item => {
+    // ---- Materiais da venda ----
+    pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -96,6 +96,7 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
+      // valores
       const valorUnitarioNum = Number(item.valor_unitario) || 0;
       const valorUnitarioFmt = formatarMoeda(valorUnitarioNum);
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
@@ -154,11 +155,12 @@ async function carregarPedidosFinanceiro() {
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
       <div class="vencimentos-container"></div>
-      <p class="venc-soma-error"></p>
+      <p class="venc-soma-error" style="color:red;"></p>
     `;
 
     // vencimentos com máscara e confirmação
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
+    const inputs = [];
     pedido.prazos_pagamento?.forEach((iso, i) => {
       const dt = new Date(iso);
       const ok = !isNaN(dt.getTime());
@@ -177,40 +179,66 @@ async function carregarPedidosFinanceiro() {
 
       const inp = row.querySelector('input');
       const btn = row.querySelector('button');
+      inputs.push(inp);
+
       const etiquetaConfirmado = document.createElement('span');
       etiquetaConfirmado.className = 'etiqueta-valor-item';
       etiquetaConfirmado.textContent = 'CONFIRMADO';
       etiquetaConfirmado.style.cursor = 'pointer';
 
-      // máscara ao blur + recalcular soma
+      // máscara ao blur e recalculação automática do último
       inp.addEventListener('blur', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
         if (!isNaN(num)) {
-          inp.value = num.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
+          inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+        // auto-ajusta último se não for o último input
+        const lastIndex = inputs.length - 1;
+        const curIndex = inputs.indexOf(inp);
+        if (curIndex !== lastIndex) {
+          // soma até o penúltimo
+          const somaExcUlt = inputs.slice(0, lastIndex)
+            .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
+            .reduce((s, v) => s + v, 0);
+          const restante = totalVenda - somaExcUlt;
+          // mostra erro inline se negativo
+          let rowErr = row.querySelector('.row-error');
+          if (restante < 0) {
+            if (!rowErr) {
+              rowErr = document.createElement('div');
+              rowErr.className = 'row-error';
+              rowErr.style.color = 'red';
+              rowErr.style.fontSize = '13px';
+              rowErr.textContent = 'Parcela excede o valor total da venda.';
+              row.appendChild(rowErr);
+            }
+          } else {
+            if (rowErr) row.removeChild(rowErr);
+            const lastInp = inputs[lastIndex];
+            lastInp.value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+        }
+
         atualizarBotaoLiberar();
       });
 
-      // alterna confirmação + recalcular soma/erro
+      // alterna confirmação e recalcula soma/erro
       function toggleConfirmacao() {
         const isConf = row.dataset.confirmado === 'true';
         if (!isConf) {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
           if (isNaN(num) || num < 0) {
-            // inline error abaixo do campo
-            let err = row.querySelector('.row-error');
-            if (!err) {
-              err = document.createElement('div');
-              err.className = 'row-error';
-              err.style.color = 'red';
-              err.style.fontSize = '13px';
-              err.textContent = 'Valor inválido.';
-              row.appendChild(err);
+            let rowErr = row.querySelector('.row-error');
+            if (!rowErr) {
+              rowErr = document.createElement('div');
+              rowErr.className = 'row-error';
+              rowErr.style.color = 'red';
+              rowErr.style.fontSize = '13px';
+              rowErr.textContent = 'Valor inválido.';
+              row.appendChild(rowErr);
             }
             inp.focus();
             return;
@@ -236,7 +264,7 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
-    // observações do financeiro e botão
+    // Observações do Financeiro e botão
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
@@ -254,10 +282,10 @@ async function carregarPedidosFinanceiro() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
       rows.forEach(r => {
-        const inp = r.querySelector('input');
-        const raw = inp.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        if (!isNaN(num)) soma += num;
+        const val = parseFloat(
+          r.querySelector('input').value.replace(/\./g, '').replace(',', '.')
+        );
+        if (!isNaN(val)) soma += val;
       });
       const erroEl = containerCinza.querySelector('.venc-soma-error');
       if (Math.abs(soma - totalVenda) > 0.005) {
@@ -270,7 +298,7 @@ async function carregarPedidosFinanceiro() {
 
     atualizarBotaoLiberar();
 
-    // toggle form
+    // toggle form visibility
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
