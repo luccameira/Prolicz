@@ -25,7 +25,11 @@
       background: #f9f9f9;
       position: relative;
       overflow: visible !important;
+      z-index: 1; /* base */
     }
+    /* quando o bloco estiver com foco dentro (ex: select focado), sobe na pilha */
+    .produto-bloco:focus-within { z-index: 1000 !important; }
+
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
@@ -42,18 +46,20 @@
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    /* CORREÇÃO: força aparência nativa e sobreposição do dropdown */
+    /*==== CORREÇÃO FINAL PARA O SELECT DE CÓDIGO FISCAL ====*/
     .select-codigo-fiscal {
-      appearance: auto !important;
-      -webkit-appearance: menulist-button !important;
-      -moz-appearance: menulist-button !important;
+      position: relative !important;
+      z-index: 1001 !important;
+      appearance: menulist !important;
+      -webkit-appearance: menulist !important;
+      -moz-appearance: menulist !important;
       background-color: #fff !important;
       color: #000 !important;
-      z-index: 1000 !important;
       pointer-events: auto !important;
     }
     .select-codigo-fiscal option {
       color: #000 !important;
+      background-color: #fff !important;
     }
   </style>
 </head>
@@ -137,22 +143,16 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // Ajuste: aceita codigosFiscais ou codigos_fiscais no JSON
+          // aceita codigosFiscais ou codigos_fiscais no JSON
           windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
-          // prazos
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
-          windowPrazos.forEach(pr => {
-            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pr}"> ${pr}</label>`);
-          });
-          // produtos
           windowProdutos = cli.produtos_autorizados || [];
-          // popula selects de código e produtos
+          // popula
           atualizarCodigoFiscalOptions();
           adicionarProduto();
         });
       });
 
-      // adicionar um bloco de produto
       $("#adicionar-produto").click(adicionarProduto);
       function adicionarProduto(){
         if (!windowProdutos.length) return;
@@ -295,4 +295,5 @@
   </script>
 </body>
 </html>
+
 
