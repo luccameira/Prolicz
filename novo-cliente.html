@@ -284,6 +284,7 @@
     const div = document.createElement("div");
     div.className = "prazo-group";
     div.innerHTML = `
+      <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
       <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
       <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
     `;
@@ -301,7 +302,8 @@
       console.error("Erro ao buscar produtos:", err);
     }
   }
-</script>
+  </script>
+
   <script>
   document.addEventListener("DOMContentLoaded", async () => {
     atualizarCamposPessoa();
@@ -348,6 +350,7 @@
 
     document.querySelectorAll(".prazo-group").forEach(div => {
       cliente.prazos.push({
+        descricao: div.querySelector(".prazo-descricao").value,
         dias: div.querySelector(".prazo-dias").value
       });
     });
@@ -371,7 +374,7 @@
       console.error(err);
     }
   });
-</script>
+  </script>
 </body>
 </html>
 
