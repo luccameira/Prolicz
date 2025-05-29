@@ -149,8 +149,9 @@ async function carregarPedidosFinanceiro() {
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginTop = '20px';
+    containerCinza.style.border = '1px solid #ddd'; // borda neutra adicionada
 
-    // recalcula totalVenda pelo peso final
+    // Recalcula totalVenda pelo peso final
     const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
       let desc = 0;
       if (item.descontos?.length) {
@@ -169,7 +170,7 @@ async function carregarPedidosFinanceiro() {
     )}</p>
     `;
 
-    // observações do pedido (vendedor)
+    // Observações do pedido (vendedor)
     const obsPedidoDiv = document.createElement('div');
     obsPedidoDiv.style.background = '#fff3cd';
     obsPedidoDiv.style.padding = '10px';
@@ -178,7 +179,7 @@ async function carregarPedidosFinanceiro() {
     obsPedidoDiv.innerHTML = `<strong>Observações:</strong> ${pedido.observacoes || '—'}`;
     containerCinza.appendChild(obsPedidoDiv);
 
-    // vencimentos
+    // Vencimentos
     const vencContainer = document.createElement('div');
     pedido.vencimentosValores = [];
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
@@ -290,11 +291,11 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ observacoes_financeiro: observacoes })
     });
-    const data = await res.json();
     if (res.ok) {
       alert('Cliente liberado com sucesso!');
       carregarPedidosFinanceiro();
     } else {
+      const data = await res.json();
       alert(data.erro || 'Erro ao confirmar liberação.');
     }
   } catch (err) {
