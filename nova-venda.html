@@ -17,18 +17,20 @@
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background-color: #f9f9f9; position: relative; }
+    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; position: relative; }
     .produto-bloco .form-group { margin-bottom: 12px; }
-    .btn { margin: 20px auto; padding: 10px 20px; background-color: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
-    .btn-remove { position: absolute; top: 10px; right: 10px; background: red; border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
+    .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     #valor-total { font-weight: bold; text-align: right; padding-top: 10px; font-size: 16px; }
-    .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; text-align: center; }
-    .btn-voltar:hover { background-color: #5a6268; }
-    #lista-prazos { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .prazo-tag { background-color: #ffc107; padding: 6px 10px; border-radius: 16px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; }
-    .prazo-tag button { background: none; border: none; color: #333; font-weight: bold; cursor: pointer; font-size: 14px; line-height: 1; }
-    .grupo-personalizar { display: none; }
-    .error-soma { color: red; display: none; font-size: 13px; }
+    .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
+    .btn-voltar:hover { background: #5a6268; }
+    /* prazos como checkboxes */
+    #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
+    #prazosCheckboxes input { margin-right: 8px; }
+    .error-prazos { color: red; display: none; font-size: 13px; }
+    /* personalizar */
+    .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
+    .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -64,20 +66,16 @@
         </select>
       </div>
 
-      <!-- Prazos de Pagamento -->
-      <div class="form-group" id="prazo-pagamento-container">
+      <!-- alteração 1: prazos como checkboxes -->
+      <div class="form-group">
         <label>Prazos de Pagamento</label>
-        <div id="lista-prazos"></div>
-        <div id="seletor-prazos" style="display:flex; gap:8px; align-items:center;">
-          <select id="select-prazo" style="flex-grow:1; padding:8px; border-radius:4px; border:1px solid #ccc;"></select>
-          <button type="button" id="btn-adicionar-prazo" class="btn" style="padding:8px 12px; display:none;">Adicionar</button>
-        </div>
-        <button type="button" id="btn-adicionar-outro" class="btn" style="margin-top:10px; display:none; max-width:250px;">Adicionar outro prazo</button>
+        <div id="prazosCheckboxes"></div>
+        <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
 
-      <!-- Itens -->
+      <!-- itens -->
       <div id="produtos"></div>
-      <div id="valor-total"></div>
+      <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
 
       <div class="form-group">
@@ -89,151 +87,73 @@
   </div>
 
   <script>
-    $(document).ready(function () {
-      flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
+    $(function(){
+      flatpickr("#data-coleta",{ locale:"pt", dateFormat:"d/m/Y" });
+      let windowPrazos = [],
+          windowProdutos = [],
+          windowCodigos = [];
 
-      let prazosSelecionados = [];
-      window.codigosFiscais = [];
-      window.produtosAutorizados = [];
+      // carrega lista de clientes
+      $.get("/api/clientes", function(clientes){
+        let sel = $("#cliente").empty().append('<option value="">Selecione</option>');
+        clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
+      });
 
-      function atualizarListaPrazos() {
-        const lista = $("#lista-prazos");
-        lista.empty();
-        prazosSelecionados.forEach((prazo, idx) => {
-          const tag = $(`
-            <div class="prazo-tag" data-index="${idx}">
-              ${prazo}
-              <button type="button">&times;</button>
-            </div>
-          `);
-          tag.find("button").click(() => {
-            prazosSelecionados.splice(idx, 1);
-            atualizarListaPrazos();
-            carregarOpcoesPrazos(window.todosPrazos);
-            ajustarVisibilidadeBotoes();
+      // ao mudar cliente
+      $("#cliente").change(function(){
+        const id = $(this).val();
+        $("#prazosCheckboxes").empty();
+        $("#produtos").empty();
+        $("#valor-total").text("Valor total do pedido: R$ 0,00");
+        $(".error-prazos").hide();
+        if(!id) return;
+        $.get(`/api/clientes/${id}`, function(cli){
+          // carregar prazos
+          windowPrazos = cli.prazos_pagamento.map(p=>p.descricao);
+          windowCodigos = cli.codigosFiscais || [];
+          windowProdutos = cli.produtos_autorizados || [];
+          let box = $("#prazosCheckboxes");
+          windowPrazos.forEach(pr => {
+            box.append(`<label><input type="checkbox" value="${pr}"> ${pr}</label>`);
           });
-          lista.append(tag);
+          adicionarProduto();
         });
-      }
-
-      function carregarOpcoesPrazos(prazos) {
-        window.todosPrazos = prazos;
-        const select = $("#select-prazo").empty();
-        select.append('<option value="">Selecione um prazo</option>');
-        prazos.forEach(p => {
-          if (!prazosSelecionados.includes(p.descricao)) {
-            select.append(`<option value="${p.descricao}">${p.descricao}</option>`);
-          }
-        });
-        $("#btn-adicionar-prazo").hide();
-      }
-
-      function ajustarVisibilidadeBotoes() {
-        if (prazosSelecionados.length === 0) {
-          $("#btn-adicionar-outro").hide();
-          $("#seletor-prazos").show();
-        } else {
-          $("#btn-adicionar-outro").show();
-          $("#seletor-prazos").hide();
-        }
-      }
-
-      $("#select-prazo").change(function () {
-        $("#btn-adicionar-prazo").toggle(!!$(this).val());
       });
 
-      $("#btn-adicionar-prazo").click(function () {
-        const val = $("#select-prazo").val();
-        if (!val) { alert("Selecione um prazo."); return; }
-        prazosSelecionados.push(val);
-        atualizarListaPrazos();
-        carregarOpcoesPrazos(window.todosPrazos);
-        ajustarVisibilidadeBotoes();
-      });
+      // adiciona bloco de produto
+      function adicionarProduto(){
+        if(!windowProdutos.length) return;
+        // evitar duplicar produto
+        let usados = $(".produto-bloco").map((i,el)=>$(el).find(".select-produto").val()).get().filter(Boolean);
+        let dispon = windowProdutos.filter(p=>!usados.includes(p.nome));
+        if(!dispon.length) return;
 
-      $("#btn-adicionar-outro").click(() => {
-        $("#seletor-prazos").show();
-        $("#btn-adicionar-outro").hide();
-        $("#btn-adicionar-prazo").hide();
-        $("#select-prazo").val("");
-      });
-
-      function atualizarValorTotal() {
-        let total = 0;
-        $(".produto-bloco").each(function () {
-          total += maskToNumber($(this).find(".subtotal").val());
-        });
-        $("#valor-total").text(
-          `Valor total do pedido: R$ ${total.toFixed(2).replace(".", ",")}`
-        );
-      }
-
-      function atualizarRemocoes() {
-        const blocos = $(".produto-bloco");
-        if (blocos.length > 1) {
-          blocos.each(function () {
-            if (!$(this).find(".btn-remove").length) {
-              const btn = $('<button class="btn-remove">Remover</button>');
-              btn.click(() => {
-                $(this).remove();
-                atualizarRemocoes();
-                atualizarValorTotal();
-              });
-              $(this).append(btn);
-            }
-          });
-        }
-      }
-
-      function adicionarProduto() {
-        if (!window.produtosAutorizados.length) return;
-        const usados = $(".produto-bloco")
-          .map((_, el) => $(el).find(".select-produto").val())
-          .get()
-          .filter(Boolean);
-        const disponiveis = window.produtosAutorizados.filter(
-          p => !usados.includes(p.nome)
-        );
-        if (!disponiveis.length) return;
-
-        const bloco = $('<div class="produto-bloco"></div>');
-
-        // Código Fiscal
-        const selCod = $('<select class="select-codigo-fiscal"></select>')
-          .append('<option value="">Selecione Código Fiscal</option>');
-        window.codigosFiscais.forEach(c => {
-          selCod.append(`<option value="${c}">${c}</option>`);
-        });
+        let bloco = $('<div class="produto-bloco"></div>');
+        // código fiscal
+        let selCod = $('<select class="select-codigo-fiscal"></select>')
+          .append('<option value="">Código Fiscal</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
              .children().last().append(selCod);
 
-        // Produto
-        const selProd = $('<select class="select-produto"></select>')
-          .append('<option value="">Selecione</option>');
-        disponiveis.forEach(p => {
-          selProd.append(
-            `<option value="${p.nome}" data-valor="${p.valor_unitario}">${p.nome}</option>`
-          );
-        });
+        // produto
+        let selProd = $('<select class="select-produto"></select>')
+          .append('<option value="">Produto</option>');
+        dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>')
              .children().last().append(selProd);
 
-        // Unitário, peso e tipo
-        bloco.append(
-          '<div class="form-group"><label>Valor Unitário</label><input readonly class="valor-unitario"></div>'
-        );
-        bloco.append(
-          '<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>'
-        );
-        bloco.append(
-          '<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso"><option>Exato</option><option>Aproximado</option></select></div>'
-        );
-        bloco.append(
-          '<div class="form-group"><label>Subtotal</label><input readonly class="subtotal"></div>'
-        );
+        // valor unitário
+        bloco.append('<div class="form-group"><label>Valor Unitário</label><input readonly class="valor-unitario"></div>');
+        // peso
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
+        // tipo de peso
+        bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso"><option>Exato</option><option>Aproximado</option></select></div>');
+        // subtotal
+        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal"></div>');
 
-        // Personalizar
-        const gp = $(`
+        // personalizar
+        let gp = $(`
           <div class="grupo-personalizar">
             <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota"></div>
             <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota"></div>
@@ -241,156 +161,109 @@
           </div>
         `);
         bloco.append(gp);
-        gp.find('input').mask('R$ 000.000.000,00', { reverse: true });
+        gp.find("input").mask("R$ 000.000.000,00",{reverse:true});
 
-        selCod.change(function () {
-          if ($(this).val() === "Personalizar") gp.show();
+        // eventos
+        selCod.change(function(){
+          if($(this).val()==="Personalizar") gp.show();
           else gp.hide().find("input").val("");
         });
-
-        selProd.change(function () {
-          const val = $(this).find("option:selected").data("valor") || 0;
-          bloco.find(".valor-unitario").val(
-            `R$ ${val.toFixed(2).replace(".", ",")}`
-          );
-          atualizarSubtotal();
-          atualizarValorTotal();
+        selProd.change(function(){
+          let v = parseFloat($(this).find("option:selected").data("valor"))||0;
+          bloco.find(".valor-unitario").val(`R$ ${v.toFixed(2).replace(".",",")}`);
+          atualizarSub(); atualizarTotal();
+        });
+        bloco.find(".peso").on("input", function(){
+          atualizarSub(); atualizarTotal();
+        });
+        gp.on("input blur", "input", function(){
+          let vc = parseMask(gp.find(".valor-com-nota").val()),
+              vs = parseMask(gp.find(".valor-sem-nota").val()),
+              st = parseMask(bloco.find(".subtotal").val());
+          gp.find(".error-soma").toggle(Math.abs(vc+vs-st)>0.005);
         });
 
-        bloco.find(".peso").on("input", function () {
-          atualizarSubtotal();
-          atualizarValorTotal();
-        });
+        function atualizarSub(){
+          let v = parseMask(bloco.find(".valor-unitario").val()),
+              p = parseFloat(bloco.find(".peso").val())||0;
+          bloco.find(".subtotal").val(`R$ ${(v*p).toFixed(2).replace(".",",")}`);
+        }
 
-        gp.find("input").on("input blur", function () {
-          const vc = maskToNumber(gp.find(".valor-com-nota").val());
-          const vs = maskToNumber(gp.find(".valor-sem-nota").val());
-          const st = maskToNumber(bloco.find(".subtotal").val());
-          gp.find(".error-soma").toggle(Math.abs(vc + vs - st) > 0.005);
-        });
-
-        function atualizarSubtotal() {
-          const v = maskToNumber(bloco.find(".valor-unitario").val());
-          const p = parseFloat(bloco.find(".peso").val()) || 0;
-          bloco.find(".subtotal").val(
-            `R$ ${(v * p).toFixed(2).replace(".", ",")}`
-          );
+        // remover
+        if($(".produto-bloco").length){
+          let btn = $('<button type="button" class="btn-remove">Remover</button>');
+          btn.click(function(){ bloco.remove(); atualizarTotal(); });
+          bloco.append(btn);
         }
 
         $("#produtos").append(bloco);
-        atualizarRemocoes();
-        atualizarValorTotal();
       }
 
-      function maskToNumber(str) {
-        return parseFloat((str || "").replace(/[R$\.]/g, "").replace(",", ".")) || 0;
-      }
-
-      // Carrega clientes
-      $.get("/api/clientes", clientes => {
-        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
-        clientes.forEach(c =>
-          sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`)
-        );
-      });
-
-      $("#cliente").change(function () {
-        const id = $(this).val();
-        if (!id) {
-          window.codigosFiscais = [];
-          prazosSelecionados = [];
-          window.produtosAutorizados = [];
-          $("#produtos").empty();
-          atualizarListaPrazos();
-          carregarOpcoesPrazos([]);
-          ajustarVisibilidadeBotoes();
-          atualizarValorTotal();
-          return;
-        }
-        $.get(`/api/clientes/${id}`, cliente => {
-          window.codigosFiscais = cliente.codigosFiscais || [];
-          prazosSelecionados = [];
-          window.produtosAutorizados = cliente.produtos_autorizados || [];
-          atualizarListaPrazos();
-          carregarOpcoesPrazos(cliente.prazos_pagamento || []);
-          ajustarVisibilidadeBotoes();
-          $("#produtos").empty();
-          adicionarProduto();
-          atualizarValorTotal();
+      function atualizarTotal(){
+        let tot = 0;
+        $(".produto-bloco").each(function(){
+          tot += parseMask($(this).find(".subtotal").val());
         });
-      });
+        $("#valor-total").text(`Valor total do pedido: R$ ${tot.toFixed(2).replace(".",",")}`);
+      }
 
-      $("#form-pedido").submit(function (e) {
+      function parseMask(str){
+        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",","."))||0;
+      }
+
+      // submit
+      $("#form-pedido").submit(function(e){
         e.preventDefault();
-        let valido = true;
-        $(".produto-bloco").each(function () {
-          const sel = $(this).find(".select-codigo-fiscal").val();
-          if (sel === "Personalizar") {
-            const gp = $(this).find(".grupo-personalizar");
-            const vc = maskToNumber(gp.find(".valor-com-nota").val());
-            const vs = maskToNumber(gp.find(".valor-sem-nota").val());
-            const st = maskToNumber($(this).find(".subtotal").val());
-            if (Math.abs(vc + vs - st) > 0.005) {
-              gp.find(".error-soma").show();
-              valido = false;
-            }
-          }
-        });
-        if (!valido) {
-          alert("Corrija os valores de Personalizar antes de enviar.");
+        let prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
+        if(!prSel.length){
+          $(".error-prazos").show();
           return;
         }
-
-        const dados = {
+        let dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
           tipo: $("#pedido-para").val(),
           data_coleta: $("#data-coleta").val(),
-          prazos: prazosSelecionados,
+          prazos: prSel,
           observacao: $("#observacao").val(),
           itens: []
         };
-        $(".produto-bloco").each(function () {
-          const nome = $(this).find(".select-produto").val();
-          const valor = maskToNumber($(this).find(".valor-unitario").val());
-          const peso = parseFloat($(this).find(".peso").val()) || 0;
-          const tipo_peso = $(this).find(".tipo-peso").val();
-          const codigo = $(this).find(".select-codigo-fiscal").val();
-          const vc = maskToNumber($(this).find(".valor-com-nota").val());
-          const vs = maskToNumber($(this).find(".valor-sem-nota").val());
-          if (nome && valor && peso) {
+        $(".produto-bloco").each(function(){
+          let nome = $(this).find(".select-produto").val(),
+              valor = parseMask($(this).find(".valor-unitario").val()),
+              peso  = parseFloat($(this).find(".peso").val())||0,
+              tpeso = $(this).find(".tipo-peso").val(),
+              cod   = $(this).find(".select-codigo-fiscal").val(),
+              vcn   = parseMask($(this).find(".valor-com-nota").val()),
+              vsn   = parseMask($(this).find(".valor-sem-nota").val());
+          if(nome && valor && peso){
             dados.itens.push({
               nome_produto: nome,
               valor_unitario: valor,
-              peso,
-              tipo_peso,
-              codigo_fiscal: codigo,
-              valor_com_nota: vc || null,
-              valor_sem_nota: vs || null
+              peso: peso,
+              tipo_peso: tpeso,
+              codigo_fiscal: cod,
+              valor_com_nota: cod==="Personalizar"? vcn : null,
+              valor_sem_nota: cod==="Personalizar"? vsn : null
             });
           }
         });
-
         fetch("/api/pedidos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dados)
         })
-          .then(res => res.json())
-          .then(res => {
-            if (res.mensagem) window.location.href = "vendas.html?sucesso=1";
-            else alert("Erro ao salvar o pedido.");
-          })
-          .catch(err => {
-            console.error(err);
-            alert("Erro ao salvar o pedido.");
-          });
+        .then(res=>res.json()).then(res=>{
+          if(res.mensagem) location.href="vendas.html?sucesso=1";
+          else alert("Erro ao salvar o pedido.");
+        }).catch(err=>{ console.error(err); alert("Erro ao salvar o pedido."); });
       });
 
-      // inicializa com um produto
+      // inicializa
       adicionarProduto();
     });
   </script>
 </body>
 </html>
+
 
