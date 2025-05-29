@@ -12,6 +12,10 @@ function formatarEmpresa(nomeEmpresa) {
   return nomeEmpresa.charAt(0).toUpperCase() + nomeEmpresa.slice(1);
 }
 
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 function formatarPesoSemDecimal(valor) {
   if (valor == null) return '—';
   const numero = Number(valor);
@@ -79,7 +83,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- blocos de materiais ----
+    // Materiais da venda
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
       cardMaterial.className = 'material-bloco';
@@ -91,7 +95,7 @@ async function carregarPedidosFinanceiro() {
       let totalDescontosKg = 0;
       if (item.descontos?.length) {
         totalDescontosKg = item.descontos.reduce(
-          (soma, d) => soma + Number(d.peso_calculado || 0),
+          (acc, d) => acc + Number(d.peso_calculado || 0),
           0
         );
       }
@@ -113,7 +117,9 @@ async function carregarPedidosFinanceiro() {
             <ul>
               ${item.descontos
                 .map(d => `
-                  <li>${formatarPesoSemDecimal(d.quantidade)} ${d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'} (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
+                  <li>${formatarPesoSemDecimal(d.quantidade)} ${
+                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
+                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
                 `)
                 .join('')}
             </ul>
@@ -126,42 +132,41 @@ async function carregarPedidosFinanceiro() {
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
-        <p style="margin-top: 16px;">Peso Final com Desconto: ${pesoFinal} Kg</p>
-        <p style="margin-top: 12px;">Valor Total do Item: <span class="etiqueta-valor-item">${valorTotalFormatado}</span></p>
+        <p style="margin-top: 16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
+        <p style="margin-top: 12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFormatado}</span></p>
       `;
       form.appendChild(cardMaterial);
     });
 
-    // ---- separador visual ----
+    // Separador visual
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // ---- resumo financeiro ----
+    // Resumo Financeiro
     const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
     containerCinza.style.marginTop = '20px';
-    containerCinza.style.border = '1px solid #ddd'; // borda neutra
+    containerCinza.style.border = '1px solid #ddd';
 
-    // Recalcula totalVenda pelo peso final
-    const totalVenda = (pedido.materiais || []).reduce((soma, item) => {
-      let desc = 0;
+    const totalVenda = (pedido.materiais || []).reduce((acc, item) => {
+      let d = 0;
       if (item.descontos?.length) {
-        desc = item.descontos.reduce((sm, d) => sm + Number(d.peso_calculado || 0), 0);
+        d = item.descontos.reduce((s, desc) => s + Number(desc.peso_calculado || 0), 0);
       }
-      const pf = (Number(item.peso_carregado) || 0) - desc;
-      return soma + pf * (Number(item.valor_unitario) || 0);
+      const pf = (Number(item.peso_carregado) || 0) - d;
+      return acc + pf * (Number(item.valor_unitario) || 0);
     }, 0);
 
     containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
-      <div class="obs-pedido" style="background:#fff3cd;padding:10px;border-radius:6px;margin-top:20px;">
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> ${totalVenda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+      <div class="obs-pedido" style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 20px;">
         <strong>Observações:</strong> ${pedido.observacoes || '—'}
       </div>
-      <div class="vencimentos-container" style="margin-top:20px;"></div>
+      <div class="vencimentos-container" style="margin-top: 20px;"></div>
     `;
 
     // Vencimentos
@@ -170,28 +175,23 @@ async function carregarPedidosFinanceiro() {
     pedido.prazos_pagamento = pedido.prazos_pagamento || [];
 
     pedido.prazos_pagamento.forEach((iso, i) => {
-      const dt = new Date(iso);
-      const ok = !isNaN(dt.getTime());
+      const d = new Date(iso);
+      const ok = !isNaN(d.getTime());
       const valSug = totalVenda / pedido.prazos_pagamento.length;
 
       const dv = document.createElement('div');
       dv.style.display = 'flex';
       dv.style.alignItems = 'center';
-      dv.style.marginBottom = '6px';
       dv.style.gap = '8px';
+      dv.style.marginBottom = '6px';
 
       const lb = document.createElement('span');
-      lb.style.background = '#eee';
-      lb.style.color = '#555';
-      lb.style.padding = '5px 10px';
-      lb.style.borderRadius = '20px';
-      lb.style.fontSize = '13px';
-      lb.style.fontWeight = '500';
+      lb.className = 'venc-label';
       lb.textContent = `Vencimento ${i + 1}`;
 
       const sp = document.createElement('span');
-      sp.style.minWidth = '105px';
-      sp.textContent = ok ? formatarData(dt) : 'Data inválida';
+      sp.className = 'venc-data';
+      sp.textContent = ok ? formatarData(d) : 'Data inválida';
 
       const inp = document.createElement('input');
       inp.type = 'text';
@@ -203,15 +203,14 @@ async function carregarPedidosFinanceiro() {
       inp.style.textAlign = 'right';
 
       const bt = document.createElement('button');
-      bt.type = 'button';
-      bt.innerHTML = '✓';
+      bt.textContent = '✓';
       bt.style.backgroundColor = '#28a745';
-      bt.style.color = 'white';
+      bt.style.color = '#fff';
       bt.style.border = 'none';
       bt.style.borderRadius = '4px';
       bt.style.padding = '5px 10px';
       bt.style.cursor = 'pointer';
-      bt.onclick = () => {
+      bt.addEventListener('click', () => {
         const v = parseFloat(inp.value.replace(',', '.'));
         if (isNaN(v) || v < 0) {
           alert('Digite um valor válido.');
@@ -219,8 +218,7 @@ async function carregarPedidosFinanceiro() {
           return;
         }
         pedido.vencimentosValores[i] = v;
-        bt.innerHTML = '✓';
-      };
+      });
 
       dv.append(lb, sp, inp, bt);
       vencContainer.appendChild(dv);
@@ -228,7 +226,7 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
-    // ---- Observações do Financeiro e botão ----
+    // Observações do Financeiro e Botão
     const blocoFin = document.createElement('div');
     blocoFin.style.marginTop = '20px';
 
@@ -253,7 +251,7 @@ async function carregarPedidosFinanceiro() {
     const btnFin = document.createElement('button');
     btnFin.textContent = 'Confirmar Liberação do Cliente';
     btnFin.className = 'btn btn-registrar';
-    btnFin.onclick = () => confirmarFinanceiro(id, taFin.value);
+    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
 
     btnWrap.appendChild(btnFin);
     blocoFin.append(lblFin, taFin, btnWrap);
@@ -263,7 +261,6 @@ async function carregarPedidosFinanceiro() {
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
-
     lista.appendChild(card);
   });
 }
@@ -293,4 +290,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
-
