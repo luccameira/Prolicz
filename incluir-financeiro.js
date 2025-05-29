@@ -203,14 +203,23 @@ async function carregarPedidosFinanceiro() {
     // Materiais e descontos no estilo conferência
     (pedido.materiais || []).forEach(item => {
       const cardMaterial = document.createElement('div');
-      cardMaterial.className = 'material-bloco'; // Para aplicar o CSS do print
+      cardMaterial.className = 'material-bloco';
 
-      // Peso previsto para carregamento e tipo (aproximado ou exato)
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
-
-      // Peso registrado na carga
       const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
+
+      let totalDescontosKg = 0;
+      if (item.descontos && item.descontos.length > 0) {
+        totalDescontosKg = item.descontos.reduce((soma, desc) => soma + Number(desc.peso_calculado || 0), 0);
+      }
+      const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontosKg;
+      const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
+
+      // Calcular valor total do item
+      const valorUnitarioNum = Number(item.valor_unitario) || 0;
+      const valorTotalCalculado = pesoFinalNum * valorUnitarioNum;
+      const valorTotalFormatado = valorTotalCalculado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
       let descontosHTML = '';
       if (item.descontos && item.descontos.length > 0) {
@@ -231,7 +240,10 @@ async function carregarPedidosFinanceiro() {
         <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} kg</p>
         <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
         ${descontosHTML}
+        <p><strong>Peso Final com Desconto:</strong> ${pesoFinal} kg</p>
+        <p><strong>Valor Total do Item:</strong> <span class="etiqueta-peso-final">${valorTotalFormatado}</span></p>
       `;
+
       form.appendChild(cardMaterial);
     });
 
