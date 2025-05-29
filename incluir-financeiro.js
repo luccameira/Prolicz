@@ -62,7 +62,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-        const containerCinza = document.createElement('div');
+    const containerCinza = document.createElement('div');
     containerCinza.style.background = '#f8f9fa';
     containerCinza.style.padding = '20px';
     containerCinza.style.borderRadius = '8px';
@@ -81,14 +81,14 @@ async function carregarPedidosFinanceiro() {
           <span style="background:#eee; color:#555; padding:5px 10px; border-radius:20px; font-size:13px; margin-right:6px; font-weight: 500;">
             Vencimento ${index + 1}
           </span>
-          ${dataValida ? formatarData(dataFormatada) : 'Data inválida'} - Valor: R$ ${valorParcela.toFixed(2)}
+          ${dataValida ? formatarData(dataFormatada) : 'Data inválida'} - Valor: R$ ${valorParcela.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       `;
     }).join('');
 
     containerCinza.innerHTML = `
       <p style="margin-bottom: 10px;"><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toFixed(2)}</p>
+      <p style="margin-bottom: 10px;"><strong>Valor Total da Venda:</strong> R$ ${totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       ${vencimentosHTML}
       <div style="background:#fff3cd; padding:10px; border-radius:6px; margin-top:20px;">
         <strong>Observações:</strong> ${pedido.observacoes || '—'}
@@ -111,7 +111,7 @@ async function carregarPedidosFinanceiro() {
       cardMaterial.innerHTML = `
         <p><strong>MATERIAL: ${item.nome_produto}</strong></p>
         <p>Peso Carregado: ${item.quantidade || item.peso_carregado || '—'} kg</p>
-        <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toFixed(2) : '—'}</p>
+        <p>Valor do Item: R$ ${!isNaN(item.valor_total) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</p>
       `;
       form.appendChild(cardMaterial);
     });
