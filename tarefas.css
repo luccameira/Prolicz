@@ -646,3 +646,129 @@ input[type="file"]::file-selector-button:hover {
   border-radius: 4px;
   text-align: right;
 }
+
+/* Estilo para os parágrafos de materiais (remove negrito e ajusta espaçamento) */
+.material-bloco p {
+  font-weight: 400;
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+/* Etiqueta de valor total do item */
+.etiqueta-valor-item {
+  display: inline-block;
+  background-color: #28a745;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* Separador entre materiais e resumo financeiro */
+.divider-financeiro {
+  border-top: 1px solid #ddd;
+  margin: 32px 0 20px;
+}
+
+/* Bloco de resumo financeiro com borda neutra */
+.resumo-financeiro {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+}
+
+/* Observações do pedido dentro do resumo */
+.resumo-financeiro .obs-pedido {
+  background: #fff3cd;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+/* Container de vencimentos */
+.vencimentos-container {
+  margin-top: 20px;
+}
+
+/* Linha de cada vencimento */
+.vencimento-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Label do vencimento */
+.venc-label {
+  background: #eee;
+  color: #555;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Data do vencimento */
+.venc-data {
+  min-width: 105px;
+  font-size: 14px;
+}
+
+/* Input de valor de vencimento */
+.vencimento-row input {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: right;
+  font-size: 14px;
+}
+
+/* Botão confirmar vencimento */
+.vencimento-row button {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* Bloco de observações do financeiro e botão */
+.bloco-fin {
+  margin-top: 20px;
+}
+
+/* Label dentro do bloco financeiro */
+.bloco-fin label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Textarea de observações do financeiro */
+.bloco-fin textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Botão de confirmação no bloco financeiro */
+.bloco-fin .btn-registrar {
+  margin-top: 12px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
