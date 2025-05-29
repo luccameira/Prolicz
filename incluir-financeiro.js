@@ -83,24 +83,20 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- blocos de materiais ----
+    // Materiais da venda
     (pedido.materiais || []).forEach(item => {
-      const cardMaterial = document.createElement('div');
-      cardMaterial.className = 'material-bloco';
+      const bloco = document.createElement('div');
+      bloco.className = 'material-bloco';
 
-      // Preparar dados
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
       const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
 
-      let totalDescontosKg = 0;
+      let descontosKg = 0;
       if (item.descontos?.length) {
-        totalDescontosKg = item.descontos.reduce(
-          (sum, d) => sum + Number(d.peso_calculado || 0),
-          0
-        );
+        descontosKg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
       }
-      const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontosKg;
+      const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
       const valorUnitarioNum = Number(item.valor_unitario) || 0;
@@ -108,45 +104,42 @@ async function carregarPedidosFinanceiro() {
       const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
       const valorTotalFmt = formatarMoeda(valorTotalCalc);
 
-      // Descontos HTML
       let descontosHTML = '';
       if (item.descontos?.length) {
         descontosHTML = `
-          <div class="descontos-aplicados" style="margin-top: 16px;">
+          <div class="descontos-aplicados" style="margin-top:16px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos
-                .map(d => `
-                  <li>${formatarPesoSemDecimal(d.quantidade)} ${d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'} (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
-                `)
+                .map(d => `<li>${formatarPesoSemDecimal(d.quantidade)} ${
+                  d.motivo.includes('Palete') ? 'UNIDADES' : 'Kg'
+                } (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`)
                 .join('')}
             </ul>
           </div>
         `;
       }
 
-      // Montar bloco
-      cardMaterial.innerHTML = `
+      bloco.innerHTML = `
         <h4>${item.nome_produto} (${valorUnitarioFmt}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
-        <p style="margin-top: 16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
-        <p style="margin-top: 12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFmt}</span></p>
+        <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
+        <p style="margin-top:12px;"><strong>Valor Total do Item:</strong> <span class="etiqueta-valor-item">${valorTotalFmt}</span></p>
       `;
-      form.appendChild(cardMaterial);
+      form.appendChild(bloco);
     });
 
-    // ---- separador visual ----
+    // Separador visual
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // ---- resumo financeiro ----
+    // Resumo Financeiro
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // Calcular total da venda
     const totalVenda = (pedido.materiais || []).reduce((sum, item) => {
       let dkg = 0;
       if (item.descontos?.length) {
@@ -159,31 +152,33 @@ async function carregarPedidosFinanceiro() {
 
     containerCinza.innerHTML = `
       <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
-      <p><strong>Valor Total da Venda:</strong> ${totalVendaFmt}</p>
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
       <div class="vencimentos-container"></div>
     `;
 
-    // ---- vencimentos com máscara ----
+    // Vencimentos com máscara e confirmação
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     (pedido.prazos_pagamento || []).forEach((iso, i) => {
       const dt = new Date(iso);
       const ok = !isNaN(dt.getTime());
       const valorSug = totalVenda / (pedido.prazos_pagamento.length || 1);
+      const valorSugFmt = valorSug
+        .toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       const row = document.createElement('div');
       row.className = 'vencimento-row';
       row.innerHTML = `
         <span class="venc-label">Vencimento ${i + 1}</span>
         <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-        <input type="text" value="${valorSug.toFixed(2).replace('.', ',')}" />
+        <input type="text" value="${valorSugFmt}" />
         <button type="button">✓</button>
       `;
 
       const inp = row.querySelector('input');
       const btn = row.querySelector('button');
 
-      // Máscara ao perder foco
+      // máscara ativa já no load e ao sair do campo
       inp.addEventListener('blur', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
@@ -192,12 +187,10 @@ async function carregarPedidosFinanceiro() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           });
-        } else {
-          inp.value = '';
         }
       });
 
-      // Confirmar valor
+      // ao confirmar, substitui check por etiqueta "CONFIRMADO"
       btn.addEventListener('click', () => {
         const raw = inp.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
@@ -208,6 +201,11 @@ async function carregarPedidosFinanceiro() {
         }
         pedido.vencimentosValores = pedido.vencimentosValores || [];
         pedido.vencimentosValores[i] = num;
+
+        const etiqueta = document.createElement('span');
+        etiqueta.className = 'etiqueta-valor-item';
+        etiqueta.textContent = 'CONFIRMADO';
+        btn.replaceWith(etiqueta);
       });
 
       vencContainer.appendChild(row);
@@ -215,7 +213,7 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
-    // ---- Observações do Financeiro e botão ----
+    // Observações do Financeiro e botão
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
@@ -228,10 +226,12 @@ async function carregarPedidosFinanceiro() {
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
 
+    // toggle form
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
+
     lista.appendChild(card);
   });
 }
