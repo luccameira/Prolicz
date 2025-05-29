@@ -42,10 +42,18 @@
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    /* estilo para o select de código fiscal */
+    /* CORREÇÃO: força aparência nativa e sobreposição do dropdown */
     .select-codigo-fiscal {
-      position: relative !important;
+      appearance: auto !important;
+      -webkit-appearance: menulist-button !important;
+      -moz-appearance: menulist-button !important;
+      background-color: #fff !important;
+      color: #000 !important;
       z-index: 1000 !important;
+      pointer-events: auto !important;
+    }
+    .select-codigo-fiscal option {
+      color: #000 !important;
     }
   </style>
 </head>
@@ -82,14 +90,12 @@
         </select>
       </div>
 
-      <!-- prazos como checkboxes -->
       <div class="form-group">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
 
-      <!-- itens -->
       <div id="produtos"></div>
       <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
@@ -131,19 +137,23 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
+          // Ajuste: aceita codigosFiscais ou codigos_fiscais no JSON
+          windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
           // prazos
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowPrazos.forEach(pr => {
             $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pr}"> ${pr}</label>`);
           });
-          // códigos e produtos
-          windowCodigos = cli.codigosFiscais || [];
+          // produtos
           windowProdutos = cli.produtos_autorizados || [];
+          // popula selects de código e produtos
           atualizarCodigoFiscalOptions();
           adicionarProduto();
         });
       });
 
+      // adicionar um bloco de produto
+      $("#adicionar-produto").click(adicionarProduto);
       function adicionarProduto(){
         if (!windowProdutos.length) return;
         const usados = $(".produto-bloco")
@@ -188,13 +198,10 @@
         bloco.append(gp);
         gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
 
-        // eventos
+        // eventos internos
         selCod.change(function(){
-          if ($(this).val() === "Personalizar") {
-            gp.show();
-          } else {
-            gp.hide().find("input").val("");
-          }
+          if ($(this).val() === "Personalizar") gp.show();
+          else gp.hide().find("input").val("");
         });
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
@@ -209,12 +216,6 @@
           gp.find(".error-soma").toggle(Math.abs(vc + vs - st) > 0.005);
         });
 
-        function atualizarSub(){
-          const v = parseMask(bloco.find(".valor-unitario").val()),
-                p = parseFloat(bloco.find(".peso").val()) || 0;
-          bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
-        }
-
         // remover
         if ($(".produto-bloco").length) {
           const btn = $('<button type="button" class="btn-remove">Remover</button>')
@@ -223,6 +224,12 @@
         }
 
         $("#produtos").append(bloco);
+
+        function atualizarSub(){
+          const v = parseMask(bloco.find(".valor-unitario").val()),
+                p = parseFloat(bloco.find(".peso").val()) || 0;
+          bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
+        }
       }
 
       function atualizarTotal(){
@@ -274,8 +281,7 @@
           }
         });
         fetch("/api/pedidos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dados)
         })
         .then(r => r.json())
@@ -285,9 +291,6 @@
         })
         .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
       });
-
-      // inicializa
-      adicionarProduto();
     });
   </script>
 </body>
