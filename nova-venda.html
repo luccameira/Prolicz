@@ -58,6 +58,7 @@
       align-items: center;
       justify-content: flex-start;
       max-width: 380px;
+      flex-wrap: nowrap; /* impedir quebra */
     }
     .valor-total-previsto #valor-total {
       font-size: 22px;
@@ -65,6 +66,8 @@
       color: #178009;
       margin-left: 10px;
       letter-spacing: 0.5px;
+      white-space: nowrap; /* NÃO QUEBRAR LINHA */
+      display: inline-block;
     }
   </style>
 </head>
