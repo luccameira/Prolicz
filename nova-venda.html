@@ -12,10 +12,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
   <style>
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    /* bloco de produto SEM position, z-index, overflow */
     .produto-bloco {
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -34,6 +36,16 @@
     .error-prazos { color: red; display: none; font-size: 13px; }
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
+    .select-codigo-fiscal {
+      appearance: menulist !important;
+      background-color: #fff !important;
+      color: #000 !important;
+      pointer-events: auto !important;
+    }
+    .select-codigo-fiscal option {
+      color: #000 !important;
+      background-color: #fff !important;
+    }
   </style>
 </head>
 <body>
@@ -86,22 +98,18 @@
     $(function(){
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
-
       function atualizarCodigoFiscalOptions() {
         $(".select-codigo-fiscal").each(function(){
-          const sel = $(this).empty().append('<option value="">Selecione</option>');
+          const sel = $(this).empty().append('<option value="">Código Fiscal</option>');
           windowCodigos.forEach(c => sel.append(`<option value="${c}">${c}</option>`));
-          sel.append('<option value="Personalizar">Personalizar</option>');
         });
       }
-
-      // Carregar clientes
+      // carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
       });
-
-      // Ao mudar cliente
+      // ao mudar cliente
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
@@ -110,8 +118,8 @@
         $(".error-prazos").hide();
         if (!id) return;
         $.get(`/api/clientes/${id}`, function(cli){
-          windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
-          windowPrazos = cli.prazos_pagamento?.map(p => p.descricao) || [];
+          windowCodigos = cli.codigosFiscais || [];
+          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
           windowPrazos.forEach(pz => {
             $("#prazosCheckboxes").append(
@@ -122,23 +130,19 @@
           adicionarProduto();
         });
       });
-
       $("#adicionar-produto").click(adicionarProduto);
-
       function adicionarProduto(){
         if (!windowProdutos.length) return;
         const usados = $(".produto-bloco")
           .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
-
         const bloco = $('<div class="produto-bloco"></div>');
         // Código Fiscal
         const selCod = $('<select class="select-codigo-fiscal" required></select>');
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
              .children().last().append(selCod);
         atualizarCodigoFiscalOptions();
-
         // Produto
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
@@ -162,7 +166,6 @@
           </div>`);
         bloco.append(gp);
         gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
-
         // eventos internos
         selCod.change(function(){
           if ($(this).val() === "Personalizar") gp.show();
@@ -180,7 +183,6 @@
                 st = parseMask(bloco.find(".subtotal").val());
           gp.find(".error-soma").toggle(Math.abs(vc + vs - st) > 0.005);
         });
-
         // remover
         if ($(".produto-bloco").length) {
           const btn = $('<button type="button" class="btn-remove">Remover</button>')
@@ -188,14 +190,12 @@
           bloco.append(btn);
         }
         $("#produtos").append(bloco);
-
         function atualizarSub(){
           const v = parseMask(bloco.find(".valor-unitario").val()),
                 p = parseFloat(bloco.find(".peso").val()) || 0;
           bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
         }
       }
-
       function atualizarTotal(){
         let tot = 0;
         $(".produto-bloco").each(function(){
@@ -206,7 +206,6 @@
       function parseMask(str){
         return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",",".")) || 0;
       }
-
       $("#form-pedido").submit(function(e){
         e.preventDefault();
         const prSel = $("#prazosCheckboxes input:checked").map((i,c) => c.value).get();
@@ -258,3 +257,4 @@
   </script>
 </body>
 </html>
+
