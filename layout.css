@@ -20,7 +20,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 100 !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 14px;
 }
@@ -49,7 +49,7 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
-  z-index: 999;
+  z-index: 100 !important;
 }
 
 .sidebar-header {
@@ -205,25 +205,30 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
-/* >>>>>>> CORREÇÃO CRÍTICA PARA O SELECT <<<<<<<< */
-.main-content, form, .produto-bloco {
-  overflow: visible !important;
-  z-index: auto !important;
-  position: static !important;
-}
-/* Mantenha .produto-bloco sem z-index */
+/* PRODUTO BLOCO (correção select travado) */
 .produto-bloco {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 15px;
   margin-top: 15px;
   background: #f9f9f9;
-  position: relative;
+  position: static !important;
   overflow: visible !important;
 }
-/* Remove qualquer z-index antigo do produto-bloco
-.produto-bloco { z-index: auto !important; }
-*/
 
-/* >>>>>>>>>> FIM DA CORREÇÃO <<<<<<<<<< */
+/* CORREÇÃO GLOBAL PARA SELECT DENTRO DO FORMULÁRIO */
+body, .main-content, form, .produto-bloco, .form-group {
+  overflow: visible !important;
+  z-index: auto !important;
+  position: static !important;
+}
+
+/* Hack para o select funcionar em todos navegadores */
+.select-codigo-fiscal {
+  position: relative !important;
+  z-index: 10 !important;
+  background: #fff !important;
+  pointer-events: auto !important;
+  overflow: visible !important;
+}
 
