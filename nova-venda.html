@@ -161,16 +161,6 @@
         if (!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
 
-        // Código Fiscal (inclui opção Personalizar apenas se autorizado)
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
-        selCod.append('<option value="">Código Fiscal</option>');
-        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
-        if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
-          if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
-        }
-        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
-             .children().last().append(selCod);
-
         // Produto
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
@@ -189,6 +179,16 @@
 
         // Subtotal
         bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal"></div>');
+
+        // Código Fiscal (depois do subtotal)
+        const selCod = $('<select class="select-codigo-fiscal" required></select>');
+        selCod.append('<option value="">Código Fiscal</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
+        if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
+          if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
+        }
+        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
+             .children().last().append(selCod);
 
         // Personalizar
         const gp = $(`\
