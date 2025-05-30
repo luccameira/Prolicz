@@ -12,25 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
   <style>
-    /* AJUSTE DE Z-INDEX PARA EVITAR SOBREPOSIÇÃO */
-    .topbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 2000;
-    }
-    .sidebar {
-      position: fixed;
-      top: 60px; /* ajuste se sua topbar for maior/menor */
-      left: 0;
-      bottom: 0;
-      z-index: 1990;
-    }
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-      position: relative;
-      z-index: 1;
-    }
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; overflow: visible !important; }
     label { font-weight: bold; margin-bottom: 5px; }
@@ -42,8 +24,8 @@
       margin-top: 15px;
       background: #f9f9f9;
       position: relative;
-      z-index: auto;
       overflow: visible !important;
+      z-index: 1;
     }
     .produto-bloco:focus-within { z-index: 10 !important; }
     .produto-bloco .form-group { margin-bottom: 12px; }
@@ -52,14 +34,19 @@
     #valor-total { font-weight: bold; text-align: right; padding-top: 10px; font-size: 16px; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
+
+    /* prazos como checkboxes */
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
+
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
+
+    /* SELECT DO CÓDIGO FISCAL */
     .select-codigo-fiscal {
       position: relative !important;
-      z-index: 10 !important;
+      z-index: 20 !important;
       appearance: menulist !important;
       -webkit-appearance: menulist !important;
       -moz-appearance: menulist !important;
@@ -105,14 +92,17 @@
           <option value="entregar">Entregar</option>
         </select>
       </div>
+
       <div class="form-group">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
+
       <div id="produtos"></div>
       <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
+
       <div class="form-group">
         <label for="observacao">Observação</label>
         <textarea id="observacao"></textarea>
@@ -120,6 +110,7 @@
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
+
   <script>
     $(function(){
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
@@ -149,18 +140,15 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // aceita codigosFiscais ou codigos_fiscais no JSON
-          windowCodigos = cli.codigosFiscais || cli.codigos_fiscais || [];
-          windowPrazos = (cli.prazos_pagamento || []).map(p => p.descricao);
+          // aceita codigosFiscais no JSON
+          windowCodigos = cli.codigosFiscais || [];
+          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
-          // popula prazos
-          windowPrazos.forEach(desc => {
-            const idChk = `prazo_${desc.replace(/\s/g, '')}`;
-            $("#prazosCheckboxes").append(`
-              <label>
-                <input type="checkbox" value="${desc}" id="${idChk}"> ${desc}
-              </label>
-            `);
+          // popula
+          windowPrazos.forEach(pz => {
+            $("#prazosCheckboxes").append(
+              `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
+            );
           });
           atualizarCodigoFiscalOptions();
           adicionarProduto();
@@ -184,7 +172,7 @@
         atualizarCodigoFiscalOptions();
 
         // Produto
-        const selProd = $('<select class="select-produt o" required><option value="">Produto</option></select>');
+        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>')
              .children().last().append(selProd);
