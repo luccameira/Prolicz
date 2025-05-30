@@ -32,20 +32,16 @@
     #valor-total { font-weight: bold; text-align: right; padding-top: 10px; font-size: 16px; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
-
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
-
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
-
     select, .codigo-fiscal-select, .produto-bloco, .produto-bloco * {
       z-index: 10000 !important;
       position: relative !important;
       overflow: visible !important;
     }
-
     form, .main-content, body {
       overflow: visible !important;
     }
@@ -83,17 +79,14 @@
           <option value="entregar">Entregar</option>
         </select>
       </div>
-
       <div class="form-group">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
-
       <div id="produtos"></div>
       <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
-
       <div class="form-group">
         <label for="observacao">Observação</label>
         <textarea id="observacao"></textarea>
@@ -134,7 +127,7 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // LOG DE DEBUG - Veja no Console (F12)
+          // DEBUG - log para diagnóstico
           console.log("DEBUG códigos fiscais recebidos:", cli.codigosFiscais, typeof cli.codigosFiscais, cli);
 
           let codigos = [];
@@ -166,12 +159,16 @@
             `);
           });
 
-          atualizarCodigoFiscalOptions();
-          adicionarProduto();
+          adicionarProduto();               // 1º cria o bloco (o select aparece)
+          atualizarCodigoFiscalOptions();   // 2º popula o select criado
         });
       });
 
-      $("#adicionar-produto").click(adicionarProduto);
+      $("#adicionar-produto").click(function(){
+        adicionarProduto();
+        atualizarCodigoFiscalOptions();
+      });
+
       function adicionarProduto(){
         if (!windowProdutos.length) return;
         const usados = $(".produto-bloco")
@@ -185,7 +182,6 @@
         const selCod = $('<select class="codigo-fiscal-select" required></select>');
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
              .children().last().append(selCod);
-        atualizarCodigoFiscalOptions();
 
         // Produto
         const selProd = $('<select class="produto-select" required><option value="">Produto</option></select>');
@@ -311,3 +307,4 @@
   </script>
 </body>
 </html>
+
