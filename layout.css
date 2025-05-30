@@ -7,13 +7,6 @@ body {
   font-size: 16px;
 }
 
-/* DEBUG/DESTRAVA DROPDOWN SELECT - MANTER NO FINAL DO ARQUIVO */
-body, .main-content, .content, form, .produto-bloco, .form-group {
-  overflow: visible !important;
-  position: static !important;
-  z-index: auto !important;
-}
-
 /* Topbar */
 .topbar {
   height: 60px;
@@ -56,6 +49,7 @@ body, .main-content, .content, form, .produto-bloco, .form-group {
   left: 0;
   display: flex;
   flex-direction: column;
+  z-index: 900;
 }
 
 .sidebar-header {
@@ -109,6 +103,7 @@ body, .main-content, .content, form, .produto-bloco, .form-group {
 }
 
 /* Conteúdo principal */
+.main-content,
 .content {
   margin-left: 280px;
   padding: 100px 40px 40px;
@@ -211,14 +206,32 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
-/* PRODUTO BLOCO */
+/* PRODUTO BLOCO (SEM z-index para não travar o select) */
 .produto-bloco {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 15px;
   margin-top: 15px;
   background: #f9f9f9;
-  /* Não precisa mais position nem overflow aqui! */
+  position: relative;
+  overflow: visible !important;
+  /* z-index: 1;  (REMOVIDO para corrigir o bug do select) */
 }
 
-/* FIM DO ARQUIVO */
+/* Responsividade simples */
+@media (max-width: 900px) {
+  .main-content,
+  .content {
+    margin-left: 0;
+    padding: 100px 10px 10px;
+  }
+  .sidebar {
+    width: 100vw;
+    left: 0;
+    top: 60px;
+    height: auto;
+    position: static;
+    z-index: 900;
+  }
+}
+
