@@ -49,6 +49,7 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
+  z-index: 999;
 }
 
 .sidebar-header {
@@ -204,7 +205,13 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
-/* PRODUTO BLOCO (atualizado para não travar o select) */
+/* >>>>>>> CORREÇÃO CRÍTICA PARA O SELECT <<<<<<<< */
+.main-content, form, .produto-bloco {
+  overflow: visible !important;
+  z-index: auto !important;
+  position: static !important;
+}
+/* Mantenha .produto-bloco sem z-index */
 .produto-bloco {
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -213,5 +220,10 @@ tr:hover {
   background: #f9f9f9;
   position: relative;
   overflow: visible !important;
-  /* z-index: 1;  (REMOVIDO para corrigir o bug do select) */
 }
+/* Remove qualquer z-index antigo do produto-bloco
+.produto-bloco { z-index: auto !important; }
+*/
+
+/* >>>>>>>>>> FIM DA CORREÇÃO <<<<<<<<<< */
+
