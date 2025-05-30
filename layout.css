@@ -205,34 +205,28 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
-/* PRODUTO BLOCO (sem z-index e position para evitar bug do select) */
+/* PRODUTO BLOCO — sem z-index, sem position, sem overflow! */
 .produto-bloco {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 15px;
   margin-top: 15px;
   background: #f9f9f9;
-  /* NÃO COLOQUE position nem z-index aqui! */
-  /* NÃO COLOQUE overflow: visible !important aqui! */
+  /* NÃO coloque position, z-index ou overflow aqui! */
 }
 
-.produto-bloco:focus-within {
-  /* Se precisar destacar o bloco no foco, só mexa em border ou sombra. */
-  /* Não use z-index aqui. */
-}
-
-/* Ajuste para select funcionar em qualquer contexto */
+/* Ajuste para selects em qualquer contexto */
 select, .select-codigo-fiscal {
-  /* Remove qualquer z-index e position desnecessário */
   position: static !important;
   z-index: auto !important;
   overflow: visible !important;
   background: #fff !important;
   color: #000 !important;
   pointer-events: auto !important;
+  box-shadow: none !important;
 }
 
-/* Caso queira garantir o visual padrão dos selects */
+/* Visual padrão nos selects */
 select:focus, .select-codigo-fiscal:focus {
   outline: 2px solid #ffc107;
 }
@@ -258,4 +252,3 @@ input, select, textarea {
   background: #fff;
   color: #222;
 }
-
