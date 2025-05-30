@@ -14,12 +14,7 @@
       font-family: 'Roboto', sans-serif;
       background-color: #f5f6fa;
     }
-
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     .container {
       background-color: #fff;
       padding: 30px;
@@ -28,100 +23,39 @@
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
     h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
     label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
     input[type="text"], input[type="email"], input[type="number"], select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      font-size: 14px;
+      width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px;
+      border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;
     }
-
-    .checkbox-group {
-      margin-top: 5px;
-      margin-bottom: 20px;
-    }
-    .checkbox-group label {
-      display: flex;
-      align-items: center;
-      margin: 5px 0;
-      font-size: 14px;
-    }
-    .checkbox-group input[type="checkbox"] {
-      width: auto;
-      margin-right: 8px;
-    }
-
     .telefone-group, .email-group, .contato-group, .produto-group, .prazo-group {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
+      display: flex; gap: 10px; align-items: center; margin-bottom: 10px;
     }
-
     .remover-btn {
-      background-color: #e0e0e0;
-      color: black;
-      border: none;
-      border-radius: 8px;
-      width: 28px;
-      height: 28px;
-      font-size: 16px;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
+      background-color: #e0e0e0; color: black; border: none; border-radius: 8px;
+      width: 28px; height: 28px; font-size: 16px; line-height: 1; cursor: pointer; padding: 0;
     }
-
-    .remover-btn:hover {
-      background-color: #d0d0d0;
-    }
-
+    .remover-btn:hover { background-color: #d0d0d0; }
     .btn-adicionar {
-      background-color: #007bff;
-      color: white;
-      width: auto;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
+      background-color: #007bff; color: white; width: auto; margin-top: 10px;
+      margin-bottom: 20px; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;
     }
-
     .hidden { display: none; }
-
-    /* Estilo do botão Voltar ajustado */
     #btn-voltar {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 7px 20px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      width: 80px;
-      box-shadow: none;
-      transition: background-color 0.3s ease;
+      background-color: #6c757d; color: white; border: none; border-radius: 4px;
+      padding: 7px 20px; cursor: pointer; margin-bottom: 20px; font-size: 14px; font-weight: 500;
+      width: 80px; box-shadow: none; transition: background-color 0.3s ease;
     }
-    #btn-voltar:hover {
-      background-color: #5a6268;
-    }
+    #btn-voltar:hover { background-color: #5a6268; }
   </style>
 </head>
 <body>
   <div class="topbar"></div>
   <div class="sidebar"></div>
-
   <div class="main-content">
     <div class="container">
       <button id="btn-voltar" onclick="window.location.href='clientes.html'">Voltar</button>
-
       <h1>Novo Cliente</h1>
       <form id="formCliente">
         <label for="tipoPessoa">Tipo de Pessoa</label>
@@ -129,13 +63,10 @@
           <option value="juridica">Jurídica</option>
           <option value="fisica">Física</option>
         </select>
-
         <label id="labelDocumento" for="documento">CNPJ</label>
         <input type="text" id="documento" required>
-
         <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
         <input type="text" id="nomeFantasia" required>
-
         <div id="divSituacaoTributaria">
           <label for="situacaoTributaria">Situação Tributária</label>
           <select id="situacaoTributaria">
@@ -145,44 +76,26 @@
             <option value="lucroReal">Lucro Real</option>
           </select>
         </div>
-
         <label>Códigos Fiscais Permitidos</label>
-        <div id="codigosFiscaisCheckboxes" class="checkbox-group">
-          <label><input type="checkbox" value="GA1">GA1</label>
-          <label><input type="checkbox" value="GA2">GA2</label>
-          <label><input type="checkbox" value="GX">GX</label>
-          <label><input type="checkbox" value="GG1">GG1</label>
-          <label><input type="checkbox" value="GG2">GG2</label>
-          <label><input type="checkbox" value="A1">A1</label>
-          <label><input type="checkbox" value="A2">A2</label>
-          <label><input type="checkbox" value="AX">AX</label>
-          <label><input type="checkbox" value="Personalizar">Personalizar</label>
-        </div>
-
+        <div id="codigosFiscaisPermitidos"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarCodigoFiscal()">+ Adicionar Código Fiscal</button>  
         <h3>Produtos Autorizados</h3>
         <div id="produtosAutorizados"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarProdutoAutorizado()">+ Adicionar Produto</button>
-
         <h3>Prazos de Pagamento Permitidos</h3>
         <div id="prazosPagamento"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarPrazoPagamento()">+ Adicionar Prazo</button>
-
         <h3>Endereço</h3>
         <label for="cep">CEP</label>
         <input type="text" id="cep" required onblur="buscarEndereco()">
-
         <label for="logradouro">Logradouro</label>
         <input type="text" id="logradouro" required>
-
         <label for="numero">Número</label>
         <input type="text" id="numero" required>
-
         <label for="bairro">Bairro</label>
         <input type="text" id="bairro" required>
-
         <label for="cidade">Cidade</label>
         <input type="text" id="cidade" required>
-
         <label for="estado">Estado</label>
         <select id="estado" required>
           <option value="">Selecione</option>
@@ -191,7 +104,6 @@
           <option value="MG">MG</option>
           <option value="RS">RS</option>
         </select>
-
         <h3>Contato</h3>
         <div id="contatos">
           <div class="contato-group">
@@ -202,20 +114,47 @@
           </div>
         </div>
         <button type="button" class="btn-adicionar" onclick="adicionarContato()">+ Adicionar Contato</button>
-
         <button type="submit" style="background-color: #28a745; color: white; margin-top: 20px;">Salvar</button>
       </form>
     </div>
   </div>
-
   <script>
+  const listaCodigosFiscais = [
+    "GA1", "GA2", "GX", "GG1", "GG2", "A1", "A2", "AX", "Personalizar"
+  ];
+  function adicionarCodigoFiscal(valorSelecionado = "") {
+    const container = document.getElementById("codigosFiscaisPermitidos");
+    const div = document.createElement("div");
+    div.className = "prazo-group";
+    const select = document.createElement("select");
+    select.className = "codigo-fiscal-select";
+    select.required = true;
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Selecione o código fiscal";
+    select.appendChild(defaultOption);
+    listaCodigosFiscais.forEach(codigo => {
+      const option = document.createElement("option");
+      option.value = codigo;
+      option.textContent = codigo;
+      if (codigo === valorSelecionado) option.selected = true;
+      select.appendChild(option);
+    });
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "remover-btn";
+    button.innerHTML = "&times;";
+    button.onclick = () => div.remove();
+    div.appendChild(select);
+    div.appendChild(button);
+    container.appendChild(div);
+  }
   function atualizarCamposPessoa() {
     const tipo = document.getElementById("tipoPessoa").value;
     const labelDoc = document.getElementById("labelDocumento");
     const inputDoc = document.getElementById("documento");
     const divSit = document.getElementById("divSituacaoTributaria");
     const labelNome = document.getElementById("labelNomeFantasia");
-
     if (tipo === "fisica") {
       labelDoc.textContent = "CPF";
       $(inputDoc).unmask().mask("000.000.000-00");
@@ -228,7 +167,6 @@
       labelNome.textContent = "Nome Fantasia";
     }
   }
-
   function buscarEndereco() {
     const cep = document.getElementById("cep").value.replace(/\D/g, "");
     if (cep.length !== 8) return;
@@ -243,7 +181,6 @@
         }
       });
   }
-
   function adicionarContato() {
     const container = document.getElementById("contatos");
     const div = document.createElement("div");
@@ -257,62 +194,7 @@
     container.appendChild(div);
     $(div).find(".telefone-contato").mask("(00) 00000-0000");
   }
-
-  function adicionarProdutoAutorizado() {
-    if (!listaProdutos.length) return;
-    const container = document.getElementById("produtosAutorizados");
-    const div = document.createElement("div");
-    div.className = "produto-group";
-
-    const select = document.createElement("select");
-    select.className = "produto-select";
-    select.required = true;
-
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione um produto";
-    select.appendChild(defaultOption);
-
-    listaProdutos.forEach(p => {
-      const option =	document.createElement("option");
-      option.value = p.id;
-      option.textContent = `${p.nome} (${p.unidade})`;
-      select.appendChild(option);
-    });
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "valor-unitario";
-    input.placeholder = "Valor unitário (ex: R$ 12,50)";
-    input.required = true;
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "remover-btn";
-    button.innerHTML = "&times;";
-    button.onclick = () => div.remove();
-
-    div.appendChild(select);
-    div.appendChild(input);
-    div.appendChild(button);
-    container.appendChild(div);
-    $(input).mask("R$ 000.000.000,00", { reverse: true });
-  }
-
-  function adicionarPrazoPagamento() {
-    const container = document.getElementById("prazosPagamento");
-    const div = document.createElement("div");
-    div.className =	"prazo-group";
-    div.innerHTML = `
-      <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
-      <input type="number" class="prazo-dias" placeholder="Dias após coleta"	required>
-      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-    `;
-    container.appendChild(div);
-  }
-
   let listaProdutos = [];
-
   async function carregarProdutos() {
     try {
       const res = await fetch('/api/clientes/produtos');
@@ -322,17 +204,60 @@
       console.error("Erro ao buscar produtos:", err);
     }
   }
-
+  function adicionarProdutoAutorizado() {
+    if (!listaProdutos.length) return;
+    const container = document.getElementById("produtosAutorizados");
+    const div = document.createElement("div");
+    div.className = "produto-group";
+    const select = document.createElement("select");
+    select.className = "produto-select";
+    select.required = true;
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Selecione um produto";
+    select.appendChild(defaultOption);
+    listaProdutos.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = `${p.nome} (${p.unidade})`;
+      select.appendChild(option);
+    });
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "valor-unitario";
+    input.placeholder = "Valor unitário (ex: R$ 12,50)";
+    input.required = true;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "remover-btn";
+    button.innerHTML = "&times;";
+    button.onclick = () => div.remove();
+    div.appendChild(select);
+    div.appendChild(input);
+    div.appendChild(button);
+    container.appendChild(div);
+    $(input).mask("R$ 000.000.000,00", { reverse: true });
+  }
+  function adicionarPrazoPagamento() {
+    const container = document.getElementById("prazosPagamento");
+    const div = document.createElement("div");
+    div.className = "prazo-group";
+    div.innerHTML = `
+      <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
+      <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
+      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(div);
+  }
   document.getElementById("formCliente").addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const cliente = {
-      tipo_pessoa:	document.getElementById("tipoPessoa").value,
-      documento:	document.getElementById("documento").value,
+      tipo_pessoa: document.getElementById("tipoPessoa").value,
+      documento: document.getElementById("documento").value,
       nome_fantasia: document.getElementById("nomeFantasia").value,
       situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
-      codigosFiscais: Array.from(document.querySelectorAll('#codigosFiscaisCheckboxes input[type="checkbox"]:checked'))
-        .map(cb => cb.value),
+      codigosFiscais: Array.from(document.querySelectorAll('.codigo-fiscal-select'))
+        .map(sel => sel.value).filter(v => !!v),
       cep: document.getElementById("cep").value,
       logradouro: document.getElementById("logradouro").value,
       numero: document.getElementById("numero").value,
@@ -341,23 +266,27 @@
       estado: document.getElementById("estado").value,
       contatos: [], produtos: [], prazos: []
     };
-
     document.querySelectorAll(".contato-group").forEach(div => {
-      cliente.contatos.push({ nome: div.querySelector(".nome-contato").value,
+      cliente.contatos.push({
+        nome: div.querySelector(".nome-contato").value,
         telefone: div.querySelector(".telefone-contato").value,
-        email: div.querySelector(".email-contato").value });
+        email: div.querySelector(".email-contato").value
+      });
     });
-
     document.querySelectorAll(".produto-group").forEach(div => {
-      cliente.produtos.push({ id: div.querySelector(".produto-select").value,
-        valor: div.querySelector(".valor-unitario").value });
+      cliente.produtos.push({
+        id: div.querySelector(".produto-select").value,
+        valor: div.querySelector(".valor-unitario").value
+      });
     });
-
     document.querySelectorAll(".prazo-group").forEach(div => {
-      cliente.prazos.push({ descricao: div.querySelector(".prazo-descricao").value,
-        dias: div.querySelector(".prazo-dias").value });
+      if(div.querySelector(".prazo-descricao") && div.querySelector(".prazo-dias")) {
+        cliente.prazos.push({
+          descricao: div.querySelector(".prazo-descricao").value,
+          dias: div.querySelector(".prazo-dias").value
+        });
+      }
     });
-
     try {
       const response = await fetch("/api/clientes", {
         method: "POST",
@@ -365,18 +294,28 @@
         body: JSON.stringify(cliente)
       });
       const result = await response.json();
-      if (response.ok) { alert("Cliente cadastrado com sucesso!"); window.location.href = "clientes.html"; }
-      else { alert("Erro: " + (result.erro || "Erro desconhecido")); }
-    } catch (err) { alert("Erro ao enviar dados para o servidor."); console.error(err); }
+      if (response.ok) {
+        alert("Cliente cadastrado com sucesso!");
+        window.location.href = "clientes.html";
+      } else {
+        alert("Erro: " + (result.erro || "Erro desconhecido"));
+      }
+    } catch (err) {
+      alert("Erro ao enviar dados para o servidor.");
+      console.error(err);
+    }
   });
-
   document.addEventListener("DOMContentLoaded", async () => {
     atualizarCamposPessoa();
     $("#cep").mask("00000-000");
     $(".telefone-contato").mask("(00) 00000-0000");
     $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
     await carregarProdutos();
+    if (document.getElementById("codigosFiscaisPermitidos").children.length === 0) {
+      adicionarCodigoFiscal();
+    }
   });
   </script>
 </body>
 </html>
+
