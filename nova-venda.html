@@ -17,7 +17,6 @@
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    /* bloco de produto SEM position, z-index, overflow */
     .produto-bloco {
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -28,7 +27,6 @@
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
-    #valor-total { font-weight: bold; text-align: right; padding-top: 10px; font-size: 16px; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
@@ -45,6 +43,28 @@
     .select-codigo-fiscal option {
       color: #000 !important;
       background-color: #fff !important;
+    }
+    /* NOVO BLOCO VALOR TOTAL PREVISTO */
+    .valor-total-previsto {
+      background: #fffbe6;
+      border: 1.5px solid #ffe066;
+      border-radius: 7px;
+      padding: 16px 20px;
+      margin: 22px 0 10px 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      max-width: 380px;
+    }
+    .valor-total-previsto #valor-total {
+      font-size: 22px;
+      font-weight: bold;
+      color: #178009;
+      margin-left: 10px;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
@@ -85,8 +105,10 @@
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
       <div id="produtos"></div>
-      <div id="valor-total">Valor total do pedido: R$ 0,00</div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
+      <div id="valor-total-previsto" class="valor-total-previsto">
+        Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
+      </div>
       <div class="form-group">
         <label for="observacao">Observação</label>
         <textarea id="observacao"></textarea>
@@ -109,7 +131,7 @@
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
         $("#produtos").empty();
-        $("#valor-total").text("Valor total do pedido: R$ 0,00");
+        $("#valor-total").text("R$ 0,00");
         $(".error-prazos").hide();
         if (!id) return;
         $.get(`/api/clientes/${id}`, function(cli){
@@ -198,7 +220,7 @@
         $(".produto-bloco").each(function(){
           tot += parseMask($(this).find(".subtotal").val());
         });
-        $("#valor-total").text(`Valor total do pedido: R$ ${tot.toFixed(2).replace(".",",")}`);
+        $("#valor-total").text(`R$ ${tot.toFixed(2).replace(".",",")}`);
       }
       function parseMask(str){
         return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",",".")) || 0;
@@ -254,4 +276,3 @@
   </script>
 </body>
 </html>
-
