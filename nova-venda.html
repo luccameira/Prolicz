@@ -40,15 +40,10 @@
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
 
-    select, .produto-bloco select {
-      z-index: auto !important;
-      position: static !important;
-      background-color: #fff !important;
-      color: #000 !important;
-      pointer-events: auto !important;
-      appearance: menulist !important;
-      -webkit-appearance: menulist !important;
-      -moz-appearance: menulist !important;
+    select, .codigo-fiscal-select, .produto-bloco, .produto-bloco * {
+      z-index: 10000 !important;
+      position: relative !important;
+      overflow: visible !important;
     }
 
     form, .main-content, body {
@@ -115,8 +110,11 @@
 
       function atualizarCodigoFiscalOptions() {
         $(".codigo-fiscal-select").each(function(){
-          const sel = $(this).empty().append('<option value="">Código Fiscal</option>');
-          windowCodigos.forEach(c => sel.append(`<option value="${c}">${c}</option>`));
+          const sel = $(this);
+          sel.empty().append('<option value="">Código Fiscal</option>');
+          (windowCodigos || []).forEach(function(c){
+            sel.append($('<option></option>').val(c).text(c));
+          });
         });
       }
 
@@ -136,7 +134,9 @@
         if (!id) return;
 
         $.get(`/api/clientes/${id}`, function(cli){
-          // --- RESOLUÇÃO DO BUG DO SELECT DE CÓDIGO FISCAL ---
+          // LOG DE DEBUG - Veja no Console (F12)
+          console.log("DEBUG códigos fiscais recebidos:", cli.codigosFiscais, typeof cli.codigosFiscais, cli);
+
           let codigos = [];
           if (cli.codigosFiscais && Array.isArray(cli.codigosFiscais)) {
             codigos = cli.codigosFiscais;
@@ -152,13 +152,10 @@
             } catch (e) { codigos = []; }
           }
           windowCodigos = codigos;
-          console.log("DEBUG códigos fiscais recebidos:", windowCodigos, cli.codigosFiscais, cli.codigos_fiscais);
-          // --------------------------------------------------
 
           windowPrazos = cli.prazos_pagamento ? cli.prazos_pagamento.map(p => p.descricao) : [];
           windowProdutos = cli.produtos_autorizados || [];
 
-          // Popular os prazos de pagamento na tela
           $("#prazosCheckboxes").empty();
           windowPrazos.forEach(function(prazo, i){
             $("#prazosCheckboxes").append(`
@@ -219,7 +216,6 @@
         bloco.append(gp);
         gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
 
-        // eventos internos
         selCod.change(function(){
           if ($(this).val() === "Personalizar") gp.show();
           else gp.hide().find("input").val("");
@@ -237,7 +233,6 @@
           gp.find(".error-soma").toggle(Math.abs(vc + vs - st) > 0.005);
         });
 
-        // remover
         if ($(".produto-bloco").length) {
           const btn = $('<button type="button" class="btn-remove">Remover</button>')
             .click(() => { bloco.remove(); atualizarTotal(); });
