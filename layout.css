@@ -203,3 +203,15 @@ th {
 tr:hover {
   background-color: #f9f9f9;
 }
+
+/* PRODUTO BLOCO (atualizado para não travar o select) */
+.produto-bloco {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  background: #f9f9f9;
+  position: relative;
+  overflow: visible !important;
+  /* z-index: 1;  (REMOVIDO para corrigir o bug do select) */
+}
