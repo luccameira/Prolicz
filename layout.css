@@ -7,6 +7,13 @@ body {
   font-size: 16px;
 }
 
+/* DEBUG/DESTRAVA DROPDOWN SELECT - MANTER NO FINAL DO ARQUIVO */
+body, .main-content, .content, form, .produto-bloco, .form-group {
+  overflow: visible !important;
+  position: static !important;
+  z-index: auto !important;
+}
+
 /* Topbar */
 .topbar {
   height: 60px;
@@ -20,7 +27,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100 !important;
+  z-index: 1000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 14px;
 }
@@ -49,7 +56,6 @@ body {
   left: 0;
   display: flex;
   flex-direction: column;
-  z-index: 100 !important;
 }
 
 .sidebar-header {
@@ -205,30 +211,14 @@ tr:hover {
   background-color: #f9f9f9;
 }
 
-/* PRODUTO BLOCO (correção select travado) */
+/* PRODUTO BLOCO */
 .produto-bloco {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 15px;
   margin-top: 15px;
   background: #f9f9f9;
-  position: static !important;
-  overflow: visible !important;
+  /* Não precisa mais position nem overflow aqui! */
 }
 
-/* CORREÇÃO GLOBAL PARA SELECT DENTRO DO FORMULÁRIO */
-body, .main-content, form, .produto-bloco, .form-group {
-  overflow: visible !important;
-  z-index: auto !important;
-  position: static !important;
-}
-
-/* Hack para o select funcionar em todos navegadores */
-.select-codigo-fiscal {
-  position: relative !important;
-  z-index: 10 !important;
-  background: #fff !important;
-  pointer-events: auto !important;
-  overflow: visible !important;
-}
-
+/* FIM DO ARQUIVO */
