@@ -98,12 +98,7 @@
     $(function(){
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
-      function atualizarCodigoFiscalOptions() {
-        $(".select-codigo-fiscal").each(function(){
-          const sel = $(this).empty().append('<option value="">Código Fiscal</option>');
-          windowCodigos.forEach(c => sel.append(`<option value="${c}">${c}</option>`));
-        });
-      }
+      
       // carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
@@ -126,7 +121,6 @@
               `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
             );
           });
-          atualizarCodigoFiscalOptions();
           adicionarProduto();
         });
       });
@@ -138,11 +132,14 @@
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
+
         // Código Fiscal
         const selCod = $('<select class="select-codigo-fiscal" required></select>');
+        selCod.append('<option value="">Código Fiscal</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
              .children().last().append(selCod);
-        atualizarCodigoFiscalOptions();
+
         // Produto
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
