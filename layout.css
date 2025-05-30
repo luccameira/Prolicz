@@ -252,3 +252,18 @@ input, select, textarea {
   background: #fff;
   color: #222;
 }
+
+/* --- CORREÇÃO UNIVERSAL SELECT DROP-DOWN BLOCO PRODUTO --- */
+/* Garante que nada que envolve o select corte o drop-down */
+.produto-bloco,
+.produto-bloco *,
+.form-group,
+.form-group *,
+#form-pedido,
+#form-pedido *,
+.main-content,
+.main-content * {
+  overflow: visible !important;
+  z-index: auto !important;
+  position: static !important;
+}
