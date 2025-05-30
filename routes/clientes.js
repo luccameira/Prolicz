@@ -135,7 +135,8 @@ router.get('/:id', async (req, res) => {
     FROM produtos_autorizados pa
     JOIN produtos p ON p.id = pa.produto_id
     WHERE pa.cliente_id = ?`;
-  const queryPrazos = `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?`;
+  // ALTERAÇÃO AQUI: Ordenando os prazos pelo campo "dias" (mais próximo para mais distante)
+  const queryPrazos = `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ? ORDER BY dias ASC`;
 
   try {
     const [clienteRes] = await connection.query(queryCliente, [id]);
@@ -275,3 +276,4 @@ Object.defineProperty(router, 'connection', {
 });
 
 module.exports = router;
+
