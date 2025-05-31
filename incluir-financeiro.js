@@ -121,30 +121,7 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // valores fiscais por kg
-      const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-
-      // totais
-      const totalComNota = pesoFinalNum * valorComNota;
-      const totalSemNota = pesoFinalNum * valorSemNota;
-
-      // Exibe a regra fiscal aplicada
-      let cod = (item.codigo_fiscal || '').toUpperCase();
-      if (cod === "PERSONALIZAR") cod = "Personalizado";
-      const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-
-      // BARRA AZUL: TUDO JUNTO
       bloco.innerHTML = `
-        <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-bottom:10px; font-size:15px; color:#1e2637; font-weight:600;">
-          <span class="etiqueta-codigo-fiscal">
-            <strong>Código Fiscal:</strong> ${cod} |
-            <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-            <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
-            <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalComNota)}</span> |
-            <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSemNota)}</span>
-            <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-          </span>
-        </div>
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
@@ -179,17 +156,38 @@ async function carregarPedidosFinanceiro() {
     // total da venda (soma total dos itens: com nota + sem nota)
     let totalComNota = 0;
     let totalSemNota = 0;
+    let codigosFiscaisBarraAzul = '';
     if (pedido.materiais && pedido.materiais.length) {
-      pedido.materiais.forEach(item => {
+      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
         const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+        let cod = (item.codigo_fiscal || '').toUpperCase();
+        if (!cod) cod = '(não informado)';
+        if (cod === "PERSONALIZAR") cod = "Personalizado";
+        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
+        // calcula totais
         let descontosKg = 0;
         if (item.descontos?.length) {
           descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
         }
         const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-        totalComNota += pesoFinalNum * valorComNota;
-        totalSemNota += pesoFinalNum * valorSemNota;
-      });
+        const totalCom = pesoFinalNum * valorComNota;
+        const totalSem = pesoFinalNum * valorSemNota;
+        totalComNota += totalCom;
+        totalSemNota += totalSem;
+
+        return `
+          <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
+            <span class="etiqueta-codigo-fiscal">
+              <strong>Código Fiscal: ${cod}</strong> |
+              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
+              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
+              <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
+              <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
+              <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
+            </span>
+          </div>
+        `;
+      }).join('');
     }
     const totalVendaFmt = formatarMoeda(totalComNota + totalSemNota);
 
@@ -197,6 +195,7 @@ async function carregarPedidosFinanceiro() {
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
+      ${codigosFiscaisBarraAzul}
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
     `;
 
