@@ -23,6 +23,31 @@ function formatarPesoSemDecimal(valor) {
   return numero.toFixed(2).replace('.', ',');
 }
 
+function calcularValoresFiscais(item) {
+  const valorUnitario = Number(item.valor_unitario) || 0;
+  let valorComNota = 0;
+  let valorSemNota = 0;
+  let tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
+
+  if (tipoCodigo === "PERSONALIZAR" && item.valor_com_nota != null && item.valor_sem_nota != null) {
+    valorComNota = Number(item.valor_com_nota);
+    valorSemNota = Number(item.valor_sem_nota);
+  } else if (tipoCodigo.endsWith("1")) {
+    valorComNota = valorUnitario;
+    valorSemNota = 0;
+  } else if (tipoCodigo.endsWith("2")) {
+    valorComNota = valorUnitario / 2;
+    valorSemNota = valorUnitario / 2;
+  } else if (tipoCodigo.endsWith("X")) {
+    valorComNota = 0;
+    valorSemNota = valorUnitario;
+  } else {
+    valorComNota = valorUnitario;
+    valorSemNota = 0;
+  }
+  return { valorComNota, valorSemNota };
+}
+
 async function carregarPedidosFinanceiro() {
   const [resPendentes, resAnteriores] = await Promise.all([
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
@@ -96,11 +121,20 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // valores
-      const valorUnitarioNum = Number(item.valor_unitario) || 0;
-      const valorUnitarioFmt = formatarMoeda(valorUnitarioNum);
-      const valorTotalCalc = pesoFinalNum * valorUnitarioNum;
-      const valorTotalFmt = formatarMoeda(valorTotalCalc);
+      // valores fiscais por kg
+      const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+      // totais
+      const totalComNota = pesoFinalNum * valorComNota;
+      const totalSemNota = pesoFinalNum * valorSemNota;
+
+      // Exibe a regra fiscal aplicada
+      let regraFiscal = '';
+      if ((item.codigo_fiscal || '').toUpperCase() === "PERSONALIZAR") {
+        regraFiscal = 'Personalizado';
+      } else if (item.codigo_fiscal) {
+        regraFiscal = item.codigo_fiscal.toUpperCase();
+      }
 
       // descontos aplicados (motivo, quantidade e peso)
       let descontosHTML = '';
@@ -118,12 +152,27 @@ async function carregarPedidosFinanceiro() {
       }
 
       bloco.innerHTML = `
-        <h4>${item.nome_produto} (${valorUnitarioFmt}/Kg)</h4>
+        <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
+        <p style="margin-top: 6px;"><strong>Código Fiscal:</strong> ${regraFiscal}</p>
+        <p style="margin-bottom: 6px;">
+          <span style="color: #3e4a66;">
+            <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
+            <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg
+          </span>
+        </p>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
         <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
-        <p style="margin-top:12px;"><strong>Valor Total do Item:</strong> <span style="color: green;">${valorTotalFmt}</span></p>
+        <div style="margin-top:12px; margin-bottom:4px;">
+          <strong>Valor Total do Item:</strong>
+          <span style="color: green;">${formatarMoeda(totalComNota + totalSemNota)}</span>
+        </div>
+        <div style="margin-left:8px; font-size:15px;">
+          <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalComNota)}</span>
+          &nbsp;|&nbsp;
+          <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSemNota)}</span>
+        </div>
       `;
       form.appendChild(bloco);
     });
@@ -137,15 +186,19 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // total da venda
-    const totalVenda = (pedido.materiais || []).reduce((sum, item) => {
-      let dkg = 0;
-      if (item.descontos?.length) {
-        dkg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
-      }
-      const pf = (Number(item.peso_carregado) || 0) - dkg;
-      return sum + pf * (Number(item.valor_unitario) || 0);
-    }, 0);
+    // total da venda (soma total dos itens: com nota + sem nota)
+    let totalVenda = 0;
+    if (pedido.materiais && pedido.materiais.length) {
+      totalVenda = pedido.materiais.reduce((sum, item) => {
+        let dkg = 0;
+        if (item.descontos?.length) {
+          dkg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
+        }
+        const pf = (Number(item.peso_carregado) || 0) - dkg;
+        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+        return sum + pf * (valorComNota + valorSemNota);
+      }, 0);
+    }
     const totalVendaFmt = formatarMoeda(totalVenda);
 
     containerCinza.innerHTML = `
@@ -320,3 +373,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+
