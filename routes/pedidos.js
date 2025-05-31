@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, (valor_unitario * peso) AS valor_total
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
