@@ -121,10 +121,34 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // descontos aplicados (motivo, quantidade e peso)
-      let descontosHTML = '';
-      if (item.descontos?.length) {
-        descontosHTML = `
+      // valores fiscais por kg
+      const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+      // totais
+      const totalComNota = pesoFinalNum * valorComNota;
+      const totalSemNota = pesoFinalNum * valorSemNota;
+
+      // Exibe a regra fiscal aplicada
+      let cod = (item.codigo_fiscal || '').toUpperCase();
+      if (cod === "PERSONALIZAR") cod = "Personalizado";
+      const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
+
+      // BARRA AZUL: TUDO JUNTO
+      bloco.innerHTML = `
+        <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-bottom:10px; font-size:15px; color:#1e2637; font-weight:600;">
+          <span class="etiqueta-codigo-fiscal">
+            <strong>Código Fiscal:</strong> ${cod} |
+            <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
+            <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
+            <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalComNota)}</span> |
+            <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSemNota)}</span>
+            <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
+          </span>
+        </div>
+        <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
+        <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
+        <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
+        ${item.descontos?.length ? `
           <div class="descontos-aplicados" style="margin-top:16px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
@@ -133,14 +157,7 @@ async function carregarPedidosFinanceiro() {
               ).join('')}
             </ul>
           </div>
-        `;
-      }
-
-      bloco.innerHTML = `
-        <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
-        <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
-        <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${descontosHTML}
+        ` : ''}
         <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
@@ -159,17 +176,12 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // --- NOVO BLOCO: códigos fiscais e valores por kg de cada material ---
-    let codigosFiscaisResumo = '';
+    // total da venda (soma total dos itens: com nota + sem nota)
     let totalComNota = 0;
     let totalSemNota = 0;
     if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisResumo = pedido.materiais.map(item => {
+      pedido.materiais.forEach(item => {
         const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        // calcula totais
         let descontosKg = 0;
         if (item.descontos?.length) {
           descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
@@ -177,40 +189,12 @@ async function carregarPedidosFinanceiro() {
         const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
         totalComNota += pesoFinalNum * valorComNota;
         totalSemNota += pesoFinalNum * valorSemNota;
-
-        return `
-          <div style="margin-bottom:3px;">
-            <span class="etiqueta-codigo-fiscal"><strong>Código Fiscal:</strong> ${cod}</span>
-            <span style="margin-left:10px;color:#3e4a66;">
-              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg
-            </span>
-            <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-          </div>
-        `;
-      }).join('');
+      });
     }
+    const totalVendaFmt = formatarMoeda(totalComNota + totalSemNota);
+
     containerCinza.innerHTML = `
-      <div style="background:#eef2f7;padding:10px 16px 10px 10px; border-radius:6px; margin-bottom:10px;">
-        ${codigosFiscaisResumo}
-      </div>
-      <div style="background:#f7fbe7;padding:10px 14px; border-radius:6px; margin-bottom:14px;">
-        <span style="font-size:16px; color:#353; font-weight:600;">
-          Resumo Fiscal do Pedido:
-        </span>
-        <div style="margin-top:7px; margin-left:10px;">
-          <span style="color:#225c20; font-weight:500;">
-            <i class="fa fa-file-invoice"></i> Total com nota:
-            <span style="font-size:18px;">${formatarMoeda(totalComNota)}</span>
-          </span>
-          &nbsp;|&nbsp;
-          <span style="color:#b12e2e; font-weight:500;">
-            <i class="fa fa-ban"></i> Total sem nota:
-            <span style="font-size:18px;">${formatarMoeda(totalSemNota)}</span>
-          </span>
-        </div>
-      </div>
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${formatarMoeda(totalComNota + totalSemNota)}</span></p>
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
