@@ -164,7 +164,6 @@ async function carregarPedidosFinanceiro() {
         if (!cod) cod = '(não informado)';
         if (cod === "PERSONALIZAR") cod = "Personalizado";
         const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        // calcula totais
         let descontosKg = 0;
         if (item.descontos?.length) {
           descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
@@ -189,113 +188,173 @@ async function carregarPedidosFinanceiro() {
         `;
       }).join('');
     }
-    const totalVendaFmt = formatarMoeda(totalComNota + totalSemNota);
+    const totalVenda = totalComNota + totalSemNota;
+    const totalVendaFmt = formatarMoeda(totalVenda);
+
+    const numVencimentos = pedido.prazos_pagamento?.length || 1;
+
+    function calcularValoresVencimentos() {
+      let parcelas = [];
+      // Cálculo com precisão para centavos
+      let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
+      let totalParcial = 0;
+
+      for (let i = 0; i < numVencimentos; i++) {
+        if (i < numVencimentos - 1) {
+          parcelas.push(base);
+          totalParcial += base;
+        } else {
+          let ultima = (totalVenda - totalParcial);
+          parcelas.push(ultima);
+        }
+      }
+      return parcelas;
+    }
 
     containerCinza.innerHTML = `
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
     `;
 
-    // vencimentos com máscara e confirmação
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
-    pedido.prazos_pagamento?.forEach((iso, i) => {
-      const dt = new Date(iso);
-      const ok = !isNaN(dt.getTime());
-      const valorSug = (totalComNota + totalSemNota) / (pedido.prazos_pagamento.length || 1);
-      const valorSugFmt = valorSug.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    let valoresPadrao = calcularValoresVencimentos();
 
-      const row = document.createElement('div');
-      row.className = 'vencimento-row';
-      row.dataset.confirmado = 'false';
-      row.innerHTML = `
-        <span class="venc-label">Vencimento ${i + 1}</span>
-        <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-        <input type="text" value="${valorSugFmt}" />
-        <button type="button">✓</button>
-      `;
+    function renderizarVencimentos(valores) {
+      vencContainer.innerHTML = '';
+      for (let i = 0; i < numVencimentos; i++) {
+        const dt = new Date(pedido.prazos_pagamento[i]);
+        const ok = !isNaN(dt.getTime());
+        const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      const inp = row.querySelector('input');
-      const btn = row.querySelector('button');
-      inputs.push(inp);
+        const row = document.createElement('div');
+        row.className = 'vencimento-row';
+        row.dataset.confirmado = 'false';
+        row.innerHTML = `
+          <span class="venc-label">Vencimento ${i + 1}</span>
+          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+          <input type="text" value="${valorFmt}" />
+          <button type="button">✓</button>
+        `;
 
-      // elemento de confirmação alternável
-      const etiquetaConfirmado = document.createElement('span');
-      etiquetaConfirmado.className = 'etiqueta-valor-item';
-      etiquetaConfirmado.textContent = 'CONFIRMADO';
-      etiquetaConfirmado.style.cursor = 'pointer';
+        const inp = row.querySelector('input');
+        const btn = row.querySelector('button');
+        inputs[i] = inp;
 
-      inp.addEventListener('blur', () => {
-        const raw = inp.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        if (!isNaN(num)) {
-          inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        const lastIndex = inputs.length - 1;
-        const curIndex = inputs.indexOf(inp);
-        if (curIndex !== lastIndex) {
-          const somaExcUlt = inputs.slice(0, lastIndex)
-            .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
-            .reduce((s, v) => s + v, 0);
-          const restante = (totalComNota + totalSemNota) - somaExcUlt;
-          let rowErr = row.querySelector('.row-error');
-          if (restante < 0) {
-            if (!rowErr) {
-              rowErr = document.createElement('div');
-              rowErr.className = 'row-error';
-              rowErr.style.color = 'red';
-              rowErr.style.fontSize = '13px';
-              rowErr.textContent = 'Parcela excede o valor total da venda.';
-              row.appendChild(rowErr);
-            }
-          } else {
-            if (rowErr) row.removeChild(rowErr);
-            inputs[lastIndex].value = restante.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-          }
-        }
-        atualizarBotaoLiberar();
-      });
+        // elemento de confirmação alternável
+        const etiquetaConfirmado = document.createElement('span');
+        etiquetaConfirmado.className = 'etiqueta-valor-item';
+        etiquetaConfirmado.textContent = 'CONFIRMADO';
+        etiquetaConfirmado.style.cursor = 'pointer';
 
-      function toggleConfirmacao() {
-        const isConf = row.dataset.confirmado === 'true';
-        if (!isConf) {
+        inp.addEventListener('blur', () => {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
-          if (isNaN(num) || num < 0) {
-            let rowErr = row.querySelector('.row-error');
-            if (!rowErr) {
-              rowErr = document.createElement('div');
-              rowErr.className = 'row-error';
-              rowErr.style.color = 'red';
-              rowErr.style.fontSize = '13px';
-              rowErr.textContent = 'Valor inválido.';
-              row.appendChild(rowErr);
-            }
-            inp.focus();
-            return;
+          if (!isNaN(num)) {
+            inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           }
-          pedido.vencimentosValores = pedido.vencimentosValores || [];
-          pedido.vencimentosValores[i] = num;
-          row.dataset.confirmado = 'true';
-          inp.disabled = true;
-          btn.replaceWith(etiquetaConfirmado);
-        } else {
-          row.dataset.confirmado = 'false';
-          inp.disabled = false;
-          etiquetaConfirmado.replaceWith(btn);
+          const lastIndex = inputs.length - 1;
+          const curIndex = i;
+          if (curIndex !== lastIndex) {
+            const somaExcUlt = inputs.slice(0, lastIndex)
+              .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
+              .reduce((s, v) => s + v, 0);
+            const restante = totalVenda - somaExcUlt;
+            let rowErr = row.querySelector('.row-error');
+            if (restante < 0) {
+              if (!rowErr) {
+                rowErr = document.createElement('div');
+                rowErr.className = 'row-error';
+                rowErr.style.color = 'red';
+                rowErr.style.fontSize = '13px';
+                rowErr.textContent = 'Parcela excede o valor total da venda.';
+                row.appendChild(rowErr);
+              }
+            } else {
+              if (rowErr) row.removeChild(rowErr);
+              inputs[lastIndex].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+          }
+          atualizarBotaoLiberar();
+        });
+
+        function toggleConfirmacao() {
+          const isConf = row.dataset.confirmado === 'true';
+          if (!isConf) {
+            const raw = inp.value.replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(raw);
+            if (isNaN(num) || num < 0) {
+              let rowErr = row.querySelector('.row-error');
+              if (!rowErr) {
+                rowErr = document.createElement('div');
+                rowErr.className = 'row-error';
+                rowErr.style.color = 'red';
+                rowErr.style.fontSize = '13px';
+                rowErr.textContent = 'Valor inválido.';
+                row.appendChild(rowErr);
+              }
+              inp.focus();
+              return;
+            }
+            pedido.vencimentosValores = pedido.vencimentosValores || [];
+            pedido.vencimentosValores[i] = num;
+            row.dataset.confirmado = 'true';
+            inp.disabled = true;
+            btn.replaceWith(etiquetaConfirmado);
+          } else {
+            row.dataset.confirmado = 'false';
+            inp.disabled = false;
+            etiquetaConfirmado.replaceWith(btn);
+          }
+          atualizarBotaoLiberar();
         }
-        atualizarBotaoLiberar();
+
+        btn.addEventListener('click', toggleConfirmacao);
+        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+
+        vencContainer.appendChild(row);
       }
+    }
 
-      btn.addEventListener('click', toggleConfirmacao);
-      etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-      vencContainer.appendChild(row);
-    });
+    function resetarVencimentosPadrao() {
+      valoresPadrao = calcularValoresVencimentos();
+      renderizarVencimentos(valoresPadrao);
+      atualizarBotaoLiberar();
+    }
 
-    form.appendChild(containerCinza);
+    // Ao clicar no valor total, reseta os vencimentos
+    setTimeout(() => {
+      const valorTotalTag = document.getElementById('reset-vencimentos');
+      if (valorTotalTag) {
+        valorTotalTag.style.cursor = 'pointer';
+        valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+        valorTotalTag.onclick = resetarVencimentosPadrao;
+      }
+    }, 200);
+
+    renderizarVencimentos(valoresPadrao);
+
+    function atualizarBotaoLiberar() {
+      const rows = containerCinza.querySelectorAll('.vencimento-row');
+      let soma = 0;
+      rows.forEach((r, idx) => {
+        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
+        if (!isNaN(val)) soma += val;
+      });
+      const erroEl = containerCinza.querySelector('.venc-soma-error');
+      if (Math.abs(soma - totalVenda) > 0.005) {
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+      } else {
+        erroEl.textContent = '';
+      }
+      const btnFin = form.querySelector('.btn-registrar');
+      if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
+    }
+
+    atualizarBotaoLiberar();
 
     // Observações do Financeiro e botão
     const blocoFin = document.createElement('div');
@@ -308,25 +367,8 @@ async function carregarPedidosFinanceiro() {
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
+    form.appendChild(containerCinza);
     form.appendChild(blocoFin);
-
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach(r => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - (totalComNota + totalSemNota)) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}) difere do total R$ ${(formatarMoeda(totalComNota + totalSemNota))}.`;
-      } else {
-        erroEl.textContent = '';
-      }
-      btnFin.disabled = Math.abs(soma - (totalComNota + totalSemNota)) > 0.005;
-    }
-
-    atualizarBotaoLiberar();
 
     // toggle form visibility
     card.appendChild(form);
