@@ -121,21 +121,6 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      // valores fiscais por kg
-      const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-
-      // totais
-      const totalComNota = pesoFinalNum * valorComNota;
-      const totalSemNota = pesoFinalNum * valorSemNota;
-
-      // Exibe a regra fiscal aplicada
-      let regraFiscal = '';
-      if ((item.codigo_fiscal || '').toUpperCase() === "PERSONALIZAR") {
-        regraFiscal = 'Personalizado';
-      } else if (item.codigo_fiscal) {
-        regraFiscal = item.codigo_fiscal.toUpperCase();
-      }
-
       // descontos aplicados (motivo, quantidade e peso)
       let descontosHTML = '';
       if (item.descontos?.length) {
@@ -153,25 +138,13 @@ async function carregarPedidosFinanceiro() {
 
       bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
-        <p style="margin-top: 6px;"><strong>Código Fiscal:</strong> ${regraFiscal}</p>
-        <p style="margin-bottom: 6px;">
-          <span style="color: #3e4a66;">
-            <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-            <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg
-          </span>
-        </p>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
         ${descontosHTML}
         <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
-          <span style="color: green;">${formatarMoeda(totalComNota + totalSemNota)}</span>
-        </div>
-        <div style="margin-left:8px; font-size:15px;">
-          <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalComNota)}</span>
-          &nbsp;|&nbsp;
-          <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSemNota)}</span>
+          <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
         </div>
       `;
       form.appendChild(bloco);
@@ -186,27 +159,61 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // total da venda (soma total dos itens: com nota + sem nota)
-    let totalVenda = 0;
+    // --- NOVO BLOCO: códigos fiscais e valores por kg de cada material ---
+    let codigosFiscaisResumo = '';
+    let totalComNota = 0;
+    let totalSemNota = 0;
     if (pedido.materiais && pedido.materiais.length) {
-      totalVenda = pedido.materiais.reduce((sum, item) => {
-        let dkg = 0;
-        if (item.descontos?.length) {
-          dkg = item.descontos.reduce((s, d) => s + Number(d.peso_calculado || 0), 0);
-        }
-        const pf = (Number(item.peso_carregado) || 0) - dkg;
+      codigosFiscaisResumo = pedido.materiais.map(item => {
         const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        return sum + pf * (valorComNota + valorSemNota);
-      }, 0);
-    }
-    const totalVendaFmt = formatarMoeda(totalVenda);
+        let cod = (item.codigo_fiscal || '').toUpperCase();
+        if (cod === "PERSONALIZAR") cod = "Personalizado";
+        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
+        // calcula totais
+        let descontosKg = 0;
+        if (item.descontos?.length) {
+          descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+        }
+        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
+        totalComNota += pesoFinalNum * valorComNota;
+        totalSemNota += pesoFinalNum * valorSemNota;
 
+        return `
+          <div style="margin-bottom:3px;">
+            <span class="etiqueta-codigo-fiscal"><strong>Código Fiscal:</strong> ${cod}</span>
+            <span style="margin-left:10px;color:#3e4a66;">
+              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
+              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg
+            </span>
+            <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
+          </div>
+        `;
+      }).join('');
+    }
     containerCinza.innerHTML = `
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${totalVendaFmt}</span></p>
+      <div style="background:#eef2f7;padding:10px 16px 10px 10px; border-radius:6px; margin-bottom:10px;">
+        ${codigosFiscaisResumo}
+      </div>
+      <div style="background:#f7fbe7;padding:10px 14px; border-radius:6px; margin-bottom:14px;">
+        <span style="font-size:16px; color:#353; font-weight:600;">
+          Resumo Fiscal do Pedido:
+        </span>
+        <div style="margin-top:7px; margin-left:10px;">
+          <span style="color:#225c20; font-weight:500;">
+            <i class="fa fa-file-invoice"></i> Total com nota:
+            <span style="font-size:18px;">${formatarMoeda(totalComNota)}</span>
+          </span>
+          &nbsp;|&nbsp;
+          <span style="color:#b12e2e; font-weight:500;">
+            <i class="fa fa-ban"></i> Total sem nota:
+            <span style="font-size:18px;">${formatarMoeda(totalSemNota)}</span>
+          </span>
+        </div>
+      </div>
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item">${formatarMoeda(totalComNota + totalSemNota)}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
-      <p><strong>Código Interno do Pedido:</strong> ${pedido.codigo_interno || '—'}</p>
     `;
 
     // vencimentos com máscara e confirmação
@@ -215,7 +222,7 @@ async function carregarPedidosFinanceiro() {
     pedido.prazos_pagamento?.forEach((iso, i) => {
       const dt = new Date(iso);
       const ok = !isNaN(dt.getTime());
-      const valorSug = totalVenda / (pedido.prazos_pagamento.length || 1);
+      const valorSug = (totalComNota + totalSemNota) / (pedido.prazos_pagamento.length || 1);
       const valorSugFmt = valorSug.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       const row = document.createElement('div');
@@ -250,7 +257,7 @@ async function carregarPedidosFinanceiro() {
           const somaExcUlt = inputs.slice(0, lastIndex)
             .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
             .reduce((s, v) => s + v, 0);
-          const restante = totalVenda - somaExcUlt;
+          const restante = (totalComNota + totalSemNota) - somaExcUlt;
           let rowErr = row.querySelector('.row-error');
           if (restante < 0) {
             if (!rowErr) {
@@ -328,12 +335,12 @@ async function carregarPedidosFinanceiro() {
         if (!isNaN(val)) soma += val;
       });
       const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}) difere do total R$ ${totalVendaFmt}.`;
+      if (Math.abs(soma - (totalComNota + totalSemNota)) > 0.005) {
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}) difere do total R$ ${(formatarMoeda(totalComNota + totalSemNota))}.`;
       } else {
         erroEl.textContent = '';
       }
-      btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
+      btnFin.disabled = Math.abs(soma - (totalComNota + totalSemNota)) > 0.005;
     }
 
     atualizarBotaoLiberar();
@@ -373,4 +380,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
-
