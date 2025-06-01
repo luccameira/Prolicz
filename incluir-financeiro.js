@@ -1,5 +1,3 @@
-// incluir-financeiro.js
-
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
@@ -48,6 +46,42 @@ function calcularValoresFiscais(item) {
   return { valorComNota, valorSemNota };
 }
 
+// Linha do tempo visual
+function gerarLinhaTempo(statusAtual) {
+  const etapas = [
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF',
+    'Cliente Liberado',
+    'Finalizado'
+  ];
+  let etapaAtiva = false;
+  return `
+    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+      ${etapas.map((etapa, idx) => {
+        if (etapa === statusAtual) etapaAtiva = true;
+        return `
+          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
+            style="
+              padding: 2px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
+              color: #222;
+              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
+              border: 1px solid #d7d7d7;
+              ">
+            ${etapa}
+          </span>
+          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 async function carregarPedidosFinanceiro() {
   const [resPendentes, resAnteriores] = await Promise.all([
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
@@ -85,6 +119,9 @@ async function carregarPedidosFinanceiro() {
     const id = pedido.pedido_id || pedido.id;
     const card = document.createElement('div');
     card.className = 'card';
+
+    // Linha do tempo visual no topo
+    card.innerHTML = gerarLinhaTempo(pedido.status);
 
     // Header
     const header = document.createElement('div');
