@@ -7,6 +7,42 @@ function formatarPeso(valor) {
   return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 });
 }
 
+// Linha do tempo visual
+function gerarLinhaTempo(statusAtual) {
+  const etapas = [
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF',
+    'Cliente Liberado',
+    'Finalizado'
+  ];
+  let etapaAtiva = false;
+  return `
+    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+      ${etapas.map((etapa, idx) => {
+        if (etapa === statusAtual) etapaAtiva = true;
+        return `
+          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
+            style="
+              padding: 2px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
+              color: #222;
+              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
+              border: 1px solid #d7d7d7;
+              ">
+            ${etapa}
+          </span>
+          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 async function carregarPedidosConferencia() {
   const [resPendentes, resFinalizados] = await Promise.all([
     fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso'),
@@ -34,6 +70,9 @@ async function carregarPedidosConferencia() {
     card.className = 'card';
     if (finalizado) card.classList.add('finalizado');
 
+    // Linha do tempo no topo
+    card.innerHTML = gerarLinhaTempo(pedido.status);
+
     const statusHtml = finalizado
       ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Confirmado</div>`
       : `<div class="status-badge status-amarelo"><i class="fa fa-balance-scale"></i> ${pedido.status}</div>`;
@@ -47,14 +86,13 @@ async function carregarPedidosConferencia() {
       </div>
       ${statusHtml}
     `;
-
     card.appendChild(header);
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
-        if (Array.isArray(pedido.materiais)) {
+    if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
         const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
@@ -98,7 +136,7 @@ async function carregarPedidosConferencia() {
     }
 
     if (pedido.ticket_balanca) {
-      const ticketId = `ticket-${pedido.pedido_id || pedido.id}`;
+      const ticketId = `ticket-${idPedido}`;
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
@@ -150,7 +188,7 @@ async function carregarPedidosConferencia() {
 
     if (!finalizado) {
       form.innerHTML += `
-        <button class="btn btn-registrar" onclick="confirmarPeso(${pedido.pedido_id || pedido.id}, this)">Confirmar Peso</button>
+        <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
       `;
     }
 
@@ -201,6 +239,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-
-    
-    
