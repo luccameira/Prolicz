@@ -32,44 +32,74 @@ function aplicarMascaraPlaca(input) {
   });
 }
 
+function formatarDataHora(data) {
+  if (!data) return '';
+  const d = new Date(data);
+  const dia = d.getDate().toString().padStart(2, '0');
+  const mes = (d.getMonth() + 1).toString().padStart(2, '0');
+  const ano = d.getFullYear();
+  const horas = d.getHours().toString().padStart(2, '0');
+  const minutos = d.getMinutes().toString().padStart(2, '0');
+  return `${dia}/${mes} ${horas}:${minutos}`;
+}
 function formatarData(data) {
-  return new Date(data).toLocaleDateString('pt-BR');
+  if (!data) return '';
+  const d = new Date(data);
+  return d.toLocaleDateString('pt-BR');
 }
 
-// Linha do tempo visual (etapas)
-function gerarLinhaTempo(statusAtual) {
+// Timeline igual ao modelo da imagem
+function gerarLinhaTempoStatus(pedido) {
+  // Lista de etapas
   const etapas = [
-    'Aguardando Início da Coleta',
-    'Coleta Iniciada',
-    'Aguardando Conferência do Peso',
-    'Em Análise pelo Financeiro',
-    'Aguardando Emissão de NF',
-    'Cliente Liberado',
-    'Finalizado'
+    { chave: 'Aguardando Início da Coleta', nome: 'Aguardando Coleta', data: pedido.data_criacao },
+    { chave: 'Coleta Iniciada', nome: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
+    { chave: 'Aguardando Conferência do Peso', nome: 'Conferência do Peso', data: pedido.data_conferencia },
+    { chave: 'Em Análise pelo Financeiro', nome: 'Financeiro', data: pedido.data_financeiro },
+    { chave: 'Finalizado', nome: 'Finalizado', data: pedido.data_finalizado }
   ];
-  let etapaAtiva = false;
-  return `
-    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+  // Status atual
+  const statusAtual = pedido.status;
+  let etapaAtualIdx = etapas.findIndex(e => statusAtual === e.chave);
+  if (etapaAtualIdx === -1 && statusAtual === 'Aguardando Início da Coleta') etapaAtualIdx = 0;
+  if (etapaAtualIdx === -1 && statusAtual === 'Coleta Iniciada') etapaAtualIdx = 1;
+  if (etapaAtualIdx === -1) etapaAtualIdx = 0;
+
+  let html = `
+  <div class="timeline-tracking" style="margin: 24px 32px 0 32px;">
+    <div style="display: flex; align-items: flex-start; gap:0;">
       ${etapas.map((etapa, idx) => {
-        if (etapa === statusAtual) etapaAtiva = true;
+        // Cores e ícones das bolinhas
+        let bolinhaCor = '#e0e0e0';
+        let icone = '';
+        if (idx < etapaAtualIdx) { bolinhaCor = '#228b22'; icone = '<i class="fa fa-check" style="color:white;font-size:13px;"></i>'; }
+        else if (idx === etapaAtualIdx) { bolinhaCor = '#2563eb'; icone = ''; }
+        let linhaCor = idx < etapaAtualIdx ? '#228b22' : '#e0e0e0';
+
         return `
-          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
-            style="
-              padding: 2px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
-              color: #222;
-              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
-              border: 1px solid #d7d7d7;
-              ">
-            ${etapa}
-          </span>
-          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+          <div style="display:flex;align-items:center;justify-content:center;">
+            <div style="
+              width:28px;height:28px;border-radius:50%;background:${bolinhaCor};
+              display:flex;align-items:center;justify-content:center;
+              border: 2px solid ${idx === etapaAtualIdx ? '#2563eb' : idx < etapaAtualIdx ? '#228b22' : '#d1d1d1'};
+              position:relative;z-index:2;">
+              ${icone}
+              ${idx === etapaAtualIdx ? '<span style="width:12px;height:12px;background:#fff;border-radius:50%;display:block;"></span>' : ''}
+            </div>
+            ${idx < etapas.length-1
+              ? `<div style="height:4px;width:60px;background:${linhaCor};margin-left:-2px;margin-right:-2px;z-index:1;"></div>`
+              : ''}
+          </div>
+          <div style="margin-top:6px;text-align:center;font-size:14px;color:#222;font-weight:${idx===etapaAtualIdx?'bold':'normal'};">${etapa.nome}</div>
+          <div style="font-size:12px;color:#686868;margin-top:2px;">${formatarDataHora(etapa.data) || ''}</div>
+        </div>
         `;
       }).join('')}
     </div>
+  </div>
   `;
+  return html;
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
@@ -158,12 +188,10 @@ async function carregarPedidosPortaria() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Linha do tempo no topo
-    card.innerHTML = gerarLinhaTempo(status);
+    // Timeline visual exata do print
+    card.innerHTML = gerarLinhaTempoStatus(pedido);
 
     const dataFormatada = formatarData(pedido.data_coleta || new Date());
-
-    // Cabeçalho
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -375,5 +403,17 @@ function monitorarUploads() {
       let checkIcon = wrapper.querySelector('.check-icon');
       if (!checkIcon) {
         checkIcon = document.createElement('i');
-        checkIcon.className = 'fa fa-check check
+        checkIcon.className = 'fa fa-check check-icon';
+        checkIcon.style.position = 'absolute';
+        checkIcon.style.right = '12px';
+        checkIcon.style.top = '50%';
+        checkIcon.style.transform = 'translateY(-50%)';
+        checkIcon.style.color = '#28a745';
+        checkIcon.style.fontSize = '16px';
+        wrapper.appendChild(checkIcon);
+      }
 
+      checkIcon.style.display = e.target.files.length ? 'block' : 'none';
+    }
+  });
+}
