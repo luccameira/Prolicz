@@ -47,7 +47,7 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA
+// ROTA CARGA (corrigida: todos os pedidos do dia)
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
@@ -55,13 +55,13 @@ router.get('/carga', async (req, res) => {
       c.nome_fantasia AS cliente,
       i.nome_produto AS produto,
       p.data_coleta,
-      SUM(i.peso) AS peso_previsto
+      SUM(i.peso) AS peso_previsto,
+      p.status
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
-    WHERE p.status = 'Coleta Iniciada'
-      AND DATE(p.data_coleta) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 DAY)
-    GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta
+    WHERE DATE(p.data_coleta) = CURDATE()
+    GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta, p.status
     ORDER BY p.data_coleta ASC
   `;
   try {
@@ -443,3 +443,4 @@ router.get('/nf', async (req, res) => {
 });
 
 module.exports = router;
+
