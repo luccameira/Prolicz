@@ -25,81 +25,82 @@ function aplicarMascaraPlaca(input) {
   input.addEventListener('input', () => {
     let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (v.length > 7) v = v.slice(0, 7);
-    if (v.length > 3) {
-      v = v.slice(0, 3) + '-' + v.slice(3);
-    }
+    if (v.length > 3) v = v.slice(0, 3) + '-' + v.slice(3);
     input.value = v;
   });
 }
 
-function formatarDataHora(data) {
-  if (!data) return '';
-  const d = new Date(data);
-  const dia = d.getDate().toString().padStart(2, '0');
-  const mes = (d.getMonth() + 1).toString().padStart(2, '0');
-  const ano = d.getFullYear();
-  const horas = d.getHours().toString().padStart(2, '0');
-  const minutos = d.getMinutes().toString().padStart(2, '0');
-  return `${dia}/${mes} ${horas}:${minutos}`;
-}
 function formatarData(data) {
   if (!data) return '';
   const d = new Date(data);
   return d.toLocaleDateString('pt-BR');
 }
 
-// Timeline igual ao modelo da imagem
-function gerarLinhaTempoStatus(pedido) {
-  // Lista de etapas
+function formatarDataHora(data) {
+  if (!data) return '';
+  const d = new Date(data);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// --- Linha do tempo visual igual ao print ---
+function gerarLinhaTempo(pedido) {
+  // status possíveis
   const etapas = [
-    { chave: 'Aguardando Início da Coleta', nome: 'Aguardando Coleta', data: pedido.data_criacao },
-    { chave: 'Coleta Iniciada', nome: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
-    { chave: 'Aguardando Conferência do Peso', nome: 'Conferência do Peso', data: pedido.data_conferencia },
-    { chave: 'Em Análise pelo Financeiro', nome: 'Financeiro', data: pedido.data_financeiro },
-    { chave: 'Finalizado', nome: 'Finalizado', data: pedido.data_finalizado }
+    { chave: 'Aguardando Início da Coleta', label: 'Aguardando Coleta' },
+    { chave: 'Coleta Iniciada', label: 'Coleta Iniciada' },
+    { chave: 'Aguardando Conferência do Peso', label: 'Conferência do Peso' },
+    { chave: 'Em Análise pelo Financeiro', label: 'Financeiro' },
+    { chave: 'Finalizado', label: 'Finalizado' }
   ];
-  // Status atual
-  const statusAtual = pedido.status;
-  let etapaAtualIdx = etapas.findIndex(e => statusAtual === e.chave);
-  if (etapaAtualIdx === -1 && statusAtual === 'Aguardando Início da Coleta') etapaAtualIdx = 0;
-  if (etapaAtualIdx === -1 && statusAtual === 'Coleta Iniciada') etapaAtualIdx = 1;
-  if (etapaAtualIdx === -1) etapaAtualIdx = 0;
+  // datas dos eventos - personalize conforme backend!
+  const datasEtapa = {
+    'Aguardando Início da Coleta': formatarDataHora(pedido.data_criacao),
+    'Coleta Iniciada': formatarDataHora(pedido.data_coleta_iniciada),
+    'Aguardando Conferência do Peso': formatarDataHora(pedido.data_conferencia),
+    'Em Análise pelo Financeiro': formatarDataHora(pedido.data_financeiro),
+    'Finalizado': formatarDataHora(pedido.data_finalizado)
+  };
+  // status atual
+  const idxAtual = etapas.findIndex(e => e.chave === pedido.status);
 
-  let html = `
-  <div class="timeline-tracking" style="margin: 24px 32px 0 32px;">
-    <div style="display: flex; align-items: flex-start; gap:0;">
-      ${etapas.map((etapa, idx) => {
-        // Cores e ícones das bolinhas
-        let bolinhaCor = '#e0e0e0';
-        let icone = '';
-        if (idx < etapaAtualIdx) { bolinhaCor = '#228b22'; icone = '<i class="fa fa-check" style="color:white;font-size:13px;"></i>'; }
-        else if (idx === etapaAtualIdx) { bolinhaCor = '#2563eb'; icone = ''; }
-        let linhaCor = idx < etapaAtualIdx ? '#228b22' : '#e0e0e0';
+  return `
+  <div class="timeline-pedido" style="display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px;">
+    ${etapas.map((etapa, idx) => {
+      const isConcluida = idx < idxAtual;
+      const isAtiva = idx === idxAtual;
+      const isFutura = idx > idxAtual;
+      // bolinha visual
+      let icone = '';
+      if (isConcluida) {
+        icone = `<div class="tl-circle concluida"><i class="fa fa-check"></i></div>`;
+      } else if (isAtiva) {
+        icone = `<div class="tl-circle ativa"><div class="circle-dot"></div></div>`;
+      } else {
+        icone = `<div class="tl-circle futura"></div>`;
+      }
+      // Linha conectando etapas (exceto o último)
+      const linha = idx < etapas.length - 1
+        ? `<div class="tl-line ${isConcluida ? 'tl-line-preenchida' : ''}"></div>`
+        : '';
+      // Data abaixo (se existir)
+      const data = datasEtapa[etapa.chave]
+        ? `<div class="tl-data">${datasEtapa[etapa.chave]}</div>`
+        : '<div class="tl-data"></div>';
+      // Texto da etapa
+      const corTxt = isConcluida ? 'tl-label-concluida' : isAtiva ? 'tl-label-ativa' : 'tl-label-futura';
 
-        return `
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
-          <div style="display:flex;align-items:center;justify-content:center;">
-            <div style="
-              width:28px;height:28px;border-radius:50%;background:${bolinhaCor};
-              display:flex;align-items:center;justify-content:center;
-              border: 2px solid ${idx === etapaAtualIdx ? '#2563eb' : idx < etapaAtualIdx ? '#228b22' : '#d1d1d1'};
-              position:relative;z-index:2;">
-              ${icone}
-              ${idx === etapaAtualIdx ? '<span style="width:12px;height:12px;background:#fff;border-radius:50%;display:block;"></span>' : ''}
-            </div>
-            ${idx < etapas.length-1
-              ? `<div style="height:4px;width:60px;background:${linhaCor};margin-left:-2px;margin-right:-2px;z-index:1;"></div>`
-              : ''}
-          </div>
-          <div style="margin-top:6px;text-align:center;font-size:14px;color:#222;font-weight:${idx===etapaAtualIdx?'bold':'normal'};">${etapa.nome}</div>
-          <div style="font-size:12px;color:#686868;margin-top:2px;">${formatarDataHora(etapa.data) || ''}</div>
+      return `
+        <div class="tl-step">
+          ${icone}
+          <div class="tl-label ${corTxt}">${etapa.label}</div>
+          ${data}
         </div>
-        `;
-      }).join('')}
-    </div>
+        ${linha}
+      `;
+    }).join('')}
   </div>
   `;
-  return html;
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
@@ -169,7 +170,6 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
-
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
   const pedidos = await res.json();
   const lista = document.getElementById('lista-pedidos');
@@ -184,14 +184,13 @@ async function carregarPedidosPortaria() {
     const pedidoId = pedido.pedido_id || pedido.id;
     const status = pedido.status;
     const podeIniciarColeta = status === 'Aguardando Início da Coleta';
+    const dataFormatada = formatarData(pedido.data_coleta || new Date());
 
+    // ----- CARD -----
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Timeline visual exata do print
-    card.innerHTML = gerarLinhaTempoStatus(pedido);
-
-    const dataFormatada = formatarData(pedido.data_coleta || new Date());
+    // -- HEADER: nome, data, status --
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -201,17 +200,21 @@ async function carregarPedidosPortaria() {
       </div>
       <div class="status-badge status-${podeIniciarColeta ? 'amarelo' : 'verde'}">
         ${podeIniciarColeta ? '<i class="fa fa-truck"></i>' : '<i class="fa fa-check"></i>'}
-        ${status}
+        ${status === 'Coleta Iniciada' ? 'Coleta Iniciada' : 'Aguardando Início da Coleta'}
       </div>
     `;
     card.appendChild(header);
 
-    // Formulário somente se puder iniciar coleta
+    // -- LINHA DO TEMPO visual (abaixo do header) --
+    const timelineDiv = document.createElement('div');
+    timelineDiv.innerHTML = gerarLinhaTempo(pedido);
+    card.appendChild(timelineDiv);
+
+    // -- FORMULÁRIO: só se pode iniciar coleta --
     if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
-
       form.innerHTML = `
         <div style="display: flex; align-items: flex-end; gap: 12px;">
           <div style="max-width: 300px; flex: none;">
@@ -257,13 +260,11 @@ async function carregarPedidosPortaria() {
           <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
         </div>
       `;
-
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
         aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
         aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
       });
-
       card.appendChild(form);
     }
 
@@ -271,8 +272,9 @@ async function carregarPedidosPortaria() {
   });
 }
 
+// Adiciona ajudantes dinâmicos
 document.addEventListener('change', function (e) {
-  if (e.target.id.startsWith('tem-ajudante-')) {
+  if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.dataset.pedido;
     const valor = e.target.value;
     const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
@@ -404,16 +406,10 @@ function monitorarUploads() {
       if (!checkIcon) {
         checkIcon = document.createElement('i');
         checkIcon.className = 'fa fa-check check-icon';
-        checkIcon.style.position = 'absolute';
-        checkIcon.style.right = '12px';
-        checkIcon.style.top = '50%';
-        checkIcon.style.transform = 'translateY(-50%)';
+        checkIcon.style.marginLeft = '8px';
         checkIcon.style.color = '#28a745';
-        checkIcon.style.fontSize = '16px';
         wrapper.appendChild(checkIcon);
       }
-
-      checkIcon.style.display = e.target.files.length ? 'block' : 'none';
     }
   });
 }
