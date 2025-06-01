@@ -36,6 +36,42 @@ function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
 
+// Linha do tempo visual (etapas)
+function gerarLinhaTempo(statusAtual) {
+  const etapas = [
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF',
+    'Cliente Liberado',
+    'Finalizado'
+  ];
+  let etapaAtiva = false;
+  return `
+    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+      ${etapas.map((etapa, idx) => {
+        if (etapa === statusAtual) etapaAtiva = true;
+        return `
+          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
+            style="
+              padding: 2px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
+              color: #222;
+              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
+              border: 1px solid #d7d7d7;
+              ">
+            ${etapa}
+          </span>
+          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
   const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
@@ -116,18 +152,18 @@ async function carregarPedidosPortaria() {
 
   pedidos.forEach(pedido => {
     const pedidoId = pedido.pedido_id || pedido.id;
-    const finalizado = pedido.status === 'Coleta Iniciada';
+    const status = pedido.status;
+    const podeIniciarColeta = status === 'Aguardando Início da Coleta';
 
     const card = document.createElement('div');
     card.className = 'card';
-    if (finalizado) card.classList.add('finalizado');
+
+    // Linha do tempo no topo
+    card.innerHTML = gerarLinhaTempo(status);
 
     const dataFormatada = formatarData(pedido.data_coleta || new Date());
 
-    const statusHtml = finalizado
-      ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Coleta Iniciada</div>`
-      : `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${pedido.status}</div>`;
-
+    // Cabeçalho
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -135,76 +171,74 @@ async function carregarPedidosPortaria() {
         <h3>${pedido.cliente}</h3>
         <p>Data Prevista: ${dataFormatada}</p>
       </div>
-      ${statusHtml}
+      <div class="status-badge status-${podeIniciarColeta ? 'amarelo' : 'verde'}">
+        ${podeIniciarColeta ? '<i class="fa fa-truck"></i>' : '<i class="fa fa-check"></i>'}
+        ${status}
+      </div>
     `;
     card.appendChild(header);
 
-    const form = document.createElement('div');
-    form.className = 'formulario';
-    form.style.display = 'none';
+    // Formulário somente se puder iniciar coleta
+    if (podeIniciarColeta) {
+      const form = document.createElement('div');
+      form.className = 'formulario';
+      form.style.display = 'block';
 
-    form.innerHTML = `
-      <div style="display: flex; align-items: flex-end; gap: 12px;">
-        <div style="max-width: 300px; flex: none;">
-          <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
-        </div>
-        <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
-      </div>
-
-      <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
-        <div style="display: flex; gap: 20px;">
-          <div style="flex: 1;">
-            <label>Nome do Motorista</label>
-            <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
+      form.innerHTML = `
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="max-width: 300px; flex: none;">
+            <label>CPF do Motorista</label>
+            <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
           </div>
-          <div style="flex: 1;">
-            <label>Placa do Veículo</label>
-            <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
+          <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
+        </div>
+        <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
+          <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+              <label>Nome do Motorista</label>
+              <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
+            </div>
+            <div style="flex: 1;">
+              <label>Placa do Veículo</label>
+              <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
+            </div>
           </div>
-        </div>
-
-        <label style="margin-top: 12px;">Foto do Caminhão</label>
-        <div class="upload-wrapper" style="position: relative;">
-          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
-        </div>
-
-        <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
-          <label>Ficha de Integração Assinada (motorista)</label>
+          <label style="margin-top: 12px;">Foto do Caminhão</label>
           <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+            <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
           </div>
-        </div>
-
-        <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
-          <label>Foto do Documento (motorista)</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+          <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
+            <label>Ficha de Integração Assinada (motorista)</label>
+            <div class="upload-wrapper" style="position: relative;">
+              <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+            </div>
           </div>
+          <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
+            <label>Foto do Documento (motorista)</label>
+            <div class="upload-wrapper" style="position: relative;">
+              <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+            </div>
+          </div>
+          <label style="margin-top: 12px;">Tem Ajudante?</label>
+          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
+            <option value="">Selecione</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+          <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
+          <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
         </div>
+      `;
 
-        <label style="margin-top: 12px;">Tem Ajudante?</label>
-        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
-          <option value="">Selecione</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
-
-        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
-
-        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
-      </div>
-    `;
-
-    if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
         aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
         aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
       });
+
+      card.appendChild(form);
     }
 
-    card.appendChild(form);
     lista.appendChild(card);
   });
 }
@@ -232,25 +266,21 @@ document.addEventListener('change', function (e) {
           </div>
           <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
         </div>
-
         <div style="margin-top: 20px;">
           <label>Nome do Ajudante</label>
           <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
-
           <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
             <label>Ficha de Integração Assinada (ajudante)</label>
             <div class="upload-wrapper" style="position: relative;">
               <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
             </div>
           </div>
-
           <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
             <label>Foto do Documento (ajudante)</label>
             <div class="upload-wrapper" style="position: relative;">
               <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
             </div>
           </div>
-
           <label style="margin-top: 12px;">Tem mais um ajudante?</label>
           <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
             <option value="">Selecione</option>
@@ -345,17 +375,5 @@ function monitorarUploads() {
       let checkIcon = wrapper.querySelector('.check-icon');
       if (!checkIcon) {
         checkIcon = document.createElement('i');
-        checkIcon.className = 'fa fa-check check-icon';
-        checkIcon.style.position = 'absolute';
-        checkIcon.style.right = '12px';
-        checkIcon.style.top = '50%';
-        checkIcon.style.transform = 'translateY(-50%)';
-        checkIcon.style.color = '#28a745';
-        checkIcon.style.fontSize = '16px';
-        wrapper.appendChild(checkIcon);
-      }
+        checkIcon.className = 'fa fa-check check
 
-      checkIcon.style.display = e.target.files.length ? 'block' : 'none';
-    }
-  });
-}
