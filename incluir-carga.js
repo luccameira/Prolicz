@@ -7,61 +7,80 @@ function formatarPeso(valor) {
 let pedidos = [];
 let descontosPorItem = {};
 
-async function carregarPedidos() {
-  const [resPendentes, resFinalizados] = await Promise.all([
-    fetch('/api/pedidos?status=Coleta%20Iniciada'),
-    fetch('/api/pedidos?status=Aguardando%20Conferência%20do%20Peso')
-  ]);
-
-  const pendentes = await resPendentes.json();
-  const finalizados = await resFinalizados.json();
-
-  const hoje = new Date();
-  const amanha = new Date();
-  amanha.setDate(hoje.getDate() + 1);
-
-  const apenasHojeOuAmanha = pedido => {
-    const data = new Date(pedido.data_coleta);
-    return (
-      data.toDateString() === hoje.toDateString() ||
-      data.toDateString() === amanha.toDateString()
-    );
-  };
-
-  const pendentesFiltrados = pendentes.filter(apenasHojeOuAmanha);
-  const finalizadosFiltrados = finalizados.filter(apenasHojeOuAmanha);
-
-  pedidos = [...pendentesFiltrados, ...finalizadosFiltrados];
-  renderizarPedidosSeparados(pendentesFiltrados, finalizadosFiltrados);
+// Linha do tempo visual (etapas)
+function gerarLinhaTempo(statusAtual) {
+  const etapas = [
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF',
+    'Cliente Liberado',
+    'Finalizado'
+  ];
+  let etapaAtiva = false;
+  return `
+    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+      ${etapas.map((etapa, idx) => {
+        if (etapa === statusAtual) etapaAtiva = true;
+        return `
+          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
+            style="
+              padding: 2px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
+              color: #222;
+              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
+              border: 1px solid #d7d7d7;
+              ">
+            ${etapa}
+          </span>
+          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
-function renderizarPedidosSeparados(pendentes, finalizados) {
-  const lista = document.getElementById('lista-pedidos');
+async function carregarPedidos() {
+  // Busca todos os pedidos do dia na carga
+  const res = await fetch('/api/pedidos/carga');
+  const listaPedidos = await res.json();
+  pedidos = listaPedidos;
+
+  renderizarPedidos(listaPedidos);
+}
+
+function renderizarPedidos(lista) {
+  const listaEl = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
   const ordenar = document.getElementById('ordenar').value;
 
-  let ativos = pendentes.filter(p => p.cliente.toLowerCase().includes(filtro));
-  let encerrados = finalizados.filter(p => p.cliente.toLowerCase().includes(filtro));
+  let pedidosFiltrados = lista.filter(p => (p.cliente || '').toLowerCase().includes(filtro));
 
   if (ordenar === 'cliente') {
-    ativos.sort((a, b) => a.cliente.localeCompare(b.cliente));
-    encerrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
+    pedidosFiltrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
   } else {
-    ativos.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
-    encerrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
+    pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
   }
 
-  lista.innerHTML = '';
+  listaEl.innerHTML = '';
 
-  [...ativos, ...encerrados].forEach(p => {
+  pedidosFiltrados.forEach(p => {
     const div = document.createElement('div');
     div.className = 'card';
-    if (p.status === 'Aguardando Conferência do Peso') div.classList.add('finalizado');
+
+    // Linha do tempo visual
+    div.innerHTML = gerarLinhaTempo(p.status);
 
     const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
-    const statusHtml = p.status === 'Aguardando Conferência do Peso'
-      ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
-      : `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`;
+    const statusHtml =
+      p.status === 'Aguardando Conferência do Peso'
+        ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
+        : p.status === 'Coleta Iniciada'
+        ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
+        : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -74,11 +93,13 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
     `;
     div.appendChild(header);
 
-    const form = document.createElement('div');
-    form.className = 'formulario';
-    form.id = `form-${p.pedido_id}`;
+    // Exibe formulário SOMENTE se status === 'Coleta Iniciada'
+    if (p.status === 'Coleta Iniciada') {
+      const form = document.createElement('div');
+      form.className = 'formulario';
+      form.id = `form-${p.id || p.pedido_id}`;
 
-        if (p.status === 'Coleta Iniciada') {
+      // Previne erro caso não venha materiais
       if (Array.isArray(p.materiais) && p.materiais.length > 0) {
         p.materiais.forEach((item, index) => {
           const itemId = item.id;
@@ -95,10 +116,9 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
                 ${icone}
               </p>
               <div class="linha-peso">
-                <label for="peso-${p.pedido_id}-${index}">Peso Carregado (kg):</label>
-                <input type="number" id="peso-${p.pedido_id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
+                <label for="peso-${p.id || p.pedido_id}-${index}">Peso Carregado (kg):</label>
+                <input type="number" id="peso-${p.id || p.pedido_id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
               </div>
-
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
               <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
             </div>
@@ -107,11 +127,10 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
 
         form.innerHTML += `
           <div class="upload-ticket">
-            <label for="ticket-${p.pedido_id}">Foto do Ticket da Balança:</label>
-            <input type="file" id="ticket-${p.pedido_id}" accept="image/*">
+            <label for="ticket-${p.id || p.pedido_id}">Foto do Ticket da Balança:</label>
+            <input type="file" id="ticket-${p.id || p.pedido_id}" accept="image/*">
           </div>
-
-          <button class="btn btn-registrar" onclick="registrarPeso(${p.pedido_id})">Registrar Peso</button>
+          <button class="btn btn-registrar" onclick="registrarPeso(${p.id || p.pedido_id})">Registrar Peso</button>
         `;
       } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
@@ -125,7 +144,7 @@ function renderizarPedidosSeparados(pendentes, finalizados) {
       div.appendChild(form);
     }
 
-    lista.appendChild(div);
+    listaEl.appendChild(div);
   });
 }
 
@@ -217,7 +236,7 @@ function atualizarDescontoItem(itemId, index) {
 }
 
 async function registrarPeso(pedidoId) {
-  const pedido = pedidos.find(p => p.pedido_id === pedidoId);
+  const pedido = pedidos.find(p => (p.id || p.pedido_id) === pedidoId);
   if (!pedido) return alert("Pedido não encontrado.");
 
   const form = document.getElementById(`form-${pedidoId}`);
@@ -274,4 +293,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
+
 
