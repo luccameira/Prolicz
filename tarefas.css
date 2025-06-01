@@ -899,3 +899,19 @@ input[type="file"]::file-selector-button:hover {
     font-size: 14px;
   }
 }
+
+.timeline-pedido { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px; }
+.tl-step { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
+.tl-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #f3f4f8; border: 3px solid #d2d3db; margin-bottom: 4px; font-size: 18px; color: #c1c1c1; }
+.tl-circle.concluida { background: #2ecc40; border-color: #2ecc40; color: #fff; }
+.tl-circle.ativa { background: #fff; border-color: #4285f4; }
+.tl-circle.futura { background: #fff; border-color: #ccc; }
+.circle-dot { width: 12px; height: 12px; border-radius: 50%; background: #4285f4; }
+.tl-label { font-size: 14px; font-weight: 500; margin-bottom: 4px; margin-top: -2px; text-align: center; }
+.tl-label-concluida { color: #2ecc40; }
+.tl-label-ativa { color: #4285f4; }
+.tl-label-futura { color: #bbb; }
+.tl-data { font-size: 12px; color: #888; margin-top: 0; }
+.tl-line { height: 4px; width: 50px; background: #ccc; margin: 0 2px; margin-top: -21px; }
+.tl-line-preenchida { background: #4285f4; }
+
