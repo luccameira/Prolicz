@@ -783,7 +783,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ FINAL ==== */
+/* ==== LINHA DO TEMPO - PROLICZ FINAL CORRIGIDA ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
@@ -796,19 +796,21 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* LINHA DE BASE - sempre cinza, centralizada */
+/* LINHA CINZA DE BASE - centralizada atrás dos círculos */
 .timeline-prolicz::before {
   content: '';
   position: absolute;
-  top: 17px; /* Alinha no centro da bolinha */
-  left: 32px; /* Igual ao padding */
-  right: 32px;
+  top: 17px;
+  left: 46px; /* 32px padding + metade do círculo (28px/2 = 14px) */
+  right: 46px;
   height: 4px;
   background: #e6e8ea;
   z-index: 0;
+  border-radius: 2px;
+  pointer-events: none;
 }
 
-/* LINHAS VERDES ENTRE STATUS CONCLUÍDOS */
+/* LINHA VERDE - só até o status atual */
 .timeline-prolicz-step.concluded:not(.last)::after {
   content: '';
   position: absolute;
@@ -816,13 +818,24 @@ input[type="file"]::file-selector-button:hover {
   left: 50%;
   width: 100%;
   height: 4px;
-  background: #219653; /* Verde concluído */
+  background: #219653;
   z-index: 1;
   pointer-events: none;
   transform: translateX(0);
 }
+.timeline-prolicz-step.active:not(.last)::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  width: 0; /* Não pinta linha verde depois do ativo */
+  height: 4px;
+  background: transparent;
+  z-index: 1;
+  pointer-events: none;
+}
 
-/* PRIMEIRO E ÚLTIMO - recorte nas pontas */
+/* Recorte nas pontas: cobre as sobras da linha cinza nas laterais */
 .timeline-prolicz-step.first::before,
 .timeline-prolicz-step.last::before {
   content: '';
