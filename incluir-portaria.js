@@ -45,16 +45,67 @@ function formatarData(data) {
   }
 }
 
+// -------- LINHA DO TEMPO COM TÍTULOS DUPLOS --------
 function gerarLinhaTempoVisual(pedido) {
+  // Títulos: [status_técnico, [título_ativo, título_concluído], campo_data, ícone]
   const etapas = [
-    { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao', icon: 'fa-box' },
-    { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada', icon: 'fa-truck-loading' },
-    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso', icon: 'fa-weight-hanging' },
-    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro', icon: 'fa-dollar-sign' },
-    { key: 'Aguardando Emissão de NF', label: 'Nota Fiscal', campoData: 'data_emissao_nf', icon: 'fa-file-invoice' },
-    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado', icon: 'fa-check' }
+    {
+      key: 'Aguardando Início da Coleta',
+      titulos: [
+        'Aguardando chegada do cliente', // Ativo (azul)
+        'Coleta iniciada'                // Concluído (verde)
+      ],
+      campoData: 'data_criacao',
+      icon: 'fa-box'
+    },
+    {
+      key: 'Coleta Iniciada',
+      titulos: [
+        'Cliente está coletando o material',
+        'Coleta finalizada'
+      ],
+      campoData: 'data_coleta_iniciada',
+      icon: 'fa-truck-loading'
+    },
+    {
+      key: 'Aguardando Conferência do Peso',
+      titulos: [
+        'Peso em conferência',
+        'Peso conferido'
+      ],
+      campoData: 'data_conferencia_peso',
+      icon: 'fa-weight-hanging'
+    },
+    {
+      key: 'Em Análise pelo Financeiro',
+      titulos: [
+        'Aguardando análise financeira',
+        'Pagamento confirmado'
+      ],
+      campoData: 'data_financeiro',
+      icon: 'fa-dollar-sign'
+    },
+    {
+      key: 'Aguardando Emissão de NF',
+      titulos: [
+        'Aguardando emissão de Nota Fiscal',
+        'Nota Fiscal emitida'
+      ],
+      campoData: 'data_emissao_nf',
+      icon: 'fa-file-invoice'
+    },
+    {
+      key: 'Finalizado',
+      titulos: [
+        'Pedido finalizado',
+        'Pedido finalizado'
+      ],
+      campoData: 'data_finalizado',
+      icon: 'fa-check'
+    }
   ];
 
+  // Pega datas corretamente, compatível com dados atuais
   const datas = [
     pedido.data_criacao || pedido.data_coleta,
     pedido.data_coleta_iniciada,
@@ -64,6 +115,7 @@ function gerarLinhaTempoVisual(pedido) {
     pedido.data_finalizado
   ];
 
+  // Descobre qual etapa está ativa
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
   let html = `<div class="timeline-prolicz">`;
 
@@ -77,9 +129,20 @@ function gerarLinhaTempoVisual(pedido) {
 
     html += `<div class="timeline-prolicz-step ${stepClass}" style="z-index:${100 - idx};">`;
 
+    // Ícone da etapa
     html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
-    html += `<div class="label">${etapa.label}</div>`;
 
+    // ----- TÍTULO DA ETAPA -----
+    // Ativo = título azul, Concluído = verde, Futuro = cinza padrão
+    if (isActive) {
+      html += `<div class="timeline-label timeline-label-ativo">${etapa.titulos[0]}</div>`;
+    } else if (isConcluded) {
+      html += `<div class="timeline-label timeline-label-concluido">${etapa.titulos[1]}</div>`;
+    } else {
+      html += `<div class="timeline-label timeline-label-futuro">${etapa.titulos[0]}</div>`;
+    }
+
+    // ----- DATA DA ETAPA -----
     let dataStr = '—';
     if (etapa.campoData && datas[idx]) {
       dataStr = formatarData(datas[idx]);
@@ -92,6 +155,9 @@ function gerarLinhaTempoVisual(pedido) {
   html += `</div>`;
   return html;
 }
+// --- FIM LINHA DO TEMPO ---
+
+// (continuação)
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -203,7 +269,7 @@ async function carregarPedidosPortaria() {
 
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
-        if (podeIniciarColeta) {
+    if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
