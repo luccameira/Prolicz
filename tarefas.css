@@ -814,36 +814,31 @@ input[type="file"]::file-selector-button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #b2b5b7;
   margin-bottom: 7px;
   position: relative;
   z-index: 2;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
+.timeline-prolicz-step .circle i {
+  font-size: 14px;
+}
+
 .timeline-prolicz-step.concluded .circle {
   background: #219653;
   border-color: #219653;
   color: #fff;
 }
-.timeline-prolicz-step.concluded .circle i {
-  font-size: 16px;
-  font-weight: bold;
-}
+
 .timeline-prolicz-step.active .circle {
   background: #fff;
   border-color: #2563eb;
   color: #2563eb;
   box-shadow: 0 0 0 3px #e8f0fe;
 }
-.timeline-prolicz-step .circle-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #2563eb;
-  display: block;
-}
+
 .timeline-prolicz-step .label {
   margin-top: 2px;
   font-size: 15px;
@@ -852,6 +847,7 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
   min-width: 90px;
 }
+
 .timeline-prolicz-step.active .label {
   color: #2563eb;
   font-weight: bold;
@@ -887,17 +883,22 @@ input[type="file"]::file-selector-button:hover {
   background: #e6e8ea;
   z-index: 0;
   transform: translateX(14px);
+  transition: background 0.3s ease;
 }
+
 .timeline-prolicz-step.concluded:not(:last-child)::after {
   background: #219653;
 }
+
 .timeline-prolicz-step.active:not(:last-child)::after {
   background: linear-gradient(90deg, #219653 80%, #e6e8ea 20%);
 }
+
 .timeline-prolicz-step:last-child::after {
   display: none;
 }
 
+/* RESPONSIVO */
 @media (max-width: 800px) {
   .timeline-prolicz {
     padding: 14px 2vw 4px 2vw;
@@ -914,6 +915,10 @@ input[type="file"]::file-selector-button:hover {
   .timeline-prolicz-step .circle {
     width: 24px;
     height: 24px;
-    font-size: 14px;
+    font-size: 13px;
+  }
+  .timeline-prolicz-step .circle i {
+    font-size: 12px;
   }
 }
+
