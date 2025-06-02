@@ -37,8 +37,7 @@ function formatarData(data) {
   try {
     const dt = new Date(data);
     if (isNaN(dt)) return '—';
-    // Exibe só dia/mês e hora:minuto igual ao print
-    return dt.toLocaleDateString('pt-BR').slice(0,5) + ' ' +
+    return dt.toLocaleDateString('pt-BR').slice(0, 5) + ' ' +
       String(dt.getHours()).padStart(2, '0') + ':' +
       String(dt.getMinutes()).padStart(2, '0');
   } catch {
@@ -46,29 +45,30 @@ function formatarData(data) {
   }
 }
 
-// ==== NOVA LINHA DO TEMPO ==== //
 function gerarLinhaTempoVisual(pedido) {
   const etapas = [
     { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao' },
     { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
     { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
     { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro' },
+    { key: 'Aguardando Emissão de NF', label: 'Nota Fiscal', campoData: 'data_emissao_nf' },
     { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado' }
   ];
 
-  let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
-  if (idxAtivo === -1) idxAtivo = 0;
-
-  // Datas reais (ajuste conforme nomes das propriedades do seu pedido)
   const datas = [
     pedido.data_criacao || pedido.data_coleta,
     pedido.data_coleta_iniciada,
     pedido.data_conferencia_peso,
     pedido.data_financeiro,
+    pedido.data_emissao_nf,
     pedido.data_finalizado
   ];
 
+  let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
+  if (idxAtivo === -1) idxAtivo = 0;
+
   let html = `<div class="timeline-prolicz">`;
+
   etapas.forEach((etapa, idx) => {
     let stepClass = '';
     if (idx < idxAtivo) stepClass = 'concluded';
@@ -76,7 +76,6 @@ function gerarLinhaTempoVisual(pedido) {
 
     html += `<div class="timeline-prolicz-step ${stepClass}">`;
 
-    // Círculo
     if (idx < idxAtivo) {
       html += `<div class="circle"><i class="fa fa-check"></i></div>`;
     } else if (idx === idxAtivo) {
@@ -85,10 +84,8 @@ function gerarLinhaTempoVisual(pedido) {
       html += `<div class="circle"></div>`;
     }
 
-    // Label
     html += `<div class="label">${etapa.label}</div>`;
 
-    // Data
     let dataStr = '—';
     if (etapa.campoData && datas[idx]) {
       dataStr = formatarData(datas[idx]);
@@ -97,11 +94,10 @@ function gerarLinhaTempoVisual(pedido) {
 
     html += `</div>`;
   });
+
   html += `</div>`;
   return html;
 }
-
-// ...restante do arquivo (igual já estava)
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -185,11 +181,9 @@ async function carregarPedidosPortaria() {
     const status = pedido.status;
     const podeIniciarColeta = status === 'Aguardando Início da Coleta';
 
-    // Card
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Cabeçalho
     const header = document.createElement('div');
     header.className = 'header-card';
     header.style.display = 'flex';
@@ -197,30 +191,25 @@ async function carregarPedidosPortaria() {
     header.style.alignItems = 'flex-start';
     header.style.padding = '18px 22px 0 22px';
 
-    // Info do cliente/título
     const info = document.createElement('div');
     info.innerHTML = `
       <div style="font-weight: bold; font-size: 19px; margin-bottom:2px;">${pedido.cliente}</div>
       <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
     `;
 
-    // Botão amarelo status
     const btnStatus = document.createElement('div');
     btnStatus.innerHTML = `
       <div style="background:#ffc107;color:#222;padding:7px 18px;font-weight:600;border-radius:8px; font-size:15px;display:flex;align-items:center;gap:8px;">
-        <i class="fa fa-truck"></i> ${status === 'Aguardando Início da Coleta' ? 'Aguardando Início da Coleta' : 'Coleta iniciada'}
+        <i class="fa fa-truck"></i> ${status}
       </div>
     `;
     header.appendChild(info);
     header.appendChild(btnStatus);
-
     card.appendChild(header);
 
-    // Timeline visual NOVA (igual ao modelo)
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
-    // Formulário se puder iniciar coleta
-    if (podeIniciarColeta) {
+        if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
@@ -272,10 +261,11 @@ async function carregarPedidosPortaria() {
         </div>
       `;
 
+      aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
+      aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
+
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
-        aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
-        aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
       });
 
       card.appendChild(form);
@@ -330,8 +320,7 @@ document.addEventListener('change', function (e) {
         </div>
       `;
       container.appendChild(div);
-      const cpfInput = div.querySelector(`#cpf-ajudante-${idSuffix}`);
-      aplicarMascaraCPF(cpfInput);
+      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
     }
   }
 });
@@ -427,3 +416,6 @@ function monitorarUploads() {
     }
   });
 }
+
+
+   
