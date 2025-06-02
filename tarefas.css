@@ -783,49 +783,42 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ===== Linha do Tempo Prolicz ===== */
-
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;  /* Deixa o conteúdo crescer de cima para baixo, mais natural */
   position: relative;
   background: #fff;
-  padding: 0 32px;
-  margin: 32px 0 16px 0;
+  padding: 20px 32px 10px 32px; /* Top menor, bottom menor */
+  margin-bottom: 12px;
   border-radius: 10px 10px 0 0;
   min-width: 480px;
-  height: 110px; /* altura ajustada para centralizar verticalmente */
   box-sizing: border-box;
 }
 
-/* Linha base (cinza) */
 .timeline-prolicz-track {
   position: absolute;
-  top: 50%;
+  top: 37px; /* Ajuste para centralizar a linha na bolinha */
   left: 0;
   right: 0;
-  height: 7px; /* MAIS GROSSA */
+  height: 7px;
   background: #e6e8ea;
   z-index: 1;
   border-radius: 4px;
-  transform: translateY(-50%);
 }
 
-/* Linha verde de progresso */
 .timeline-prolicz-track-green {
   position: absolute;
-  top: 50%;
+  top: 37px;
   left: 0;
-  height: 7px; /* MAIS GROSSA */
-  background: #199143; /* VERDE MAIS ESCURO E CORPORATIVO */
+  height: 7px;
+  background: #199143;
   z-index: 2;
   border-radius: 4px;
   transition: width 0.3s;
-  transform: translateY(-50%);
 }
 
-/* Step da linha do tempo */
+/* Step */
 .timeline-prolicz-step {
   position: relative;
   flex: 1 1 0;
@@ -849,32 +842,31 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
   z-index: 4;
   transition: border-color 0.3s, background 0.3s, color 0.3s;
-  box-sizing: border-box;
-  margin-bottom: 7px; /* pequeno gap para legenda */
+  margin-bottom: 3px; /* Gap menor para legenda ficar próxima */
 }
 
-/* Step ativo */
+/* Ativo */
 .timeline-prolicz-step.active .circle {
   border-color: #2076fa;
   color: #2076fa;
   background: #fff;
 }
 
-/* Step concluído */
+/* Concluído */
 .timeline-prolicz-step.concluded .circle {
-  border-color: #199143; /* verde escuro, igual ao progresso */
+  border-color: #199143;
   background: #199143;
   color: #fff;
 }
 
-/* Step futuro */
+/* Futuro */
 .timeline-prolicz-step .circle {
   color: #c2c2c2;
 }
 
 /* Legenda/títulos */
 .timeline-label {
-  margin-top: 2px;
+  margin-top: 0;
   font-size: 14px;
   font-weight: 500;
   min-height: 20px;
@@ -890,7 +882,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: bold;
 }
 .timeline-label-concluido {
-  color: #199143; /* verde escuro */
+  color: #199143;
   font-weight: bold;
 }
 .timeline-label-futuro {
@@ -901,21 +893,18 @@ input[type="file"]::file-selector-button:hover {
 .data {
   font-size: 13px;
   color: #aaa;
-  margin-top: 3px;
+  margin-top: 1px;
   line-height: 1.1;
 }
 
-/* RESPONSIVIDADE: Reduz espaço lateral em telas pequenas */
+/* RESPONSIVIDADE: */
 @media (max-width: 650px) {
   .timeline-prolicz {
     padding: 0 6px;
     min-width: 0;
-    height: 100px;
   }
   .timeline-label {
     min-width: 70px;
     font-size: 13px;
   }
 }
-
-/* ===== FIM Linha do Tempo Prolicz ===== */
