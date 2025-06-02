@@ -783,7 +783,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ PADRÃO (REVISADA) ==== */
+/* ==== LINHA DO TEMPO - PROLICZ PADRÃO (AJUSTADO 2024/06) ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
@@ -796,13 +796,13 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* LINHA DE FUNDO CENTRAL */
+/* LINHA CENTRAL DE CONEXÃO */
 .timeline-prolicz::before {
   content: '';
   position: absolute;
-  top: 14px;
-  left: 50px;
-  right: 50px;
+  top: 28px; /* agora alinhado ao meio dos círculos */
+  left: 0;
+  right: 0;
   height: 4px;
   background: #e6e8ea;
   z-index: 0;
@@ -833,10 +833,7 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
   z-index: 2;
   transition: all 0.3s ease;
-}
-
-.timeline-prolicz-step .circle i {
-  font-size: 14px;
+  box-sizing: border-box;
 }
 
 /* CONCLUÍDO */
@@ -845,11 +842,11 @@ input[type="file"]::file-selector-button:hover {
   border-color: #219653;
   color: #fff;
 }
-
+.timeline-prolicz-step.concluded .timeline-label,
 .timeline-prolicz-step.concluded .label {
   color: #219653;
+  font-weight: bold;
 }
-
 .timeline-prolicz-step.concluded .data {
   color: #444;
 }
@@ -861,13 +858,14 @@ input[type="file"]::file-selector-button:hover {
   color: #2563eb;
   box-shadow: 0 0 0 3px #e8f0fe;
 }
-
+.timeline-prolicz-step.active .timeline-label,
 .timeline-prolicz-step.active .label {
   color: #2563eb;
   font-weight: bold;
 }
 
 /* LABELS */
+.timeline-label,
 .timeline-prolicz-step .label {
   margin-top: 2px;
   font-size: 15px;
@@ -875,10 +873,20 @@ input[type="file"]::file-selector-button:hover {
   color: #222;
   text-align: center;
   min-width: 90px;
+  line-height: 1.15;
+  transition: color .2s;
 }
-
-.timeline-prolicz-step:not(.active):not(.concluded) .label {
-  color: #bbb;
+.timeline-label-futuro {
+  color: #bbb !important;
+  font-weight: 600;
+}
+.timeline-label-ativo {
+  color: #2563eb !important;
+  font-weight: bold;
+}
+.timeline-label-concluido {
+  color: #219653 !important;
+  font-weight: bold;
 }
 
 /* DATAS */
@@ -889,14 +897,19 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
   min-height: 19px;
 }
-
 .timeline-prolicz-step:not(.active):not(.concluded) .data {
   color: #e4e6eb;
 }
 
-/* DESATIVAR CONEXÕES ANTIGAS */
+/* REMOVE CONEXÕES ANTIGAS ENTRE OS CÍRCULOS */
 .timeline-prolicz-step:not(:last-child)::after {
   display: none;
+}
+
+/* GARANTE QUE OS ÍCONES NÃO FIQUEM SOB A LINHA */
+.timeline-prolicz-step .circle {
+  background-clip: padding-box;
+  z-index: 2;
 }
 
 /* RESPONSIVO */
@@ -906,6 +919,7 @@ input[type="file"]::file-selector-button:hover {
     flex-wrap: wrap;
     min-width: 0;
   }
+  .timeline-label,
   .timeline-prolicz-step .label {
     min-width: 60px;
     font-size: 12px;
