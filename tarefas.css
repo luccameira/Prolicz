@@ -786,83 +786,93 @@ input[type="file"]::file-selector-button:hover {
 .timeline-simples {
   position: relative;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  background: #fff;
-  padding: 38px 40px 18px 40px;
-  border-radius: 10px 10px 0 0;
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 6px;
+  align-items: center;
+  margin: 34px 0 0 0;
+  padding: 0 24px 18px 24px;
+  background: none;
 }
 
 .timeline-bar-bg {
   position: absolute;
+  top: 50%;
   left: 0;
   right: 0;
-  top: 47px;    /* Alinha no centro das bolinhas, ajuste se sua bolinha mudar de tamanho */
-  height: 4px;  /* Espessura da linha */
+  height: 9px; /* MAIS GROSSA */
   background: #e6e8ea;
+  border-radius: 5px;
   z-index: 1;
-  border-radius: 2px;
+  transform: translateY(-50%);
 }
 
+/* Linha verde do progresso */
 .timeline-bar-fg {
   position: absolute;
+  top: 50%;
   left: 0;
-  top: 47px;
-  height: 4px;
-  background: #199143;
+  height: 9px; /* MAIS GROSSA */
+  background: #1c7430;
+  border-radius: 5px;
   z-index: 2;
-  border-radius: 2px;
-  transition: width .3s;
+  transform: translateY(-50%);
+  transition: width 0.4s;
 }
 
 .timeline-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 140px;
-  z-index: 10; /* Sempre acima da linha */
   position: relative;
+  flex: 1 1 0;
+  text-align: center;
+  z-index: 3;
   background: none;
 }
-.dot {
-  width: 26px;
-  height: 26px;
+
+.timeline-step .dot {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 3px solid #bdbdbd;
   background: #fff;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 4px #0001;
-  z-index: 10;
+  border: 3px solid #cccccc;
+  margin: 0 auto;
   position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #cccccc;
+  box-sizing: border-box;
 }
+
 .timeline-step.done .dot {
-  background: #199143;
-  border-color: #199143;
+  border-color: #1c7430;
+  background: #1c7430;
+  color: #fff;
 }
+
 .timeline-step.active .dot {
+  border-color: #1976d2;
   background: #fff;
-  border-color: #2076fa;
+  color: #1976d2;
 }
-.timeline-step:not(.done):not(.active) .dot {
-  background: #fff;
-  border-color: #bdbdbd;
-}
-.step-title {
-  font-size: 17px;
+
+.timeline-step .label {
+  margin-top: 8px;
+  font-size: 16px;
   font-weight: 700;
-  color: #222;
-  margin-bottom: 2px;
-  margin-top: 2px;
-  text-align: center;
-  letter-spacing: 0.01em;
+  color: #23272f;
+  white-space: pre-line;
 }
-.step-date {
-  font-size: 14px;
-  color: #aaa;
-  text-align: center;
-  font-weight: 400;
-  margin-top: 0;
+
+.timeline-step .data {
+  font-size: 13px;
+  color: #888;
+  margin-top: 3px;
+  min-height: 18px;
+}
+
+.timeline-step:not(:first-child) {
+  margin-left: 0;
+}
+.timeline-step:not(:last-child) {
+  margin-right: 0;
 }
