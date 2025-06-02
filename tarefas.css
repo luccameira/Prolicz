@@ -796,13 +796,13 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* LINHA CENTRAL - SEMPRE ALINHADA AO CENTRO DOS CÍRCULOS */
+/* LINHA CENTRAL - ALINHADA AO CENTRO DAS BOLINHAS, SEM SOBRA */
 .timeline-prolicz::before {
   content: '';
   position: absolute;
-  top: 17px;
-  left: 14px;
-  right: 14px;
+  top: 17px;      /* Centraliza a linha horizontal na bolinha (com bolinha 28px, ajuste fino se quiser) */
+  left: 32px;     /* Igual ao padding da timeline-prolicz */
+  right: 32px;    /* Igual ao padding da timeline-prolicz */
   height: 4px;
   background: #e6e8ea;
   z-index: 0;
@@ -947,5 +947,3 @@ input[type="file"]::file-selector-button:hover {
     font-size: 12px;
   }
 }
-
-
