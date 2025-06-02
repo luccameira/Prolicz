@@ -45,7 +45,6 @@ function formatarData(data) {
   }
 }
 
-// LINHA DO TEMPO COM ÍCONES E LÓGICA AJUSTADA
 function gerarLinhaTempoVisual(pedido) {
   const etapas = [
     { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao', icon: 'fa-box' },
@@ -65,22 +64,20 @@ function gerarLinhaTempoVisual(pedido) {
     pedido.data_finalizado
   ];
 
-  let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
-  if (idxAtivo === -1) idxAtivo = 0;
-
+  const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
   let html = `<div class="timeline-prolicz">`;
 
   etapas.forEach((etapa, idx) => {
+    const isConcluded = idx < idxAtivo;
+    const isActive = idx === idxAtivo;
+
     let stepClass = '';
-    if (idx < idxAtivo) stepClass = 'concluded';
-    else if (idx === idxAtivo) stepClass = 'active';
+    if (isConcluded) stepClass = 'concluded';
+    else if (isActive) stepClass = 'active';
 
     html += `<div class="timeline-prolicz-step ${stepClass}" style="z-index:${100 - idx};">`;
 
-    // Ícone no círculo
     html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
-
-    // Texto
     html += `<div class="label">${etapa.label}</div>`;
 
     let dataStr = '—';
@@ -206,7 +203,7 @@ async function carregarPedidosPortaria() {
 
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
-       if (podeIniciarColeta) {
+        if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
@@ -405,6 +402,7 @@ function monitorarUploads() {
     }
   });
 }
+
 
 
    
