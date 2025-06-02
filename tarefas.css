@@ -783,123 +783,103 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== TIMELINE CORPORATIVA PADRÃO ==== */
-
+/* === LINHA DO TEMPO SIMPLES - PROLICZ === */
 .timeline-simples {
-  position: relative;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin: 34px 0 20px 0;
-  min-width: 640px;
-  background: #fff;
-  padding: 0 12px;
-  height: 90px;
+  align-items: flex-start;
+  position: relative;
+  min-height: 84px;
+  margin: 22px 0 10px 0;
 }
 
-/* Linha de fundo (cinza) */
-.timeline-bar-bg {
+.timeline-bar-bg, .timeline-bar-fg {
   position: absolute;
-  left: 0;
-  right: 0;
+  height: 7px;         /* Linha grossa */
+  border-radius: 3.5px;
   top: 50%;
-  height: 8px; /* Espessura maior */
-  border-radius: 5px;
-  background: #e6e8ea;
+  transform: translateY(-50%);
   z-index: 0;
-  width: 100%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-/* Linha de progresso (verde escuro) */
-.timeline-bar-fg {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  height: 8px;
-  border-radius: 5px;
-  background: #24502a;
-  z-index: 1;
+  left: 0; /* Valores definidos via JS */
   width: 0;
-  transform: translateY(-50%);
-  pointer-events: none;
-  transition: width 0.4s;
+  transition: all 0.35s;
+}
+.timeline-bar-bg {
+  background: #dee1e7; /* cinza base */
+}
+.timeline-bar-fg {
+  background: #245a28; /* verde escuro profissional */
+  z-index: 1;
 }
 
-/* Status */
+/* Passos da timeline */
 .timeline-step {
   position: relative;
-  flex: 1 1 0;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 16.666%;        /* 6 passos - ajuste para mais/menos etapas */
+  min-width: 90px;
   z-index: 2;
+  text-align: center;
+  background: transparent;
+  user-select: none;
 }
 
+/* Bolinha (dot) */
 .timeline-step .dot {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 3.5px solid #cfcfcf;
+  border: 3px solid #dee1e7;
   background: #fff;
-  margin: 0 auto 7px auto;
-  position: relative;
-  z-index: 2;
-  box-sizing: border-box;
+  margin-bottom: 6px;
+  margin-top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
-  color: #fff;
-  transition: border-color 0.2s, background 0.2s;
+  font-size: 22px;
+  color: #dee1e7;
+  transition: border 0.2s, background 0.2s, color 0.2s;
 }
 
-/* Concluído */
+/* Passo concluído (verde) */
 .timeline-step.done .dot {
-  background: #24502a;
-  border-color: #24502a;
+  background: #245a28;
+  border-color: #245a28;
   color: #fff;
 }
 
-/* Ativo */
+/* Passo ativo (azul) */
 .timeline-step.active .dot {
+  border-color: #2363ae;
   background: #fff;
-  border-color: #2963b5;
-  color: #2963b5;
+  color: #2363ae;
 }
 
-/* Futuro */
-.timeline-step .dot {
-  color: #fff;
-}
-
-/* Texto do status */
+/* Label e data */
 .timeline-step .label {
-  font-weight: bold;
+  font-weight: 600;
   font-size: 15px;
-  color: #222;
-  line-height: 18px;
-  margin-bottom: 2px;
-  margin-top: 1px;
-  letter-spacing: 0;
+  margin-top: 2px;
+  color: #1a1a1a;
 }
-
-.timeline-step .date {
-  font-size: 13px;
-  color: #999;
+.timeline-step .data {
+  font-size: 12px;
+  color: #888;
   margin-top: 1px;
 }
 
-.timeline-step:not(:first-child) {
-  /* Remove gap extra entre etapas */
+/* Remove excesso de espaçamento e selects de texto */
+.timeline-step .dot,
+.timeline-step .label,
+.timeline-step .data {
+  user-select: none;
+  pointer-events: none;
 }
 
-.timeline-step:last-child .dot {
-  /* Arredondamento extra se quiser */
-}
-
-/* Adaptação responsiva (opcional) */
-@media (max-width: 850px) {
-  .timeline-simples { min-width: 440px; font-size: 13px; }
+@media (max-width: 900px) {
+  .timeline-step { min-width: 75px; font-size: 13px; }
+  .timeline-step .dot { width: 24px; height: 24px; font-size: 17px; }
   .timeline-step .label { font-size: 13px; }
-  .timeline-step .dot { width: 22px; height: 22px; font-size: 13px; }
 }
