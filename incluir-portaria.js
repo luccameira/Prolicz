@@ -105,7 +105,7 @@ function gerarLinhaTempoVisual(pedido) {
     }
   ];
 
-  // Pega datas corretamente, compatível com dados atuais
+  // Datas para cada etapa
   const datas = [
     pedido.data_criacao || pedido.data_coleta,
     pedido.data_coleta_iniciada,
@@ -115,32 +115,34 @@ function gerarLinhaTempoVisual(pedido) {
     pedido.data_finalizado
   ];
 
-  // Descobre qual etapa está ativa
+  // Índice do status atual
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  // INÍCIO DA LINHA DO TEMPO - NOVA ESTRUTURA PARA CENTRALIZAÇÃO PERFEITA
-  let html = `<div class="timeline-prolicz">
-    <div class="timeline-prolicz-line"></div>`;
+  // Gera HTML
+  let html = `<div class="timeline-prolicz">`;
 
   etapas.forEach((etapa, idx) => {
+    // Só etapas ANTERIORES ao status atual são concluídas
     const isConcluded = idx < idxAtivo;
+    // Só a etapa ATUAL é ativa
     const isActive = idx === idxAtivo;
 
+    // Adiciona classes de posição
+    let extClass = '';
+    if (idx === 0) extClass += ' first';
+    if (idx === etapas.length - 1) extClass += ' last';
+
+    // Classes de status
     let stepClass = '';
     if (isConcluded) stepClass = 'concluded';
     else if (isActive) stepClass = 'active';
 
-    // Adiciona uma classe especial na primeira e última bolinha
-    let extClass = '';
-    if (idx === 0) extClass = ' first';
-    if (idx === etapas.length - 1) extClass = ' last';
-
     html += `<div class="timeline-prolicz-step${extClass} ${stepClass}" style="z-index:${100 - idx};">`;
 
-    // Ícone da etapa
+    // Ícone
     html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
 
-    // ----- TÍTULO DA ETAPA -----
+    // Título duplo: ativo (azul), concluído (verde), futuro (cinza)
     if (isActive) {
       html += `<div class="timeline-label timeline-label-ativo">${etapa.titulos[0]}</div>`;
     } else if (isConcluded) {
@@ -149,7 +151,7 @@ function gerarLinhaTempoVisual(pedido) {
       html += `<div class="timeline-label timeline-label-futuro">${etapa.titulos[0]}</div>`;
     }
 
-    // ----- DATA DA ETAPA -----
+    // Data da etapa (se houver)
     let dataStr = '—';
     if (etapa.campoData && datas[idx]) {
       dataStr = formatarData(datas[idx]);
@@ -162,8 +164,6 @@ function gerarLinhaTempoVisual(pedido) {
   html += `</div>`; // fecha .timeline-prolicz
   return html;
 }
-
-// PARTE 2 DE 2 - incluir-portaria.js
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
