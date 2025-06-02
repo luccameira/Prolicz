@@ -45,14 +45,15 @@ function formatarData(data) {
   }
 }
 
+// LINHA DO TEMPO COM ÍCONES E LÓGICA AJUSTADA
 function gerarLinhaTempoVisual(pedido) {
   const etapas = [
-    { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao' },
-    { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
-    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
-    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro' },
-    { key: 'Aguardando Emissão de NF', label: 'Nota Fiscal', campoData: 'data_emissao_nf' },
-    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado' }
+    { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao', icon: 'fa-box' },
+    { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada', icon: 'fa-truck-loading' },
+    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso', icon: 'fa-weight-hanging' },
+    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro', icon: 'fa-dollar-sign' },
+    { key: 'Aguardando Emissão de NF', label: 'Nota Fiscal', campoData: 'data_emissao_nf', icon: 'fa-file-invoice' },
+    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado', icon: 'fa-check' }
   ];
 
   const datas = [
@@ -74,16 +75,12 @@ function gerarLinhaTempoVisual(pedido) {
     if (idx < idxAtivo) stepClass = 'concluded';
     else if (idx === idxAtivo) stepClass = 'active';
 
-    html += `<div class="timeline-prolicz-step ${stepClass}">`;
+    html += `<div class="timeline-prolicz-step ${stepClass}" style="z-index:${100 - idx};">`;
 
-    if (idx < idxAtivo) {
-      html += `<div class="circle"><i class="fa fa-check"></i></div>`;
-    } else if (idx === idxAtivo) {
-      html += `<div class="circle"><div class="circle-dot"></div></div>`;
-    } else {
-      html += `<div class="circle"></div>`;
-    }
+    // Ícone no círculo
+    html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
 
+    // Texto
     html += `<div class="label">${etapa.label}</div>`;
 
     let dataStr = '—';
@@ -209,7 +206,7 @@ async function carregarPedidosPortaria() {
 
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
-        if (podeIniciarColeta) {
+       if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
@@ -240,15 +237,11 @@ async function carregarPedidosPortaria() {
           </div>
           <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
             <label>Ficha de Integração Assinada (motorista)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*" required></div>
           </div>
           <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
             <label>Foto do Documento (motorista)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="doc-${pedidoId}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*" required></div>
           </div>
           <label style="margin-top: 12px;">Tem Ajudante?</label>
           <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
@@ -301,15 +294,11 @@ document.addEventListener('change', function (e) {
           <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
           <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
             <label>Ficha de Integração Assinada (ajudante)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*" required></div>
           </div>
           <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
             <label>Foto do Documento (ajudante)</label>
-            <div class="upload-wrapper" style="position: relative;">
-              <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
           </div>
           <label style="margin-top: 12px;">Tem mais um ajudante?</label>
           <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
