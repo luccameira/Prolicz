@@ -164,20 +164,23 @@ function animarLinhaVerdeTimeline(container) {
     const circles = Array.from(steps).map(step => step.querySelector('.circle'));
     const idxActive = Array.from(steps).findIndex(step => step.classList.contains('active'));
     if (greenTrack && circles.length > 1 && idxActive > 0) {
-      const leftCircle = circles[0].getBoundingClientRect();
-      const activeCircle = circles[idxActive].getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
-      // Corrige posição levando em conta o container pai
-      const startX = leftCircle.left + leftCircle.width / 2 - containerRect.left;
-      const endX = activeCircle.left + activeCircle.width / 2 - containerRect.left;
+      const firstCircle = circles[0].getBoundingClientRect();
+      const activeCircle = circles[idxActive].getBoundingClientRect();
+
+      // Posição central de cada círculo, relativo ao container
+      const startX = (firstCircle.left - containerRect.left) + (firstCircle.width / 2);
+      const endX = (activeCircle.left - containerRect.left) + (activeCircle.width / 2);
+
       greenTrack.style.left = `${startX}px`;
-      greenTrack.style.width = `${endX - startX}px`;
+      greenTrack.style.width = `${Math.max(0, endX - startX)}px`;
       greenTrack.style.top = '50%';
+      greenTrack.style.zIndex = 1; // Garante linha atrás dos círculos
     } else if (greenTrack) {
       greenTrack.style.width = '0';
     }
   } catch (err) {
-    // Não faz nada em caso de erro de renderização
+    // Silêncio em erro
   }
 }
 
