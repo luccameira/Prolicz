@@ -800,10 +800,9 @@ input[type="file"]::file-selector-button:hover {
 .timeline-prolicz::before {
   content: '';
   position: absolute;
-  top: 17px; /* Ajuste para alinhar ao centro vertical dos círculos */
-  /* O valor 14px é metade do círculo (28px/2) */
-  left: 14px;  /* Começa no meio da primeira bolinha */
-  right: 14px; /* Termina no meio da última bolinha */
+  top: 17px;
+  left: 14px;
+  right: 14px;
   height: 4px;
   background: #e6e8ea;
   z-index: 0;
