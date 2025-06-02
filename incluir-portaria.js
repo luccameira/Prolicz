@@ -167,20 +167,18 @@ function animarLinhaVerdeTimeline(container) {
       const containerRect = container.getBoundingClientRect();
       const firstCircle = circles[0].getBoundingClientRect();
       const activeCircle = circles[idxActive].getBoundingClientRect();
-
-      // Posição central de cada círculo, relativo ao container
+      // Calcula a posição do centro de cada círculo em relação ao container
       const startX = (firstCircle.left - containerRect.left) + (firstCircle.width / 2);
       const endX = (activeCircle.left - containerRect.left) + (activeCircle.width / 2);
-
       greenTrack.style.left = `${startX}px`;
       greenTrack.style.width = `${Math.max(0, endX - startX)}px`;
-      greenTrack.style.top = '50%';
-      greenTrack.style.zIndex = 1; // Garante linha atrás dos círculos
+      greenTrack.style.top = '48px';
+      greenTrack.style.zIndex = 2;
     } else if (greenTrack) {
       greenTrack.style.width = '0';
     }
   } catch (err) {
-    // Silêncio em erro
+    // Silêncio
   }
 }
 
