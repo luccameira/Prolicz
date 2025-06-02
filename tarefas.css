@@ -783,7 +783,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ PADRÃO ==== */
+/* ==== LINHA DO TEMPO - PROLICZ PADRÃO (REVISADA) ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
@@ -794,6 +794,18 @@ input[type="file"]::file-selector-button:hover {
   padding: 0 32px 0 32px;
   min-width: 480px;
   position: relative;
+}
+
+/* LINHA DE FUNDO CENTRAL */
+.timeline-prolicz::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 50px;
+  right: 50px;
+  height: 4px;
+  background: #e6e8ea;
+  z-index: 0;
 }
 
 .timeline-prolicz-step {
@@ -822,16 +834,27 @@ input[type="file"]::file-selector-button:hover {
   z-index: 2;
   transition: all 0.3s ease;
 }
+
 .timeline-prolicz-step .circle i {
   font-size: 14px;
 }
 
+/* CONCLUÍDO */
 .timeline-prolicz-step.concluded .circle {
   background: #219653;
   border-color: #219653;
   color: #fff;
 }
 
+.timeline-prolicz-step.concluded .label {
+  color: #219653;
+}
+
+.timeline-prolicz-step.concluded .data {
+  color: #444;
+}
+
+/* ATIVO */
 .timeline-prolicz-step.active .circle {
   background: #fff;
   border-color: #2563eb;
@@ -839,6 +862,12 @@ input[type="file"]::file-selector-button:hover {
   box-shadow: 0 0 0 3px #e8f0fe;
 }
 
+.timeline-prolicz-step.active .label {
+  color: #2563eb;
+  font-weight: bold;
+}
+
+/* LABELS */
 .timeline-prolicz-step .label {
   margin-top: 2px;
   font-size: 15px;
@@ -848,17 +877,11 @@ input[type="file"]::file-selector-button:hover {
   min-width: 90px;
 }
 
-.timeline-prolicz-step.active .label {
-  color: #2563eb;
-  font-weight: bold;
-}
-.timeline-prolicz-step.concluded .label {
-  color: #219653;
-}
 .timeline-prolicz-step:not(.active):not(.concluded) .label {
   color: #bbb;
 }
 
+/* DATAS */
 .timeline-prolicz-step .data {
   font-size: 13px;
   color: #7b858e;
@@ -866,35 +889,13 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
   min-height: 19px;
 }
-.timeline-prolicz-step.concluded .data {
-  color: #444;
-}
+
 .timeline-prolicz-step:not(.active):not(.concluded) .data {
   color: #e4e6eb;
 }
 
+/* DESATIVAR CONEXÕES ANTIGAS */
 .timeline-prolicz-step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  width: 100%;
-  height: 4px;
-  background: #e6e8ea;
-  z-index: 0;
-  transform: translateX(14px);
-  transition: background 0.3s ease;
-}
-
-.timeline-prolicz-step.concluded:not(:last-child)::after {
-  background: #219653;
-}
-
-.timeline-prolicz-step.active:not(:last-child)::after {
-  background: linear-gradient(90deg, #219653 80%, #e6e8ea 20%);
-}
-
-.timeline-prolicz-step:last-child::after {
   display: none;
 }
 
