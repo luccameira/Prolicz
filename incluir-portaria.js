@@ -167,12 +167,15 @@ function animarLinhaVerdeTimeline(container) {
       const containerRect = container.getBoundingClientRect();
       const firstCircle = circles[0].getBoundingClientRect();
       const activeCircle = circles[idxActive].getBoundingClientRect();
-      // Calcula a posição do centro de cada círculo em relação ao container
-      const startX = (firstCircle.left - containerRect.left) + (firstCircle.width / 2);
-      const endX = (activeCircle.left - containerRect.left) + (activeCircle.width / 2);
+
+      // Calcula o centro de cada círculo em relação ao container
+      const startX = (firstCircle.left + firstCircle.width / 2) - containerRect.left;
+      const endX = (activeCircle.left + activeCircle.width / 2) - containerRect.left;
+
+      // Garante que a linha só vá até o centro do círculo ativo
       greenTrack.style.left = `${startX}px`;
-      greenTrack.style.width = `${Math.max(0, endX - startX)}px`;
-      greenTrack.style.top = '48px';
+      greenTrack.style.width = `${endX - startX}px`;
+      greenTrack.style.top = '47px';
       greenTrack.style.zIndex = 2;
     } else if (greenTrack) {
       greenTrack.style.width = '0';
