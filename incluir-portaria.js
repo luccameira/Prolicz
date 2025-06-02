@@ -45,144 +45,38 @@ function formatarData(data) {
   }
 }
 
-// LINHA DO TEMPO VISUAL 2.0 (com track verde animada)
+// LINHA DO TEMPO SIMPLES - igual ao print
 function gerarLinhaTempoVisual(pedido) {
+  // Status da linha do tempo e datas
   const etapas = [
-    {
-      key: 'Aguardando Início da Coleta',
-      titulos: [
-        'Aguardando chegada do cliente',
-        'Coleta iniciada'
-      ],
-      campoData: 'data_criacao',
-      icon: 'fa-box'
-    },
-    {
-      key: 'Coleta Iniciada',
-      titulos: [
-        'Cliente está coletando o material',
-        'Coleta finalizada'
-      ],
-      campoData: 'data_coleta_iniciada',
-      icon: 'fa-truck-loading'
-    },
-    {
-      key: 'Aguardando Conferência do Peso',
-      titulos: [
-        'Peso em conferência',
-        'Peso conferido'
-      ],
-      campoData: 'data_conferencia_peso',
-      icon: 'fa-weight-hanging'
-    },
-    {
-      key: 'Em Análise pelo Financeiro',
-      titulos: [
-        'Aguardando análise financeira',
-        'Pagamento confirmado'
-      ],
-      campoData: 'data_financeiro',
-      icon: 'fa-dollar-sign'
-    },
-    {
-      key: 'Aguardando Emissão de NF',
-      titulos: [
-        'Aguardando emissão de Nota Fiscal',
-        'Nota Fiscal emitida'
-      ],
-      campoData: 'data_emissao_nf',
-      icon: 'fa-file-invoice'
-    },
-    {
-      key: 'Finalizado',
-      titulos: [
-        'Pedido finalizado',
-        'Pedido finalizado'
-      ],
-      campoData: 'data_finalizado',
-      icon: 'fa-check'
-    }
-  ];
-
-  const datas = [
-    pedido.data_criacao || pedido.data_coleta,
-    pedido.data_coleta_iniciada,
-    pedido.data_conferencia_peso,
-    pedido.data_financeiro,
-    pedido.data_emissao_nf,
-    pedido.data_finalizado
+    { key: 'Aguardando Início da Coleta', titulo: 'Aguardando Coleta', data: pedido.data_criacao || pedido.data_coleta },
+    { key: 'Coleta Iniciada', titulo: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
+    { key: 'Aguardando Conferência do Peso', titulo: 'Conferência do Peso', data: pedido.data_conferencia_peso },
+    { key: 'Em Análise pelo Financeiro', titulo: 'Financeiro', data: pedido.data_financeiro },
+    { key: 'Finalizado', titulo: 'Finalizado', data: pedido.data_finalizado }
   ];
 
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  let html = `<div class="timeline-prolicz">
-    <div class="timeline-prolicz-track"></div>
-    <div class="timeline-prolicz-track-green"></div>
-  `;
-
+  let html = `<div class="timeline-simples">`;
   etapas.forEach((etapa, idx) => {
-    const isConcluded = idx < idxAtivo;
-    const isActive = idx === idxAtivo;
-
-    let extClass = '';
-    if (idx === 0) extClass += ' first';
-    if (idx === etapas.length - 1) extClass += ' last';
-
     let stepClass = '';
-    if (isConcluded) stepClass = 'concluded';
-    else if (isActive) stepClass = 'active';
+    if (idx < idxAtivo) stepClass = 'done';
+    else if (idx === idxAtivo) stepClass = 'active';
 
-    html += `<div class="timeline-prolicz-step${extClass} ${stepClass}" style="z-index:${100 - idx};">`;
-    html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
-
-    if (isActive) {
-      html += `<div class="timeline-label timeline-label-ativo">${etapa.titulos[0]}</div>`;
-    } else if (isConcluded) {
-      html += `<div class="timeline-label timeline-label-concluido">${etapa.titulos[1]}</div>`;
-    } else {
-      html += `<div class="timeline-label timeline-label-futuro">${etapa.titulos[0]}</div>`;
+    html += `
+      <div class="timeline-step ${stepClass}">
+        <div class="dot"></div>
+        <div class="step-title">${etapa.titulo}</div>
+        <div class="step-date">${etapa.data ? formatarData(etapa.data) : '—'}</div>
+      </div>
+    `;
+    if (idx < etapas.length - 1) {
+      html += `<div class="timeline-bar${idx < idxAtivo ? ' done' : ''}"></div>`;
     }
-
-    let dataStr = '—';
-    if (etapa.campoData && datas[idx]) {
-      dataStr = formatarData(datas[idx]);
-    }
-    html += `<div class="data">${dataStr}</div>`;
-
-    html += `</div>`;
   });
-
   html += `</div>`;
   return html;
-}
-
-// Função para animar a linha verde da timeline
-function animarLinhaVerdeTimeline(container) {
-  try {
-    const steps = container.querySelectorAll('.timeline-prolicz-step');
-    const greenTrack = container.querySelector('.timeline-prolicz-track-green');
-    const circles = Array.from(steps).map(step => step.querySelector('.circle'));
-    const idxActive = Array.from(steps).findIndex(step => step.classList.contains('active'));
-    if (greenTrack && circles.length > 1 && idxActive > 0) {
-      const containerRect = container.getBoundingClientRect();
-      const firstCircle = circles[0].getBoundingClientRect();
-      const activeCircle = circles[idxActive].getBoundingClientRect();
-
-      // Calcula o centro de cada círculo em relação ao container
-      const startX = (firstCircle.left + firstCircle.width / 2) - containerRect.left;
-      const endX = (activeCircle.left + activeCircle.width / 2) - containerRect.left;
-
-      // Garante que a linha só vá até o centro do círculo ativo
-      greenTrack.style.left = `${startX}px`;
-      greenTrack.style.width = `${endX - startX}px`;
-      greenTrack.style.top = '47px';
-      greenTrack.style.zIndex = 2;
-    } else if (greenTrack) {
-      greenTrack.style.width = '0';
-    }
-  } catch (err) {
-    // Silêncio
-  }
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
