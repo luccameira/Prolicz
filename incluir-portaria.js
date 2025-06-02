@@ -117,7 +117,10 @@ function gerarLinhaTempoVisual(pedido) {
 
   // Descobre qual etapa está ativa
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
-  let html = `<div class="timeline-prolicz">`;
+
+  // INÍCIO DA LINHA DO TEMPO - NOVA ESTRUTURA PARA CENTRALIZAÇÃO PERFEITA
+  let html = `<div class="timeline-prolicz">
+    <div class="timeline-prolicz-line"></div>`;
 
   etapas.forEach((etapa, idx) => {
     const isConcluded = idx < idxAtivo;
@@ -127,13 +130,17 @@ function gerarLinhaTempoVisual(pedido) {
     if (isConcluded) stepClass = 'concluded';
     else if (isActive) stepClass = 'active';
 
-    html += `<div class="timeline-prolicz-step ${stepClass}" style="z-index:${100 - idx};">`;
+    // Adiciona uma classe especial na primeira e última bolinha
+    let extClass = '';
+    if (idx === 0) extClass = ' first';
+    if (idx === etapas.length - 1) extClass = ' last';
+
+    html += `<div class="timeline-prolicz-step${extClass} ${stepClass}" style="z-index:${100 - idx};">`;
 
     // Ícone da etapa
     html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
 
     // ----- TÍTULO DA ETAPA -----
-    // Ativo = título azul, Concluído = verde, Futuro = cinza padrão
     if (isActive) {
       html += `<div class="timeline-label timeline-label-ativo">${etapa.titulos[0]}</div>`;
     } else if (isConcluded) {
@@ -152,12 +159,11 @@ function gerarLinhaTempoVisual(pedido) {
     html += `</div>`;
   });
 
-  html += `</div>`;
+  html += `</div>`; // fecha .timeline-prolicz
   return html;
 }
-// --- FIM LINHA DO TEMPO ---
 
-// (continuação)
+// PARTE 2 DE 2 - incluir-portaria.js
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -471,4 +477,5 @@ function monitorarUploads() {
 
 
 
-   
+
+
