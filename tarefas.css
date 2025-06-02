@@ -788,49 +788,45 @@ input[type="file"]::file-selector-button:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 32px;
+  position: relative;
   background: #fff;
   border-radius: 10px 10px 0 0;
-  padding: 0 32px;
   min-width: 480px;
-  position: relative;
-  height: 88px;
+  height: 90px;
 }
 
-.timeline-prolicz-track {
-  position: absolute;
-  left: 48px;
-  right: 48px;
-  top: 48px; /* centralizado verticalmente, considerando altura da linha/círculo */
-  height: 4px;
-  background: #e6e8ea;
-  z-index: 1;
-  border-radius: 2px;
-}
-
+.timeline-prolicz-track,
 .timeline-prolicz-track-green {
   position: absolute;
   left: 48px;
-  top: 48px;
+  right: 48px;
+  top: 44px; /* Metade do círculo (32px) + metade da linha (4px) = 16 + 2 = 18. O padding superior invisível, total 44px bate com visual Figma. */
   height: 4px;
-  background: #219653;
-  z-index: 2;
   border-radius: 2px;
-  transition: width 0.4s cubic-bezier(.4,1,.4,1);
-  /* width é ajustada via JS */
+  z-index: 1;
 }
 
-/* Cada etapa */
+.timeline-prolicz-track {
+  background: #e6e8ea;
+}
+
+.timeline-prolicz-track-green {
+  background: #219653;
+  transition: width 0.4s cubic-bezier(.4,1,.4,1);
+  z-index: 2;
+}
+
 .timeline-prolicz-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  z-index: 10;
   flex: 1 1 0;
   min-width: 0;
+  z-index: 3;
 }
 
-/* Círculo padrão */
 .timeline-prolicz-step .circle {
   width: 32px;
   height: 32px;
@@ -841,50 +837,26 @@ input[type="file"]::file-selector-button:hover {
   align-items: center;
   justify-content: center;
   font-size: 16px;
+  margin-bottom: 6px;
   color: #b2b5b7;
-  margin-bottom: 8px;
-  position: relative;
-  transition: border 0.2s, background 0.2s;
-  box-sizing: border-box;
+  transition: all .2s;
 }
 
 .timeline-prolicz-step .circle i {
   font-size: 15px;
 }
 
-/* Status CONCLUÍDO */
 .timeline-prolicz-step.concluded .circle {
   background: #219653;
   border-color: #219653;
   color: #fff;
 }
-.timeline-prolicz-step.concluded .timeline-label {
-  color: #219653;
-  font-weight: bold;
-}
-
-/* Status ATIVO */
 .timeline-prolicz-step.active .circle {
   background: #fff;
   border-color: #2563eb;
   color: #2563eb;
   box-shadow: 0 0 0 3px #e8f0fe;
-  z-index: 11;
-}
-.timeline-prolicz-step.active .timeline-label {
-  color: #2563eb;
-  font-weight: bold;
-}
-
-/* Status FUTURO */
-.timeline-prolicz-step:not(.active):not(.concluded) .circle {
-  background: #e6e8ea;
-  border-color: #e6e8ea;
-  color: #b2b5b7;
-}
-.timeline-prolicz-step:not(.active):not(.concluded) .timeline-label {
-  color: #bbb;
-  font-weight: 600;
+  z-index: 4;
 }
 
 .timeline-label {
@@ -894,10 +866,12 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
   margin-top: 2px;
   min-width: 90px;
-  line-height: 1.16;
-  transition: color .2s;
-  word-break: keep-all;
+  line-height: 1.1;
 }
+
+.timeline-prolicz-step.concluded .timeline-label { color: #219653; }
+.timeline-prolicz-step.active .timeline-label { color: #2563eb; }
+.timeline-prolicz-step:not(.active):not(.concluded) .timeline-label { color: #bbb; }
 
 .timeline-prolicz-step .data {
   font-size: 13px;
@@ -907,10 +881,4 @@ input[type="file"]::file-selector-button:hover {
   min-height: 18px;
 }
 
-@media (max-width: 900px) {
-  .timeline-prolicz { padding: 0 8px; }
-  .timeline-label { min-width: 60px; font-size: 13px; }
-  .timeline-prolicz-step .data { font-size: 11px; }
-  .timeline-prolicz-step .circle { width: 24px; height: 24px; font-size: 13px; }
-}
 
