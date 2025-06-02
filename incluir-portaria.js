@@ -47,12 +47,13 @@ function formatarData(data) {
 
 // LINHA DO TEMPO SIMPLES - igual ao print
 function gerarLinhaTempoVisual(pedido) {
-  // Status da linha do tempo e datas
+  // Inclui status "Emissão de Nota Fiscal"
   const etapas = [
     { key: 'Aguardando Início da Coleta', titulo: 'Aguardando Coleta', data: pedido.data_criacao || pedido.data_coleta },
     { key: 'Coleta Iniciada', titulo: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
     { key: 'Aguardando Conferência do Peso', titulo: 'Conferência do Peso', data: pedido.data_conferencia_peso },
     { key: 'Em Análise pelo Financeiro', titulo: 'Financeiro', data: pedido.data_financeiro },
+    { key: 'Aguardando Emissão de NF', titulo: 'Emissão de Nota Fiscal', data: pedido.data_emissao_nf },
     { key: 'Finalizado', titulo: 'Finalizado', data: pedido.data_finalizado }
   ];
 
