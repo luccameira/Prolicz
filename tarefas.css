@@ -783,7 +783,6 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ FINAL CORRIGIDA ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
@@ -796,61 +795,6 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* LINHA CINZA DE BASE - centralizada atrás dos círculos */
-.timeline-prolicz::before {
-  content: '';
-  position: absolute;
-  top: 17px;
-  left: 46px; /* 32px padding + metade do círculo (28px/2 = 14px) */
-  right: 46px;
-  height: 4px;
-  background: #e6e8ea;
-  z-index: 0;
-  border-radius: 2px;
-  pointer-events: none;
-}
-
-/* LINHA VERDE - só até o status atual */
-.timeline-prolicz-step.concluded:not(.last)::after {
-  content: '';
-  position: absolute;
-  top: 17px;
-  left: 50%;
-  width: 100%;
-  height: 4px;
-  background: #219653;
-  z-index: 1;
-  pointer-events: none;
-  transform: translateX(0);
-}
-.timeline-prolicz-step.active:not(.last)::after {
-  content: '';
-  position: absolute;
-  top: 17px;
-  left: 50%;
-  width: 0; /* Não pinta linha verde depois do ativo */
-  height: 4px;
-  background: transparent;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Recorte nas pontas: cobre as sobras da linha cinza nas laterais */
-.timeline-prolicz-step.first::before,
-.timeline-prolicz-step.last::before {
-  content: '';
-  position: absolute;
-  top: 17px;
-  width: 50%;
-  height: 4px;
-  background: #fff;
-  z-index: 2;
-  pointer-events: none;
-}
-.timeline-prolicz-step.first::before { left: -50%; }
-.timeline-prolicz-step.last::before { right: -50%; }
-
-/* BOLINHAS (CÍRCULOS) */
 .timeline-prolicz-step {
   display: flex;
   flex-direction: column;
@@ -859,6 +803,47 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
   z-index: 3;
 }
+
+/* LINHA À ESQUERDA DA BOLINHA */
+.timeline-prolicz-step:not(.first)::before {
+  content: '';
+  position: absolute;
+  top: 31.5%;
+  left: 0;
+  width: 50%;
+  height: 4px;
+  background: #e6e8ea;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+.timeline-prolicz-step.concluded:not(.first)::before {
+  background: #219653;
+}
+
+/* LINHA À DIREITA DA BOLINHA */
+.timeline-prolicz-step:not(.last)::after {
+  content: '';
+  position: absolute;
+  top: 31.5%;
+  left: 50%;
+  width: 50%;
+  height: 4px;
+  background: #e6e8ea;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+.timeline-prolicz-step.concluded:not(.last)::after {
+  background: #219653;
+}
+
+.timeline-prolicz-step.active:not(.first)::before {
+  background: #219653;
+}
+.timeline-prolicz-step.active:not(.last)::after {
+  background: #e6e8ea;
+}
+
+/* BOLINHAS (CÍRCULOS) */
 .timeline-prolicz-step .circle {
   width: 28px;
   height: 28px;
