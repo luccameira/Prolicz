@@ -783,47 +783,65 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
+/* ==== TIMELINE CORPORATIVA PADRÃO ==== */
+
 .timeline-simples {
   position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 32px 0 20px 0;
-  min-width: 620px;
+  margin: 34px 0 20px 0;
+  min-width: 640px;
   background: #fff;
+  padding: 0 12px;
+  height: 90px;
 }
 
-.timeline-bar-bg,
-.timeline-bar-fg {
+/* Linha de fundo (cinza) */
+.timeline-bar-bg {
   position: absolute;
-  top: 50%;
   left: 0;
-  height: 7px;           /* Espessura da linha */
-  border-radius: 4px;
-  transform: translateY(-50%);
+  right: 0;
+  top: 50%;
+  height: 8px; /* Espessura maior */
+  border-radius: 5px;
   background: #e6e8ea;
   z-index: 0;
   width: 100%;
-}
-.timeline-bar-fg {
-  background: #24502a; /* Verde escuro corporativo */
-  z-index: 1;
-  transition: width 0.3s;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
+/* Linha de progresso (verde escuro) */
+.timeline-bar-fg {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 8px;
+  border-radius: 5px;
+  background: #24502a;
+  z-index: 1;
+  width: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: width 0.4s;
+}
+
+/* Status */
 .timeline-step {
   position: relative;
   flex: 1 1 0;
   text-align: center;
   z-index: 2;
 }
+
 .timeline-step .dot {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  border: 3.5px solid #ccc;
+  border: 3.5px solid #cfcfcf;
   background: #fff;
-  margin: 0 auto 4px auto;
+  margin: 0 auto 7px auto;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
@@ -832,31 +850,56 @@ input[type="file"]::file-selector-button:hover {
   justify-content: center;
   font-size: 19px;
   color: #fff;
+  transition: border-color 0.2s, background 0.2s;
 }
+
+/* Concluído */
 .timeline-step.done .dot {
   background: #24502a;
   border-color: #24502a;
+  color: #fff;
 }
+
+/* Ativo */
 .timeline-step.active .dot {
   background: #fff;
   border-color: #2963b5;
+  color: #2963b5;
 }
-.timeline-step .dot i {
+
+/* Futuro */
+.timeline-step .dot {
   color: #fff;
-  font-size: 18px;
 }
+
+/* Texto do status */
 .timeline-step .label {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
   color: #222;
+  line-height: 18px;
+  margin-bottom: 2px;
+  margin-top: 1px;
+  letter-spacing: 0;
 }
+
 .timeline-step .date {
   font-size: 13px;
   color: #999;
+  margin-top: 1px;
 }
+
 .timeline-step:not(:first-child) {
-  /* Remove gap extra */
+  /* Remove gap extra entre etapas */
 }
+
 .timeline-step:last-child .dot {
-  /* Corrige arredondamento da última bolinha, se necessário */
+  /* Arredondamento extra se quiser */
+}
+
+/* Adaptação responsiva (opcional) */
+@media (max-width: 850px) {
+  .timeline-simples { min-width: 440px; font-size: 13px; }
+  .timeline-step .label { font-size: 13px; }
+  .timeline-step .dot { width: 22px; height: 22px; font-size: 13px; }
 }
