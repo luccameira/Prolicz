@@ -45,9 +45,8 @@ function formatarData(data) {
   }
 }
 
-// LINHA DO TEMPO SIMPLES - igual ao print
+// LINHA DO TEMPO NOVA
 function gerarLinhaTempoVisual(pedido) {
-  // Inclui status "Emissão de Nota Fiscal"
   const etapas = [
     { key: 'Aguardando Início da Coleta', titulo: 'Aguardando Coleta', data: pedido.data_criacao || pedido.data_coleta },
     { key: 'Coleta Iniciada', titulo: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
@@ -59,26 +58,47 @@ function gerarLinhaTempoVisual(pedido) {
 
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  let html = `<div class="timeline-simples">`;
+  let html = `<div class="timeline-simples" style="position:relative;">`;
+  html += `<div class="timeline-bar-bg"></div>`;
+  html += `<div class="timeline-bar-fg" style="width:0"></div>`;
+
   etapas.forEach((etapa, idx) => {
     let stepClass = '';
     if (idx < idxAtivo) stepClass = 'done';
     else if (idx === idxAtivo) stepClass = 'active';
 
     html += `
-      <div class="timeline-step ${stepClass}">
+      <div class="timeline-step ${stepClass}" data-step="${idx}">
         <div class="dot"></div>
         <div class="step-title">${etapa.titulo}</div>
         <div class="step-date">${etapa.data ? formatarData(etapa.data) : '—'}</div>
       </div>
     `;
-    if (idx < etapas.length - 1) {
-      html += `<div class="timeline-bar${idx < idxAtivo ? ' done' : ''}"></div>`;
-    }
   });
   html += `</div>`;
   return html;
 }
+
+// Faz a barra verde da timeline acompanhar o progresso
+function animarLinhaProgresso(container) {
+  const steps = container.querySelectorAll('.timeline-step');
+  const fg = container.querySelector('.timeline-bar-fg');
+  let ultimoDone = -1;
+  steps.forEach((step, idx) => {
+    if (step.classList.contains('done') || step.classList.contains('active')) ultimoDone = idx;
+  });
+  if (fg && steps.length > 1 && ultimoDone >= 0) {
+    const first = steps[0].querySelector('.dot').getBoundingClientRect();
+    const last = steps[ultimoDone].querySelector('.dot').getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const start = (first.left + first.width / 2) - containerRect.left;
+    const end = (last.left + last.width / 2) - containerRect.left;
+    fg.style.left = `${start}px`;
+    fg.style.width = `${end - start}px`;
+  }
+}
+
+// ==== RESTANTE DO CÓDIGO PADRÃO (NÃO ALTERE) ====
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -191,11 +211,10 @@ async function carregarPedidosPortaria() {
     // Linha do tempo
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
-    // Depois que a linha do tempo for inserida no DOM,
-    // aguardar a renderização e animar a linha verde
+    // Após inserir a timeline, faz a linha verde acompanhar as bolinhas
     setTimeout(() => {
-      const timeline = card.querySelector('.timeline-prolicz');
-      if (timeline) animarLinhaVerdeTimeline(timeline);
+      const timeline = card.querySelector('.timeline-simples');
+      if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
     if (podeIniciarColeta) {
@@ -399,7 +418,4 @@ function monitorarUploads() {
     }
   });
 }
-
-
-
 
