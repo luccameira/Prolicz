@@ -809,7 +809,7 @@ input[type="file"]::file-selector-button:hover {
 
 .timeline-prolicz-track-green {
   position: absolute;
-  left: 50px;
+  left: 48px;
   top: 48px;
   height: 4px;
   background: #219653;
