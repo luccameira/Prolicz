@@ -45,60 +45,80 @@ function formatarData(data) {
   }
 }
 
-// LINHA DO TEMPO NOVA
-function gerarLinhaTempoVisual(pedido) {
+// === NOVA LINHA DO TEMPO SIMPLES ===
+function gerarLinhaTempoSimples(pedido) {
+  // Etapas padrão
   const etapas = [
-    { key: 'Aguardando Início da Coleta', titulo: 'Aguardando Coleta', data: pedido.data_criacao || pedido.data_coleta },
-    { key: 'Coleta Iniciada', titulo: 'Coleta Iniciada', data: pedido.data_coleta_iniciada },
-    { key: 'Aguardando Conferência do Peso', titulo: 'Conferência do Peso', data: pedido.data_conferencia_peso },
-    { key: 'Em Análise pelo Financeiro', titulo: 'Financeiro', data: pedido.data_financeiro },
-    { key: 'Aguardando Emissão de NF', titulo: 'Emissão de Nota Fiscal', data: pedido.data_emissao_nf },
-    { key: 'Finalizado', titulo: 'Finalizado', data: pedido.data_finalizado }
+    { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao' },
+    { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
+    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
+    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro' },
+    { key: 'Aguardando Emissão de NF', label: 'Emissão de Nota Fiscal', campoData: 'data_emissao_nf' },
+    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado' }
   ];
 
+  // Qual etapa está ativa?
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  let html = `<div class="timeline-simples" style="position:relative;">`;
-  html += `<div class="timeline-bar-bg"></div>`;
-  html += `<div class="timeline-bar-fg" style="width:0"></div>`;
+  let html = `
+    <div class="timeline-simples">
+      <div class="timeline-bar-bg"></div>
+      <div class="timeline-bar-fg"></div>
+  `;
 
   etapas.forEach((etapa, idx) => {
-    let stepClass = '';
-    if (idx < idxAtivo) stepClass = 'done';
-    else if (idx === idxAtivo) stepClass = 'active';
+    let statusClass = '';
+    if (idx < idxAtivo) statusClass = 'done';
+    else if (idx === idxAtivo) statusClass = 'active';
 
     html += `
-      <div class="timeline-step ${stepClass}" data-step="${idx}">
-        <div class="dot"></div>
-        <div class="step-title">${etapa.titulo}</div>
-        <div class="step-date">${etapa.data ? formatarData(etapa.data) : '—'}</div>
+      <div class="timeline-step ${statusClass}">
+        <div class="dot">
+          ${statusClass === 'done' ? '<span style="font-size:20px;">&#10003;</span>' : ''}
+        </div>
+        <div class="label">${etapa.label}</div>
+        <div class="data">${formatarData(pedido[etapa.campoData])}</div>
       </div>
     `;
   });
+
   html += `</div>`;
   return html;
 }
 
-// Faz a barra verde da timeline acompanhar o progresso
 function animarLinhaProgresso(container) {
   const steps = container.querySelectorAll('.timeline-step');
   const fg = container.querySelector('.timeline-bar-fg');
-  let ultimoDone = -1;
+  const bg = container.querySelector('.timeline-bar-bg');
+  let ultimoFeito = -1;
+
   steps.forEach((step, idx) => {
-    if (step.classList.contains('done') || step.classList.contains('active')) ultimoDone = idx;
+    if (step.classList.contains('done') || step.classList.contains('active')) ultimoFeito = idx;
   });
-  if (fg && steps.length > 1 && ultimoDone >= 0) {
-    const first = steps[0].querySelector('.dot').getBoundingClientRect();
-    const last = steps[ultimoDone].querySelector('.dot').getBoundingClientRect();
+
+  if (steps.length > 1 && fg && bg) {
+    const firstDot = steps[0].querySelector('.dot').getBoundingClientRect();
+    const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
-    const start = (first.left + first.width / 2) - containerRect.left;
-    const end = (last.left + last.width / 2) - containerRect.left;
-    fg.style.left = `${start}px`;
-    fg.style.width = `${end - start}px`;
+
+    // Linha só entre a 1ª e a última bolinha!
+    const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
+    const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
+
+    bg.style.left = `${start}px`;
+    bg.style.width = `${end - start}px`;
+
+    // Linha verde vai até a última "feita"
+    if (ultimoFeito > 0) {
+      const doneDot = steps[ultimoFeito].querySelector('.dot').getBoundingClientRect();
+      const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
+      fg.style.left = `${start}px`;
+      fg.style.width = `${done - start}px`;
+    } else {
+      fg.style.width = '0';
+    }
   }
 }
-
-// ==== RESTANTE DO CÓDIGO PADRÃO (NÃO ALTERE) ====
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -209,9 +229,9 @@ async function carregarPedidosPortaria() {
     card.appendChild(header);
 
     // Linha do tempo
-    card.innerHTML += gerarLinhaTempoVisual(pedido);
+    card.innerHTML += gerarLinhaTempoSimples(pedido);
 
-    // Após inserir a timeline, faz a linha verde acompanhar as bolinhas
+    // Após renderizar, animar a linha
     setTimeout(() => {
       const timeline = card.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
@@ -278,8 +298,6 @@ async function carregarPedidosPortaria() {
     lista.appendChild(card);
   });
 }
-
-// --- DEMAIS FUNÇÕES (ajudantes, registro, upload) ---
 
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
@@ -418,4 +436,5 @@ function monitorarUploads() {
     }
   });
 }
+
 
