@@ -45,15 +45,14 @@ function formatarData(data) {
   }
 }
 
-// -------- LINHA DO TEMPO COM TÍTULOS DUPLOS --------
+// LINHA DO TEMPO VISUAL 2.0 (com track verde animada)
 function gerarLinhaTempoVisual(pedido) {
-  // Títulos: [status_técnico, [título_ativo, título_concluído], campo_data, ícone]
   const etapas = [
     {
       key: 'Aguardando Início da Coleta',
       titulos: [
-        'Aguardando chegada do cliente', // Ativo (azul)
-        'Coleta iniciada'                // Concluído (verde)
+        'Aguardando chegada do cliente',
+        'Coleta iniciada'
       ],
       campoData: 'data_criacao',
       icon: 'fa-box'
@@ -105,7 +104,6 @@ function gerarLinhaTempoVisual(pedido) {
     }
   ];
 
-  // Datas para cada etapa
   const datas = [
     pedido.data_criacao || pedido.data_coleta,
     pedido.data_coleta_iniciada,
@@ -115,34 +113,28 @@ function gerarLinhaTempoVisual(pedido) {
     pedido.data_finalizado
   ];
 
-  // Índice do status atual
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  // Gera HTML
-  let html = `<div class="timeline-prolicz">`;
+  let html = `<div class="timeline-prolicz">
+    <div class="timeline-prolicz-track"></div>
+    <div class="timeline-prolicz-track-green"></div>
+  `;
 
   etapas.forEach((etapa, idx) => {
-    // Só etapas ANTERIORES ao status atual são concluídas
     const isConcluded = idx < idxAtivo;
-    // Só a etapa ATUAL é ativa
     const isActive = idx === idxAtivo;
 
-    // Adiciona classes de posição
     let extClass = '';
     if (idx === 0) extClass += ' first';
     if (idx === etapas.length - 1) extClass += ' last';
 
-    // Classes de status
     let stepClass = '';
     if (isConcluded) stepClass = 'concluded';
     else if (isActive) stepClass = 'active';
 
     html += `<div class="timeline-prolicz-step${extClass} ${stepClass}" style="z-index:${100 - idx};">`;
-
-    // Ícone
     html += `<div class="circle"><i class="fa ${etapa.icon}"></i></div>`;
 
-    // Título duplo: ativo (azul), concluído (verde), futuro (cinza)
     if (isActive) {
       html += `<div class="timeline-label timeline-label-ativo">${etapa.titulos[0]}</div>`;
     } else if (isConcluded) {
@@ -151,7 +143,6 @@ function gerarLinhaTempoVisual(pedido) {
       html += `<div class="timeline-label timeline-label-futuro">${etapa.titulos[0]}</div>`;
     }
 
-    // Data da etapa (se houver)
     let dataStr = '—';
     if (etapa.campoData && datas[idx]) {
       dataStr = formatarData(datas[idx]);
@@ -161,8 +152,33 @@ function gerarLinhaTempoVisual(pedido) {
     html += `</div>`;
   });
 
-  html += `</div>`; // fecha .timeline-prolicz
+  html += `</div>`;
   return html;
+}
+
+// Função para animar a linha verde da timeline
+function animarLinhaVerdeTimeline(container) {
+  try {
+    const steps = container.querySelectorAll('.timeline-prolicz-step');
+    const greenTrack = container.querySelector('.timeline-prolicz-track-green');
+    const circles = Array.from(steps).map(step => step.querySelector('.circle'));
+    const idxActive = Array.from(steps).findIndex(step => step.classList.contains('active'));
+    if (greenTrack && circles.length > 1 && idxActive > 0) {
+      const leftCircle = circles[0].getBoundingClientRect();
+      const activeCircle = circles[idxActive].getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      // Corrige posição levando em conta o container pai
+      const startX = leftCircle.left + leftCircle.width / 2 - containerRect.left;
+      const endX = activeCircle.left + activeCircle.width / 2 - containerRect.left;
+      greenTrack.style.left = `${startX}px`;
+      greenTrack.style.width = `${endX - startX}px`;
+      greenTrack.style.top = '50%';
+    } else if (greenTrack) {
+      greenTrack.style.width = '0';
+    }
+  } catch (err) {
+    // Não faz nada em caso de erro de renderização
+  }
 }
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
@@ -273,7 +289,15 @@ async function carregarPedidosPortaria() {
     header.appendChild(btnStatus);
     card.appendChild(header);
 
+    // Linha do tempo
     card.innerHTML += gerarLinhaTempoVisual(pedido);
+
+    // Depois que a linha do tempo for inserida no DOM,
+    // aguardar a renderização e animar a linha verde
+    setTimeout(() => {
+      const timeline = card.querySelector('.timeline-prolicz');
+      if (timeline) animarLinhaVerdeTimeline(timeline);
+    }, 20);
 
     if (podeIniciarColeta) {
       const form = document.createElement('div');
@@ -336,6 +360,8 @@ async function carregarPedidosPortaria() {
     lista.appendChild(card);
   });
 }
+
+// --- DEMAIS FUNÇÕES (ajudantes, registro, upload) ---
 
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
@@ -474,7 +500,6 @@ function monitorarUploads() {
     }
   });
 }
-
 
 
 
