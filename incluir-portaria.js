@@ -37,7 +37,8 @@ function formatarData(data) {
   try {
     const dt = new Date(data);
     if (isNaN(dt)) return '—';
-    return dt.toLocaleDateString('pt-BR') + ' ' +
+    // Exibe só dia/mês e hora:minuto igual ao print
+    return dt.toLocaleDateString('pt-BR').slice(0,5) + ' ' +
       String(dt.getHours()).padStart(2, '0') + ':' +
       String(dt.getMinutes()).padStart(2, '0');
   } catch {
@@ -45,20 +46,20 @@ function formatarData(data) {
   }
 }
 
-// Linha do tempo igual ao print de referência
+// ==== NOVA LINHA DO TEMPO ==== //
 function gerarLinhaTempoVisual(pedido) {
   const etapas = [
     { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao' },
     { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
-    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: null },
-    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: null },
-    { key: 'Finalizado', label: 'Finalizado', campoData: null }
+    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
+    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro' },
+    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado' }
   ];
 
   let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
   if (idxAtivo === -1) idxAtivo = 0;
 
-  // Datas da timeline
+  // Datas reais (ajuste conforme nomes das propriedades do seu pedido)
   const datas = [
     pedido.data_criacao || pedido.data_coleta,
     pedido.data_coleta_iniciada,
@@ -67,47 +68,40 @@ function gerarLinhaTempoVisual(pedido) {
     pedido.data_finalizado
   ];
 
-  let html = `<div class="timeline-status" style="display: flex; align-items: flex-end; justify-content: space-between; margin: 28px 0 16px 0; min-width:480px;">`;
+  let html = `<div class="timeline-prolicz">`;
   etapas.forEach((etapa, idx) => {
-    let ativo = idx === idxAtivo;
-    let concluido = idx < idxAtivo;
-    // Visual
-    let circulo = concluido
-      ? `<div style="width:28px;height:28px;border-radius:50%;background:#34a853;border:3px solid #34a853;display:flex;align-items:center;justify-content:center;">
-            <i class="fa fa-check" style="color:#fff;font-size:16px;"></i>
-         </div>`
-      : ativo
-        ? `<div style="width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #1976d2;display:flex;align-items:center;justify-content:center;">
-              <div style="width:14px;height:14px;border-radius:50%;background:#1976d2;"></div>
-           </div>`
-        : `<div style="width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #e4e6eb;"></div>`;
+    let stepClass = '';
+    if (idx < idxAtivo) stepClass = 'concluded';
+    else if (idx === idxAtivo) stepClass = 'active';
 
-    let linha = idx < etapas.length - 1
-      ? `<div style="flex:1;height:4px;background:${idx < idxAtivo ? '#34a853' : '#e4e6eb'};margin:0 0 22px 0;"></div>`
-      : '';
+    html += `<div class="timeline-prolicz-step ${stepClass}">`;
 
-    // Data
-    let dataStr = '';
-    if (etapa.campoData && datas[idx]) {
-      dataStr = `<div style="font-size:13px;color:#444;margin-top:3px;">${formatarData(datas[idx])}</div>`;
+    // Círculo
+    if (idx < idxAtivo) {
+      html += `<div class="circle"><i class="fa fa-check"></i></div>`;
+    } else if (idx === idxAtivo) {
+      html += `<div class="circle"><div class="circle-dot"></div></div>`;
     } else {
-      dataStr = `<div style="font-size:13px;color:#e4e6eb;margin-top:3px;">—</div>`;
+      html += `<div class="circle"></div>`;
     }
 
-    html += `
-      <div style="display:flex;flex-direction:column;align-items:center;min-width:95px;">
-        ${circulo}
-        <div style="font-size:15px;color:${ativo ? '#1976d2' : concluido ? '#34a853' : '#bbb'};font-weight:${ativo ? 'bold' : 'normal'};margin-top:7px;text-align:center;min-height:32px;">
-          ${etapa.label}
-        </div>
-        ${dataStr}
-      </div>
-      ${linha}
-    `;
+    // Label
+    html += `<div class="label">${etapa.label}</div>`;
+
+    // Data
+    let dataStr = '—';
+    if (etapa.campoData && datas[idx]) {
+      dataStr = formatarData(datas[idx]);
+    }
+    html += `<div class="data">${dataStr}</div>`;
+
+    html += `</div>`;
   });
   html += `</div>`;
   return html;
 }
+
+// ...restante do arquivo (igual já estava)
 
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
@@ -195,7 +189,7 @@ async function carregarPedidosPortaria() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Cabeçalho igual ao print (nome cliente, data prevista, botão amarelo)
+    // Cabeçalho
     const header = document.createElement('div');
     header.className = 'header-card';
     header.style.display = 'flex';
@@ -222,7 +216,7 @@ async function carregarPedidosPortaria() {
 
     card.appendChild(header);
 
-    // Timeline visual igual ao print
+    // Timeline visual NOVA (igual ao modelo)
     card.innerHTML += gerarLinhaTempoVisual(pedido);
 
     // Formulário se puder iniciar coleta
@@ -433,4 +427,3 @@ function monitorarUploads() {
     }
   });
 }
-
