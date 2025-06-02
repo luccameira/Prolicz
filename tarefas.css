@@ -783,69 +783,88 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO VISUAL PROLICZ PADRÃO FINAL ==== */
+/* ==== LINHA DO TEMPO - PROLICZ FINAL ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 0 32px;
-  position: relative;
+  margin: 28px 0 16px 0;
   background: #fff;
   border-radius: 10px 10px 0 0;
+  padding: 0 32px;
   min-width: 480px;
-  height: 95px;
+  position: relative;
 }
 
-/* Linha de fundo (cinza) e linha de progresso (verde) */
-.timeline-prolicz-track,
-.timeline-prolicz-track-green {
+/* LINHA DE BASE - sempre cinza, centralizada */
+.timeline-prolicz::before {
+  content: '';
   position: absolute;
-  left: 48px;
-  right: 48px;
-  top: 44px;  /* Centralizado verticalmente: metade do círculo (32/2) + metade da linha (4/2) */
+  top: 17px;    /* Centraliza a linha horizontal na bolinha */
+  left: 32px;   /* Igual ao padding da timeline-prolicz */
+  right: 32px;  /* Igual ao padding da timeline-prolicz */
   height: 4px;
-  border-radius: 2px;
+  background: #e6e8ea;
+  z-index: 0;
+}
+
+/* LINHAS VERDES ENTRE STATUS CONCLUÍDOS */
+.timeline-prolicz-step.concluded:not(.last)::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  width: 100%;
+  height: 4px;
+  background: #219653; /* Verde concluído */
   z-index: 1;
   pointer-events: none;
-}
-.timeline-prolicz-track {
-  background: #e6e8ea;
-}
-.timeline-prolicz-track-green {
-  background: #219653;
-  transition: width 0.4s cubic-bezier(.4,1,.4,1);
+  transform: translateX(0);
 }
 
-/* Cada etapa (step) */
+/* PRIMEIRO E ÚLTIMO - recorte nas pontas */
+.timeline-prolicz-step.first::before,
+.timeline-prolicz-step.last::before {
+  content: '';
+  position: absolute;
+  top: 17px;
+  width: 50%;
+  height: 4px;
+  background: #fff;
+  z-index: 2;
+  pointer-events: none;
+}
+.timeline-prolicz-step.first::before { left: -50%; }
+.timeline-prolicz-step.last::before { right: -50%; }
+
+/* BOLINHAS (CÍRCULOS) */
 .timeline-prolicz-step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
   flex: 1 1 0;
-  min-width: 0;
-  z-index: 2;
+  position: relative;
+  z-index: 3;
 }
-
-/* Círculo padrão */
 .timeline-prolicz-step .circle {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #e6e8ea;
   border: 3px solid #e6e8ea;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  margin-bottom: 2px;
+  font-size: 14px;
   color: #b2b5b7;
-  z-index: 3;
+  margin-bottom: 7px;
   position: relative;
-  transition: all .2s;
+  z-index: 4;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 .timeline-prolicz-step .circle i {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 /* Status CONCLUÍDO */
@@ -865,52 +884,57 @@ input[type="file"]::file-selector-button:hover {
   border-color: #2563eb;
   color: #2563eb;
   box-shadow: 0 0 0 3px #e8f0fe;
-  z-index: 4;
+  z-index: 5;
 }
 .timeline-prolicz-step.active .timeline-label {
   color: #2563eb;
   font-weight: bold;
 }
 
-/* Status FUTURO */
+/* FUTURO / NÃO ATIVO */
 .timeline-prolicz-step:not(.active):not(.concluded) .circle {
   background: #e6e8ea;
   border-color: #e6e8ea;
   color: #b2b5b7;
 }
-.timeline-prolicz-step:not(.active):not(.concluded) .timeline-label {
+.timeline-prolicz-step:not(.active):not(.concluded) .timeline-label,
+.timeline-prolicz-step:not(.active):not(.concluded) .label {
   color: #bbb;
   font-weight: 600;
 }
+.timeline-prolicz-step:not(.active):not(.concluded) .data {
+  color: #e4e6eb;
+}
 
-/* Label e data */
-.timeline-label {
+/* LABELS */
+.timeline-label,
+.timeline-prolicz-step .label {
   font-size: 15px;
   font-weight: 600;
   color: #222;
   text-align: center;
-  margin-top: 16px;   /* Isso afasta a label da linha */
+  margin-top: 2px;
   min-width: 90px;
-  line-height: 1.1;
+  line-height: 1.16;
   transition: color .2s;
   word-break: keep-all;
 }
 
+/* DATAS */
 .timeline-prolicz-step .data {
   font-size: 13px;
-  color: #7b858e;
-  margin-top: 6px;
   text-align: center;
-  min-height: 18px;
+  min-height: 19px;
 }
 
-/* Responsivo: ajuste se quiser */
-@media (max-width: 900px) {
-  .timeline-prolicz { padding: 0 8px; }
+/* RESPONSIVO */
+@media (max-width: 800px) {
+  .timeline-prolicz {
+    padding: 0 8px;
+  }
   .timeline-label { min-width: 60px; font-size: 13px; }
   .timeline-prolicz-step .data { font-size: 11px; }
-  .timeline-prolicz-step .circle { width: 24px; height: 24px; font-size: 13px; }
+  .timeline-prolicz-step .circle { width: 20px; height: 20px; font-size: 11px; }
 }
-
 
 
