@@ -783,7 +783,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ PADRÃO (AJUSTADO 2024/06) ==== */
+/* ==== LINHA DO TEMPO - PROLICZ PADRÃO FINAL ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
@@ -796,16 +796,17 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* LINHA CENTRAL DE CONEXÃO */
+/* LINHA CENTRAL - SEMPRE ALINHADA AO CENTRO DOS CÍRCULOS */
 .timeline-prolicz::before {
   content: '';
   position: absolute;
-  top: 17px; /* ou 18px, dependendo do seu gosto visual */
+  top: 50%;
   left: 0;
   right: 0;
   height: 4px;
   background: #e6e8ea;
   z-index: 0;
+  transform: translateY(-50%);
 }
 
 .timeline-prolicz-step {
@@ -834,6 +835,10 @@ input[type="file"]::file-selector-button:hover {
   z-index: 2;
   transition: all 0.3s ease;
   box-sizing: border-box;
+}
+
+.timeline-prolicz-step .circle i {
+  font-size: 14px;
 }
 
 /* CONCLUÍDO */
@@ -889,6 +894,13 @@ input[type="file"]::file-selector-button:hover {
   font-weight: bold;
 }
 
+/* LABELS FUTUROS E DESATIVADOS */
+.timeline-prolicz-step:not(.active):not(.concluded) .timeline-label,
+.timeline-prolicz-step:not(.active):not(.concluded) .label {
+  color: #bbb;
+  font-weight: 600;
+}
+
 /* DATAS */
 .timeline-prolicz-step .data {
   font-size: 13px;
@@ -936,4 +948,5 @@ input[type="file"]::file-selector-button:hover {
     font-size: 12px;
   }
 }
+
 
