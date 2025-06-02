@@ -786,26 +786,28 @@ input[type="file"]::file-selector-button:hover {
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* <-- Centraliza perfeitamente */
+  align-items: center; /* Centraliza os steps */
   margin: 28px 0 16px 0;
   background: #fff;
   border-radius: 10px 10px 0 0;
   padding: 0 32px;
   min-width: 480px;
   position: relative;
-  height: 90px; /* altura total: ajuste se necessário */
+  height: 90px;
 }
 
+/* Linha cinza (fundo da timeline) */
 .timeline-prolicz-track {
   position: absolute;
-  left: 46px; /* padding + raio do círculo */
+  left: 46px;
   right: 46px;
   top: 50%;
   height: 4px;
   background: #e6e8ea;
-  z-index: 0;
+  z-index: 1 !important;  /* Garante que está atrás dos círculos */
   transform: translateY(-50%);
   border-radius: 2px;
+  pointer-events: none;
 }
 
 /* Linha verde do progresso */
@@ -815,10 +817,11 @@ input[type="file"]::file-selector-button:hover {
   top: 50%;
   height: 4px;
   background: #219653;
-  z-index: 1;
+  z-index: 2 !important;  /* Ainda atrás dos círculos */
   transform: translateY(-50%);
   border-radius: 2px;
-  /* width será setada pelo JS */
+  pointer-events: none;
+  /* width é ajustada via JS */
 }
 
 .timeline-prolicz-step {
@@ -844,7 +847,7 @@ input[type="file"]::file-selector-button:hover {
   color: #b2b5b7;
   margin-bottom: 7px;
   position: relative;
-  z-index: 4;
+  z-index: 10; /* Sempre acima das linhas! */
   transition: all 0.3s ease;
   box-sizing: border-box;
 }
@@ -872,6 +875,7 @@ input[type="file"]::file-selector-button:hover {
   border-color: #2563eb;
   color: #2563eb;
   box-shadow: 0 0 0 3px #e8f0fe;
+  z-index: 11; /* Extra garantido acima */
 }
 .timeline-prolicz-step.active .timeline-label,
 .timeline-prolicz-step.active .label {
@@ -948,5 +952,3 @@ input[type="file"]::file-selector-button:hover {
     font-size: 12px;
   }
 }
-
-
