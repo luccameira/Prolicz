@@ -784,6 +784,7 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .timeline-simples {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -793,15 +794,38 @@ input[type="file"]::file-selector-button:hover {
   width: 100%;
   box-sizing: border-box;
   margin-top: 6px;
-  gap: 0;
 }
+
+.timeline-bar-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 47px;    /* Alinha no centro das bolinhas, ajuste se sua bolinha mudar de tamanho */
+  height: 4px;  /* Espessura da linha */
+  background: #e6e8ea;
+  z-index: 1;
+  border-radius: 2px;
+}
+
+.timeline-bar-fg {
+  position: absolute;
+  left: 0;
+  top: 47px;
+  height: 4px;
+  background: #199143;
+  z-index: 2;
+  border-radius: 2px;
+  transition: width .3s;
+}
+
 .timeline-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 140px;
-  z-index: 2;
+  z-index: 10; /* Sempre acima da linha */
   position: relative;
+  background: none;
 }
 .dot {
   width: 26px;
@@ -811,7 +835,8 @@ input[type="file"]::file-selector-button:hover {
   background: #fff;
   margin-bottom: 8px;
   box-shadow: 0 2px 4px #0001;
-  z-index: 3;
+  z-index: 10;
+  position: relative;
 }
 .timeline-step.done .dot {
   background: #199143;
@@ -840,17 +865,4 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
   font-weight: 400;
   margin-top: 0;
-}
-.timeline-bar {
-  flex: 1;
-  height: 4px;
-  background: #e6e8ea;
-  margin: 0;
-  z-index: 1;
-  border-radius: 2px;
-  min-width: 0;
-  position: relative;
-}
-.timeline-bar.done {
-  background: #199143;
 }
