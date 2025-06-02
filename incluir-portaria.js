@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   monitorarUploads();
 });
 
+// Máscara CPF
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
     let v = input.value.replace(/\D/g, '');
@@ -21,17 +22,17 @@ function aplicarMascaraCPF(input) {
   });
 }
 
+// Máscara Placa
 function aplicarMascaraPlaca(input) {
   input.addEventListener('input', () => {
     let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (v.length > 7) v = v.slice(0, 7);
-    if (v.length > 3) {
-      v = v.slice(0, 3) + '-' + v.slice(3);
-    }
+    if (v.length > 3) v = v.slice(0, 3) + '-' + v.slice(3);
     input.value = v;
   });
 }
 
+// Formatação de data/hora
 function formatarData(data) {
   if (!data) return '—';
   try {
@@ -45,38 +46,91 @@ function formatarData(data) {
   }
 }
 
-// === NOVA LINHA DO TEMPO SIMPLES ===
-function gerarLinhaTempoSimples(pedido) {
-  // Etapas padrão
+// === LINHA DO TEMPO PADRÃO FINAL COM TÍTULOS DUPLOS ===
+function gerarLinhaTempoCompleta(pedido) {
   const etapas = [
-    { key: 'Aguardando Início da Coleta', label: 'Aguardando Coleta', campoData: 'data_criacao' },
-    { key: 'Coleta Iniciada', label: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
-    { key: 'Aguardando Conferência do Peso', label: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
-    { key: 'Em Análise pelo Financeiro', label: 'Financeiro', campoData: 'data_financeiro' },
-    { key: 'Aguardando Emissão de NF', label: 'Emissão de Nota Fiscal', campoData: 'data_emissao_nf' },
-    { key: 'Finalizado', label: 'Finalizado', campoData: 'data_finalizado' }
+    {
+      key: 'Aguardando Início da Coleta',
+      titulos: [
+        'Aguardando chegada do cliente',
+        'Coleta iniciada'
+      ],
+      campoData: 'data_criacao'
+    },
+    {
+      key: 'Coleta Iniciada',
+      titulos: [
+        'Cliente está coletando o material',
+        'Coleta finalizada'
+      ],
+      campoData: 'data_coleta_iniciada'
+    },
+    {
+      key: 'Aguardando Conferência do Peso',
+      titulos: [
+        'Peso em conferência',
+        'Peso conferido'
+      ],
+      campoData: 'data_conferencia_peso'
+    },
+    {
+      key: 'Em Análise pelo Financeiro',
+      titulos: [
+        'Aguardando análise financeira',
+        'Pagamento confirmado'
+      ],
+      campoData: 'data_financeiro'
+    },
+    {
+      key: 'Aguardando Emissão de NF',
+      titulos: [
+        'Aguardando emissão de Nota Fiscal',
+        'Nota Fiscal emitida'
+      ],
+      campoData: 'data_emissao_nf'
+    },
+    {
+      key: 'Finalizado',
+      titulos: [
+        'Pedido finalizado',
+        'Pedido finalizado'
+      ],
+      campoData: 'data_finalizado'
+    }
   ];
 
-  // Qual etapa está ativa?
+  // Descobre qual etapa está ativa
   const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  let html = `
-    <div class="timeline-simples">
+  let html = `<div class="timeline-simples">
       <div class="timeline-bar-bg"></div>
       <div class="timeline-bar-fg"></div>
   `;
 
   etapas.forEach((etapa, idx) => {
+    const isConcluded = idx < idxAtivo;
+    const isActive = idx === idxAtivo;
+
     let statusClass = '';
-    if (idx < idxAtivo) statusClass = 'done';
-    else if (idx === idxAtivo) statusClass = 'active';
+    if (isConcluded) statusClass = 'done';
+    else if (isActive) statusClass = 'active';
+
+    // Decide qual título mostrar
+    let titulo = '';
+    if (isActive) {
+      titulo = etapa.titulos[0]; // Explicativo/azul
+    } else if (isConcluded) {
+      titulo = etapa.titulos[1]; // Objetivo/verde
+    } else {
+      titulo = etapa.titulos[0]; // Futuro/cinza
+    }
 
     html += `
       <div class="timeline-step ${statusClass}">
         <div class="dot">
-          ${statusClass === 'done' ? '<span style="font-size:20px;">&#10003;</span>' : ''}
+          ${isConcluded ? '<span style="font-size:20px;">&#10003;</span>' : ''}
         </div>
-        <div class="label">${etapa.label}</div>
+        <div class="label">${titulo}</div>
         <div class="data">${formatarData(pedido[etapa.campoData])}</div>
       </div>
     `;
@@ -86,6 +140,7 @@ function gerarLinhaTempoSimples(pedido) {
   return html;
 }
 
+// === ANIMAÇÃO DA BARRA DE PROGRESSO ===
 function animarLinhaProgresso(container) {
   const steps = container.querySelectorAll('.timeline-step');
   const fg = container.querySelector('.timeline-bar-fg');
@@ -101,18 +156,12 @@ function animarLinhaProgresso(container) {
     const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    // Posição central da bolinha (top)
-    const dotHeight = firstDot.height;
-    const lineHeight = bg.offsetHeight || 7; // mesmo valor do CSS
-    const topValue = (firstDot.top - containerRect.top) + (dotHeight / 2) - (lineHeight / 2);
-
     // Linha só entre a 1ª e a última bolinha!
     const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
     const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
 
     bg.style.left = `${start}px`;
     bg.style.width = `${end - start}px`;
-    bg.style.top = `${topValue}px`;
 
     // Linha verde vai até a última "feita"
     if (ultimoFeito > 0) {
@@ -120,13 +169,13 @@ function animarLinhaProgresso(container) {
       const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
       fg.style.left = `${start}px`;
       fg.style.width = `${done - start}px`;
-      fg.style.top = `${topValue}px`;
     } else {
       fg.style.width = '0';
     }
   }
 }
 
+// ==== VERIFICAÇÃO DE CPF ====
 async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
   const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
@@ -192,6 +241,7 @@ async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
   }
 }
 
+// ==== CARREGAMENTO DOS PEDIDOS E FORMULÁRIO ====
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
@@ -235,15 +285,15 @@ async function carregarPedidosPortaria() {
     header.appendChild(btnStatus);
     card.appendChild(header);
 
-    // Linha do tempo
-    card.innerHTML += gerarLinhaTempoSimples(pedido);
+    // Linha do tempo NOVA
+    card.innerHTML += gerarLinhaTempoCompleta(pedido);
 
-    // Após renderizar, animar a linha
     setTimeout(() => {
       const timeline = card.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
+    // Formulário (apenas para quem pode iniciar)
     if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
@@ -306,6 +356,7 @@ async function carregarPedidosPortaria() {
   });
 }
 
+// ==== DINÂMICA DE AJUDANTES ====
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.dataset.pedido;
@@ -352,6 +403,7 @@ document.addEventListener('change', function (e) {
   }
 });
 
+// ==== REGISTRO DE COLETA ====
 async function registrarColeta(pedidoId, botao) {
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
   if (!confirmar) return;
