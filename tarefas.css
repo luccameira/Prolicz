@@ -788,91 +788,75 @@ input[type="file"]::file-selector-button:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 34px 0 0 0;
-  padding: 0 24px 18px 24px;
-  background: none;
+  margin: 32px 0 20px 0;
+  min-width: 620px;
+  background: #fff;
 }
 
-.timeline-bar-bg {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 9px; /* MAIS GROSSA */
-  background: #e6e8ea;
-  border-radius: 5px;
-  z-index: 1;
-  transform: translateY(-50%);
-}
-
-/* Linha verde do progresso */
+.timeline-bar-bg,
 .timeline-bar-fg {
   position: absolute;
   top: 50%;
   left: 0;
-  height: 9px; /* MAIS GROSSA */
-  background: #1c7430;
-  border-radius: 5px;
-  z-index: 2;
+  height: 7px;           /* Espessura da linha */
+  border-radius: 4px;
   transform: translateY(-50%);
-  transition: width 0.4s;
+  background: #e6e8ea;
+  z-index: 0;
+  width: 100%;
+}
+.timeline-bar-fg {
+  background: #24502a; /* Verde escuro corporativo */
+  z-index: 1;
+  transition: width 0.3s;
 }
 
 .timeline-step {
   position: relative;
   flex: 1 1 0;
   text-align: center;
-  z-index: 3;
-  background: none;
+  z-index: 2;
 }
-
 .timeline-step .dot {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
+  border: 3.5px solid #ccc;
   background: #fff;
-  border: 3px solid #cccccc;
-  margin: 0 auto;
+  margin: 0 auto 4px auto;
   position: relative;
-  z-index: 4;
+  z-index: 2;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  color: #cccccc;
-  box-sizing: border-box;
-}
-
-.timeline-step.done .dot {
-  border-color: #1c7430;
-  background: #1c7430;
+  font-size: 19px;
   color: #fff;
 }
-
+.timeline-step.done .dot {
+  background: #24502a;
+  border-color: #24502a;
+}
 .timeline-step.active .dot {
-  border-color: #1976d2;
   background: #fff;
-  color: #1976d2;
+  border-color: #2963b5;
 }
-
+.timeline-step .dot i {
+  color: #fff;
+  font-size: 18px;
+}
 .timeline-step .label {
-  margin-top: 8px;
+  font-weight: bold;
   font-size: 16px;
-  font-weight: 700;
-  color: #23272f;
-  white-space: pre-line;
+  color: #222;
 }
-
-.timeline-step .data {
+.timeline-step .date {
   font-size: 13px;
-  color: #888;
-  margin-top: 3px;
-  min-height: 18px;
+  color: #999;
 }
-
 .timeline-step:not(:first-child) {
-  margin-left: 0;
+  /* Remove gap extra */
 }
-.timeline-step:not(:last-child) {
-  margin-right: 0;
+.timeline-step:last-child .dot {
+  /* Corrige arredondamento da última bolinha, se necessário */
 }
