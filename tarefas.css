@@ -783,68 +783,53 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* ==== LINHA DO TEMPO - PROLICZ FINAL CORRIGIDA ==== */
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center; /* <-- Centraliza perfeitamente */
   margin: 28px 0 16px 0;
   background: #fff;
   border-radius: 10px 10px 0 0;
   padding: 0 32px;
   min-width: 480px;
   position: relative;
+  height: 90px; /* altura total: ajuste se necessário */
+}
+
+.timeline-prolicz-track {
+  position: absolute;
+  left: 46px; /* padding + raio do círculo */
+  right: 46px;
+  top: 50%;
+  height: 4px;
+  background: #e6e8ea;
+  z-index: 0;
+  transform: translateY(-50%);
+  border-radius: 2px;
+}
+
+/* Linha verde do progresso */
+.timeline-prolicz-track-green {
+  position: absolute;
+  left: 46px;
+  top: 50%;
+  height: 4px;
+  background: #219653;
+  z-index: 1;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  /* width será setada pelo JS */
 }
 
 .timeline-prolicz-step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 0;
   position: relative;
   z-index: 3;
+  flex: 1 1 0;
 }
 
-/* LINHA À ESQUERDA DA BOLINHA */
-.timeline-prolicz-step:not(.first)::before {
-  content: '';
-  position: absolute;
-  top: 31.5%;
-  left: 0;
-  width: 50%;
-  height: 4px;
-  background: #e6e8ea;
-  z-index: 1;
-  transform: translateY(-50%);
-}
-.timeline-prolicz-step.concluded:not(.first)::before {
-  background: #219653;
-}
-
-/* LINHA À DIREITA DA BOLINHA */
-.timeline-prolicz-step:not(.last)::after {
-  content: '';
-  position: absolute;
-  top: 31.5%;
-  left: 50%;
-  width: 50%;
-  height: 4px;
-  background: #e6e8ea;
-  z-index: 1;
-  transform: translateY(-50%);
-}
-.timeline-prolicz-step.concluded:not(.last)::after {
-  background: #219653;
-}
-
-.timeline-prolicz-step.active:not(.first)::before {
-  background: #219653;
-}
-.timeline-prolicz-step.active:not(.last)::after {
-  background: #e6e8ea;
-}
-
-/* BOLINHAS (CÍRCULOS) */
 .timeline-prolicz-step .circle {
   width: 28px;
   height: 28px;
@@ -867,7 +852,7 @@ input[type="file"]::file-selector-button:hover {
   font-size: 14px;
 }
 
-/* CONCLUÍDO */
+/* Concluído */
 .timeline-prolicz-step.concluded .circle {
   background: #219653;
   border-color: #219653;
@@ -881,8 +866,7 @@ input[type="file"]::file-selector-button:hover {
 .timeline-prolicz-step.concluded .data {
   color: #444;
 }
-
-/* ATIVO */
+/* Ativo */
 .timeline-prolicz-step.active .circle {
   background: #fff;
   border-color: #2563eb;
@@ -894,8 +878,7 @@ input[type="file"]::file-selector-button:hover {
   color: #2563eb;
   font-weight: bold;
 }
-
-/* FUTURO / NÃO ATIVO */
+/* Futuro */
 .timeline-prolicz-step:not(.active):not(.concluded) .circle {
   background: #e6e8ea;
   border-color: #e6e8ea;
@@ -909,8 +892,7 @@ input[type="file"]::file-selector-button:hover {
 .timeline-prolicz-step:not(.active):not(.concluded) .data {
   color: #e4e6eb;
 }
-
-/* LABELS */
+/* Labels e datas */
 .timeline-label,
 .timeline-prolicz-step .label {
   margin-top: 2px;
@@ -934,8 +916,6 @@ input[type="file"]::file-selector-button:hover {
   color: #219653 !important;
   font-weight: bold;
 }
-
-/* DATAS */
 .timeline-prolicz-step .data {
   font-size: 13px;
   color: #7b858e;
@@ -944,12 +924,12 @@ input[type="file"]::file-selector-button:hover {
   min-height: 19px;
 }
 
-/* RESPONSIVO */
+/* Responsivo - ajuste só se precisar */
 @media (max-width: 800px) {
   .timeline-prolicz {
     padding: 14px 2vw 4px 2vw;
-    flex-wrap: wrap;
     min-width: 0;
+    height: 75px;
   }
   .timeline-label,
   .timeline-prolicz-step .label {
@@ -968,3 +948,4 @@ input[type="file"]::file-selector-button:hover {
     font-size: 12px;
   }
 }
+
