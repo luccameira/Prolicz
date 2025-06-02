@@ -85,6 +85,7 @@ function gerarLinhaTempoSimples(pedido) {
   html += `</div>`;
   return html;
 }
+
 function animarLinhaProgresso(container) {
   const steps = container.querySelectorAll('.timeline-step');
   const fg = container.querySelector('.timeline-bar-fg');
@@ -100,26 +101,26 @@ function animarLinhaProgresso(container) {
     const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    // Centraliza do centro da primeira até o centro da última bolinha
+    // Posição central da bolinha (top)
+    const dotHeight = firstDot.height;
+    const lineHeight = bg.offsetHeight || 7; // mesmo valor do CSS
+    const topValue = (firstDot.top - containerRect.top) + (dotHeight / 2) - (lineHeight / 2);
+
+    // Linha só entre a 1ª e a última bolinha!
     const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
     const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
 
-    // Linha cinza (base)
-    bg.style.position = 'absolute';
     bg.style.left = `${start}px`;
     bg.style.width = `${end - start}px`;
-    bg.style.top = '50%';
-    bg.style.transform = 'translateY(-50%)';
+    bg.style.top = `${topValue}px`;
 
-    // Linha verde (progresso)
+    // Linha verde vai até a última "feita"
     if (ultimoFeito > 0) {
       const doneDot = steps[ultimoFeito].querySelector('.dot').getBoundingClientRect();
       const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
-      fg.style.position = 'absolute';
       fg.style.left = `${start}px`;
       fg.style.width = `${done - start}px`;
-      fg.style.top = '50%';
-      fg.style.transform = 'translateY(-50%)';
+      fg.style.top = `${topValue}px`;
     } else {
       fg.style.width = '0';
     }
