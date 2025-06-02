@@ -783,40 +783,46 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
+/* ===== Linha do Tempo Prolicz ===== */
+
 .timeline-prolicz {
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
   background: #fff;
-  padding: 28px 32px 0 32px;
-  margin-bottom: 10px;
+  padding: 0 32px;
+  margin: 32px 0 16px 0;
   border-radius: 10px 10px 0 0;
   min-width: 480px;
-  height: 90px;
+  height: 110px; /* altura ajustada para centralizar verticalmente */
+  box-sizing: border-box;
 }
 
 /* Linha base (cinza) */
 .timeline-prolicz-track {
   position: absolute;
-  top: 47px; /* centro vertical das bolinhas */
+  top: 50%;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 7px; /* MAIS GROSSA */
   background: #e6e8ea;
   z-index: 1;
+  border-radius: 4px;
+  transform: translateY(-50%);
 }
 
 /* Linha verde de progresso */
 .timeline-prolicz-track-green {
   position: absolute;
-  top: 47px;
+  top: 50%;
   left: 0;
-  height: 4px;
-  background: #1ecc41;
+  height: 7px; /* MAIS GROSSA */
+  background: #199143; /* VERDE MAIS ESCURO E CORPORATIVO */
   z-index: 2;
-  border-radius: 2px;
+  border-radius: 4px;
   transition: width 0.3s;
+  transform: translateY(-50%);
 }
 
 /* Step da linha do tempo */
@@ -843,37 +849,40 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
   z-index: 4;
   transition: border-color 0.3s, background 0.3s, color 0.3s;
+  box-sizing: border-box;
+  margin-bottom: 7px; /* pequeno gap para legenda */
 }
 
-/* Ativo */
+/* Step ativo */
 .timeline-prolicz-step.active .circle {
   border-color: #2076fa;
   color: #2076fa;
   background: #fff;
 }
 
-/* Concluído */
+/* Step concluído */
 .timeline-prolicz-step.concluded .circle {
-  border-color: #1ecc41;
-  background: #1ecc41;
+  border-color: #199143; /* verde escuro, igual ao progresso */
+  background: #199143;
   color: #fff;
 }
 
-/* Futuro */
+/* Step futuro */
 .timeline-prolicz-step .circle {
   color: #c2c2c2;
 }
 
 /* Legenda/títulos */
 .timeline-label {
-  margin-top: 5px;
+  margin-top: 2px;
   font-size: 14px;
   font-weight: 500;
   min-height: 20px;
   text-align: center;
   color: #999;
-  min-width: 100px;
+  min-width: 110px;
   max-width: 120px;
+  line-height: 1.22;
 }
 
 .timeline-label-ativo {
@@ -881,7 +890,7 @@ input[type="file"]::file-selector-button:hover {
   font-weight: bold;
 }
 .timeline-label-concluido {
-  color: #1ecc41;
+  color: #199143; /* verde escuro */
   font-weight: bold;
 }
 .timeline-label-futuro {
@@ -893,4 +902,20 @@ input[type="file"]::file-selector-button:hover {
   font-size: 13px;
   color: #aaa;
   margin-top: 3px;
+  line-height: 1.1;
 }
+
+/* RESPONSIVIDADE: Reduz espaço lateral em telas pequenas */
+@media (max-width: 650px) {
+  .timeline-prolicz {
+    padding: 0 6px;
+    min-width: 0;
+    height: 100px;
+  }
+  .timeline-label {
+    min-width: 70px;
+    font-size: 13px;
+  }
+}
+
+/* ===== FIM Linha do Tempo Prolicz ===== */
