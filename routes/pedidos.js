@@ -27,18 +27,30 @@ function formatarDataBRparaISO(dataBR) {
 
 // Rota GET /api/pedidos/portaria
 router.get('/portaria', async (req, res) => {
-  const sql = `
-    SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
-      p.ticket_balanca,
-      c.nome_fantasia AS cliente
-    FROM pedidos p
-    INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE DATE(p.data_coleta) = CURDATE()
-    ORDER BY p.data_coleta ASC
-  `;
   try {
+    const sql = `
+      SELECT 
+        p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+        p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+        p.ticket_balanca,
+        c.nome_fantasia AS cliente
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      WHERE DATE(p.data_coleta) = CURDATE()
+      ORDER BY 
+        CASE 
+          WHEN p.status = 'Aguardando Início da Coleta' THEN 1
+          WHEN p.status = 'Coleta Iniciada' THEN 2
+          WHEN p.status = 'Coleta Finalizada' THEN 3
+          WHEN p.status = 'Aguardando Conferência do Peso' THEN 4
+          WHEN p.status = 'Em Análise pelo Financeiro' THEN 5
+          WHEN p.status = 'Aguardando Emissão de NF' THEN 6
+          WHEN p.status = 'Finalizado' THEN 7
+          ELSE 99
+        END,
+        p.data_coleta ASC
+    `;
+
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
   } catch (err) {
