@@ -62,7 +62,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
   );
 
   try {
-    const res = await fetch(`/api/motoristas/cpf/${cpf}`);
+    const res = await fetch(`/api/motoristas/${cpf}`);
     const data = await res.json();
 
     if (data && data.nome) {
