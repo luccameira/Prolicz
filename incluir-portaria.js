@@ -126,14 +126,12 @@ async function carregarPedidosPortaria() {
     return;
   }
 
-  // ✅ Ordena: não finalizados primeiro, finalizados por último
   pedidos.sort((a, b) => {
     const prioridade = status => status === 'Finalizado' ? 1 : 0;
     return prioridade(a.status) - prioridade(b.status);
   });
 
   pedidos.forEach(pedido => {
-
     const pedidoId = pedido.pedido_id || pedido.id;
     const status = pedido.status;
     const podeIniciarColeta = status === 'Aguardando Início da Coleta';
@@ -185,6 +183,10 @@ async function carregarPedidosPortaria() {
       const timeline = card.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
+
+    lista.appendChild(card);
+  });
+}
 
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
