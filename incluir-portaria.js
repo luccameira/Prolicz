@@ -116,7 +116,8 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
-  const pedidos = await res.json();
+  let pedidos = await res.json();
+
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
@@ -125,7 +126,14 @@ async function carregarPedidosPortaria() {
     return;
   }
 
+  // ✅ Ordena: não finalizados primeiro, finalizados por último
+  pedidos.sort((a, b) => {
+    const prioridade = status => status === 'Finalizado' ? 1 : 0;
+    return prioridade(a.status) - prioridade(b.status);
+  });
+
   pedidos.forEach(pedido => {
+
     const pedidoId = pedido.pedido_id || pedido.id;
     const status = pedido.status;
     const podeIniciarColeta = status === 'Aguardando Início da Coleta';
@@ -146,26 +154,29 @@ async function carregarPedidosPortaria() {
       <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
     `;
 
-   const btnStatus = document.createElement('div');
+    const btnStatus = document.createElement('div');
+    let corStatus, corTexto, textoStatus;
 
-let corStatus = '#ffc107';
-let corTexto = '#222';
-let textoStatus = 'Aguardando Início da Coleta';
+    if (status === 'Coleta Iniciada') {
+      corStatus = '#28a745';
+      corTexto = '#fff';
+      textoStatus = 'Coleta Iniciada';
+    } else if (status === 'Aguardando Início da Coleta') {
+      corStatus = '#ffc107';
+      corTexto = '#222';
+      textoStatus = 'Aguardando Início da Coleta';
+    }
 
-if (status === 'Coleta Iniciada') {
-  corStatus = '#28a745';
-  corTexto = '#fff';
-  textoStatus = 'Coleta Iniciada';
-}
-
-btnStatus.innerHTML = `
-  <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
-    <i class="fa fa-truck"></i> ${textoStatus}
-  </div>
-`;
+    if (textoStatus) {
+      btnStatus.innerHTML = `
+        <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
+          <i class="fa fa-truck"></i> ${textoStatus}
+        </div>
+      `;
+    }
 
     header.appendChild(info);
-    header.appendChild(btnStatus);
+    if (textoStatus) header.appendChild(btnStatus);
     card.appendChild(header);
 
     card.innerHTML += gerarLinhaTempoCompleta(pedido);
@@ -174,68 +185,6 @@ btnStatus.innerHTML = `
       const timeline = card.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
-
-        if (podeIniciarColeta) {
-      const form = document.createElement('div');
-      form.className = 'formulario';
-      form.style.display = 'block';
-      form.style.padding = '0 22px 20px 22px';
-
-      form.innerHTML = `
-        <div style="display: flex; align-items: flex-end; gap: 12px;">
-          <div style="max-width: 300px; flex: none;">
-            <label>CPF do Motorista</label>
-            <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
-          </div>
-          <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
-        </div>
-        <div id="bloco-form-${pedidoId}" class="subcard" style="display: none; margin-top: 25px; padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px;">
-          <div style="display: flex; gap: 20px;">
-            <div style="flex: 1;">
-              <label>Nome do Motorista</label>
-              <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
-            </div>
-            <div style="flex: 1;">
-              <label>Placa do Veículo</label>
-              <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
-            </div>
-          </div>
-          <label style="margin-top: 12px;">Foto do Caminhão</label>
-          <div class="upload-wrapper" style="position: relative;">
-            <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
-          </div>
-          <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
-            <label>Ficha de Integração Assinada (motorista)</label>
-            <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*" required></div>
-          </div>
-          <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
-            <label>Foto do Documento (motorista)</label>
-            <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*" required></div>
-          </div>
-          <label style="margin-top: 12px;">Tem Ajudante?</label>
-          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
-          <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
-          <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
-        </div>
-      `;
-
-      aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
-      aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
-
-      header.addEventListener('click', () => {
-        form.style.display = form.style.display === 'block' ? 'none' : 'block';
-      });
-
-      card.appendChild(form);
-    }
-
-    lista.appendChild(card);
-  });
-}
 
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
