@@ -57,10 +57,21 @@ function renderizarPedidos(lista) {
     if (p.status === 'Coleta Iniciada') {
       const form = document.createElement('div');
       form.className = 'formulario';
-      form.id = `form-${p.id || p.pedido_id}`;
+      form.id = `form-${p.id}`;
 
-      const materiais = p.materiais || p.itens || p.produtos || [];
-      if (Array.isArray(materiais) && materiais.length > 0) {
+      const materiais = [];
+
+      if (p.produto && p.peso_previsto) {
+        materiais.push({
+          id: p.id,
+          nome_produto: p.produto,
+          quantidade: parseFloat(p.peso_previsto),
+          unidade: 'kg',
+          tipo_peso: 'Aproximado'
+        });
+      }
+
+      if (materiais.length > 0) {
         materiais.forEach((item, index) => {
           const itemId = item.id;
           if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
@@ -72,12 +83,12 @@ function renderizarPedidos(lista) {
             <div class="material-bloco" data-item-id="${itemId}">
               <h4>${item.nome_produto}</h4>
               <p>
-                <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}
+                <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade}
                 ${icone}
               </p>
               <div class="linha-peso">
-                <label for="peso-${p.id || p.pedido_id}-${index}">Peso Carregado (kg):</label>
-                <input type="number" id="peso-${p.id || p.pedido_id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
+                <label for="peso-${p.id}-${index}">Peso Carregado (kg):</label>
+                <input type="number" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
               </div>
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
               <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
@@ -87,22 +98,21 @@ function renderizarPedidos(lista) {
 
         form.innerHTML += `
           <div class="upload-ticket">
-            <label for="ticket-${p.id || p.pedido_id}">Foto do Ticket da Balança:</label>
-            <input type="file" id="ticket-${p.id || p.pedido_id}" accept="image/*">
+            <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
+            <input type="file" id="ticket-${p.id}" accept="image/*">
           </div>
-          <button class="btn btn-registrar" onclick="registrarPeso(${p.id || p.pedido_id})">Registrar Peso</button>
+          <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
         `;
       } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
 
-     form.style.display = 'none';
-card.addEventListener('click', (e) => {
-  // Garante que o clique foi no card, mas não em um botão dentro dele
-  if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
-    form.style.display = form.style.display === 'block' ? 'none' : 'block';
-  }
-});
+      form.style.display = 'none';
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
+          form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+      });
 
       card.appendChild(form);
     }
@@ -191,8 +201,6 @@ function atualizarDescontoItem(itemId, index) {
     unidade = 'unidade';
     labelTexto = 'Qtd. Paletes Grandes';
     pesoPorUnidade = 14.37;
-  } else {
-    pesoPorUnidade = 1;
   }
 
   label.textContent = labelTexto;
@@ -260,7 +268,6 @@ async function registrarPeso(pedidoId) {
   }
 }
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
