@@ -49,25 +49,31 @@ function renderizarPedidos(lista) {
     `;
     div.appendChild(header);
 
-    // 2. Linha do tempo padronizada (timeline)
-    div.innerHTML += gerarLinhaTempoCompleta(p);
-    setTimeout(() => {
-      const timeline = div.querySelector('.timeline-simples');
-      if (timeline) animarLinhaProgresso(timeline);
-    }, 20);
+    // 1. Header (já adicionado)
+div.appendChild(header);
 
-    // 3. Status visual (badge)
-    const statusHtml =
-      p.status === 'Aguardando Conferência do Peso'
-        ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
-        : p.status === 'Coleta Iniciada'
-        ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
-        : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
+// 2. Timeline (cria, converte e adiciona corretamente)
+const tempDiv = document.createElement('div');
+tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
+const timelineElem = tempDiv.firstElementChild;
+div.appendChild(timelineElem);
+setTimeout(() => {
+  if (timelineElem) animarLinhaProgresso(timelineElem);
+}, 20);
 
-    const statusDiv = document.createElement('div');
-    statusDiv.innerHTML = statusHtml;
-    statusDiv.style.textAlign = 'right';
-    div.appendChild(statusDiv);
+// 3. Status (badge, normalizado)
+const statusHtml =
+  p.status === 'Aguardando Conferência do Peso'
+    ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
+    : p.status === 'Coleta Iniciada'
+    ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
+    : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
+
+const statusDiv = document.createElement('div');
+statusDiv.innerHTML = statusHtml;
+statusDiv.style.textAlign = 'right';
+statusDiv.style.margin = '16px 0 0 0';
+div.appendChild(statusDiv);
 
     // 4. Exibe formulário SOMENTE se status === 'Coleta Iniciada'
     if (p.status === 'Coleta Iniciada') {
