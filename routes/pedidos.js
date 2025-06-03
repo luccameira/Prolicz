@@ -49,6 +49,15 @@ router.get('/portaria', async (req, res) => {
   `;
 
   try {
+    const [pedidos] = await db.query(sql);  // <-- só pode usar await dentro de async
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos da portaria:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
+  }
+});
+
+  try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
   } catch (err) {
