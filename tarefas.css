@@ -794,19 +794,17 @@ input[type="file"]::file-selector-button:hover {
   min-width: 540px;
 }
 
-/* Linha de fundo (cinza) e linha verde */
 .timeline-bar-bg, .timeline-bar-fg {
   position: absolute;
   left: 0;
   right: 0;
-  /* CENTRALIZA NO CENTRO DA BOLINHA */
-  top: 38px; /* valor EXATO para alinhar no meio da bolinha de 28px + 3px de borda */
-  height: 4px; /* grossura da linha igual ao padrão aprovado */
+  top: 52px;      /* Centralizado para bolinha de 28px (+3px de borda), padding-top 38px */
+  height: 7px;    /* Mais grossa: 7px visualmente profissional */
   background: #e6e8ea;
-  border-radius: 2px;
+  border-radius: 3.5px; /* metade da altura */
   z-index: 0;
   pointer-events: none;
-  transform: none !important; /* Remove translateY, que pode causar desalinhamento */
+  transform: none !important;
 }
 .timeline-bar-fg {
   background: #45b36b;
