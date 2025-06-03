@@ -46,55 +46,42 @@ function formatarData(data) {
   }
 }
 
-// === LINHA DO TEMPO PADRÃO FINAL COM TÍTULOS DUPLOS ===
+// ==== LINHA DO TEMPO FIXA (NOMES FIXOS, SEM TÍTULOS DINÂMICOS) ====
 function gerarLinhaTempoCompleta(pedido) {
   const etapas = [
     {
       key: 'Aguardando Início da Coleta',
-      titulos: [
-        'Aguardando chegada do cliente',
-        'Coleta iniciada'
-      ],
+      nome: 'Aguardando Coleta',
       campoData: 'data_criacao'
     },
     {
       key: 'Coleta Iniciada',
-      titulos: [
-        'Cliente está coletando o material',
-        'Coleta finalizada'
-      ],
+      nome: 'Coleta Iniciada',
       campoData: 'data_coleta_iniciada'
     },
     {
+      key: 'Coleta Finalizada',
+      nome: 'Coleta Finalizada',
+      campoData: 'data_coleta_finalizada'
+    },
+    {
       key: 'Aguardando Conferência do Peso',
-      titulos: [
-        'Peso em conferência',
-        'Peso conferido'
-      ],
+      nome: 'Conferência do Peso',
       campoData: 'data_conferencia_peso'
     },
     {
       key: 'Em Análise pelo Financeiro',
-      titulos: [
-        'Aguardando análise financeira',
-        'Pagamento confirmado'
-      ],
+      nome: 'Financeiro',
       campoData: 'data_financeiro'
     },
     {
       key: 'Aguardando Emissão de NF',
-      titulos: [
-        'Aguardando emissão de Nota Fiscal',
-        'Nota Fiscal emitida'
-      ],
+      nome: 'Emissão de Nota Fiscal',
       campoData: 'data_emissao_nf'
     },
     {
       key: 'Finalizado',
-      titulos: [
-        'Pedido finalizado',
-        'Pedido finalizado'
-      ],
+      nome: 'Finalizado',
       campoData: 'data_finalizado'
     }
   ];
@@ -115,22 +102,12 @@ function gerarLinhaTempoCompleta(pedido) {
     if (isConcluded) statusClass = 'done';
     else if (isActive) statusClass = 'active';
 
-    // Decide qual título mostrar
-    let titulo = '';
-    if (isActive) {
-      titulo = etapa.titulos[0]; // Explicativo/azul
-    } else if (isConcluded) {
-      titulo = etapa.titulos[1]; // Objetivo/verde
-    } else {
-      titulo = etapa.titulos[0]; // Futuro/cinza
-    }
-
     html += `
       <div class="timeline-step ${statusClass}">
         <div class="dot">
           ${isConcluded ? '<span style="font-size:20px;">&#10003;</span>' : ''}
         </div>
-        <div class="label">${titulo}</div>
+        <div class="label">${etapa.nome}</div>
         <div class="data">${formatarData(pedido[etapa.campoData])}</div>
       </div>
     `;
