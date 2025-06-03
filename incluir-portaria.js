@@ -47,7 +47,48 @@ function formatarData(data) {
 }
 
 // ==== VERIFICAÇÃO DE CPF ====
-// ... [função igual ao seu código acima] ...
+async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
+  const cpfInput = isAjudante
+    ? document.getElementById(`cpf-ajudante-${pedidoId}-${index}`)
+    : document.getElementById(`cpf-${pedidoId}`);
+
+  const cpf = cpfInput?.value?.replace(/\D/g, '');
+  if (!cpf || cpf.length < 11) return;
+
+  const statusDiv = document.getElementById(
+    isAjudante
+      ? `status-cadastro-ajudante-${index}`
+      : `status-cadastro-${pedidoId}`
+  );
+
+  try {
+    const res = await fetch(`/api/motoristas/cpf/${cpf}`);
+    const data = await res.json();
+
+    if (data && data.nome) {
+      if (!isAjudante) {
+        document.getElementById(`nome-${pedidoId}`).value = data.nome;
+        document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
+        document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
+      } else {
+        document.getElementById(`nome-ajudante-${index}`).value = data.nome;
+      }
+
+      statusDiv.innerHTML = `<span style="color: green; font-weight: 500;">Motorista já cadastrado</span>`;
+    } else {
+      statusDiv.innerHTML = `<span style="color: orange; font-weight: 500;">Cadastro necessário</span>`;
+      if (!isAjudante) {
+        document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
+      }
+    }
+
+    statusDiv.style.display = 'block';
+  } catch (error) {
+    console.error('Erro na verificação de CPF:', error);
+    statusDiv.innerHTML = `<span style="color: red; font-weight: 500;">Erro ao verificar CPF</span>`;
+    statusDiv.style.display = 'block';
+  }
+}
 
 // ==== CARREGAMENTO DOS PEDIDOS E FORMULÁRIO ====
 async function carregarPedidosPortaria() {
@@ -101,7 +142,7 @@ async function carregarPedidosPortaria() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    // Formulário (apenas para quem pode iniciar)
+        // Formulário (apenas para quem pode iniciar)
     if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
