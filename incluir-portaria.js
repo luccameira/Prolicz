@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
   monitorarUploads();
 });
 
-// Máscara CPF
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
     let v = input.value.replace(/\D/g, '');
@@ -22,7 +21,6 @@ function aplicarMascaraCPF(input) {
   });
 }
 
-// Máscara Placa
 function aplicarMascaraPlaca(input) {
   input.addEventListener('input', () => {
     let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -32,7 +30,6 @@ function aplicarMascaraPlaca(input) {
   });
 }
 
-// Formatação de data/hora
 function formatarData(data) {
   if (!data) return '—';
   try {
@@ -46,7 +43,6 @@ function formatarData(data) {
   }
 }
 
-// ==== VERIFICAÇÃO DE CPF ====
 async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
   const cpfInput = isAjudante
     ? document.getElementById(`cpf-ajudante-${pedidoId}-${index}`)
@@ -65,39 +61,42 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     const res = await fetch(`/api/motoristas/${cpf}`);
     const data = await res.json();
 
-    let mensagem = '';
-    let cor = '';
-    
+    let html = '';
     if (!data.encontrado) {
-      mensagem = 'Motorista não cadastrado';
-      cor = '#ff9800'; // Laranja
+      html = `<span style="background:#ff9800;color:#000;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟠 Motorista não cadastrado</span>`;
     } else if (data.cadastroVencido) {
-      mensagem = 'Cadastro vencido - necessário reenvio da ficha e foto';
-      cor = '#dc3545'; // Vermelho
+      html = `<span style="background:#dc3545;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
     } else {
-      mensagem = 'Motorista já cadastrado';
-      cor = '#28a745'; // Verde
+      html = `<span style="background:#28a745;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟢 Motorista já cadastrado</span>`;
     }
+
+    statusDiv.innerHTML = html;
+    statusDiv.style.display = 'block';
 
     if (!isAjudante) {
       document.getElementById(`nome-${pedidoId}`).value = data.nome || '';
       document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
       document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
-    } else {
-      document.getElementById(`nome-ajudante-${index}`).value = data.nome || '';
-    }
 
-    statusDiv.innerHTML = `<span style="color: ${cor}; font-weight: 500;">${mensagem}</span>`;
-    statusDiv.style.display = 'block';
+      const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
+      const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
+
+      if (!data.encontrado || data.cadastroVencido) {
+        grupoFicha.style.display = 'block';
+        grupoDoc.style.display = 'block';
+      } else {
+        grupoFicha.style.display = 'none';
+        grupoDoc.style.display = 'none';
+      }
+    }
 
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
-    statusDiv.innerHTML = `<span style="color: red; font-weight: 500;">Erro ao verificar CPF</span>`;
+    statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
     statusDiv.style.display = 'block';
   }
 }
 
-// ==== CARREGAMENTO DOS PEDIDOS E FORMULÁRIO ====
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
@@ -141,7 +140,6 @@ async function carregarPedidosPortaria() {
     header.appendChild(btnStatus);
     card.appendChild(header);
 
-    // Linha do tempo PADRONIZADA do timeline-prolicz.js
     card.innerHTML += gerarLinhaTempoCompleta(pedido);
 
     setTimeout(() => {
@@ -149,8 +147,7 @@ async function carregarPedidosPortaria() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-        // Formulário (apenas para quem pode iniciar)
-    if (podeIniciarColeta) {
+        if (podeIniciarColeta) {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.style.display = 'block';
@@ -212,7 +209,6 @@ async function carregarPedidosPortaria() {
   });
 }
 
-// ==== DINÂMICA DE AJUDANTES ====
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.dataset.pedido;
@@ -259,7 +255,6 @@ document.addEventListener('change', function (e) {
   }
 });
 
-// ==== REGISTRO DE COLETA ====
 async function registrarColeta(pedidoId, botao) {
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
   if (!confirmar) return;
@@ -351,5 +346,3 @@ function monitorarUploads() {
     }
   });
 }
-
-
