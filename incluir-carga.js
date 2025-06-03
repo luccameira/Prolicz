@@ -96,10 +96,13 @@ function renderizarPedidos(lista) {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
 
-      form.style.display = 'none';
-      header.addEventListener('click', () => {
-        form.style.display = form.style.display === 'block' ? 'none' : 'block';
-      });
+     form.style.display = 'none';
+card.addEventListener('click', (e) => {
+  // Garante que o clique foi no card, mas não em um botão dentro dele
+  if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
+    form.style.display = form.style.display === 'block' ? 'none' : 'block';
+  }
+});
 
       card.appendChild(form);
     }
