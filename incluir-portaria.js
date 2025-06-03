@@ -65,24 +65,31 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     const res = await fetch(`/api/motoristas/${cpf}`);
     const data = await res.json();
 
-    if (data && data.nome) {
-      if (!isAjudante) {
-        document.getElementById(`nome-${pedidoId}`).value = data.nome;
-        document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
-        document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
-      } else {
-        document.getElementById(`nome-ajudante-${index}`).value = data.nome;
-      }
-
-      statusDiv.innerHTML = `<span style="color: green; font-weight: 500;">Motorista já cadastrado</span>`;
+    let mensagem = '';
+    let cor = '';
+    
+    if (!data.encontrado) {
+      mensagem = 'Motorista não cadastrado';
+      cor = '#ff9800'; // Laranja
+    } else if (data.cadastroVencido) {
+      mensagem = 'Cadastro vencido - necessário reenvio da ficha e foto';
+      cor = '#dc3545'; // Vermelho
     } else {
-      statusDiv.innerHTML = `<span style="color: orange; font-weight: 500;">Cadastro necessário</span>`;
-      if (!isAjudante) {
-        document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
-      }
+      mensagem = 'Motorista já cadastrado';
+      cor = '#28a745'; // Verde
     }
 
+    if (!isAjudante) {
+      document.getElementById(`nome-${pedidoId}`).value = data.nome || '';
+      document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
+      document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
+    } else {
+      document.getElementById(`nome-ajudante-${index}`).value = data.nome || '';
+    }
+
+    statusDiv.innerHTML = `<span style="color: ${cor}; font-weight: 500;">${mensagem}</span>`;
     statusDiv.style.display = 'block';
+
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
     statusDiv.innerHTML = `<span style="color: red; font-weight: 500;">Erro ao verificar CPF</span>`;
