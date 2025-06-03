@@ -1,21 +1,3 @@
-function formatarPeso(valor) {
-  if (typeof valor !== 'number') valor = parseFloat(valor);
-  if (isNaN(valor)) return '0';
-  return Math.round(valor).toLocaleString('pt-BR');
-}
-
-let pedidos = [];
-let descontosPorItem = {};
-
-async function carregarPedidos() {
-  // Busca todos os pedidos do dia na carga
-  const res = await fetch('/api/pedidos/carga');
-  const listaPedidos = await res.json();
-  pedidos = listaPedidos;
-
-  renderizarPedidos(listaPedidos);
-}
-
 function renderizarPedidos(lista) {
   const listaEl = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
@@ -35,14 +17,27 @@ function renderizarPedidos(lista) {
     const div = document.createElement('div');
     div.className = 'card';
 
-    // === LINHA DO TEMPO PADRONIZADA ===
+    // 1. Header - título e subtítulo
+    const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    header.innerHTML = `
+      <div class="info">
+        <h3 style="font-size:19px; margin-bottom:2px;">${p.cliente}</h3>
+        <p style="font-size:15px; color:#888;">Data Prevista: ${dataFormatada}</p>
+      </div>
+    `;
+    div.appendChild(header);
+
+    // 2. Linha do tempo padronizada
+    // Adiciona a timeline DEPOIS do header
     div.innerHTML += gerarLinhaTempoCompleta(p);
     setTimeout(() => {
       const timeline = div.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
+    // 3. Status visual (badge de status, igual antes)
     const statusHtml =
       p.status === 'Aguardando Conferência do Peso'
         ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
@@ -50,24 +45,17 @@ function renderizarPedidos(lista) {
         ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
         : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
 
-    const header = document.createElement('div');
-    header.className = 'card-header';
-    header.innerHTML = `
-      <div class="info">
-        <h3>${p.cliente}</h3>
-        <p>Data Prevista: ${dataFormatada}</p>
-      </div>
-      ${statusHtml}
-    `;
-    div.appendChild(header);
+    const statusDiv = document.createElement('div');
+    statusDiv.innerHTML = statusHtml;
+    statusDiv.style.textAlign = 'right';
+    div.appendChild(statusDiv);
 
-    // Exibe formulário SOMENTE se status === 'Coleta Iniciada'
+    // 4. Exibe formulário SOMENTE se status === 'Coleta Iniciada'
     if (p.status === 'Coleta Iniciada') {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.id = `form-${p.id || p.pedido_id}`;
 
-      // Previne erro caso não venha materiais
       if (Array.isArray(p.materiais) && p.materiais.length > 0) {
         p.materiais.forEach((item, index) => {
           const itemId = item.id;
