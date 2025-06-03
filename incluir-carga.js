@@ -33,7 +33,7 @@ function renderizarPedidos(lista) {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // HEADER
+    // Cabeçalho com status no canto direito
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -41,10 +41,13 @@ function renderizarPedidos(lista) {
         <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
         <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
       </div>
+      <div class="status-box">
+        ${gerarBadgeStatus(p.status)}
+      </div>
     `;
     card.appendChild(header);
 
-    // LINHA DO TEMPO
+    // Linha do tempo
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
     const timeline = tempDiv.firstElementChild;
@@ -53,14 +56,7 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    // BADGE DE STATUS
-    const statusDiv = document.createElement('div');
-    statusDiv.innerHTML = gerarBadgeStatus(p.status);
-    statusDiv.style.textAlign = 'right';
-    statusDiv.style.margin = '18px 22px 0 0';
-    card.appendChild(statusDiv);
-
-    // FORMULÁRIO SE status === Coleta Iniciada
+    // Formulário de carga (se status = Coleta Iniciada)
     if (p.status === 'Coleta Iniciada') {
       const form = document.createElement('div');
       form.className = 'formulario';
