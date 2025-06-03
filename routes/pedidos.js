@@ -14,7 +14,7 @@ const storageTickets = multer.diskStorage({
   destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const nome = ticket_${Date.now()}${ext};
+    const nome = `ticket_${Date.now()}${ext}`;
     cb(null, nome);
   }
 });
@@ -22,12 +22,12 @@ const uploadTicket = multer({ storage: storageTickets });
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
-  return ${ano}-${mes}-${dia};
+  return `${ano}-${mes}-${dia}`;
 }
 
 // Rota GET /api/pedidos/portaria
 router.get('/portaria', async (req, res) => {
-  const sql = 
+  const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
@@ -37,7 +37,7 @@ router.get('/portaria', async (req, res) => {
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE DATE(p.data_coleta) = CURDATE()
     ORDER BY p.data_coleta ASC
-  ;
+  `;
   try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
@@ -49,7 +49,7 @@ router.get('/portaria', async (req, res) => {
 
 // ROTA CARGA (corrigida: todos os pedidos do dia)
 router.get('/carga', async (req, res) => {
-  const sql = 
+  const sql = `
     SELECT 
       p.id,
       c.nome_fantasia AS cliente,
@@ -63,7 +63,7 @@ router.get('/carga', async (req, res) => {
     WHERE DATE(p.data_coleta) = CURDATE()
     GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta, p.status
     ORDER BY p.data_coleta ASC
-  ;
+  `;
   try {
     const [results] = await db.query(sql);
     res.json(results);
@@ -77,7 +77,7 @@ router.get('/carga', async (req, res) => {
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
-  let sqlPedidos = 
+  let sqlPedidos = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa,
@@ -85,7 +85,7 @@ router.get('/', async (req, res) => {
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE 1 = 1
-  ;
+  `;
   const params = [];
 
   if (cliente) {
@@ -112,17 +112,17 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
-         WHERE pedido_id = ?,
+         WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
 
       for (const item of materiais) {
         const [descontos] = await db.query(
-          SELECT motivo, quantidade, peso_calculado
+          `SELECT motivo, quantidade, peso_calculado
            FROM descontos_item_pedido
-           WHERE item_id = ?,
+           WHERE item_id = ?`,
           [item.id]
         );
         item.descontos = descontos || [];
@@ -133,7 +133,7 @@ router.get('/', async (req, res) => {
 
       // Ajuste para buscar os prazos do pedido
       const [prazosPedido] = await db.query(
-        SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?,
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
       pedido.prazos_pagamento = prazosPedido.map(prazo => {
@@ -159,7 +159,7 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
     const [produtos] = await db.query(
-      SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?,
+      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
       [clienteId]
     );
     res.json(produtos);
@@ -177,8 +177,8 @@ router.post('/', async (req, res) => {
   try {
     // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, NOW()),
+      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta']
     );
 
@@ -188,8 +188,8 @@ router.post('/', async (req, res) => {
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
-          INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
-           VALUES (?, ?, ?, ?, ?, ?, ?),
+          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             pedido_id,
             item.nome_produto,
@@ -223,7 +223,7 @@ router.post('/', async (req, res) => {
         }
 
         await db.query(
-          INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?),
+          `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
           [pedido_id, descricao.trim(), dias]
         );
       }
@@ -247,13 +247,13 @@ router.put('/:id/coleta', async (req, res) => {
 
   try {
     await db.query(
-      UPDATE pedidos 
+      `UPDATE pedidos 
        SET status = 'Coleta Iniciada', 
            placa_veiculo = ?, 
            nome_motorista = ?, 
            nome_ajudante = ?, 
            data_coleta_iniciada = NOW() 
-       WHERE id = ?,
+       WHERE id = ?`,
       [placa, motorista, ajudante || '', pedidoId]
     );
 
@@ -272,11 +272,11 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
 
   try {
     await db.query(
-      UPDATE pedidos
+      `UPDATE pedidos
        SET 
          ticket_balanca = ?, 
          status = 'Aguardando Conferência do Peso'
-       WHERE id = ?,
+       WHERE id = ?`,
       [nomeArquivo, id]
     );
 
@@ -285,22 +285,22 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
     if (Array.isArray(listaItens)) {
       for (const item of listaItens) {
         await db.query(
-          UPDATE itens_pedido 
+          `UPDATE itens_pedido 
            SET peso_carregado = ? 
-           WHERE id = ?,
+           WHERE id = ?`,
           [item.peso_carregado, item.item_id]
         );
 
         await db.query(
-          DELETE FROM descontos_item_pedido WHERE item_id = ?,
+          `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
           [item.item_id]
         );
 
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
             await db.query(
-              INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
-               VALUES (?, ?, ?, ?),
+              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
+               VALUES (?, ?, ?, ?)`,
               [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
             );
           }
@@ -343,7 +343,7 @@ router.put('/:id/financeiro', async (req, res) => {
 
   try {
     await db.query(
-      UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?,
+      `UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?`,
       ['Aguardando Emissão de NF', observacoes_financeiro, id]
     );
 
@@ -381,7 +381,7 @@ router.delete('/:id', async (req, res) => {
 
 // GET /api/pedidos/conferencia
 router.get('/conferencia', async (req, res) => {
-  const sql = 
+  const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa,
@@ -390,7 +390,7 @@ router.get('/conferencia', async (req, res) => {
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE p.status = 'Aguardando Conferência do Peso'
     ORDER BY p.data_coleta ASC
-  ;
+  `;
   try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
@@ -402,7 +402,7 @@ router.get('/conferencia', async (req, res) => {
 
 // GET /api/pedidos/financeiro
 router.get('/financeiro', async (req, res) => {
-  const sql = 
+  const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa,
@@ -411,7 +411,7 @@ router.get('/financeiro', async (req, res) => {
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE p.status = 'Em Análise pelo Financeiro'
     ORDER BY p.data_coleta ASC
-  ;
+  `;
   try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
@@ -423,7 +423,7 @@ router.get('/financeiro', async (req, res) => {
 
 // GET /api/pedidos/nf
 router.get('/nf', async (req, res) => {
-  const sql = 
+  const sql = `
     SELECT 
       p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
       p.codigo_interno, p.observacao, p.empresa,
@@ -432,7 +432,7 @@ router.get('/nf', async (req, res) => {
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE p.status = 'Aguardando Emissão de NF'
     ORDER BY p.data_coleta ASC
-  ;
+  `;
   try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
