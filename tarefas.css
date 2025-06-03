@@ -788,28 +788,32 @@ input[type="file"]::file-selector-button:hover {
   justify-content: space-between;
   align-items: flex-start;
   position: relative;
-  padding: 38px 32px 18px 32px; /* ajuste o padding superior conforme necessário */
+  padding: 38px 32px 18px 32px;
   background: #fff;
   border-radius: 10px 10px 0 0;
   min-width: 540px;
 }
 
+/* Linha de fundo (cinza) e linha verde */
 .timeline-bar-bg, .timeline-bar-fg {
   position: absolute;
-  height: 4px;
-  top: 50%;
   left: 0;
+  right: 0;
+  /* CENTRALIZA NO CENTRO DA BOLINHA */
+  top: 38px; /* valor EXATO para alinhar no meio da bolinha de 28px + 3px de borda */
+  height: 4px; /* grossura da linha igual ao padrão aprovado */
   background: #e6e8ea;
   border-radius: 2px;
-  transform: translateY(-50%);
   z-index: 0;
   pointer-events: none;
+  transform: none !important; /* Remove translateY, que pode causar desalinhamento */
 }
 .timeline-bar-fg {
   background: #45b36b;
   z-index: 1;
 }
 
+/* As bolinhas */
 .timeline-step {
   display: flex;
   flex-direction: column;
@@ -818,7 +822,6 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
   z-index: 2;
 }
-
 .timeline-step .dot {
   width: 28px;
   height: 28px;
@@ -843,6 +846,7 @@ input[type="file"]::file-selector-button:hover {
   border-color: #007bff;
 }
 
+/* Textos */
 .timeline-step .label {
   margin-top: 8px;
   font-size: 15px;
@@ -856,3 +860,4 @@ input[type="file"]::file-selector-button:hover {
   color: #888;
   text-align: center;
 }
+
