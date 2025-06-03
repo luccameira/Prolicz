@@ -1,3 +1,23 @@
+function formatarPeso(valor) {
+  if (typeof valor !== 'number') valor = parseFloat(valor);
+  if (isNaN(valor)) return '0';
+  return Math.round(valor).toLocaleString('pt-BR');
+}
+
+let pedidos = [];
+let descontosPorItem = {};
+
+// ====== Carregamento dos pedidos ======
+async function carregarPedidos() {
+  // Busca todos os pedidos do dia na carga
+  const res = await fetch('/api/pedidos/carga');
+  const listaPedidos = await res.json();
+  pedidos = listaPedidos;
+
+  renderizarPedidos(listaPedidos);
+}
+
+// ====== Renderização dos cards ======
 function renderizarPedidos(lista) {
   const listaEl = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
@@ -29,15 +49,14 @@ function renderizarPedidos(lista) {
     `;
     div.appendChild(header);
 
-    // 2. Linha do tempo padronizada
-    // Adiciona a timeline DEPOIS do header
+    // 2. Linha do tempo padronizada (timeline)
     div.innerHTML += gerarLinhaTempoCompleta(p);
     setTimeout(() => {
       const timeline = div.querySelector('.timeline-simples');
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    // 3. Status visual (badge de status, igual antes)
+    // 3. Status visual (badge)
     const statusHtml =
       p.status === 'Aguardando Conferência do Peso'
         ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
@@ -104,7 +123,7 @@ function renderizarPedidos(lista) {
   });
 }
 
-// ====== Desconto Material ======
+// ====== Descontos por material ======
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const existentes = descontosPorItem[itemId].map(d => d.motivo);
@@ -192,6 +211,7 @@ function atualizarDescontoItem(itemId, index) {
   };
 }
 
+// ====== Registrar peso ======
 async function registrarPeso(pedidoId) {
   const pedido = pedidos.find(p => (p.id || p.pedido_id) === pedidoId);
   if (!pedido) return alert("Pedido não encontrado.");
@@ -245,10 +265,9 @@ async function registrarPeso(pedidoId) {
   }
 }
 
+// ====== Inicialização ======
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
-
-
