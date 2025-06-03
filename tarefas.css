@@ -783,103 +783,76 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 600 !important;
 }
 
-/* === LINHA DO TEMPO SIMPLES - PROLICZ === */
 .timeline-simples {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   position: relative;
-  min-height: 84px;
-  margin: 22px 0 10px 0;
+  padding: 38px 32px 18px 32px; /* ajuste o padding superior conforme necessário */
+  background: #fff;
+  border-radius: 10px 10px 0 0;
+  min-width: 540px;
 }
 
 .timeline-bar-bg, .timeline-bar-fg {
   position: absolute;
-  height: 7px;         /* Linha grossa */
-  border-radius: 3.5px;
+  height: 4px;
   top: 50%;
+  left: 0;
+  background: #e6e8ea;
+  border-radius: 2px;
   transform: translateY(-50%);
   z-index: 0;
-  left: 0; /* Valores definidos via JS */
-  width: 0;
-  transition: all 0.35s;
-}
-.timeline-bar-bg {
-  background: #dee1e7; /* cinza base */
+  pointer-events: none;
 }
 .timeline-bar-fg {
-  background: #245a28; /* verde escuro profissional */
+  background: #45b36b;
   z-index: 1;
 }
 
-/* Passos da timeline */
 .timeline-step {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 16.666%;        /* 6 passos - ajuste para mais/menos etapas */
-  min-width: 90px;
+  flex: 1 1 0;
+  position: relative;
   z-index: 2;
-  text-align: center;
-  background: transparent;
-  user-select: none;
 }
 
-/* Bolinha (dot) */
 .timeline-step .dot {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 3px solid #dee1e7;
+  border: 3px solid #e6e8ea;
   background: #fff;
-  margin-bottom: 6px;
-  margin-top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  color: #dee1e7;
-  transition: border 0.2s, background 0.2s, color 0.2s;
+  font-weight: bold;
+  font-size: 17px;
+  z-index: 3;
+  position: relative;
 }
 
-/* Passo concluído (verde) */
 .timeline-step.done .dot {
-  background: #245a28;
-  border-color: #245a28;
+  border-color: #45b36b;
+  background: #45b36b;
   color: #fff;
 }
-
-/* Passo ativo (azul) */
 .timeline-step.active .dot {
-  border-color: #2363ae;
-  background: #fff;
-  color: #2363ae;
+  border-color: #007bff;
 }
 
-/* Label e data */
 .timeline-step .label {
-  font-weight: 600;
+  margin-top: 8px;
   font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+}
+.timeline-step .data {
   margin-top: 2px;
-  color: #1a1a1a;
-}
-.timeline-step .data {
-  font-size: 12px;
+  font-size: 13px;
   color: #888;
-  margin-top: 1px;
-}
-
-/* Remove excesso de espaçamento e selects de texto */
-.timeline-step .dot,
-.timeline-step .label,
-.timeline-step .data {
-  user-select: none;
-  pointer-events: none;
-}
-
-@media (max-width: 900px) {
-  .timeline-step { min-width: 75px; font-size: 13px; }
-  .timeline-step .dot { width: 24px; height: 24px; font-size: 17px; }
-  .timeline-step .label { font-size: 13px; }
+  text-align: center;
 }
