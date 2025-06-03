@@ -7,17 +7,13 @@ function formatarPeso(valor) {
 let pedidos = [];
 let descontosPorItem = {};
 
-// ====== Carregamento dos pedidos ======
 async function carregarPedidos() {
-  // Busca todos os pedidos do dia na carga
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
   pedidos = listaPedidos;
-
   renderizarPedidos(listaPedidos);
 }
 
-// ====== Renderização dos cards ======
 function renderizarPedidos(lista) {
   const listaEl = document.getElementById('lista-pedidos');
   const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
@@ -34,45 +30,37 @@ function renderizarPedidos(lista) {
   listaEl.innerHTML = '';
 
   pedidosFiltrados.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'card';
+    const card = document.createElement('div');
+    card.className = 'card';
 
-    // 1. Header - título e subtítulo
-    const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
+    // HEADER
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
       <div class="info">
-        <h3 style="font-size:19px; margin-bottom:2px;">${p.cliente}</h3>
-        <p style="font-size:15px; color:#888;">Data Prevista: ${dataFormatada}</p>
+        <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
+        <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
       </div>
     `;
-    div.appendChild(header);
+    card.appendChild(header);
 
-    // 2. Timeline PADRÃO (usar sempre appendChild para não quebrar o card)
+    // LINHA DO TEMPO
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
-    const timelineElem = tempDiv.firstElementChild;
-    div.appendChild(timelineElem);
+    const timeline = tempDiv.firstElementChild;
+    card.appendChild(timeline);
     setTimeout(() => {
-      if (timelineElem) animarLinhaProgresso(timelineElem);
-    }, 20);
+      if (timeline) animarLinhaProgresso(timeline);
+    }, 10);
 
-    // 3. Badge de status (SEM expandir largura, SEM colar fora do card)
-    const statusHtml =
-      p.status === 'Aguardando Conferência do Peso'
-        ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
-        : p.status === 'Coleta Iniciada'
-        ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
-        : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
-
+    // BADGE DE STATUS
     const statusDiv = document.createElement('div');
-    statusDiv.innerHTML = statusHtml;
+    statusDiv.innerHTML = gerarBadgeStatus(p.status);
     statusDiv.style.textAlign = 'right';
     statusDiv.style.margin = '18px 22px 0 0';
-    div.appendChild(statusDiv);
+    card.appendChild(statusDiv);
 
-    // 4. Exibe formulário SOMENTE se status === 'Coleta Iniciada'
+    // FORMULÁRIO SE status === Coleta Iniciada
     if (p.status === 'Coleta Iniciada') {
       const form = document.createElement('div');
       form.className = 'formulario';
@@ -119,14 +107,23 @@ function renderizarPedidos(lista) {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
       });
 
-      div.appendChild(form);
+      card.appendChild(form);
     }
 
-    listaEl.appendChild(div);
+    listaEl.appendChild(card);
   });
 }
 
-// ====== Descontos por material ======
+function gerarBadgeStatus(status) {
+  if (status === 'Aguardando Conferência do Peso') {
+    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
+  } else if (status === 'Coleta Iniciada') {
+    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
+  } else {
+    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
+  }
+}
+
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const existentes = descontosPorItem[itemId].map(d => d.motivo);
@@ -214,7 +211,6 @@ function atualizarDescontoItem(itemId, index) {
   };
 }
 
-// ====== Registrar peso ======
 async function registrarPeso(pedidoId) {
   const pedido = pedidos.find(p => (p.id || p.pedido_id) === pedidoId);
   if (!pedido) return alert("Pedido não encontrado.");
@@ -225,7 +221,7 @@ async function registrarPeso(pedidoId) {
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
 
-  blocos.forEach((bloco, index) => {
+  blocos.forEach((bloco) => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
     const input = bloco.querySelector('input[type="number"]');
     const peso = parseFloat(input.value);
@@ -255,7 +251,6 @@ async function registrarPeso(pedidoId) {
     });
 
     const data = await res.json();
-
     if (res.ok) {
       alert('Peso registrado com sucesso!');
       carregarPedidos();
@@ -268,7 +263,7 @@ async function registrarPeso(pedidoId) {
   }
 }
 
-// ====== Inicialização ======
+// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
