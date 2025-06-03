@@ -33,7 +33,6 @@ function renderizarPedidos(lista) {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Cabeçalho com status no canto direito
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -47,7 +46,6 @@ function renderizarPedidos(lista) {
     `;
     card.appendChild(header);
 
-    // Linha do tempo
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
     const timeline = tempDiv.firstElementChild;
@@ -56,14 +54,14 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    // Formulário de carga (se status = Coleta Iniciada)
     if (p.status === 'Coleta Iniciada') {
       const form = document.createElement('div');
       form.className = 'formulario';
       form.id = `form-${p.id || p.pedido_id}`;
 
-      if (Array.isArray(p.materiais) && p.materiais.length > 0) {
-        p.materiais.forEach((item, index) => {
+      const materiais = p.materiais || p.itens || p.produtos || [];
+      if (Array.isArray(materiais) && materiais.length > 0) {
+        materiais.forEach((item, index) => {
           const itemId = item.id;
           if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
