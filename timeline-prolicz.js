@@ -1,5 +1,3 @@
-// timeline-prolicz.js
-
 // ==== Gera a timeline padronizada ====
 function gerarLinhaTempoCompleta(pedido) {
   const etapas = [
@@ -40,8 +38,11 @@ function gerarLinhaTempoCompleta(pedido) {
     }
   ];
 
-  // Descobre qual etapa está ativa
-  const idxAtivo = etapas.findIndex(et => et.key === pedido.status);
+  // Corrige exibição: se o status for "Aguardando Início da Coleta", consideramos a primeira etapa como já concluída
+  let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
+  if (pedido.status === 'Aguardando Início da Coleta') {
+    idxAtivo = 1; // Ativa visualmente "Coleta Iniciada", marcando "Aguardando Coleta" como concluída
+  }
 
   let html = `<div class="timeline-simples">
       <div class="timeline-bar-bg"></div>
@@ -87,14 +88,14 @@ function animarLinhaProgresso(container) {
     const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    // Linha só entre a 1ª e a última bolinha!
+    // Linha cinza de fundo (vai do primeiro ao último ponto)
     const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
     const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
 
     bg.style.left = `${start}px`;
     bg.style.width = `${end - start}px`;
 
-    // Linha verde vai até a última "feita"
+    // Linha verde de progresso vai até a última etapa concluída
     if (ultimoFeito > 0) {
       const doneDot = steps[ultimoFeito].querySelector('.dot').getBoundingClientRect();
       const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
