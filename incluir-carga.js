@@ -49,31 +49,28 @@ function renderizarPedidos(lista) {
     `;
     div.appendChild(header);
 
-    // 1. Header (já adicionado)
-div.appendChild(header);
+    // 2. Timeline PADRÃO (usar sempre appendChild para não quebrar o card)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
+    const timelineElem = tempDiv.firstElementChild;
+    div.appendChild(timelineElem);
+    setTimeout(() => {
+      if (timelineElem) animarLinhaProgresso(timelineElem);
+    }, 20);
 
-// 2. Timeline (cria, converte e adiciona corretamente)
-const tempDiv = document.createElement('div');
-tempDiv.innerHTML = gerarLinhaTempoCompleta(p);
-const timelineElem = tempDiv.firstElementChild;
-div.appendChild(timelineElem);
-setTimeout(() => {
-  if (timelineElem) animarLinhaProgresso(timelineElem);
-}, 20);
+    // 3. Badge de status (SEM expandir largura, SEM colar fora do card)
+    const statusHtml =
+      p.status === 'Aguardando Conferência do Peso'
+        ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
+        : p.status === 'Coleta Iniciada'
+        ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
+        : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
 
-// 3. Status (badge, normalizado)
-const statusHtml =
-  p.status === 'Aguardando Conferência do Peso'
-    ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`
-    : p.status === 'Coleta Iniciada'
-    ? `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${p.status}</div>`
-    : `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${p.status}</div>`;
-
-const statusDiv = document.createElement('div');
-statusDiv.innerHTML = statusHtml;
-statusDiv.style.textAlign = 'right';
-statusDiv.style.margin = '16px 0 0 0';
-div.appendChild(statusDiv);
+    const statusDiv = document.createElement('div');
+    statusDiv.innerHTML = statusHtml;
+    statusDiv.style.textAlign = 'right';
+    statusDiv.style.margin = '18px 22px 0 0';
+    div.appendChild(statusDiv);
 
     // 4. Exibe formulário SOMENTE se status === 'Coleta Iniciada'
     if (p.status === 'Coleta Iniciada') {
