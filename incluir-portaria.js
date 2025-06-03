@@ -146,12 +146,24 @@ async function carregarPedidosPortaria() {
       <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
     `;
 
-    const btnStatus = document.createElement('div');
-    btnStatus.innerHTML = `
-      <div style="background:#ffc107;color:#222;padding:7px 18px;font-weight:600;border-radius:8px; font-size:15px;display:flex;align-items:center;gap:8px;">
-        <i class="fa fa-truck"></i> ${status}
-      </div>
-    `;
+   const btnStatus = document.createElement('div');
+
+let corStatus = '#ffc107';
+let corTexto = '#222';
+let textoStatus = 'Aguardando Início da Coleta';
+
+if (status === 'Coleta Iniciada') {
+  corStatus = '#28a745';
+  corTexto = '#fff';
+  textoStatus = 'Coleta Iniciada';
+}
+
+btnStatus.innerHTML = `
+  <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
+    <i class="fa fa-truck"></i> ${textoStatus}
+  </div>
+`;
+
     header.appendChild(info);
     header.appendChild(btnStatus);
     card.appendChild(header);
