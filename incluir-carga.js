@@ -87,7 +87,7 @@ function renderizarPedidos(lista) {
                 ${icone}
               </p>
               <div class="linha-peso">
-                <label for="peso-${p.id}-${index}">Peso Carregado (kg):</label>
+                <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
                 <input type="number" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
               </div>
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
