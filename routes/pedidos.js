@@ -29,43 +29,15 @@ function formatarDataBRparaISO(dataBR) {
 router.get('/portaria', async (req, res) => {
   const sql = `
     SELECT 
-      p.id AS pedido_id,
-      p.status,
-      p.data_coleta,
-      p.data_criacao,
-      p.data_coleta_iniciada,
-      p.data_coleta_finalizada,
-      p.data_conferencia_peso,
-      p.data_financeiro,
-      p.data_emissao_nf,
-      p.data_finalizado,
+      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
+      p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+      p.ticket_balanca,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE DATE(p.data_coleta) = CURDATE()
-    ORDER BY 
-      CASE WHEN p.status = 'Coleta Iniciada' THEN 1 ELSE 0 END, 
-      p.data_coleta ASC
+    ORDER BY p.data_coleta ASC
   `;
-
-  try {
-    const [pedidos] = await db.query(sql);  // <-- só pode usar await dentro de async
-    res.json(pedidos);
-  } catch (err) {
-    console.error('Erro ao buscar pedidos da portaria:', err);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
-  }
-});
-
-  try {
-    const [pedidos] = await db.query(sql);
-    res.json(pedidos);
-  } catch (err) {
-    console.error('Erro ao buscar pedidos da portaria:', err);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
-  }
-});
-
   try {
     const [pedidos] = await db.query(sql);
     res.json(pedidos);
@@ -471,4 +443,3 @@ router.get('/nf', async (req, res) => {
 });
 
 module.exports = router;
-
