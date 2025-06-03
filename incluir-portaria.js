@@ -74,19 +74,35 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     statusDiv.style.display = 'block';
 
     if (!isAjudante) {
-      document.getElementById(`nome-${pedidoId}`).value = data.nome || '';
+      const nomeInput = document.getElementById(`nome-${pedidoId}`);
+      nomeInput.value = data.nome || '';
+      nomeInput.readOnly = !!data.encontrado;
       document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
       document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
 
       const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
       const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
-
       if (!data.encontrado || data.cadastroVencido) {
         grupoFicha.style.display = 'block';
         grupoDoc.style.display = 'block';
       } else {
         grupoFicha.style.display = 'none';
         grupoDoc.style.display = 'none';
+      }
+
+    } else {
+      const nomeAj = document.getElementById(`nome-ajudante-${index}`);
+      nomeAj.value = data.nome || '';
+      nomeAj.readOnly = !!data.encontrado;
+
+      const grupoFichaAj = document.getElementById(`grupo-ficha-ajudante-${index}`);
+      const grupoDocAj = document.getElementById(`grupo-doc-ajudante-${index}`);
+      if (!data.encontrado || data.cadastroVencido) {
+        grupoFichaAj.style.display = 'block';
+        grupoDocAj.style.display = 'block';
+      } else {
+        grupoFichaAj.style.display = 'none';
+        grupoDocAj.style.display = 'none';
       }
     }
 
@@ -222,8 +238,11 @@ document.addEventListener('change', function (e) {
       div.id = `card-ajudante-${idSuffix}`;
       div.style = "padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
       div.innerHTML = `
-        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante ${index + 1}</label>
-        <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; justify-content: space-between;">
+          <label style="font-weight: bold;">Ajudante ${index + 1}</label>
+          <button onclick="document.getElementById('card-ajudante-${idSuffix}').remove()" style="background: none; border: none; color: #c00; font-weight: bold; cursor: pointer;">Fechar</button>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 12px; margin-top: 10px;">
           <div style="max-width: 300px; flex: none;">
             <label>CPF do Ajudante</label>
             <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
@@ -241,12 +260,6 @@ document.addEventListener('change', function (e) {
             <label>Foto do Documento (ajudante)</label>
             <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
           </div>
-          <label style="margin-top: 12px;">Tem mais um ajudante?</label>
-          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
         </div>
       `;
       container.appendChild(div);
