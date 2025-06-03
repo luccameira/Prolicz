@@ -7,42 +7,6 @@ function formatarPeso(valor) {
 let pedidos = [];
 let descontosPorItem = {};
 
-// Linha do tempo visual (etapas)
-function gerarLinhaTempo(statusAtual) {
-  const etapas = [
-    'Aguardando Início da Coleta',
-    'Coleta Iniciada',
-    'Aguardando Conferência do Peso',
-    'Em Análise pelo Financeiro',
-    'Aguardando Emissão de NF',
-    'Cliente Liberado',
-    'Finalizado'
-  ];
-  let etapaAtiva = false;
-  return `
-    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
-      ${etapas.map((etapa, idx) => {
-        if (etapa === statusAtual) etapaAtiva = true;
-        return `
-          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
-            style="
-              padding: 2px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
-              color: #222;
-              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
-              border: 1px solid #d7d7d7;
-              ">
-            ${etapa}
-          </span>
-          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
 async function carregarPedidos() {
   // Busca todos os pedidos do dia na carga
   const res = await fetch('/api/pedidos/carga');
@@ -71,8 +35,12 @@ function renderizarPedidos(lista) {
     const div = document.createElement('div');
     div.className = 'card';
 
-    // Linha do tempo visual
-    div.innerHTML = gerarLinhaTempo(p.status);
+    // === LINHA DO TEMPO PADRONIZADA ===
+    div.innerHTML += gerarLinhaTempoCompleta(p);
+    setTimeout(() => {
+      const timeline = div.querySelector('.timeline-simples');
+      if (timeline) animarLinhaProgresso(timeline);
+    }, 20);
 
     const dataFormatada = new Date(p.data_coleta).toLocaleDateString('pt-BR');
     const statusHtml =
@@ -148,6 +116,7 @@ function renderizarPedidos(lista) {
   });
 }
 
+// ====== Desconto Material ======
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const existentes = descontosPorItem[itemId].map(d => d.motivo);
