@@ -65,7 +65,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     if (!data.encontrado) {
       html = `<span class="badge-status badge-nao-cadastrado">🟠 Motorista não cadastrado</span>`;
     } else if (data.cadastroVencido) {
-      html = `<span class="badge-status badge-vencido">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
+      html = `<span class="badge-status badge-vencido">🔴 Cadastro vencido - necessário reenvio da ficha</span>`;
     } else {
       html = `<span class="badge-status badge-ok">🟢 Motorista já cadastrado</span>`;
     }
@@ -88,7 +88,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
       const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
       if (!data.encontrado || data.cadastroVencido) {
         grupoFicha.style.display = 'block';
-        grupoDoc.style.display = 'block';
+        grupoDoc.style.display = !data.cadastroVencido ? 'block' : 'none';
       } else {
         grupoFicha.style.display = 'none';
         grupoDoc.style.display = 'none';
@@ -101,7 +101,26 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
         });
       }
 
+    } else {
+      const nomeAj = document.getElementById(`nome-ajudante-${index}`);
+      const grupoFichaAj = document.getElementById(`grupo-ficha-ajudante-${index}`);
+      const grupoDocAj = document.getElementById(`grupo-doc-ajudante-${index}`);
+
+      nomeAj.value = data.nome || '';
+      nomeAj.readOnly = !!data.encontrado;
+
+      if (!data.encontrado) {
+        grupoFichaAj.style.display = 'block';
+        grupoDocAj.style.display = 'block';
+      } else if (data.cadastroVencido) {
+        grupoFichaAj.style.display = 'block';
+        grupoDocAj.style.display = 'none';
+      } else {
+        grupoFichaAj.style.display = 'none';
+        grupoDocAj.style.display = 'none';
+      }
     }
+
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
     statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
