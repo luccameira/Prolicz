@@ -25,101 +25,86 @@ function aplicarMascaraPlaca(input) {
   input.addEventListener('input', () => {
     let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (v.length > 7) v = v.slice(0, 7);
-    if (v.length > 3) v = v.slice(0, 3) + '-' + v.slice(3);
+    if (v.length > 3) {
+      v = v.slice(0, 3) + '-' + v.slice(3);
+    }
     input.value = v;
   });
 }
 
 function formatarData(data) {
-  if (!data) return '—';
-  try {
-    const dt = new Date(data);
-    if (isNaN(dt)) return '—';
-    return dt.toLocaleDateString('pt-BR').slice(0, 5) + ' ' +
-      String(dt.getHours()).padStart(2, '0') + ':' +
-      String(dt.getMinutes()).padStart(2, '0');
-  } catch {
-    return data;
-  }
+  return new Date(data).toLocaleDateString('pt-BR');
 }
 
-async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
-  const cpfInput = isAjudante
-    ? document.getElementById(`cpf-ajudante-${pedidoId}-${index}`)
-    : document.getElementById(`cpf-${pedidoId}`);
+async function verificarCPF(pedidoId, isAjudante = false, indice = '0') {
+  const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${indice}` : `cpf-${pedidoId}`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${indice}` : `nome-${pedidoId}`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${indice}` : `status-cadastro-${pedidoId}`;
+  const docId = isAjudante ? `doc-ajudante-${indice}` : `doc-${pedidoId}`;
+  const fichaId = isAjudante ? `ficha-ajudante-${indice}` : `ficha-${pedidoId}`;
+  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${indice}` : `grupo-ficha-${pedidoId}`;
+  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${indice}` : `grupo-doc-${pedidoId}`;
+  const cardId = isAjudante ? `card-ajudante-${pedidoId}-${indice}` : `bloco-form-${pedidoId}`;
 
-  const cpf = cpfInput?.value?.replace(/\D/g, '');
-  if (!cpf || cpf.length < 11) return;
+  const cpf = document.getElementById(prefix)?.value.trim();
+  const nomeInput = document.getElementById(nomePrefix);
+  const alerta = document.getElementById(alertaPrefix);
+  const docInput = document.getElementById(docId);
+  const fichaInput = document.getElementById(fichaId);
+  const grupoFicha = document.getElementById(grupoFichaId);
+  const grupoDoc = document.getElementById(grupoDocId);
+  const blocoForm = document.getElementById(cardId);
 
-  const statusDiv = document.getElementById(
-    isAjudante
-      ? `status-cadastro-ajudante-${index}`
-      : `status-cadastro-${pedidoId}`
-  );
+  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
+  blocoForm.style.display = 'block';
 
   try {
-    const res = await fetch(`/api/motoristas/${cpf}`);
-    const data = await res.json();
+    const res = await fetch(`/api/motoristas/${cpf.replace(/\D/g, '')}`);
+    grupoFicha.style.display = 'block';
+    grupoDoc.style.display = 'block';
+    fichaInput.required = true;
+    docInput.required = true;
 
-    let html = '';
-    if (!data.encontrado) {
-      html = `<span style="background:#ff9800;color:#000;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟠 Motorista não cadastrado</span>`;
-    } else if (data.cadastroVencido) {
-      html = `<span style="background:#dc3545;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
+    if (res.status === 404) {
+      alerta.className = 'alerta-vencido';
+      alerta.style.display = 'block';
+      alerta.innerText = '🚫 Não possui cadastro.';
+      nomeInput.disabled = false;
+      nomeInput.value = '';
     } else {
-      html = `<span style="background:#28a745;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟢 Motorista já cadastrado</span>`;
-    }
+      const dados = await res.json();
+      nomeInput.value = dados.nome;
+      nomeInput.disabled = true;
 
-    statusDiv.innerHTML = html;
-    statusDiv.style.display = 'block';
+      let vencido = dados.cadastroVencido === true;
 
-    if (!isAjudante) {
-      const nomeInput = document.getElementById(`nome-${pedidoId}`);
-      nomeInput.value = data.nome || '';
-      nomeInput.readOnly = !!data.encontrado;
-      document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
-
-      const blocoForm = document.getElementById(`bloco-form-${pedidoId}`);
-      if (blocoForm) blocoForm.style.display = 'block';
-
-      const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
-      const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
-      if (!data.encontrado || data.cadastroVencido) {
+      if (vencido) {
+        alerta.className = 'alerta-vencido';
+        alerta.style.display = 'block';
+        alerta.innerText = '⚠️ Permissão expirada. Reenvie a ficha de integração.';
         grupoFicha.style.display = 'block';
-        grupoDoc.style.display = 'block';
-      } else {
-        grupoFicha.style.display = 'none';
+        fichaInput.required = true;
         grupoDoc.style.display = 'none';
-      }
-
-    } else {
-      const nomeAj = document.getElementById(`nome-ajudante-${index}`);
-      nomeAj.value = data.nome || '';
-      nomeAj.readOnly = !!data.encontrado;
-
-      const grupoFichaAj = document.getElementById(`grupo-ficha-ajudante-${index}`);
-      const grupoDocAj = document.getElementById(`grupo-doc-ajudante-${index}`);
-      if (!data.encontrado || data.cadastroVencido) {
-        grupoFichaAj.style.display = 'block';
-        grupoDocAj.style.display = 'block';
+        docInput.required = false;
       } else {
-        grupoFichaAj.style.display = 'none';
-        grupoDocAj.style.display = 'none';
+        alerta.className = 'alerta-sucesso';
+        alerta.style.display = 'block';
+        alerta.innerText = '✅ Já cadastrado';
+        grupoFicha.style.display = 'none';
+        fichaInput.required = false;
+        grupoDoc.style.display = 'none';
+        docInput.required = false;
       }
     }
-
-  } catch (error) {
-    console.error('Erro na verificação de CPF:', error);
-    statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
-    statusDiv.style.display = 'block';
+  } catch (err) {
+    console.error('Erro ao verificar CPF:', err);
   }
 }
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
-  let pedidos = await res.json();
-
+  const pedidos = await res.json();
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
@@ -128,121 +113,200 @@ async function carregarPedidosPortaria() {
     return;
   }
 
-  pedidos.sort((a, b) => {
-    const prioridade = status => status === 'Finalizado' ? 1 : 0;
-    return prioridade(a.status) - prioridade(b.status);
-  });
+  pedidos.sort((a, b) => (a.status === 'Finalizado') - (b.status === 'Finalizado'));
 
   pedidos.forEach(pedido => {
     const pedidoId = pedido.pedido_id || pedido.id;
-    const status = pedido.status;
-    const podeIniciarColeta = status === 'Aguardando Início da Coleta';
+    const finalizado = pedido.status === 'Coleta Iniciada';
 
     const card = document.createElement('div');
     card.className = 'card';
+    if (finalizado) card.classList.add('finalizado');
 
     const header = document.createElement('div');
     header.className = 'header-card';
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'flex-start';
-    header.style.padding = '18px 22px 0 22px';
-
-    const info = document.createElement('div');
-    info.innerHTML = `
-      <div style="font-weight: bold; font-size: 19px; margin-bottom:2px;">${pedido.cliente}</div>
-      <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
+    header.innerHTML = `
+      <div>
+        <div class="titulo-card">${pedido.cliente}</div>
+        <div class="subtitulo-card">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
+      </div>
+      <div class="status-badge ${finalizado ? 'status-verde' : 'status-amarelo'}">
+        <i class="fa ${finalizado ? 'fa-check' : 'fa-truck'}"></i>
+        ${finalizado ? 'Coleta Iniciada' : pedido.status}
+      </div>
     `;
-
-    const btnStatus = document.createElement('div');
-    let corStatus, corTexto, textoStatus;
-
-    if (status === 'Coleta Iniciada') {
-      corStatus = '#28a745';
-      corTexto = '#fff';
-      textoStatus = 'Coleta Iniciada';
-    } else if (status === 'Aguardando Início da Coleta') {
-      corStatus = '#ffc107';
-      corTexto = '#222';
-      textoStatus = 'Aguardando Início da Coleta';
-    }
-
-    if (textoStatus) {
-      btnStatus.innerHTML = `
-        <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
-          <i class="fa fa-truck"></i> ${textoStatus}
-        </div>
-      `;
-    }
-
-    header.appendChild(info);
-    if (textoStatus) header.appendChild(btnStatus);
     card.appendChild(header);
 
-    card.innerHTML += gerarLinhaTempoCompleta(pedido);
+    // Timeline
+    const linhaTempo = gerarLinhaTempoCompleta(pedido);
+    card.innerHTML += linhaTempo;
 
-    if (podeIniciarColeta) {
-      const blocoCPF = document.createElement('div');
-      blocoCPF.style = "padding: 20px 22px 10px; border-top: 1px solid #eee;";
-      blocoCPF.innerHTML = `
-        <div style="margin-bottom: 12px;">
+    const form = document.createElement('div');
+    form.className = 'formulario';
+    form.style.display = 'none';
+    form.innerHTML = `
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="max-width: 300px; flex: none;">
           <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required>
-          <div id="status-cadastro-${pedidoId}" style="margin-top: 6px;"></div>
+          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
         </div>
-      `;
-
-      const blocoForm = document.createElement('div');
-      blocoForm.id = `bloco-form-${pedidoId}`;
-      blocoForm.style = "padding: 0 22px 22px; margin-top: 10px; display: none;";
-      blocoForm.innerHTML = `
-        <div>
-          <label>Nome do Motorista</label>
-          <input type="text" id="nome-${pedidoId}" required>
+        <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
+      </div>
+      <div id="bloco-form-${pedidoId}" style="display: none; margin-top: 25px; padding: 20px; background: #f5f5f5; border: 1px solid #ccc; border-radius: 10px;">
+        <div style="display: flex; gap: 20px;">
+          <div style="flex: 1;">
+            <label>Nome do Motorista</label>
+            <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
+          </div>
+          <div style="flex: 1;">
+            <label>Placa do Veículo</label>
+            <input type="text" id="placa-${pedidoId}" placeholder="Digite a placa do caminhão" required>
+          </div>
         </div>
-        <div style="margin-top: 12px;">
-          <label>Placa do Veículo</label>
-          <input type="text" id="placa-${pedidoId}" required>
+        <label style="margin-top: 12px;">Foto do Caminhão</label>
+        <div class="upload-wrapper">
+          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
         </div>
         <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
           <label>Ficha de Integração Assinada</label>
-          <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*" required></div>
+          <div class="upload-wrapper">
+            <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
         <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
           <label>Foto do Documento (CNH)</label>
-          <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*" required></div>
+          <div class="upload-wrapper">
+            <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+          </div>
         </div>
-        <div style="margin-top: 12px;">
-          <label>Foto do Caminhão</label>
-          <div class="upload-wrapper"><input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required></div>
-        </div>
-        <div style="margin-top: 20px;">
-          <label>Tem Ajudante?</label>
-          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
-        </div>
-        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 16px;"></div>
-        <div style="text-align: right; margin-top: 20px;">
-          <button onclick="registrarColeta('${pedidoId}', this)" class="btn-amarelo">Iniciar Coleta</button>
-        </div>
-      `;
+        <label style="margin-top: 12px;">Tem Ajudante?</label>
+        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
+          <option value="">Selecione</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 25px;"></div>
+        <button class="btn btn-registrar" style="margin-top: 20px;" onclick="registrarColeta(${pedidoId}, this)">Iniciar Coleta</button>
+      </div>
+    `;
 
-      card.appendChild(blocoCPF);
-      card.appendChild(blocoForm);
-      aplicarMascaraCPF(blocoCPF.querySelector(`#cpf-${pedidoId}`));
-      aplicarMascaraPlaca(blocoForm.querySelector(`#placa-${pedidoId}`));
+    if (!finalizado) {
+      header.addEventListener('click', () => {
+        form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
+        aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
+      });
     }
 
-    setTimeout(() => {
-      const timeline = card.querySelector('.timeline-simples');
-      if (timeline) animarLinhaProgresso(timeline);
-    }, 20);
-
+    card.appendChild(form);
     lista.appendChild(card);
   });
+}
+
+document.addEventListener('change', function (e) {
+  if (e.target.id.startsWith('tem-ajudante-')) {
+    const pedidoId = e.target.dataset.pedido;
+    const valor = e.target.value;
+    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+
+    if (valor === 'sim') {
+      const index = container.children.length;
+      const idSuffix = `${pedidoId}-${index}`;
+      const div = document.createElement('div');
+      div.className = 'subcard';
+      div.id = `card-ajudante-${idSuffix}`;
+      div.style = "padding: 20px; background: #f2f2f2; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
+
+      div.innerHTML = `
+        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante ${index + 1}</label>
+        <div style="display: flex; align-items: flex-end; gap: 12px;">
+          <div style="max-width: 300px; flex: none;">
+            <label>CPF do Ajudante</label>
+            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
+          </div>
+          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
+        </div>
+        <label style="margin-top: 12px;">Nome do Ajudante</label>
+        <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
+        <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
+          <label>Ficha de Integração Assinada</label>
+          <div class="upload-wrapper">
+            <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
+          </div>
+        </div>
+        <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
+          <label>Foto do Documento (ajudante)</label>
+          <div class="upload-wrapper">
+            <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
+    }
+  }
+});
+
+async function registrarColeta(pedidoId, botao) {
+  if (!confirm("Tem certeza que deseja iniciar a coleta?")) return;
+
+  const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const docInput = document.getElementById(`doc-${pedidoId}`);
+
+  if (!cpf || !placa || !caminhaoInput.files.length) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  botao.disabled = true;
+  botao.innerText = 'Enviando...';
+
+  const formData = new FormData();
+  formData.append('cpf', cpf);
+  formData.append('placa', placa);
+  if (nome) formData.append('nome', nome);
+  if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
+  if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
+  formData.append('foto_caminhao', caminhaoInput.files[0]);
+
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  const nomeAjudante = [];
+
+  ajudantes.forEach((card, index) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
+
+    if (cpfAj && nomeAj) {
+      formData.append('cpf_ajudante', cpfAj);
+      formData.append('nome_ajudante', nomeAj);
+      if (fichaAj) formData.append('ficha_ajudante', fichaAj);
+      if (docAj) formData.append('documento_ajudante', docAj);
+      nomeAjudante.push(nomeAj);
+    }
+  });
+
+  try {
+    await fetch('/api/motoristas', { method: 'POST', body: formData });
+    await fetch(`/api/pedidos/${pedidoId}/coleta`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante.join(', ') })
+    });
+
+    alert('Coleta iniciada com sucesso!');
+    carregarPedidosPortaria();
+  } catch (err) {
+    console.error('Erro ao registrar coleta:', err);
+    alert('Erro ao registrar coleta.');
+    botao.disabled = false;
+    botao.innerText = 'Iniciar Coleta';
+  }
 }
 
 function monitorarUploads() {
@@ -256,13 +320,14 @@ function monitorarUploads() {
         checkIcon = document.createElement('i');
         checkIcon.className = 'fa fa-check check-icon';
         checkIcon.style.position = 'absolute';
-        checkIcon.style.right = '16px';
+        checkIcon.style.right = '12px';
         checkIcon.style.top = '50%';
         checkIcon.style.transform = 'translateY(-50%)';
         checkIcon.style.color = '#28a745';
-        checkIcon.style.fontSize = '18px';
+        checkIcon.style.fontSize = '16px';
         wrapper.appendChild(checkIcon);
       }
+
       checkIcon.style.display = e.target.files.length ? 'block' : 'none';
     }
   });
