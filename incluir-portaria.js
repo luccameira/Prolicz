@@ -31,36 +31,84 @@ function aplicarMascaraPlaca(input) {
 }
 
 function formatarData(data) {
-  const d = new Date(data);
-  if (isNaN(d)) return '—';
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  if (!data) return '—';
+  const dt = new Date(data);
+  if (isNaN(dt)) return '—';
+  return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+}
+
+function formatarDataTimeline(data) {
+  if (!data) return '—';
+  try {
+    const dt = new Date(data);
+    if (isNaN(dt)) return '—';
+    return dt.toLocaleDateString('pt-BR').slice(0, 5) + ' ' +
+      String(dt.getHours()).padStart(2, '0') + ':' +
+      String(dt.getMinutes()).padStart(2, '0');
+  } catch {
+    return data;
+  }
 }
 
 function gerarLinhaTempoCompleta(pedido) {
-  const status = pedido.status;
   const etapas = [
-    "Aguardando Coleta",
-    "Coleta Iniciada",
-    "Coleta Finalizada",
-    "Conferência do Peso",
-    "Financeiro",
-    "Emissão de Nota Fiscal",
-    "Finalizado"
+    { key: 'Aguardando Início da Coleta', nome: 'Aguardando Coleta', campoData: 'data_criacao' },
+    { key: 'Coleta Iniciada', nome: 'Coleta Iniciada', campoData: 'data_coleta_iniciada' },
+    { key: 'Coleta Finalizada', nome: 'Coleta Finalizada', campoData: 'data_coleta_finalizada' },
+    { key: 'Aguardando Conferência do Peso', nome: 'Conferência do Peso', campoData: 'data_conferencia_peso' },
+    { key: 'Em Análise pelo Financeiro', nome: 'Financeiro', campoData: 'data_financeiro' },
+    { key: 'Aguardando Emissão de NF', nome: 'Emissão de Nota Fiscal', campoData: 'data_emissao_nf' },
+    { key: 'Finalizado', nome: 'Finalizado', campoData: 'data_finalizado' }
   ];
-  const indexAtual = etapas.indexOf(status);
 
-  let linha = `<div class="timeline-prolicz"><div class="timeline-prolicz-track"></div>`;
-  etapas.forEach((etapa, i) => {
-    const statusClasse = i < indexAtual ? 'verde' : i === indexAtual ? 'atual' : '';
-    linha += `
-      <div class="timeline-prolicz-step ${statusClasse}">
-        <div class="circle"></div>
-        <div class="step-title">${etapa}</div>
-      </div>
-    `;
+  let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
+  if (pedido.status === 'Aguardando Início da Coleta') idxAtivo = 1;
+
+  let html = `<div class="timeline-simples"><div class="timeline-bar-bg"></div><div class="timeline-bar-fg"></div>`;
+  etapas.forEach((etapa, idx) => {
+    const isConcluded = idx < idxAtivo;
+    const isActive = idx === idxAtivo;
+    let statusClass = isConcluded ? 'done' : isActive ? 'active' : '';
+    html += `
+      <div class="timeline-step ${statusClass}">
+        <div class="dot">${isConcluded ? '<span style="font-size:20px;">&#10003;</span>' : ''}</div>
+        <div class="label">${etapa.nome}</div>
+        <div class="data">${formatarDataTimeline(pedido[etapa.campoData])}</div>
+      </div>`;
   });
-  linha += `</div>`;
-  return linha;
+  html += `</div>`;
+  return html;
+}
+
+function animarLinhaProgresso(container) {
+  const steps = container.querySelectorAll('.timeline-step');
+  const fg = container.querySelector('.timeline-bar-fg');
+  const bg = container.querySelector('.timeline-bar-bg');
+  let ultimoFeito = -1;
+
+  steps.forEach((step, idx) => {
+    if (step.classList.contains('done') || step.classList.contains('active')) ultimoFeito = idx;
+  });
+
+  if (steps.length > 1 && fg && bg) {
+    const firstDot = steps[0].querySelector('.dot').getBoundingClientRect();
+    const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
+    const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
+    bg.style.left = `${start}px`;
+    bg.style.width = `${end - start}px`;
+
+    if (ultimoFeito > 0) {
+      const doneDot = steps[ultimoFeito].querySelector('.dot').getBoundingClientRect();
+      const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
+      fg.style.left = `${start}px`;
+      fg.style.width = `${done - start}px`;
+    } else {
+      fg.style.width = '0';
+    }
+  }
 }
 
 async function carregarPedidosPortaria() {
@@ -103,81 +151,92 @@ async function carregarPedidosPortaria() {
     `;
 
     const btnStatus = document.createElement('div');
-    let corStatus, corTexto, textoStatus;
+    let corStatus = '#ffc107', corTexto = '#222', textoStatus = 'Aguardando Início da Coleta';
     if (status === 'Coleta Iniciada') {
-      corStatus = '#28a745';
-      corTexto = '#fff';
-      textoStatus = 'Coleta Iniciada';
-    } else {
-      corStatus = '#ffc107';
-      corTexto = '#222';
-      textoStatus = 'Aguardando Início da Coleta';
+      corStatus = '#28a745'; corTexto = '#fff'; textoStatus = 'Coleta Iniciada';
     }
 
     btnStatus.innerHTML = `
       <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
         <i class="fa fa-truck"></i> ${textoStatus}
-      </div>
-    `;
+      </div>`;
 
     header.appendChild(info);
     header.appendChild(btnStatus);
     card.appendChild(header);
 
-    card.innerHTML += gerarLinhaTempoCompleta(pedido);
-
-    if (podeIniciar) {
-      const form = document.createElement('div');
-      form.className = 'formulario';
-      form.style = 'padding: 20px 22px 22px; border-top: 1px solid #eee;';
-
-      form.innerHTML = `
-        <div style="margin-bottom: 12px;">
-          <label>CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required>
-          <div id="status-cadastro-${pedidoId}" style="margin-top: 6px;"></div>
-        </div>
-        <div id="bloco-form-${pedidoId}" style="display:none;">
-          <div style="display:flex;gap:20px;">
-            <div style="flex:1;">
-              <label>Nome do Motorista</label>
-              <input type="text" id="nome-${pedidoId}" required>
-            </div>
-            <div style="flex:1;">
-              <label>Placa do Veículo</label>
-              <input type="text" id="placa-${pedidoId}" required>
-            </div>
-          </div>
-          <label style="margin-top:12px;">Foto do Caminhão</label>
-          <div class="upload-wrapper"><input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required></div>
-          <div id="grupo-ficha-${pedidoId}" style="margin-top:12px;">
-            <label>Ficha de Integração Assinada</label>
-            <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*" required></div>
-          </div>
-          <div id="grupo-doc-${pedidoId}" style="margin-top:12px;">
-            <label>Foto do Documento (CNH)</label>
-            <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*" required></div>
-          </div>
-          <label style="margin-top:12px;">Tem Ajudante?</label>
-          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
-          <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
-          <div style="text-align: right; margin-top: 20px;">
-            <button onclick="registrarColeta('${pedidoId}', this)" class="btn-amarelo">Iniciar Coleta</button>
-          </div>
-        </div>
-      `;
-
-      card.appendChild(form);
-      aplicarMascaraCPF(form.querySelector(`#cpf-${pedidoId}`));
-      aplicarMascaraPlaca(form.querySelector(`#placa-${pedidoId}`));
-    }
+    const linhaTempo = document.createElement('div');
+    linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
+    card.appendChild(linhaTempo);
+    setTimeout(() => {
+      const timelineEl = linhaTempo.querySelector('.timeline-simples');
+      if (timelineEl) animarLinhaProgresso(timelineEl);
+    }, 20);
 
     lista.appendChild(card);
   });
+}
+
+async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
+  const prefix = isAjudante ? `cpf-ajudante-${pedidoId}-${index}` : `cpf-${pedidoId}`;
+  const nomePrefix = isAjudante ? `nome-ajudante-${index}` : `nome-${pedidoId}`;
+  const alertaPrefix = isAjudante ? `status-cadastro-ajudante-${index}` : `status-cadastro-${pedidoId}`;
+  const docId = isAjudante ? `doc-ajudante-${index}` : `doc-${pedidoId}`;
+  const fichaId = isAjudante ? `ficha-ajudante-${index}` : `ficha-${pedidoId}`;
+  const grupoFichaId = isAjudante ? `grupo-ficha-ajudante-${index}` : `grupo-ficha-${pedidoId}`;
+  const grupoDocId = isAjudante ? `grupo-doc-ajudante-${index}` : `grupo-doc-${pedidoId}`;
+  const blocoFormId = isAjudante ? `card-ajudante-${pedidoId}-${index}` : `bloco-form-${pedidoId}`;
+
+  const cpf = document.getElementById(prefix)?.value?.replace(/\D/g, '');
+  const nomeInput = document.getElementById(nomePrefix);
+  const alerta = document.getElementById(alertaPrefix);
+  const docInput = document.getElementById(docId);
+  const fichaInput = document.getElementById(fichaId);
+  const grupoFicha = document.getElementById(grupoFichaId);
+  const grupoDoc = document.getElementById(grupoDocId);
+  const blocoForm = document.getElementById(blocoFormId);
+
+  if (!cpf || !nomeInput || !alerta || !docInput || !fichaInput || !grupoFicha || !grupoDoc || !blocoForm) return;
+  blocoForm.style.display = 'block';
+
+  try {
+    const res = await fetch(`/api/motoristas/${cpf}`);
+    grupoFicha.style.display = 'block';
+    grupoDoc.style.display = 'block';
+    fichaInput.required = true;
+    docInput.required = true;
+
+    if (res.status === 404) {
+      alerta.className = 'alerta-vencido';
+      alerta.style.display = 'block';
+      alerta.innerText = '🚫 Não possui cadastro.';
+      nomeInput.disabled = false;
+      nomeInput.value = '';
+    } else {
+      const dados = await res.json();
+      nomeInput.value = dados.nome;
+      nomeInput.disabled = true;
+
+      if (dados.cadastroVencido) {
+        alerta.className = 'alerta-vencido';
+        alerta.style.display = 'block';
+        alerta.innerText = '⚠️ Cadastro vencido. Reenvie a ficha de integração.';
+        grupoFicha.style.display = 'block';
+        grupoDoc.style.display = 'none';
+        docInput.required = false;
+      } else {
+        alerta.className = 'alerta-sucesso';
+        alerta.style.display = 'block';
+        alerta.innerText = '✅ Já cadastrado.';
+        grupoFicha.style.display = 'none';
+        grupoDoc.style.display = 'none';
+        fichaInput.required = false;
+        docInput.required = false;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao verificar CPF:', err);
+  }
 }
 
 document.addEventListener('change', function (e) {
@@ -185,7 +244,6 @@ document.addEventListener('change', function (e) {
     const pedidoId = e.target.dataset.pedido;
     const valor = e.target.value;
     const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-
     container.innerHTML = '';
     if (valor === 'sim') {
       const index = 0;
@@ -194,7 +252,6 @@ document.addEventListener('change', function (e) {
       div.className = 'subcard';
       div.id = `card-ajudante-${idSuffix}`;
       div.style = "padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
-
       div.innerHTML = `
         <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante</label>
         <div style="display: flex; align-items: flex-end; gap: 12px;">
@@ -207,23 +264,15 @@ document.addEventListener('change', function (e) {
         <div style="margin-top: 20px;">
           <label>Nome do Ajudante</label>
           <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
-
           <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
             <label>Ficha de Integração Assinada (ajudante)</label>
-            <div class="upload-wrapper">
-              <input type="file" id="ficha-ajudante-${index}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*" required></div>
           </div>
-
           <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
             <label>Foto do Documento (ajudante)</label>
-            <div class="upload-wrapper">
-              <input type="file" id="doc-ajudante-${index}" accept="image/*" required>
-            </div>
+            <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
           </div>
-        </div>
-      `;
-
+        </div>`;
       container.appendChild(div);
       aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
     }
@@ -311,9 +360,7 @@ function monitorarUploads() {
         checkIcon.style.fontSize = '16px';
         wrapper.appendChild(checkIcon);
       }
-
       checkIcon.style.display = e.target.files.length ? 'block' : 'none';
     }
   });
 }
-
