@@ -115,7 +115,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
-  let pedidos = await res.json();
+  const pedidos = await res.json();
 
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
@@ -161,7 +161,15 @@ async function carregarPedidosPortaria() {
     header.appendChild(statusTag);
     card.appendChild(header);
 
-    card.innerHTML += gerarLinhaTempoCompleta(pedido);
+    // ✅ INSERE A TIMELINE SEM QUEBRAR NADA
+    const linhaTempo = document.createElement('div');
+    linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
+    card.appendChild(linhaTempo);
+
+    setTimeout(() => {
+      const timeline = card.querySelector('.timeline-simples');
+      if (timeline) animarLinhaProgresso(timeline);
+    }, 20);
 
     if (status === 'Aguardando Início da Coleta') {
       renderizarFormularioColeta(pedido, card);
