@@ -66,7 +66,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     }
 
     statusDiv.innerHTML = html;
-    statusDiv.style.display = 'block';
+    statusDiv.style.display = 'flex'; // 🔧 Alinhamento lateral
 
     if (!isAjudante) {
       const nomeInput = document.getElementById(`nome-${pedidoId}`);
@@ -108,76 +108,61 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
     statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
-    statusDiv.style.display = 'block';
+    statusDiv.style.display = 'flex';
   }
 }
 
-async function carregarPedidosPortaria() {
-  const hoje = new Date().toISOString().split('T')[0];
-  const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
-  const pedidos = await res.json();
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id.startsWith('tem-ajudante-')) {
+    const pedidoId = e.target.dataset.pedido;
+    const valor = e.target.value;
+    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+    if (valor === 'sim') {
+      const index = container.children.length;
+      const idSuffix = `${pedidoId}-${index}`;
+      const div = document.createElement('div');
+      div.className = 'subcard';
+      div.id = `card-ajudante-${idSuffix}`;
+      div.style = `
+        background: #f2f2f2;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      `;
+      div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <label style="font-weight: bold;">Ajudante ${index + 1}</label>
+          <button onclick="document.getElementById('card-ajudante-${idSuffix}').remove()" style="background: none; border: none; color: #c00; font-weight: bold; cursor: pointer;">Fechar</button>
+        </div>
 
-  const lista = document.getElementById('lista-pedidos');
-  lista.innerHTML = '';
+        <div style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 250px;">
+            <label>CPF do Ajudante</label>
+            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
+          </div>
+          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
+        </div>
 
-  if (!pedidos.length) {
-    lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido encontrado.</p>";
-    return;
+        <div style="margin-top: 20px;">
+          <label>Nome do Ajudante</label>
+          <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
+        </div>
+
+        <div id="grupo-ficha-ajudante-${index}" style="margin-top: 16px;">
+          <label>Ficha de Integração Assinada (ajudante)</label>
+          <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*" required></div>
+        </div>
+
+        <div id="grupo-doc-ajudante-${index}" style="margin-top: 16px;">
+          <label>Foto do Documento (ajudante)</label>
+          <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
+        </div>
+      `;
+      container.appendChild(div);
+      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
+    }
   }
-
-  pedidos.sort((a, b) => {
-    const prioridade = status => status === 'Finalizado' ? 1 : 0;
-    return prioridade(a.status) - prioridade(b.status);
-  });
-
-  pedidos.forEach(pedido => {
-    const pedidoId = pedido.pedido_id || pedido.id;
-    const status = pedido.status;
-
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const header = document.createElement('div');
-    header.className = 'card-header';
-
-    const info = document.createElement('div');
-    info.className = 'info';
-    info.innerHTML = `
-      <h3>${pedido.cliente}</h3>
-      <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
-    `;
-
-    const statusTag = document.createElement('div');
-    statusTag.className = 'status-badge';
-    if (status === 'Aguardando Início da Coleta') {
-      statusTag.classList.add('status-amarelo');
-      statusTag.textContent = 'Aguardando Início da Coleta';
-    } else {
-      statusTag.classList.add('status-verde');
-      statusTag.textContent = 'Coleta Iniciada';
-    }
-
-    header.appendChild(info);
-    header.appendChild(statusTag);
-    card.appendChild(header);
-
-    // ✅ INSERE A TIMELINE SEM QUEBRAR NADA
-    const linhaTempo = document.createElement('div');
-    linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
-    card.appendChild(linhaTempo);
-
-    setTimeout(() => {
-      const timeline = card.querySelector('.timeline-simples');
-      if (timeline) animarLinhaProgresso(timeline);
-    }, 20);
-
-    if (status === 'Aguardando Início da Coleta') {
-      renderizarFormularioColeta(pedido, card);
-    }
-
-    lista.appendChild(card);
-  });
-}
+});
 
 function renderizarFormularioColeta(pedido, card) {
   const pedidoId = pedido.pedido_id || pedido.id;
@@ -239,7 +224,7 @@ function renderizarFormularioColeta(pedido, card) {
         <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
         <div style="margin-top: 28px;">
-          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta">
+          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta" style="padding: 10px 20px; font-size: 15px;">
             <i class="fas fa-truck"></i> Iniciar Coleta
           </button>
         </div>
@@ -349,3 +334,4 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
   monitorarUploads();
 });
+
