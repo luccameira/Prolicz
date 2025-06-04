@@ -307,6 +307,7 @@ async function registrarColeta(pedidoId, botao) {
   }
 }
 
+// === MONITORA UPLOADS DE ARQUIVOS (documento, ficha, caminhão) ===
 function monitorarUploads() {
   document.body.addEventListener('change', function (e) {
     if (e.target.type === 'file') {
@@ -330,8 +331,10 @@ function monitorarUploads() {
   });
 }
 
+// === CHAMADA PRINCIPAL APÓS DOM CARREGADO ===
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
   monitorarUploads();
 });
+
 
