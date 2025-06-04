@@ -378,22 +378,33 @@ background: #fff;
   gap: 8px;
 }
 
+/* Alinhamento perfeito da etiqueta de status */
 .linha-cpf-status {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .linha-cpf-status .cpf-input {
-  flex: 1 1 35%;
+  flex: 0 0 auto;
 }
 
 .linha-cpf-status .status-label {
-  flex: 1 1 60%;
   display: flex;
   align-items: center;
-  padding-top: 8px;
+  height: 38px; /* Altura igual à do input */
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Mantém a badge no tamanho correto */
+.badge-status {
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 6px;
 }
 
 .linha-motorista {
