@@ -45,43 +45,43 @@ function formatarData(data) {
 
 async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
   const cpfInput = isAjudante
-    ? document.getElementById(cpf-ajudante-${pedidoId}-${index})
-    : document.getElementById(cpf-${pedidoId});
+    ? document.getElementById(`cpf-ajudante-${pedidoId}-${index}`)
+    : document.getElementById(`cpf-${pedidoId}`);
 
   const cpf = cpfInput?.value?.replace(/\D/g, '');
   if (!cpf || cpf.length < 11) return;
 
   const statusDiv = document.getElementById(
     isAjudante
-      ? status-cadastro-ajudante-${index}
-      : status-cadastro-${pedidoId}
+      ? `status-cadastro-ajudante-${index}`
+      : `status-cadastro-${pedidoId}`
   );
 
   try {
-    const res = await fetch(/api/motoristas/${cpf});
+    const res = await fetch(`/api/motoristas/${cpf}`);
     const data = await res.json();
 
     let html = '';
     if (!data.encontrado) {
-      html = <span style="background:#ff9800;color:#000;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟠 Motorista não cadastrado</span>;
+      html = `<span style="background:#ff9800;color:#000;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟠 Motorista não cadastrado</span>`;
     } else if (data.cadastroVencido) {
-      html = <span style="background:#dc3545;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>;
+      html = `<span style="background:#dc3545;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
     } else {
-      html = <span style="background:#28a745;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟢 Motorista já cadastrado</span>;
+      html = `<span style="background:#28a745;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟢 Motorista já cadastrado</span>`;
     }
 
     statusDiv.innerHTML = html;
     statusDiv.style.display = 'block';
 
     if (!isAjudante) {
-      const nomeInput = document.getElementById(nome-${pedidoId});
+      const nomeInput = document.getElementById(`nome-${pedidoId}`);
       nomeInput.value = data.nome || '';
       nomeInput.readOnly = !!data.encontrado;
-      document.getElementById(placa-${pedidoId}).value = data.placa || '';
-      document.getElementById(bloco-form-${pedidoId}).style.display = 'block';
+      document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
+      document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
 
-      const grupoFicha = document.getElementById(grupo-ficha-${pedidoId});
-      const grupoDoc = document.getElementById(grupo-doc-${pedidoId});
+      const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
+      const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
       if (!data.encontrado || data.cadastroVencido) {
         grupoFicha.style.display = 'block';
         grupoDoc.style.display = 'block';
@@ -91,12 +91,12 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
       }
 
     } else {
-      const nomeAj = document.getElementById(nome-ajudante-${index});
+      const nomeAj = document.getElementById(`nome-ajudante-${index}`);
       nomeAj.value = data.nome || '';
       nomeAj.readOnly = !!data.encontrado;
 
-      const grupoFichaAj = document.getElementById(grupo-ficha-ajudante-${index});
-      const grupoDocAj = document.getElementById(grupo-doc-ajudante-${index});
+      const grupoFichaAj = document.getElementById(`grupo-ficha-ajudante-${index}`);
+      const grupoDocAj = document.getElementById(`grupo-doc-ajudante-${index}`);
       if (!data.encontrado || data.cadastroVencido) {
         grupoFichaAj.style.display = 'block';
         grupoDocAj.style.display = 'block';
@@ -108,14 +108,14 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
 
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
-    statusDiv.innerHTML = <span style="color: red;">Erro ao verificar CPF</span>;
+    statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
     statusDiv.style.display = 'block';
   }
 }
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
-  const res = await fetch(/api/pedidos/portaria?data=${hoje});
+  const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
   let pedidos = await res.json();
 
   const lista = document.getElementById('lista-pedidos');
@@ -126,14 +126,12 @@ async function carregarPedidosPortaria() {
     return;
   }
 
-  // ✅ Ordena: não finalizados primeiro, finalizados por último
   pedidos.sort((a, b) => {
     const prioridade = status => status === 'Finalizado' ? 1 : 0;
     return prioridade(a.status) - prioridade(b.status);
   });
 
   pedidos.forEach(pedido => {
-
     const pedidoId = pedido.pedido_id || pedido.id;
     const status = pedido.status;
     const podeIniciarColeta = status === 'Aguardando Início da Coleta';
@@ -149,10 +147,10 @@ async function carregarPedidosPortaria() {
     header.style.padding = '18px 22px 0 22px';
 
     const info = document.createElement('div');
-    info.innerHTML = 
+    info.innerHTML = `
       <div style="font-weight: bold; font-size: 19px; margin-bottom:2px;">${pedido.cliente}</div>
       <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
-    ;
+    `;
 
     const btnStatus = document.createElement('div');
     let corStatus, corTexto, textoStatus;
@@ -168,11 +166,11 @@ async function carregarPedidosPortaria() {
     }
 
     if (textoStatus) {
-      btnStatus.innerHTML = 
+      btnStatus.innerHTML = `
         <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
           <i class="fa fa-truck"></i> ${textoStatus}
         </div>
-      ;
+      `;
     }
 
     header.appendChild(info);
@@ -186,19 +184,23 @@ async function carregarPedidosPortaria() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
+    lista.appendChild(card);
+  });
+}
+
 document.addEventListener('change', function (e) {
   if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
     const pedidoId = e.target.dataset.pedido;
     const valor = e.target.value;
-    const container = document.getElementById(card-ajudante-container-${pedidoId});
+    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
     if (valor === 'sim') {
       const index = container.children.length;
-      const idSuffix = ${pedidoId}-${index};
+      const idSuffix = `${pedidoId}-${index}`;
       const div = document.createElement('div');
       div.className = 'subcard';
-      div.id = card-ajudante-${idSuffix};
+      div.id = `card-ajudante-${idSuffix}`;
       div.style = "padding: 20px; background: #eaeaea; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
-      div.innerHTML = 
+      div.innerHTML = `
         <div style="display: flex; justify-content: space-between;">
           <label style="font-weight: bold;">Ajudante ${index + 1}</label>
           <button onclick="document.getElementById('card-ajudante-${idSuffix}').remove()" style="background: none; border: none; color: #c00; font-weight: bold; cursor: pointer;">Fechar</button>
@@ -222,9 +224,9 @@ document.addEventListener('change', function (e) {
             <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
           </div>
         </div>
-      ;
+      `;
       container.appendChild(div);
-      aplicarMascaraCPF(div.querySelector(#cpf-ajudante-${idSuffix}));
+      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
     }
   }
 });
@@ -233,12 +235,12 @@ async function registrarColeta(pedidoId, botao) {
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
   if (!confirmar) return;
 
-  const cpf = document.getElementById(cpf-${pedidoId})?.value.trim();
-  const nome = document.getElementById(nome-${pedidoId})?.value.trim();
-  const placa = document.getElementById(placa-${pedidoId})?.value.trim();
-  const caminhaoInput = document.getElementById(foto-caminhao-${pedidoId});
-  const fichaInput = document.getElementById(ficha-${pedidoId});
-  const docInput = document.getElementById(doc-${pedidoId});
+  const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const docInput = document.getElementById(`doc-${pedidoId}`);
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');
@@ -256,14 +258,14 @@ async function registrarColeta(pedidoId, botao) {
   if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
   formData.append('foto_caminhao', caminhaoInput.files[0]);
 
-  const ajudantes = Array.from(document.querySelectorAll([id^="card-ajudante-${pedidoId}-"]));
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
   const nomeAjudante = [];
 
   ajudantes.forEach((card, index) => {
-    const cpfAj = card.querySelector(#cpf-ajudante-${pedidoId}-${index})?.value;
-    const nomeAj = card.querySelector(#nome-ajudante-${index})?.value;
-    const fichaAj = card.querySelector(#ficha-ajudante-${index})?.files?.[0];
-    const docAj = card.querySelector(#doc-ajudante-${index})?.files?.[0];
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
 
     if (cpfAj && nomeAj) {
       formData.append('cpf_ajudante', cpfAj);
@@ -282,7 +284,7 @@ async function registrarColeta(pedidoId, botao) {
 
     if (!res.ok) throw new Error();
 
-    await fetch(/api/pedidos/${pedidoId}/coleta, {
+    await fetch(`/api/pedidos/${pedidoId}/coleta`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante.join(', ') })
