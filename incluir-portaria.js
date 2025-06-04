@@ -1,3 +1,8 @@
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosPortaria();
+  monitorarUploads();
+});
+
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
     let v = input.value.replace(/\D/g, '');
@@ -58,11 +63,11 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
 
     let html = '';
     if (!data.encontrado) {
-      html = `<span style="background:#ff9800;color:#000;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟠 Motorista não cadastrado</span>`;
+      html = `<span class="badge-status badge-nao-cadastrado">🟠 Motorista não cadastrado</span>`;
     } else if (data.cadastroVencido) {
-      html = `<span style="background:#dc3545;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
+      html = `<span class="badge-status badge-vencido">🔴 Cadastro vencido - necessário reenvio da ficha e foto</span>`;
     } else {
-      html = `<span style="background:#28a745;color:#fff;padding:6px 12px;border-radius:6px;font-weight:600;display:inline-block;">🟢 Motorista já cadastrado</span>`;
+      html = `<span class="badge-status badge-ok">🟢 Motorista já cadastrado</span>`;
     }
 
     statusDiv.innerHTML = html;
@@ -89,27 +94,54 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
         grupoDoc.style.display = 'none';
       }
 
-    } else {
-      const nomeAj = document.getElementById(`nome-ajudante-${index}`);
-      nomeAj.value = data.nome || '';
-      nomeAj.readOnly = !!data.encontrado;
-
-      const grupoFichaAj = document.getElementById(`grupo-ficha-ajudante-${index}`);
-      const grupoDocAj = document.getElementById(`grupo-doc-ajudante-${index}`);
-      if (!data.encontrado || data.cadastroVencido) {
-        grupoFichaAj.style.display = 'block';
-        grupoDocAj.style.display = 'block';
-      } else {
-        grupoFichaAj.style.display = 'none';
-        grupoDocAj.style.display = 'none';
+      const seletor = document.getElementById(`tem-ajudante-${pedidoId}`);
+      if (seletor) {
+        seletor.addEventListener('change', () => {
+          exibirCardAjudante(pedidoId, seletor.value);
+        });
       }
-    }
 
+    }
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
     statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
     statusDiv.style.display = 'block';
   }
+}
+
+function exibirCardAjudante(pedidoId, valor) {
+  const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
+  container.innerHTML = '';
+  if (valor !== 'sim') return;
+
+  const index = 0;
+  const html = `
+    <div class="card-ajudante" id="card-ajudante-${pedidoId}-${index}">
+      <h4>Dados do Ajudante</h4>
+      <div class="linha-cpf-status">
+        <div class="cpf-input">
+          <label for="cpf-ajudante-${pedidoId}-${index}">CPF do Ajudante</label>
+          <input type="text" id="cpf-ajudante-${pedidoId}-${index}" data-pedido="${pedidoId}" data-index="${index}" placeholder="000.000.000-00" required>
+        </div>
+        <div class="status-label" id="status-cadastro-ajudante-${index}" style="display:none;"></div>
+      </div>
+      <div>
+        <label for="nome-ajudante-${index}">Nome do Ajudante</label>
+        <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo" required>
+      </div>
+      <div id="grupo-ficha-ajudante-${index}" style="margin-top:22px;display:none;">
+        <label>Ficha de Integração Assinada</label>
+        <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*"></div>
+      </div>
+      <div id="grupo-doc-ajudante-${index}" style="margin-top:22px;display:none;">
+        <label>Foto do Documento com Foto</label>
+        <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*"></div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  aplicarMascaraCPF(document.getElementById(`cpf-ajudante-${pedidoId}-${index}`));
 }
 
 async function carregarPedidosPortaria() {
@@ -161,7 +193,6 @@ async function carregarPedidosPortaria() {
     header.appendChild(statusTag);
     card.appendChild(header);
 
-    // ✅ INSERE A TIMELINE SEM QUEBRAR NADA
     const linhaTempo = document.createElement('div');
     linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
     card.appendChild(linhaTempo);
@@ -239,7 +270,7 @@ function renderizarFormularioColeta(pedido, card) {
         <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
         <div style="margin-top: 28px;">
-          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta">
+          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta btn-reduzido">
             <i class="fas fa-truck"></i> Iniciar Coleta
           </button>
         </div>
@@ -344,8 +375,3 @@ function monitorarUploads() {
     }
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosPortaria();
-  monitorarUploads();
-});
