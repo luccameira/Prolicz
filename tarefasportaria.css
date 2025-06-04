@@ -361,3 +361,78 @@ h1 {
   cursor: pointer;
   float: right;
 }
+
+/* === MELHORIAS VISUAIS DO FORMULÁRIO DE MOTORISTA === */
+.bloco-motorista {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 30px 32px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 30px;
+}
+
+.bloco-motorista h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #333;
+}
+
+.bloco-motorista h3 i {
+  font-size: 18px;
+  color: #555;
+}
+
+.linha-motorista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.linha-motorista > div {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+}
+
+.linha-cpf-status {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.linha-cpf-status .cpf-input {
+  flex: 1 1 35%;
+}
+
+.linha-cpf-status .status-label {
+  flex: 1 1 65%;
+  display: flex;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.botao-iniciar-coleta {
+  background-color: #ffc107;
+  color: #1f1f1f;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.botao-iniciar-coleta:hover {
+  background-color: #e0a800;
+}
