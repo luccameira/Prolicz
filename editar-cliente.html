@@ -10,86 +10,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
   <style>
     body { font-family: 'Roboto', sans-serif; margin: 0; background: #f5f6fa; }
-
-    .main-content {
-  margin-left: 280px;
-  padding: 100px 40px 40px; 
-  box-sizing: border-box;
- }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; box-sizing: border-box; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
     label { margin-top: 15px; display: block; font-weight: 500; font-size: 14px; }
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-
-    .grupo-dinamico {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .grupo-dinamico input,
-    .grupo-dinamico select {
-      flex: 1;
-    }
-
-    .remover-btn {
-      background: #ccc;
-      border: none;
-      border-radius: 5px;
-      width: 30px;
-      cursor: pointer;
-    }
-
-    .btn-adicionar {
-      background: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      margin: 10px 0;
-      border-radius: 5px;
-      cursor: pointer;
-      width: auto;
-    }
-
-    .btn-salvar {
-      background: #28a745;
-      color: white;
-      margin-top: 20px;
-    }
-
-    .btn-voltar {
-      padding: 10px 20px;
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      text-decoration: none;
-      display: inline-block;
-      margin: 10px 0;
-    }
+    input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+    .checkbox-group { margin-top: 5px; margin-bottom: 20px; }
+    .checkbox-group label { display: flex; align-items: center; margin: 5px 0; font-size: 14px; }
+    .checkbox-group input[type="checkbox"] { width: auto; margin-right: 8px; }
+    .grupo-dinamico { display: flex; gap: 10px; margin-bottom: 10px; }
+    .grupo-dinamico input, .grupo-dinamico select { flex: 1; }
+    .remover-btn { background: #ccc; border: none; border-radius: 5px; width: 30px; cursor: pointer; }
+    .btn-adicionar { background: #007bff; color: white; padding: 10px 20px; border: none; margin: 10px 0; border-radius: 5px; cursor: pointer; width: auto; }
+    .btn-salvar { background: #28a745; color: white; margin-top: 20px; }
+    .btn-voltar { padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; margin: 10px 0; }
   </style>
 </head>
 <body>
   <div class="topbar"></div>
   <div class="sidebar"></div>
-
   <div class="main-content">
     <div class="container">
       <a href="clientes.html" class="btn-voltar">Voltar</a>
@@ -98,10 +37,7 @@
         <input type="hidden" id="clienteId">
 
         <label for="tipoPessoa">Tipo de Pessoa</label>
-        <select id="tipoPessoa" required>
-          <option value="juridica">Jurídica</option>
-          <option value="fisica">Física</option>
-        </select>
+        <select id="tipoPessoa" required></select>
 
         <label for="documento">Documento</label>
         <input type="text" id="documento" required>
@@ -112,13 +48,18 @@
         <label for="situacaoTributaria">Situação Tributária</label>
         <input type="text" id="situacaoTributaria">
 
-        <label for="codigoFiscal">Código Fiscal</label>
-        <select id="codigoFiscal" required>
-          <option value="">Selecione</option>
-          <option value="GA1">GA1</option>
-          <option value="GA2">GA2</option>
-          <option value="GAX">GAX</option>
-        </select>
+        <label>Códigos Fiscais Permitidos</label>
+        <div id="codigosFiscaisCheckboxes" class="checkbox-group">
+          <label><input type="checkbox" value="GA1">GA1</label>
+          <label><input type="checkbox" value="GA2">GA2</label>
+          <label><input type="checkbox" value="GX">GX</label>
+          <label><input type="checkbox" value="GG1">GG1</label>
+          <label><input type="checkbox" value="GG2">GG2</label>
+          <label><input type="checkbox" value="A1">A1</label>
+          <label><input type="checkbox" value="A2">A2</label>
+          <label><input type="checkbox" value="AX">AX</label>
+          <label><input type="checkbox" value="Personalizar">Personalizar</label>
+        </div>
 
         <label for="cep">CEP</label>
         <input type="text" id="cep">
@@ -173,8 +114,7 @@
 
     async function carregarCliente() {
       const id = new URLSearchParams(window.location.search).get('id');
-      if (!id) return alert("ID inválido");
-
+      if (!id) return alert('ID inválido');
       document.getElementById('clienteId').value = id;
 
       try {
@@ -185,7 +125,17 @@
         $('#documento').val(cliente.documento);
         $('#nomeFantasia').val(cliente.nome_fantasia);
         $('#situacaoTributaria').val(cliente.situacao_tributaria);
-        $('#codigoFiscal').val(cliente.codigo_fiscal);
+
+        // preencher checkboxes de códigos fiscais
+        if (cliente.codigosFiscais && Array.isArray(cliente.codigosFiscais)) {
+          cliente.codigosFiscais.forEach(cod => {
+            const cb = document.querySelector(
+              `#codigosFiscaisCheckboxes input[type=checkbox][value="${cod}"]`
+            );
+            if (cb) cb.checked = true;
+          });
+        }
+
         $('#cep').val(cliente.cep);
         $('#logradouro').val(cliente.logradouro);
         $('#numero').val(cliente.numero);
@@ -222,7 +172,6 @@
     function adicionarProduto(p = {}) {
       const div = document.createElement('div');
       div.className = 'grupo-dinamico';
-
       const selectHTML = `
         <select required>
           <option value="">Selecione um produto</option>
@@ -232,10 +181,11 @@
           }).join('')}
         </select>
       `;
-
       div.innerHTML = `
         ${selectHTML}
-        <input type="text" class="valor" placeholder="Valor (R$)" value="${p.valor_unitario ? 'R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ',') : ''}" required>
+        <input type="text" class="valor" placeholder="Valor (R$)" value="${
+          p.valor_unitario ? 'R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ',') : ''
+        }" required>
         <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
       `;
       document.getElementById('produtosAutorizados').appendChild(div);
@@ -255,62 +205,41 @@
     document.getElementById('formEditarCliente').addEventListener('submit', async e => {
       e.preventDefault();
       const id = document.getElementById('clienteId').value;
-
       const cliente = {
         tipo_pessoa: $('#tipoPessoa').val(),
         documento: $('#documento').val(),
         nome_fantasia: $('#nomeFantasia').val(),
         situacao_tributaria: $('#situacaoTributaria').val(),
-        codigo_fiscal: $('#codigoFiscal').val(),
+        codigosFiscais: Array.from(document.querySelectorAll('#codigosFiscaisCheckboxes input[type=checkbox]:checked')).map(cb => cb.value),
         cep: $('#cep').val(),
         logradouro: $('#logradouro').val(),
         numero: $('#numero').val(),
         bairro: $('#bairro').val(),
         cidade: $('#cidade').val(),
         estado: $('#estado').val(),
-        contatos: [],
-        produtos: [],
-        prazos: []
+        contatos: [], produtos: [], prazos: []
       };
-
       $('#contatos .grupo-dinamico').each(function () {
         const inputs = this.querySelectorAll('input');
         cliente.contatos.push({ nome: inputs[0].value, telefone: inputs[1].value, email: inputs[2].value });
       });
-
       $('#produtosAutorizados .grupo-dinamico').each(function () {
         const select = this.querySelector('select');
         const inputValor = this.querySelector('.valor');
         cliente.produtos.push({ nome: select.value, valor: inputValor.value });
       });
-
-      $('#prazosPagamento .grupo-dinamico').each(function () {
-        cliente.prazos.push(this.querySelector('input').value);
-      });
-
+      $('#prazosPagamento .grupo-dinamico').each(function () { cliente.prazos.push(this.querySelector('input').value); });
       try {
-        const res = await fetch(`/api/clientes/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cliente)
-        });
-
+        const res = await fetch(`/api/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cliente) });
         const result = await res.json();
-        if (res.ok) {
-          alert("Cliente atualizado com sucesso!");
-          window.location.href = "clientes.html";
-        } else {
-          alert("Erro: " + (result.erro || "Erro desconhecido"));
-        }
-      } catch (err) {
-        alert("Erro ao atualizar cliente");
-        console.error(err);
-      }
+        if (res.ok) { alert('Cliente atualizado com sucesso!'); window.location.href = 'clientes.html'; }
+        else { alert('Erro: ' + (result.erro || 'Erro desconhecido')); }
+      } catch (err) { alert('Erro ao atualizar cliente'); console.error(err); }
     });
 
     $(document).ready(async () => {
-      $('#cep').mask('00000-000');
       await carregarProdutosDoSistema();
+      $('#cep').mask('00000-000');
       carregarCliente();
     });
   </script>

@@ -7,6 +7,42 @@ function formatarPeso(valor) {
   return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 });
 }
 
+// Linha do tempo visual
+function gerarLinhaTempo(statusAtual) {
+  const etapas = [
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF',
+    'Cliente Liberado',
+    'Finalizado'
+  ];
+  let etapaAtiva = false;
+  return `
+    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+      ${etapas.map((etapa, idx) => {
+        if (etapa === statusAtual) etapaAtiva = true;
+        return `
+          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
+            style="
+              padding: 2px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
+              color: #222;
+              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
+              border: 1px solid #d7d7d7;
+              ">
+            ${etapa}
+          </span>
+          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 async function carregarPedidosConferencia() {
   const [resPendentes, resFinalizados] = await Promise.all([
     fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso'),
@@ -34,6 +70,9 @@ async function carregarPedidosConferencia() {
     card.className = 'card';
     if (finalizado) card.classList.add('finalizado');
 
+    // Linha do tempo no topo
+    card.innerHTML = gerarLinhaTempo(pedido.status);
+
     const statusHtml = finalizado
       ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Confirmado</div>`
       : `<div class="status-badge status-amarelo"><i class="fa fa-balance-scale"></i> ${pedido.status}</div>`;
@@ -55,29 +94,96 @@ async function carregarPedidosConferencia() {
 
     if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
-        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+        const pesoPrevisto = formatarPeso(item.quantidade);
+        const pesoCarregado = formatarPeso(item.peso_carregado);
+        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
+
+        let descontosHTML = '';
+        let totalDescontos = 0;
+
+        if (item.descontos && item.descontos.length > 0) {
+          const linhas = item.descontos.map(desc => {
+            const qtd = formatarPeso(desc.quantidade);
+            const peso = formatarPeso(desc.peso_calculado);
+            totalDescontos += Number(desc.peso_calculado || 0);
+            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'Kg';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
+          }).join('');
+
+          descontosHTML = `
+            <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
+              <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+              <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
+            </div>
+          `;
+        }
+
+        const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
+        const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
+
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong>Peso Previsto:</strong> ${formatarPeso(item.quantidade)} ${item.unidade || 'kg'}</p>
-            <span class="tipo-peso">${tipoPeso}</span>
-            <p><strong>Peso Carregado:</strong> ${formatarPeso(item.peso_carregado)} kg</p>
+            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+            ${descontosHTML}
+            <div style="margin-top: 14px;">
+              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+            </div>
           </div>
         `;
       });
     }
 
-    if (pedido.desconto_peso || pedido.motivo_desconto) {
-      const sufixo = pedido.motivo_desconto === 'Paletes' ? 'unidade' : 'kg';
-      const label = pedido.motivo_desconto === 'Paletes'
-        ? 'Desconto (quantidade de paletes)'
-        : 'Desconto (em quilos)';
+    if (pedido.ticket_balanca) {
+      const ticketId = `ticket-${idPedido}`;
       form.innerHTML += `
-        <div class="grupo-desconto">
-          <p><strong>Motivo do Desconto:</strong> ${pedido.motivo_desconto || '—'}</p>
-          <p><strong>${label}:</strong> ${formatarPeso(pedido.desconto_peso)} ${sufixo}</p>
+        <div style="margin-top: 20px;">
+          <label style="font-weight: bold;">Ticket da Balança:</label><br>
+          <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
         </div>
       `;
+
+      setTimeout(() => {
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
+
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.width = '95vw';
+            modalImg.style.height = 'auto';
+            modalImg.style.maxHeight = '95vh';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
+
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
+      }, 100);
     }
 
     if (!finalizado) {
@@ -98,6 +204,9 @@ async function carregarPedidosConferencia() {
 }
 
 async function confirmarPeso(pedidoId, botao) {
+  const confirmar = confirm("Tem certeza que deseja confirmar o peso deste pedido?");
+  if (!confirmar) return;
+
   botao.disabled = true;
   botao.innerText = 'Enviando...';
 
@@ -125,5 +234,8 @@ async function confirmarPeso(pedidoId, botao) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', carregarPedidosConferencia);
-
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosConferencia();
+  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
+  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
+});

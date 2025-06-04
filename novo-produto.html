@@ -73,8 +73,8 @@
         <label for="unidade">Unidade de Medida</label>
         <select id="unidade" name="unidade" required>
           <option value="">Selecione</option>
-          <option value="kg">Kg</option>
-          <option value="unidade">Unidade</option>
+          <option value="Kg">Kg</option>
+          <option value="Unidade">Unidade</option>
         </select>
 
         <button type="submit">Salvar</button>
@@ -108,14 +108,15 @@
         const resposta = await fetch('/api/produtos/novo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome, unidade })
+          body: JSON.stringify({ nome, unidade })  // nome corrigido aqui
         });
 
         if (resposta.ok) {
           alert('Produto cadastrado com sucesso!');
           window.location.href = 'produtos.html';
         } else {
-          alert('Erro ao cadastrar produto.');
+          const erro = await resposta.json();
+          alert('Erro ao cadastrar produto: ' + (erro.erro || 'Erro desconhecido.'));
         }
       } catch (erro) {
         console.error('Erro na requisição:', erro);
@@ -125,3 +126,4 @@
   </script>
 </body>
 </html>
+

@@ -102,7 +102,8 @@ body {
 }
 
 /* Conteúdo principal */
-.content {
+.content,
+.main-content {
   margin-left: 280px;
   padding: 100px 40px 40px;
 }
@@ -202,4 +203,67 @@ th {
 
 tr:hover {
   background-color: #f9f9f9;
+}
+
+/* PRODUTO BLOCO — sem z-index, sem position, sem overflow! */
+.produto-bloco {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  background: #f9f9f9;
+  /* NÃO coloque position, z-index ou overflow aqui! */
+}
+
+/* Ajuste para selects em qualquer contexto */
+select, .select-codigo-fiscal {
+  position: static !important;
+  z-index: auto !important;
+  overflow: visible !important;
+  background: #fff !important;
+  color: #000 !important;
+  pointer-events: auto !important;
+  box-shadow: none !important;
+}
+
+/* Visual padrão nos selects */
+select:focus, .select-codigo-fiscal:focus {
+  outline: 2px solid #ffc107;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 70px;
+    padding: 0;
+  }
+  .content, .main-content {
+    margin-left: 70px;
+    padding: 100px 8px 32px;
+  }
+}
+
+/* Outras correções visuais globais */
+input, select, textarea {
+  font-size: 15px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  background: #fff;
+  color: #222;
+}
+
+/* --- CORREÇÃO UNIVERSAL SELECT DROP-DOWN BLOCO PRODUTO --- */
+/* Garante que nada que envolve o select corte o drop-down */
+.produto-bloco,
+.produto-bloco *,
+.form-group,
+.form-group *,
+#form-pedido,
+#form-pedido *,
+.main-content,
+.main-content * {
+  overflow: visible !important;
+  z-index: auto !important;
+  position: static !important;
 }

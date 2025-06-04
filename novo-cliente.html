@@ -1,441 +1,321 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Novo Cliente - Prolicz</title> <link rel="stylesheet" href="layout.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    <style>
-        /* Estilos específicos para a página Novo Cliente */
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f6fa;
-        }
-
-        /* O .main-content agora é chamado de .content no layout principal para consistência */
-        .content { 
-            margin-left: 280px;
-            padding: 100px 40px 40px;
-        }
-
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 800px;
-            margin: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
-        label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
-        input, select { /* Removido 'button' para não afetar os botões de ação */
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-
-        .telefone-group, .email-group, .contato-group, .produto-group, .prazo-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .remover-btn {
-            background-color: #e0e0e0;
-            color: black;
-            border: none;
-            border-radius: 8px;
-            width: 28px;
-            height: 28px;
-            font-size: 16px;
-            line-height: 1;
-            cursor: pointer;
-            padding: 0;
-            display: flex; /* Para centralizar o 'x' */
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0; /* Impede que o botão encolha em telas pequenas */
-        }
-
-        .remover-btn:hover {
-            background-color: #d0d0d0;
-        }
-
-        .btn-adicionar {
-            background-color: #007bff; /* Mantenho o azul do seu código para este botão específico */
-            color: white;
-            width: auto;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            display: inline-flex; /* Para permitir ícone e texto na mesma linha */
-            align-items: center;
-            gap: 8px;
-            font-weight: bold; /* Adicionado para consistência */
-        }
-        
-        /* Estilo para o botão "Salvar" */
-        button[type="submit"] {
-            background-color: #28a745; 
-            color: white; 
-            margin-top: 20px;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold; /* Adicionado para consistência */
-        }
-
-
-        .hidden { display: none; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Novo Cliente</title>
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <script defer src="incluir-layout.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f6fa;
+    }
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 { margin-bottom: 20px; font-size: 22px; font-weight: 500; }
+    label { display: block; margin-top: 15px; font-weight: 500; font-size: 14px; }
+    input[type="text"], input[type="email"], input[type="number"], select, button {
+      width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px;
+      border: 1px solid #ccc; box-sizing: border-box; font-size: 14px;
+    }
+    .telefone-group, .email-group, .contato-group, .produto-group, .prazo-group {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 10px;
+    }
+    .remover-btn {
+      background-color: #e0e0e0; color: black; border: none; border-radius: 8px;
+      width: 28px; height: 28px; font-size: 16px; line-height: 1; cursor: pointer; padding: 0;
+    }
+    .remover-btn:hover { background-color: #d0d0d0; }
+    .btn-adicionar {
+      background-color: #007bff; color: white; width: auto; margin-top: 10px;
+      margin-bottom: 20px; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;
+    }
+    .hidden { display: none; }
+    #btn-voltar {
+      background-color: #6c757d; color: white; border: none; border-radius: 4px;
+      padding: 7px 20px; cursor: pointer; margin-bottom: 20px; font-size: 14px; font-weight: 500;
+      width: 80px; box-shadow: none; transition: background-color 0.3s ease;
+    }
+    #btn-voltar:hover { background-color: #5a6268; }
+  </style>
 </head>
 <body>
-    <div class="topbar">
-        <div class="logo">
-            <span style="color: #ffc107; font-weight: bold;">Mellicz</span>
-            <span style="color: white;">Ambiental</span>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
+  <div class="main-content">
+    <div class="container">
+      <button id="btn-voltar" onclick="window.location.href='clientes.html'">Voltar</button>
+      <h1>Novo Cliente</h1>
+      <form id="formCliente">
+        <label for="tipoPessoa">Tipo de Pessoa</label>
+        <select id="tipoPessoa" required onchange="atualizarCamposPessoa()">
+          <option value="juridica">Jurídica</option>
+          <option value="fisica">Física</option>
+        </select>
+        <label id="labelDocumento" for="documento">CNPJ</label>
+        <input type="text" id="documento" required>
+        <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
+        <input type="text" id="nomeFantasia" required>
+        <div id="divSituacaoTributaria">
+          <label for="situacaoTributaria">Situação Tributária</label>
+          <select id="situacaoTributaria">
+            <option value="">Selecione</option>
+            <option value="simples">Simples Nacional</option>
+            <option value="lucroPresumido">Lucro Presumido</option>
+            <option value="lucroReal">Lucro Real</option>
+          </select>
         </div>
-        <div>
-            <i class="fa fa-user-circle" style="font-size: 20px; margin-right: 8px;"></i>
-            <span style="margin-right: 10px;">Lucas</span> |
-            <a href="#" style="margin-left: 10px;">Sair</a>
-        </div>
-    </div>
-
-    <div class="sidebar">
-        <nav>
-            <div class="menu-section-title">Menu Principal</div>
-            <a href="dashboard.html"><i class="fa fa-chart-line"></i> Dashboard</a>
-            <a href="clientes.html" class="active"><i class="fa fa-users"></i> Clientes</a> <a href="vendas.html"><i class="fa fa-dollar-sign"></i> Vendas</a>
-            <a href="produtos.html"><i class="fa fa-box"></i> Produtos</a>
-            <a href="usuarios.html"><i class="fa fa-user-cog"></i> Usuários</a>
-
-            <div class="menu-section-title">Tarefas Operacionais</div>
-            <a href="tarefas-portaria.html"><i class="fa fa-door-open"></i> Portaria</a>
-            <a href="tarefas-carga.html"><i class="fa fa-truck"></i> Carga e Descarga</a>
-            <a href="tarefas-conferencia.html"><i class="fa fa-balance-scale"></i> Conferência de Peso</a>
-            <a href="tarefas-financeiro.html"><i class="fa fa-dollar-sign"></i> Financeiro</a>
-            <a href="tarefas-nf.html"><i class="fa fa-file-invoice"></i> Emissão de NF</a>
-            <a href="tarefas-liberacao.html"><i class="fa fa-check-circle"></i> Liberação Final</a>
-        </nav>
-    </div>
-
-    <div class="content"> <div class="container">
-            <h1>Novo Cliente</h1>
-            <form id="formCliente">
-                <label for="tipoPessoa">Tipo de Pessoa</label>
-                <select id="tipoPessoa" required onchange="atualizarCamposPessoa()">
-                    <option value="juridica">Jurídica</option>
-                    <option value="fisica">Física</option>
-                </select>
-
-                <label id="labelDocumento" for="documento">CNPJ</label>
-                <input type="text" id="documento" required>
-
-                <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
-                <input type="text" id="nomeFantasia" required>
-
-                <div id="divSituacaoTributaria">
-                    <label for="situacaoTributaria">Situação Tributária</label>
-                    <select id="situacaoTributaria">
-                        <option value="">Selecione</option>
-                        <option value="simples">Simples Nacional</option>
-                        <option value="lucroPresumido">Lucro Presumido</option>
-                        <option value="lucroReal">Lucro Real</option>
-                    </select>
-                </div>
-
-                <label for="codigoFiscal">Código Fiscal</label>
-                <select id="codigoFiscal" required>
-                    <option value="">Selecione</option>
-                    <option value="GA1">GA1</option>
-                    <option value="GA2">GA2</option>
-                    <option value="GAX">GAX</option>
-                </select>
-
-                <h3>Produtos Autorizados</h3>
-                <div id="produtosAutorizados">
-                    <div class="produto-group">
-                        <select class="produto-select" required>
-                            <option value="">Selecione um produto</option>
-                            </select>
-                        <input type="text" class="valor-unitario" placeholder="Valor unitário (ex: R$ 12,50)" required>
-                        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-                    </div>
-                </div>
-
-                <button type="button" class="btn-adicionar" onclick="adicionarProdutoAutorizado()"><i class="fa fa-plus-circle"></i> Adicionar Produto</button>
-
-                <h3>Prazos de Pagamento Permitidos</h3>
-                <div id="prazosPagamento">
-                    <div class="prazo-group">
-                        <input type="text" class="prazo-input" placeholder="Ex: À vista" required>
-                        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-                    </div>
-                </div>
-                <button type="button" class="btn-adicionar" onclick="adicionarPrazoPagamento()"><i class="fa fa-plus-circle"></i> Adicionar Prazo</button>
-
-                <h3>Endereço</h3>
-                <label for="cep">CEP</label>
-                <input type="text" id="cep" required onblur="buscarEndereco()">
-
-                <label for="logradouro">Logradouro</label>
-                <input type="text" id="logradouro" required>
-
-                <label for="numero">Número</label>
-                <input type="text" id="numero" required>
-
-                <label for="bairro">Bairro</label>
-                <input type="text" id="bairro" required>
-
-                <label for="cidade">Cidade</label>
-                <input type="text" id="cidade" required>
-
-                <label for="estado">Estado</label>
-                <select id="estado" required>
-                    <option value="">Selecione</option>
-                    <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-                </select>
-
-                <h3>Contato</h3>
-                <div id="contatos">
-                    <div class="contato-group">
-                        <input type="text" class="nome-contato" placeholder="Nome do contato" required>
-                        <input type="text" class="telefone-contato" placeholder="Telefone" required>
-                        <input type="email" class="email-contato" placeholder="E-mail" required>
-                        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-                    </div>
-                </div>
-                <button type="button" class="btn-adicionar" onclick="adicionarContato()"><i class="fa fa-plus-circle"></i> Adicionar Contato</button>
-
-                <button type="submit" style="background-color: #28a745; color: white; margin-top: 20px;">Salvar</button>
-            </form>
-        </div>
-    </div>
-
-<script>
-    // Seus scripts JavaScript originais para funcionalidades do formulário
-    
-    // Funções de máscara (já vêm do seu código)
-    function atualizarCamposPessoa() {
-        const tipo = document.getElementById("tipoPessoa").value;
-        const labelDoc = document.getElementById("labelDocumento");
-        const inputDoc = document.getElementById("documento");
-        const divSit = document.getElementById("divSituacaoTributaria");
-        const labelNome = document.getElementById("labelNomeFantasia");
-
-        if (tipo === "fisica") {
-            labelDoc.textContent = "CPF";
-            $(inputDoc).unmask().mask("000.000.000-00");
-            divSit.classList.add("hidden");
-            labelNome.textContent = "Nome";
-        } else {
-            labelDoc.textContent = "CNPJ";
-            $(inputDoc).unmask().mask("00.000.000/0000-00");
-            divSit.classList.remove("hidden");
-            labelNome.textContent = "Nome Fantasia";
-        }
-    }
-
-    // Função de busca de CEP (já vem do seu código)
-    function buscarEndereco() {
-        const cep = document.getElementById("cep").value.replace(/\D/g, "");
-        if (cep.length !== 8) return;
-        fetch(`https://viacep.com.br/ws/${cep}/json/`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.erro) {
-                    document.getElementById("logradouro").value = data.logradouro;
-                    document.getElementById("bairro").value = data.bairro;
-                    document.getElementById("cidade").value = data.localidade;
-                    document.getElementById("estado").value = data.uf;
-                }
-            });
-    }
-
-    let listaProdutos = [];
-
-    // Função para carregar produtos da API (já vem do seu código)
-    async function carregarProdutos() {
-        try {
-            const res = await fetch('/api/clientes/produtos');
-            const data = await res.json();
-            listaProdutos = data;
-        } catch (error) {
-            console.error("Erro ao buscar produtos:", error);
-        }
-    }
-
-    // Função para adicionar produto autorizado (já vem do seu código)
-    function adicionarProdutoAutorizado() {
-        // Permitir adicionar mesmo se listaProdutos estiver vazia para evitar travar o usuário
-        const container = document.getElementById("produtosAutorizados");
-        if (container.children.length >= 10) { // Limite razoável para evitar abuso
-             alert("Máximo de 10 produtos permitidos por cliente.");
-             return;
-        }
-
-        const div = document.createElement("div");
-        div.className = "produto-group";
-
-        const select = document.createElement("select");
-        select.className = "produto-select";
-        select.required = true;
-
-        const defaultOption = document.createElement("option");
-        defaultOption.value = "";
-        defaultOption.textContent = "Selecione um produto";
-        select.appendChild(defaultOption);
-
-        listaProdutos.forEach(p => {
-            const option = document.createElement("option");
-            option.value = p.nome;
-            option.textContent = `${p.nome} (${p.unidade})`;
-            select.appendChild(option);
-        });
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "valor-unitario";
-        input.placeholder = "Valor unitário (ex: R$ 12,50)";
-        input.required = true;
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "remover-btn";
-        button.innerHTML = "&times;";
-        button.onclick = () => div.remove();
-
-        div.appendChild(select);
-        div.appendChild(input);
-        div.appendChild(button);
-
-        container.appendChild(div);
-        $(input).mask("R$ 000.000.000,00", { reverse: true });
-    }
-
-    // Função para adicionar contato (já vem do seu código)
-    function adicionarContato() {
-        const container = document.getElementById("contatos");
-        const div = document.createElement("div");
-        div.className = "contato-group";
-        div.innerHTML = `
+        <label>Códigos Fiscais Permitidos</label>
+        <div id="codigosFiscaisPermitidos"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarCodigoFiscal()">+ Adicionar Código Fiscal</button>  
+        <h3>Produtos Autorizados</h3>
+        <div id="produtosAutorizados"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarProdutoAutorizado()">+ Adicionar Produto</button>
+        <h3>Prazos de Pagamento Permitidos</h3>
+        <div id="prazosPagamento"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarPrazoPagamento()">+ Adicionar Prazo</button>
+        <h3>Endereço</h3>
+        <label for="cep">CEP</label>
+        <input type="text" id="cep" required onblur="buscarEndereco()">
+        <label for="logradouro">Logradouro</label>
+        <input type="text" id="logradouro" required>
+        <label for="numero">Número</label>
+        <input type="text" id="numero" required>
+        <label for="bairro">Bairro</label>
+        <input type="text" id="bairro" required>
+        <label for="cidade">Cidade</label>
+        <input type="text" id="cidade" required>
+        <label for="estado">Estado</label>
+        <select id="estado" required>
+          <option value="">Selecione</option>
+          <option value="SP">SP</option>
+          <option value="RJ">RJ</option>
+          <option value="MG">MG</option>
+          <option value="RS">RS</option>
+        </select>
+        <h3>Contato</h3>
+        <div id="contatos">
+          <div class="contato-group">
             <input type="text" class="nome-contato" placeholder="Nome do contato" required>
             <input type="text" class="telefone-contato" placeholder="Telefone" required>
             <input type="email" class="email-contato" placeholder="E-mail" required>
             <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-        `;
-        container.appendChild(div);
-        $(div).find(".telefone-contato").mask("(00) 00000-0000");
-    }
-
-    // Função para adicionar prazo de pagamento (já vem do seu código)
-    function adicionarPrazoPagamento() {
-        const container = document.getElementById("prazosPagamento");
-        const div = document.createElement("div");
-        div.className = "prazo-group";
-        div.innerHTML = `
-            <input type="text" class="prazo-input" placeholder="Ex: À vista" required>
-            <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-        `;
-        container.appendChild(div);
-    }
-
-    // Listener para o DOMContentLoaded - Inicialização de máscaras e carregamento de produtos (já vem do seu código)
-    document.addEventListener("DOMContentLoaded", async () => {
-        atualizarCamposPessoa();
-        $("#cep").mask("00000-000");
-        
-        // Aplica máscara em telefones já existentes e novos
-        $(".telefone-contato").mask("(00) 00000-0000"); 
-        $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
-
-        await carregarProdutos();
-
-        // Atualiza o primeiro select de produto (se existir)
-        const primeiroSelect = document.querySelector("#produtosAutorizados .produto-select");
-        if (primeiroSelect && listaProdutos.length) {
-            primeiroSelect.innerHTML = '<option value="">Selecione um produto</option>'; // Limpa e adiciona a opção padrão
-            listaProdutos.forEach(p => {
-                const opt = document.createElement("option");
-                opt.value = p.nome;
-                opt.textContent = `${p.nome} (${p.unidade})`;
-                primerioSelect.appendChild(opt);
-            });
-        }
+          </div>
+        </div>
+        <button type="button" class="btn-adicionar" onclick="adicionarContato()">+ Adicionar Contato</button>
+        <button type="submit" style="background-color: #28a745; color: white; margin-top: 20px;">Salvar</button>
+      </form>
+    </div>
+  </div>
+  <script>
+  const listaCodigosFiscais = [
+    "GA1", "GA2", "GX", "GG1", "GG2", "A1", "A2", "AX", "Personalizar"
+  ];
+  function adicionarCodigoFiscal(valorSelecionado = "") {
+    const container = document.getElementById("codigosFiscaisPermitidos");
+    const div = document.createElement("div");
+    div.className = "prazo-group";
+    const select = document.createElement("select");
+    select.className = "codigo-fiscal-select";
+    select.required = true;
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Selecione o código fiscal";
+    select.appendChild(defaultOption);
+    listaCodigosFiscais.forEach(codigo => {
+      const option = document.createElement("option");
+      option.value = codigo;
+      option.textContent = codigo;
+      if (codigo === valorSelecionado) option.selected = true;
+      select.appendChild(option);
     });
-
-    // Listener para o submit do formulário (já vem do seu código)
-    document.getElementById("formCliente").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const cliente = {
-            tipo_pessoa: document.getElementById("tipoPessoa").value,
-            documento: document.getElementById("documento").value,
-            nome_fantasia: document.getElementById("nomeFantasia").value,
-            situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
-            codigo_fiscal: document.getElementById("codigoFiscal").value,
-            cep: document.getElementById("cep").value,
-            logradouro: document.getElementById("logradouro").value,
-            numero: document.getElementById("numero").value,
-            bairro: document.getElementById("bairro").value,
-            cidade: document.getElementById("cidade").value,
-            estado: document.getElementById("estado").value,
-            contatos: [],
-            produtos: [],
-            prazos: []
-        };
-
-        document.querySelectorAll(".contato-group").forEach(div => {
-            cliente.contatos.push({
-                nome: div.querySelector(".nome-contato").value,
-                telefone: div.querySelector(".telefone-contato").value,
-                email: div.querySelector(".email-contato").value
-            });
-        });
-
-        document.querySelectorAll(".produto-group").forEach(div => {
-            cliente.produtos.push({
-                nome: div.querySelector(".produto-select").value,
-                valor: div.querySelector(".valor-unitario").value // O ideal seria converter para número aqui
-            });
-        });
-
-        document.querySelectorAll(".prazo-group").forEach(div => {
-            cliente.prazos.push(div.querySelector(".prazo-input").value);
-        });
-
-        try {
-            const response = await fetch("/api/clientes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(cliente)
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                alert("Cliente cadastrado com sucesso!");
-                window.location.href = "clientes.html";
-            } else {
-                alert("Erro: " + (result.erro || "Erro desconhecido"));
-            }
-        } catch (err) {
-            alert("Erro ao enviar dados para o servidor.");
-            console.error(err);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "remover-btn";
+    button.innerHTML = "&times;";
+    button.onclick = () => div.remove();
+    div.appendChild(select);
+    div.appendChild(button);
+    container.appendChild(div);
+  }
+  function atualizarCamposPessoa() {
+    const tipo = document.getElementById("tipoPessoa").value;
+    const labelDoc = document.getElementById("labelDocumento");
+    const inputDoc = document.getElementById("documento");
+    const divSit = document.getElementById("divSituacaoTributaria");
+    const labelNome = document.getElementById("labelNomeFantasia");
+    if (tipo === "fisica") {
+      labelDoc.textContent = "CPF";
+      $(inputDoc).unmask().mask("000.000.000-00");
+      divSit.classList.add("hidden");
+      labelNome.textContent = "Nome";
+    } else {
+      labelDoc.textContent = "CNPJ";
+      $(inputDoc).unmask().mask("00.000.000/0000-00");
+      divSit.classList.remove("hidden");
+      labelNome.textContent = "Nome Fantasia";
+    }
+  }
+  function buscarEndereco() {
+    const cep = document.getElementById("cep").value.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.erro) {
+          document.getElementById("logradouro").value = data.logradouro;
+          document.getElementById("bairro").value = data.bairro;
+          document.getElementById("cidade").value = data.localidade;
+          document.getElementById("estado").value = data.uf;
         }
+      });
+  }
+  function adicionarContato() {
+    const container = document.getElementById("contatos");
+    const div = document.createElement("div");
+    div.className = "contato-group";
+    div.innerHTML = `
+      <input type="text" class="nome-contato" placeholder="Nome do contato" required>
+      <input type="text" class="telefone-contato" placeholder="Telefone" required>
+      <input type="email" class="email-contato" placeholder="E-mail" required>
+      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(div);
+    $(div).find(".telefone-contato").mask("(00) 00000-0000");
+  }
+  let listaProdutos = [];
+  async function carregarProdutos() {
+    try {
+      const res = await fetch('/api/clientes/produtos');
+      const data = await res.json();
+      listaProdutos = data;
+    } catch (err) {
+      console.error("Erro ao buscar produtos:", err);
+    }
+  }
+  function adicionarProdutoAutorizado() {
+    if (!listaProdutos.length) return;
+    const container = document.getElementById("produtosAutorizados");
+    const div = document.createElement("div");
+    div.className = "produto-group";
+    const select = document.createElement("select");
+    select.className = "produto-select";
+    select.required = true;
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Selecione um produto";
+    select.appendChild(defaultOption);
+    listaProdutos.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = `${p.nome} (${p.unidade})`;
+      select.appendChild(option);
     });
-</script>
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "valor-unitario";
+    input.placeholder = "Valor unitário (ex: R$ 12,50)";
+    input.required = true;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "remover-btn";
+    button.innerHTML = "&times;";
+    button.onclick = () => div.remove();
+    div.appendChild(select);
+    div.appendChild(input);
+    div.appendChild(button);
+    container.appendChild(div);
+    $(input).mask("R$ 000.000.000,00", { reverse: true });
+  }
+  function adicionarPrazoPagamento() {
+    const container = document.getElementById("prazosPagamento");
+    const div = document.createElement("div");
+    div.className = "prazo-group";
+    div.innerHTML = `
+      <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
+      <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
+      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(div);
+  }
+  document.getElementById("formCliente").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cliente = {
+      tipo_pessoa: document.getElementById("tipoPessoa").value,
+      documento: document.getElementById("documento").value,
+      nome_fantasia: document.getElementById("nomeFantasia").value,
+      situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
+      codigosFiscais: Array.from(document.querySelectorAll('.codigo-fiscal-select'))
+        .map(sel => sel.value).filter(v => !!v),
+      cep: document.getElementById("cep").value,
+      logradouro: document.getElementById("logradouro").value,
+      numero: document.getElementById("numero").value,
+      bairro: document.getElementById("bairro").value,
+      cidade: document.getElementById("cidade").value,
+      estado: document.getElementById("estado").value,
+      contatos: [], produtos: [], prazos: []
+    };
+    document.querySelectorAll(".contato-group").forEach(div => {
+      cliente.contatos.push({
+        nome: div.querySelector(".nome-contato").value,
+        telefone: div.querySelector(".telefone-contato").value,
+        email: div.querySelector(".email-contato").value
+      });
+    });
+    document.querySelectorAll(".produto-group").forEach(div => {
+      cliente.produtos.push({
+        id: div.querySelector(".produto-select").value,
+        valor: div.querySelector(".valor-unitario").value
+      });
+    });
+    document.querySelectorAll(".prazo-group").forEach(div => {
+      if(div.querySelector(".prazo-descricao") && div.querySelector(".prazo-dias")) {
+        cliente.prazos.push({
+          descricao: div.querySelector(".prazo-descricao").value,
+          dias: div.querySelector(".prazo-dias").value
+        });
+      }
+    });
+    try {
+      const response = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cliente)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        alert("Cliente cadastrado com sucesso!");
+        window.location.href = "clientes.html";
+      } else {
+        alert("Erro: " + (result.erro || "Erro desconhecido"));
+      }
+    } catch (err) {
+      alert("Erro ao enviar dados para o servidor.");
+      console.error(err);
+    }
+  });
+  document.addEventListener("DOMContentLoaded", async () => {
+    atualizarCamposPessoa();
+    $("#cep").mask("00000-000");
+    $(".telefone-contato").mask("(00) 00000-0000");
+    $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
+    await carregarProdutos();
+    if (document.getElementById("codigosFiscaisPermitidos").children.length === 0) {
+      adicionarCodigoFiscal();
+    }
+  });
+  </script>
 </body>
 </html>
+

@@ -3,26 +3,30 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
-const connection = require('./routes/db');
+const connection = require('./db'); // ✅ conexão com callback
 
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
+// ✅ Permite acesso à pasta uploads/tickets (para visualizar imagens do ticket da balança)
+app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
+
 // Rotas com conexão injetada
 function withConnection(routePath) {
   const router = require(routePath);
-  router.connection = connection;
+  router.connection = connection; // ✅ conexão callback
   return router;
 }
 
 app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
-app.use('/api/produtos', withConnection('./routes/produtos')); // se necessário
-app.use('/api/usuarios', withConnection('./routes/usuarios')); // se necessário
+app.use('/api/produtos', withConnection('./routes/produtos'));
+app.use('/api/usuarios', withConnection('./routes/usuarios'));
+app.use('/api/motoristas', require('./routes/motoristas')); // rota sem injeção
 
-// Redirecionamentos para páginas HTML (existentes)
+// Redirecionamentos para páginas HTML
 app.get('/visualizar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
@@ -35,8 +39,6 @@ app.get('/nova-venda', (req, res) => {
 app.get('/editar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'editar-venda.html'));
 });
-
-// Redirecionamentos para novas páginas de tarefas
 app.get('/tarefas-portaria.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'tarefas-portaria.html'));
 });
