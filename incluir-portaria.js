@@ -79,7 +79,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
       nomeInput.value = data.nome || '';
       nomeInput.readOnly = !!data.encontrado;
       placaInput.value = data.placa || '';
-      placaInput.readOnly = !!data.encontrado;
+      placaInput.readOnly = false;
 
       const bloco = document.getElementById(`bloco-form-${pedidoId}`);
       if (bloco) bloco.style.display = 'block';
