@@ -1,8 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosPortaria();
-  monitorarUploads();
-});
-
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
     let v = input.value.replace(/\D/g, '');
@@ -116,11 +111,6 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     statusDiv.style.display = 'block';
   }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosPortaria();
-  monitorarUploads();
-});
 
 function aplicarMascaraCPF(input) {
   input.addEventListener('input', () => {
@@ -379,3 +369,9 @@ function monitorarUploads() {
     }
   });
 }
+
+// ✅ Correção final: chamada movida para o fim
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosPortaria();
+  monitorarUploads();
+});
