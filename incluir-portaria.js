@@ -173,6 +173,74 @@ async function carregarPedidosPortaria() {
       if (timelineEl) animarLinhaProgresso(timelineEl);
     }, 20);
 
+    if (podeIniciar) {
+      const form = document.createElement('div');
+      form.innerHTML = `
+        <div id="bloco-form-${pedidoId}" style="padding: 24px; display: block;">
+          <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 16px;">
+            <div style="flex: 1;">
+              <label>CPF do Motorista</label>
+              <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required placeholder="Digite o CPF">
+            </div>
+            <div id="status-cadastro-${pedidoId}" style="flex: 1;"></div>
+          </div>
+
+          <div>
+            <label>Nome do Motorista</label>
+            <input type="text" id="nome-${pedidoId}" required placeholder="Nome do motorista">
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label>Placa do Veículo</label>
+            <input type="text" id="placa-${pedidoId}" required placeholder="Ex: ABC-1234">
+          </div>
+
+          <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
+            <label>Foto do Documento</label>
+            <div class="upload-wrapper">
+              <input type="file" id="doc-${pedidoId}" accept="image/*" required>
+            </div>
+          </div>
+
+          <div id="grupo-ficha-${pedidoId}" style="margin-top: 12px;">
+            <label>Ficha de Integração Assinada</label>
+            <div class="upload-wrapper">
+              <input type="file" id="ficha-${pedidoId}" accept="image/*" required>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label>Foto do Caminhão</label>
+            <div class="upload-wrapper">
+              <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label>Tem Ajudante?</label>
+            <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
+              <option value="">Selecione</option>
+              <option value="sim">Sim</option>
+              <option value="nao">Não</option>
+            </select>
+          </div>
+
+          <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
+
+          <div style="margin-top: 24px;">
+            <button onclick="registrarColeta('${pedidoId}', this)" class="botao-amarelo">
+              Iniciar Coleta
+            </button>
+          </div>
+        </div>
+      `;
+      card.appendChild(form);
+      setTimeout(() => {
+        aplicarMascaraCPF(document.getElementById(`cpf-${pedidoId}`));
+        aplicarMascaraPlaca(document.getElementById(`placa-${pedidoId}`));
+      }, 10);
+    }
+
     lista.appendChild(card);
   });
 }
@@ -238,46 +306,6 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     console.error('Erro ao verificar CPF:', err);
   }
 }
-
-document.addEventListener('change', function (e) {
-  if (e.target.id.startsWith('tem-ajudante-')) {
-    const pedidoId = e.target.dataset.pedido;
-    const valor = e.target.value;
-    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-    container.innerHTML = '';
-    if (valor === 'sim') {
-      const index = 0;
-      const idSuffix = `${pedidoId}-${index}`;
-      const div = document.createElement('div');
-      div.className = 'subcard';
-      div.id = `card-ajudante-${idSuffix}`;
-      div.style = "padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 20px;";
-      div.innerHTML = `
-        <label style="font-weight: bold; display: block; margin-bottom: 10px;">Ajudante</label>
-        <div style="display: flex; align-items: flex-end; gap: 12px;">
-          <div style="max-width: 300px; flex: none;">
-            <label>CPF do Ajudante</label>
-            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
-          </div>
-          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
-        </div>
-        <div style="margin-top: 20px;">
-          <label>Nome do Ajudante</label>
-          <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
-          <div id="grupo-ficha-ajudante-${index}" style="margin-top: 12px;">
-            <label>Ficha de Integração Assinada (ajudante)</label>
-            <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*" required></div>
-          </div>
-          <div id="grupo-doc-ajudante-${index}" style="margin-top: 12px;">
-            <label>Foto do Documento (ajudante)</label>
-            <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
-          </div>
-        </div>`;
-      container.appendChild(div);
-      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
-    }
-  }
-});
 
 async function registrarColeta(pedidoId, botao) {
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
@@ -364,3 +392,4 @@ function monitorarUploads() {
     }
   });
 }
+
