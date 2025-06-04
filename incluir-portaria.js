@@ -138,49 +138,30 @@ async function carregarPedidosPortaria() {
     card.className = 'card';
 
     const header = document.createElement('div');
-    header.className = 'header-card';
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'flex-start';
-    header.style.padding = '18px 22px 0 22px';
+    header.className = 'card-header';
 
     const info = document.createElement('div');
+    info.className = 'info';
     info.innerHTML = `
-      <div style="font-weight: bold; font-size: 19px; margin-bottom:2px;">${pedido.cliente}</div>
-      <div style="font-size: 15px; color: #888;">Data Prevista: ${formatarData(pedido.data_coleta)}</div>
+      <h3>${pedido.cliente}</h3>
+      <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
     `;
 
-    const btnStatus = document.createElement('div');
-    let corStatus, corTexto, textoStatus;
-
-    if (status === 'Coleta Iniciada') {
-      corStatus = '#28a745';
-      corTexto = '#fff';
-      textoStatus = 'Coleta Iniciada';
-    } else if (status === 'Aguardando Início da Coleta') {
-      corStatus = '#ffc107';
-      corTexto = '#222';
-      textoStatus = 'Aguardando Início da Coleta';
-    }
-
-    if (textoStatus) {
-      btnStatus.innerHTML = `
-        <div style="background:${corStatus};color:${corTexto};padding:4px 14px;font-weight:600;border-radius:6px;font-size:14px;display:flex;align-items:center;gap:8px;">
-          <i class="fa fa-truck"></i> ${textoStatus}
-        </div>
-      `;
+    const statusTag = document.createElement('div');
+    statusTag.className = 'status-badge';
+    if (status === 'Aguardando Início da Coleta') {
+      statusTag.classList.add('status-amarelo');
+      statusTag.textContent = 'Aguardando Início da Coleta';
+    } else {
+      statusTag.classList.add('status-verde');
+      statusTag.textContent = 'Coleta Iniciada';
     }
 
     header.appendChild(info);
-    if (textoStatus) header.appendChild(btnStatus);
+    header.appendChild(statusTag);
     card.appendChild(header);
 
     card.innerHTML += gerarLinhaTempoCompleta(pedido);
-
-    setTimeout(() => {
-      const timeline = card.querySelector('.timeline-simples');
-      if (timeline) animarLinhaProgresso(timeline);
-    }, 20);
 
     if (status === 'Aguardando Início da Coleta') {
       renderizarFormularioColeta(pedido, card);
@@ -190,57 +171,148 @@ async function carregarPedidosPortaria() {
   });
 }
 
-document.addEventListener('change', function (e) {
-  if (e.target.id && e.target.id.startsWith('tem-ajudante-')) {
-    const pedidoId = e.target.dataset.pedido;
-    const valor = e.target.value;
-    const container = document.getElementById(`card-ajudante-container-${pedidoId}`);
-    if (valor === 'sim') {
-      const index = container.children.length;
-      const idSuffix = `${pedidoId}-${index}`;
-      const div = document.createElement('div');
-      div.className = 'subcard';
-      div.id = `card-ajudante-${idSuffix}`;
-      div.style = `
-        background: #f2f2f2;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-      `;
-      div.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <label style="font-weight: bold;">Ajudante ${index + 1}</label>
-          <button onclick="document.getElementById('card-ajudante-${idSuffix}').remove()" style="background: none; border: none; color: #c00; font-weight: bold; cursor: pointer;">Fechar</button>
-        </div>
+function renderizarFormularioColeta(pedido, card) {
+  const pedidoId = pedido.pedido_id || pedido.id;
 
-        <div style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 250px;">
-            <label>CPF do Ajudante</label>
-            <input type="text" id="cpf-ajudante-${idSuffix}" data-pedido="${pedidoId}" data-index="${index}" required placeholder="Digite o CPF do ajudante">
+  const container = document.createElement('div');
+  container.className = 'formulario';
+  container.innerHTML = `
+    <div class="bloco-motorista">
+      <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
+
+      <div class="linha-cpf-status">
+        <div class="cpf-input">
+          <label for="cpf-${pedidoId}">CPF do Motorista</label>
+          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" placeholder="000.000.000-00" required>
+        </div>
+        <div class="status-label" id="status-cadastro-${pedidoId}" style="display: none;"></div>
+      </div>
+
+      <div id="bloco-form-${pedidoId}" style="display: none;">
+        <div class="linha-motorista">
+          <div>
+            <label for="nome-${pedidoId}">Nome do Motorista</label>
+            <input type="text" id="nome-${pedidoId}" placeholder="Nome completo" required>
           </div>
-          <div id="status-cadastro-ajudante-${index}" style="display: none; flex: 1;"></div>
+          <div>
+            <label for="placa-${pedidoId}">Placa do Veículo</label>
+            <input type="text" id="placa-${pedidoId}" placeholder="AAA-0000" required>
+          </div>
         </div>
 
-        <div style="margin-top: 20px;">
-          <label>Nome do Ajudante</label>
-          <input type="text" id="nome-ajudante-${index}" placeholder="Nome completo do ajudante" required>
+        <div class="linha-motorista">
+          <div style="flex: 1 1 100%;">
+            <label for="foto-caminhao-${pedidoId}">Foto do Caminhão</label>
+            <div class="upload-wrapper">
+              <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+            </div>
+          </div>
         </div>
 
-        <div id="grupo-ficha-ajudante-${index}" style="margin-top: 16px;">
-          <label>Ficha de Integração Assinada (ajudante)</label>
-          <div class="upload-wrapper"><input type="file" id="ficha-ajudante-${index}" accept="image/*" required></div>
+        <div id="grupo-ficha-${pedidoId}" style="margin-top: 22px; display: none;">
+          <label>Ficha de Integração Assinada</label>
+          <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*"></div>
         </div>
 
-        <div id="grupo-doc-ajudante-${index}" style="margin-top: 16px;">
-          <label>Foto do Documento (ajudante)</label>
-          <div class="upload-wrapper"><input type="file" id="doc-ajudante-${index}" accept="image/*" required></div>
+        <div id="grupo-doc-${pedidoId}" style="margin-top: 22px; display: none;">
+          <label>Foto do Documento com Foto</label>
+          <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*"></div>
         </div>
-      `;
-      container.appendChild(div);
-      aplicarMascaraCPF(div.querySelector(`#cpf-ajudante-${idSuffix}`));
-    }
+
+        <div style="margin-top: 22px;">
+          <label>Tem ajudante?</label>
+          <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
+            <option value="">Selecione</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+
+        <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
+
+        <div style="margin-top: 28px;">
+          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta">
+            <i class="fas fa-truck"></i> Iniciar Coleta
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  card.appendChild(container);
+  aplicarMascaraCPF(container.querySelector(`#cpf-${pedidoId}`));
+  aplicarMascaraPlaca(container.querySelector(`#placa-${pedidoId}`));
+  container.style.display = 'block';
+}
+
+async function registrarColeta(pedidoId, botao) {
+  const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
+  if (!confirmar) return;
+
+  const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const docInput = document.getElementById(`doc-${pedidoId}`);
+
+  if (!cpf || !placa || !caminhaoInput.files.length) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
   }
-});
+
+  botao.disabled = true;
+  botao.innerText = 'Enviando...';
+
+  const formData = new FormData();
+  formData.append('cpf', cpf);
+  formData.append('placa', placa);
+  if (nome) formData.append('nome', nome);
+  if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
+  if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
+  formData.append('foto_caminhao', caminhaoInput.files[0]);
+
+  const nomeAjudante = [];
+
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  ajudantes.forEach((card, index) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
+
+    if (cpfAj && nomeAj) {
+      formData.append('cpf_ajudante', cpfAj);
+      formData.append('nome_ajudante', nomeAj);
+      if (fichaAj) formData.append('ficha_ajudante', fichaAj);
+      if (docAj) formData.append('documento_ajudante', docAj);
+      nomeAjudante.push(nomeAj);
+    }
+  });
+
+  try {
+    const res = await fetch('/api/motoristas', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error();
+
+    await fetch(`/api/pedidos/${pedidoId}/coleta`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante.join(', ') })
+    });
+
+    alert('Coleta iniciada com sucesso!');
+    carregarPedidosPortaria();
+  } catch (err) {
+    console.error('Erro ao registrar coleta:', err);
+    alert('Erro ao registrar coleta.');
+    botao.disabled = false;
+    botao.innerText = 'Iniciar Coleta';
+  }
+}
 
 function monitorarUploads() {
   document.body.addEventListener('change', function (e) {
