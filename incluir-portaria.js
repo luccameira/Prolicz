@@ -79,8 +79,8 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
       nomeInput.readOnly = !!data.encontrado;
       document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
 
-      // Aqui o card será exibido APÓS verificação
-      document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
+      const blocoForm = document.getElementById(`bloco-form-${pedidoId}`);
+      if (blocoForm) blocoForm.style.display = 'block';
 
       const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
       const grupoDoc = document.getElementById(`grupo-doc-${pedidoId}`);
@@ -182,16 +182,20 @@ async function carregarPedidosPortaria() {
     card.innerHTML += gerarLinhaTempoCompleta(pedido);
 
     if (podeIniciarColeta) {
-      const bloco = document.createElement('div');
-      bloco.id = `bloco-form-${pedidoId}`;
-      bloco.style = "padding: 20px 22px 22px; margin-top: 10px; border-top: 1px solid #eee; display: none;";
-
-      bloco.innerHTML = `
+      const blocoCPF = document.createElement('div');
+      blocoCPF.style = "padding: 20px 22px 10px; border-top: 1px solid #eee;";
+      blocoCPF.innerHTML = `
         <div style="margin-bottom: 12px;">
           <label>CPF do Motorista</label>
           <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" required>
           <div id="status-cadastro-${pedidoId}" style="margin-top: 6px;"></div>
         </div>
+      `;
+
+      const blocoForm = document.createElement('div');
+      blocoForm.id = `bloco-form-${pedidoId}`;
+      blocoForm.style = "padding: 0 22px 22px; margin-top: 10px; display: none;";
+      blocoForm.innerHTML = `
         <div>
           <label>Nome do Motorista</label>
           <input type="text" id="nome-${pedidoId}" required>
@@ -226,9 +230,10 @@ async function carregarPedidosPortaria() {
         </div>
       `;
 
-      card.appendChild(bloco);
-      aplicarMascaraCPF(bloco.querySelector(`#cpf-${pedidoId}`));
-      aplicarMascaraPlaca(bloco.querySelector(`#placa-${pedidoId}`));
+      card.appendChild(blocoCPF);
+      card.appendChild(blocoForm);
+      aplicarMascaraCPF(blocoCPF.querySelector(`#cpf-${pedidoId}`));
+      aplicarMascaraPlaca(blocoForm.querySelector(`#placa-${pedidoId}`));
     }
 
     setTimeout(() => {
@@ -262,4 +267,3 @@ function monitorarUploads() {
     }
   });
 }
-
