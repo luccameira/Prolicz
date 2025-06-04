@@ -859,3 +859,55 @@ input[type="file"]::file-selector-button:hover {
   text-align: center;
 }
 
+
+/* ===== AJUSTES VISUAIS PARA FORMULÁRIO DE PORTARIA ===== */
+
+.subcard {
+  background: #f2f2f2;
+  border-radius: 12px;
+  padding: 32px;
+  margin: 28px 22px 0 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.subcard label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.subcard input[type="text"],
+.subcard select,
+.subcard input[type="file"] {
+  width: 100%;
+  max-width: 420px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.subcard .upload-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.subcard .btn-primario {
+  margin-top: 12px;
+  background: #2c7be5;
+  color: white;
+  font-weight: bold;
+  padding: 10px 22px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.subcard .btn-primario:hover {
+  background: #1a5fd0;
+}
+
