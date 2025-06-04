@@ -66,7 +66,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     }
 
     statusDiv.innerHTML = html;
-    statusDiv.style.display = 'flex';
+    statusDiv.style.display = 'block';
 
     if (!isAjudante) {
       const nomeInput = document.getElementById(`nome-${pedidoId}`);
@@ -108,7 +108,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
   } catch (error) {
     console.error('Erro na verificação de CPF:', error);
     statusDiv.innerHTML = `<span style="color: red;">Erro ao verificar CPF</span>`;
-    statusDiv.style.display = 'flex';
+    statusDiv.style.display = 'block';
   }
 }
 
@@ -161,6 +161,7 @@ async function carregarPedidosPortaria() {
     header.appendChild(statusTag);
     card.appendChild(header);
 
+    // ✅ INSERE A TIMELINE SEM QUEBRAR NADA
     const linhaTempo = document.createElement('div');
     linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
     card.appendChild(linhaTempo);
@@ -186,6 +187,7 @@ function renderizarFormularioColeta(pedido, card) {
   container.innerHTML = `
     <div class="bloco-motorista">
       <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
+
       <div class="linha-cpf-status">
         <div class="cpf-input">
           <label for="cpf-${pedidoId}">CPF do Motorista</label>
@@ -237,7 +239,7 @@ function renderizarFormularioColeta(pedido, card) {
         <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
         <div style="margin-top: 28px;">
-          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta" style="padding: 10px 20px; font-size: 15px;">
+          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta">
             <i class="fas fa-truck"></i> Iniciar Coleta
           </button>
         </div>
@@ -249,6 +251,75 @@ function renderizarFormularioColeta(pedido, card) {
   aplicarMascaraCPF(container.querySelector(`#cpf-${pedidoId}`));
   aplicarMascaraPlaca(container.querySelector(`#placa-${pedidoId}`));
   container.style.display = 'block';
+}
+
+async function registrarColeta(pedidoId, botao) {
+  const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
+  if (!confirmar) return;
+
+  const cpf = document.getElementById(`cpf-${pedidoId}`)?.value.trim();
+  const nome = document.getElementById(`nome-${pedidoId}`)?.value.trim();
+  const placa = document.getElementById(`placa-${pedidoId}`)?.value.trim();
+  const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
+  const fichaInput = document.getElementById(`ficha-${pedidoId}`);
+  const docInput = document.getElementById(`doc-${pedidoId}`);
+
+  if (!cpf || !placa || !caminhaoInput.files.length) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  botao.disabled = true;
+  botao.innerText = 'Enviando...';
+
+  const formData = new FormData();
+  formData.append('cpf', cpf);
+  formData.append('placa', placa);
+  if (nome) formData.append('nome', nome);
+  if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
+  if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
+  formData.append('foto_caminhao', caminhaoInput.files[0]);
+
+  const nomeAjudante = [];
+
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  ajudantes.forEach((card, index) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
+
+    if (cpfAj && nomeAj) {
+      formData.append('cpf_ajudante', cpfAj);
+      formData.append('nome_ajudante', nomeAj);
+      if (fichaAj) formData.append('ficha_ajudante', fichaAj);
+      if (docAj) formData.append('documento_ajudante', docAj);
+      nomeAjudante.push(nomeAj);
+    }
+  });
+
+  try {
+    const res = await fetch('/api/motoristas', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error();
+
+    await fetch(`/api/pedidos/${pedidoId}/coleta`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ placa, motorista: nome, ajudante: nomeAjudante.join(', ') })
+    });
+
+    alert('Coleta iniciada com sucesso!');
+    carregarPedidosPortaria();
+  } catch (err) {
+    console.error('Erro ao registrar coleta:', err);
+    alert('Erro ao registrar coleta.');
+    botao.disabled = false;
+    botao.innerText = 'Iniciar Coleta';
+  }
 }
 
 function monitorarUploads() {
