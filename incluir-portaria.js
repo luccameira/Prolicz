@@ -200,55 +200,67 @@ function renderizarFormularioColeta(pedido, card) {
 
   const container = document.createElement('div');
   container.className = 'subcard';
-  container.style = 'margin: 24px 22px 0 22px; padding: 22px; background: #f6f6f6; border-radius: 12px;';
+  container.style = `
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    margin: 28px 22px 0 22px;
+    padding: 24px;
+  `;
 
   container.innerHTML = `
     <div style="display: flex; align-items: flex-end; gap: 12px;">
-      <div style="max-width: 280px;">
-        <label>CPF do Motorista</label>
+      <div style="max-width: 280px; flex: 1;">
+        <label style="font-size: 15px; font-weight: 500;">CPF do Motorista</label>
         <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" placeholder="Digite o CPF do motorista" required>
       </div>
       <div id="status-cadastro-${pedidoId}" style="display: none; flex: 1;"></div>
     </div>
 
-    <div id="bloco-form-${pedidoId}" style="display: none; margin-top: 24px;">
+    <div id="bloco-form-${pedidoId}" style="display: none; margin-top: 28px;">
       <div>
-        <label>Nome do Motorista</label>
+        <label style="font-size: 15px; font-weight: 500;">Nome do Motorista</label>
         <input type="text" id="nome-${pedidoId}" placeholder="Nome completo do motorista" required>
       </div>
 
-      <div style="margin-top: 12px;">
-        <label>Placa do Veículo</label>
+      <div style="margin-top: 16px;">
+        <label style="font-size: 15px; font-weight: 500;">Placa do Veículo</label>
         <input type="text" id="placa-${pedidoId}" placeholder="ABC-1234" required>
       </div>
 
-      <div id="grupo-ficha-${pedidoId}" style="margin-top: 16px;">
-        <label>Ficha de Integração Assinada</label>
-        <div class="upload-wrapper"><input type="file" id="ficha-${pedidoId}" accept="image/*"></div>
+      <div id="grupo-ficha-${pedidoId}" style="margin-top: 22px;">
+        <label style="font-size: 15px; font-weight: 500;">Ficha de Integração Assinada</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="ficha-${pedidoId}" accept="image/*">
+        </div>
       </div>
 
-      <div id="grupo-doc-${pedidoId}" style="margin-top: 12px;">
-        <label>Foto do Documento com Foto</label>
-        <div class="upload-wrapper"><input type="file" id="doc-${pedidoId}" accept="image/*"></div>
+      <div id="grupo-doc-${pedidoId}" style="margin-top: 22px;">
+        <label style="font-size: 15px; font-weight: 500;">Foto do Documento com Foto</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="doc-${pedidoId}" accept="image/*">
+        </div>
       </div>
 
-      <div style="margin-top: 12px;">
-        <label>Foto do Caminhão</label>
-        <div class="upload-wrapper"><input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required></div>
+      <div style="margin-top: 22px;">
+        <label style="font-size: 15px; font-weight: 500;">Foto do Caminhão</label>
+        <div class="upload-wrapper" style="position: relative;">
+          <input type="file" id="foto-caminhao-${pedidoId}" accept="image/*" required>
+        </div>
       </div>
 
-      <div style="margin-top: 20px;">
-        <label>Tem ajudante?</label>
-        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}">
+      <div style="margin-top: 22px;">
+        <label style="font-size: 15px; font-weight: 500;">Tem ajudante?</label>
+        <select id="tem-ajudante-${pedidoId}" data-pedido="${pedidoId}" required>
           <option value="">Selecione</option>
           <option value="sim">Sim</option>
           <option value="nao">Não</option>
         </select>
       </div>
 
-      <div id="card-ajudante-container-${pedidoId}" style="margin-top: 16px;"></div>
+      <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
-      <div style="margin-top: 24px;">
+      <div style="margin-top: 28px;">
         <button onclick="registrarColeta('${pedidoId}', this)" class="btn-primario">Iniciar Coleta</button>
       </div>
     </div>
