@@ -78,6 +78,8 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
       nomeInput.value = data.nome || '';
       nomeInput.readOnly = !!data.encontrado;
       document.getElementById(`placa-${pedidoId}`).value = data.placa || '';
+
+      // Aqui o card será exibido APÓS verificação
       document.getElementById(`bloco-form-${pedidoId}`).style.display = 'block';
 
       const grupoFicha = document.getElementById(`grupo-ficha-${pedidoId}`);
@@ -182,7 +184,7 @@ async function carregarPedidosPortaria() {
     if (podeIniciarColeta) {
       const bloco = document.createElement('div');
       bloco.id = `bloco-form-${pedidoId}`;
-      bloco.style = "padding: 20px 22px 22px; margin-top: 10px; border-top: 1px solid #eee;";
+      bloco.style = "padding: 20px 22px 22px; margin-top: 10px; border-top: 1px solid #eee; display: none;";
 
       bloco.innerHTML = `
         <div style="margin-bottom: 12px;">
