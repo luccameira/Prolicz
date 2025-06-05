@@ -182,7 +182,7 @@ h1 {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 20px;
+  padding: 12px 20px 20px;
   margin-top: 20px;
 }
 
@@ -214,6 +214,7 @@ h1 {
   margin: 0;
 }
 
+/* Botões */
 .btn {
   border: none;
   padding: 10px 20px;
@@ -241,6 +242,7 @@ h1 {
   background-color: #e0a800;
 }
 
+/* Upload */
 .upload-ticket {
   margin-top: 20px;
   padding: 18px;
@@ -280,27 +282,27 @@ input[type="file"]::file-selector-button:hover {
   background-color: #e0a800;
 }
 
-/* ↓ Reduz espaço entre a timeline e o card do material */
+/* Ajustes visuais extras */
 .card .formulario {
-  margin-top: -8px; /* estava muito longe da timeline */
+  margin-top: -8px;
 }
 
-/* ↓ Reduz espaço do título "Scrap" até o topo do card */
 .material-bloco {
-  padding-top: 12px !important; /* estava 18px ou 20px */
+  padding-top: 12px !important;
 }
 
+/* Botão Abrir/Fechar Tarefa */
 .btn-toggle-tarefa {
   background-color: #007bff;
   color: white;
-  padding: 10px 24px;
+  padding: 8px 20px;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  margin-top: 18px;
+  margin-top: 12px;
   display: inline-block;
   text-align: center;
 }
