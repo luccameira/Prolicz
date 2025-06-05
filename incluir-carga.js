@@ -6,6 +6,7 @@ function formatarPeso(valor) {
 
 let pedidos = [];
 let descontosPorItem = {};
+let formularioAberto = {};
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -54,11 +55,37 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    if (p.status === 'Coleta Iniciada') {
-      const form = document.createElement('div');
-      form.className = 'formulario';
-      form.id = `form-${p.id}`;
+    const podeExecutar = p.status === 'Coleta Iniciada';
+    const tarefaJaFinalizada = p.status !== 'Coleta Iniciada';
 
+    const form = document.createElement('div');
+    form.className = 'formulario';
+    form.id = `form-${p.id}`;
+    form.style.display = formularioAberto[p.id] ? 'block' : 'none';
+
+    const btnToggle = document.createElement('button');
+    btnToggle.className = 'btn btn-toggle-tarefa';
+    btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
+    btnToggle.style.margin = '0 auto 20px';
+    btnToggle.style.display = 'block';
+
+    if (tarefaJaFinalizada) {
+      btnToggle.remove();
+    } else if (!podeExecutar) {
+      btnToggle.disabled = true;
+      btnToggle.style.opacity = 0.4;
+      btnToggle.style.cursor = 'not-allowed';
+    } else {
+      btnToggle.addEventListener('click', () => {
+        formularioAberto[p.id] = !formularioAberto[p.id];
+        form.style.display = formularioAberto[p.id] ? 'block' : 'none';
+        btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
+      });
+    }
+
+    card.appendChild(btnToggle);
+
+    if (podeExecutar) {
       const materiais = [];
 
       if (p.produto && p.peso_previsto) {
@@ -106,13 +133,6 @@ function renderizarPedidos(lista) {
       } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
-
-      form.style.display = 'none';
-      card.addEventListener('click', (e) => {
-        if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
-          form.style.display = form.style.display === 'block' ? 'none' : 'block';
-        }
-      });
 
       card.appendChild(form);
     }
