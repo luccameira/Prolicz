@@ -1,3 +1,5 @@
+/* tarefascarga.css - Estilo exclusivo para página de Carga e Descarga */
+
 body {
   background-color: #e2e4e7;
   font-family: 'Roboto', sans-serif;
@@ -11,6 +13,7 @@ body {
   min-height: 100vh;
 }
 
+/* Título da página */
 h1 {
   font-size: 28px;
   margin-bottom: 25px;
@@ -41,7 +44,7 @@ h1 {
   font-size: 14px;
 }
 
-/* Cards */
+/* Card padrão */
 .card {
   background-color: #fff;
   border-radius: 10px;
@@ -61,7 +64,7 @@ h1 {
 }
 
 .card-header .info h3 {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px 0;
 }
@@ -94,13 +97,13 @@ h1 {
   color: #34a853;
 }
 
-/* Timeline (importada com JS) */
+/* Timeline */
 .timeline-simples {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   position: relative;
-  padding: 38px 32px 18px 32px;
+  padding: 28px 32px 12px;
   background: #fff;
   border-radius: 10px 10px 0 0;
   min-width: 540px;
@@ -110,12 +113,11 @@ h1 {
   position: absolute;
   left: 0;
   right: 0;
-  top: 52px;
+  top: 42px;
   height: 7px;
   background: #e6e8ea;
   border-radius: 3.5px;
   z-index: 0;
-  pointer-events: none;
 }
 
 .timeline-bar-fg {
@@ -127,7 +129,7 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 0;
+  flex: 1;
   position: relative;
   z-index: 2;
 }
@@ -141,8 +143,9 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
   font-size: 17px;
-  z-index: 3;
+  position: relative;
 }
 
 .timeline-step.done .dot {
@@ -170,70 +173,22 @@ h1 {
   text-align: center;
 }
 
-/* Formulário */
+/* Formulário da tarefa */
 .formulario {
-  display: none;
-  padding: 0 25px 25px;
+  padding: 10px 25px 25px;
 }
 
-.formulario label {
-  font-weight: 500;
-  display: block;
-  margin-top: 12px;
-}
-
-.formulario input,
-.formulario select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.btn {
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  margin-top: 16px;
-  transition: background-color 0.2s;
-}
-
-.btn-registrar {
-  background-color: #007bff;
-  color: white;
-}
-
-.btn-registrar:hover {
-  background-color: #0069d9;
-}
-
-.btn-desconto {
-  background-color: #ffc107;
-  color: #1f1f1f;
-}
-
-.btn-desconto:hover {
-  background-color: #e0a800;
-}
-
-/* Material */
 .material-bloco {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 20px;
-  margin-top: 25px;
+  margin-top: 20px;
 }
 
 .material-bloco h4 {
   font-size: 20px;
   margin-bottom: 12px;
-  color: #333;
 }
 
 .material-bloco p {
@@ -248,56 +203,44 @@ h1 {
   margin-top: 12px;
 }
 
-.linha-peso input {
-  max-width: 200px;
-}
-
-.input-sem-seta::-webkit-inner-spin-button,
-.input-sem-seta::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+.linha-peso label {
   margin: 0;
-}
-.input-sem-seta {
-  appearance: textfield;
-}
-
-/* Grupo de descontos */
-.grupo-desconto {
-  background-color: #f4f4f4;
-  border: 1px dashed #ccc;
-  padding: 16px;
-  border-radius: 8px;
-  margin-top: 20px;
-  position: relative;
-}
-
-.grupo-desconto .fechar-desconto {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  color: #333;
-  cursor: pointer;
-}
-
-.desconto-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-.desconto-container input {
-  flex: 1;
-}
-.sufixo-unidade {
-  font-size: 14px;
-  color: #444;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-/* Upload ticket */
+.linha-peso input {
+  max-width: 200px;
+  margin: 0;
+}
+
+.btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  margin-top: 16px;
+}
+
+.btn-registrar {
+  background-color: #007bff;
+  color: white;
+}
+.btn-registrar:hover {
+  background-color: #0069d9;
+}
+
+.btn-desconto {
+  background-color: #ffc107;
+  color: #1f1f1f;
+}
+.btn-desconto:hover {
+  background-color: #e0a800;
+}
+
 .upload-ticket {
   margin-top: 20px;
   padding: 18px;
@@ -337,10 +280,12 @@ input[type="file"]::file-selector-button:hover {
   background-color: #e0a800;
 }
 
-/* Ícone de peso exato */
-.check-exato {
-  color: #28a745;
-  font-size: 16px;
-  margin-left: 6px;
-  vertical-align: middle;
+/* ↓ Reduz espaço entre a timeline e o card do material */
+.card .formulario {
+  margin-top: -8px; /* estava muito longe da timeline */
+}
+
+/* ↓ Reduz espaço do título "Scrap" até o topo do card */
+.material-bloco {
+  padding-top: 12px !important; /* estava 18px ou 20px */
 }
