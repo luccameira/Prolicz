@@ -38,23 +38,14 @@ function gerarLinhaTempoCompleta(pedido) {
     }
   ];
 
-  // === Define índice da etapa ativa
   let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  // ✅ Regra especial da portaria
   if (pedido.status === 'Aguardando Início da Coleta') {
     idxAtivo = 1;
+  } else if (pedido.status === 'Coleta Iniciada' && pedido.data_coleta_iniciada) {
+    idxAtivo = 2;
   }
 
-  // ✅ Avança para próxima etapa se coleta já foi iniciada com data
-  else if (
-    pedido.status === 'Coleta Iniciada' &&
-    pedido.data_coleta_iniciada
-  ) {
-    idxAtivo = 2; // marca Coleta Iniciada como done, ativa Coleta Finalizada
-  }
-
-  // ✅ Fallback: usa última etapa com data registrada
   if (idxAtivo === -1) {
     for (let i = etapas.length - 1; i >= 0; i--) {
       if (pedido[etapas[i].campoData]) {
@@ -65,8 +56,13 @@ function gerarLinhaTempoCompleta(pedido) {
   }
 
   let html = `<div class="timeline-simples">
-      <div class="timeline-bar-bg"></div>
-      <div class="timeline-bar-fg"></div>
+    <style>
+      .timeline-step.active .dot {
+        border: 5px solid #007bff !important;
+      }
+    </style>
+    <div class="timeline-bar-bg"></div>
+    <div class="timeline-bar-fg"></div>
   `;
 
   etapas.forEach((etapa, idx) => {
