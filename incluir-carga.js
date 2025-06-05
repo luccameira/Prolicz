@@ -78,7 +78,7 @@ function renderizarPedidos(lista) {
           id: p.id,
           nome_produto: p.produto,
           quantidade: parseFloat(p.peso_previsto),
-          unidade: 'kg',
+          unidade: 'Kg', // Corrigido aqui
           tipo_peso: 'Aproximado'
         });
       }
