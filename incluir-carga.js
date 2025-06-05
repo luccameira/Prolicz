@@ -6,7 +6,6 @@ function formatarPeso(valor) {
 
 let pedidos = [];
 let descontosPorItem = {};
-let formularioAberto = {};
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -36,7 +35,7 @@ function renderizarPedidos(lista) {
 
     const header = document.createElement('div');
     header.className = 'card-header';
-    header.innerHTML = `
+    header.innerHTML = 
       <div class="info">
         <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
         <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
@@ -44,7 +43,7 @@ function renderizarPedidos(lista) {
       <div class="status-box">
         ${gerarBadgeStatus(p.status)}
       </div>
-    `;
+    ;
     card.appendChild(header);
 
     const tempDiv = document.createElement('div');
@@ -55,37 +54,11 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const podeExecutar = p.status === 'Coleta Iniciada';
-    const tarefaJaFinalizada = p.status !== 'Coleta Iniciada';
+    if (p.status === 'Coleta Iniciada') {
+      const form = document.createElement('div');
+      form.className = 'formulario';
+      form.id = form-${p.id};
 
-    const form = document.createElement('div');
-    form.className = 'formulario';
-    form.id = `form-${p.id}`;
-    form.style.display = formularioAberto[p.id] ? 'block' : 'none';
-
-    const btnToggle = document.createElement('button');
-    btnToggle.className = 'btn btn-toggle-tarefa';
-    btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
-    btnToggle.style.margin = '0 auto 20px';
-    btnToggle.style.display = 'block';
-
-    if (tarefaJaFinalizada) {
-      btnToggle.remove();
-    } else if (!podeExecutar) {
-      btnToggle.disabled = true;
-      btnToggle.style.opacity = 0.4;
-      btnToggle.style.cursor = 'not-allowed';
-    } else {
-      btnToggle.addEventListener('click', () => {
-        formularioAberto[p.id] = !formularioAberto[p.id];
-        form.style.display = formularioAberto[p.id] ? 'block' : 'none';
-        btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
-      });
-    }
-
-    card.appendChild(btnToggle);
-
-    if (podeExecutar) {
       const materiais = [];
 
       if (p.produto && p.peso_previsto) {
@@ -106,7 +79,7 @@ function renderizarPedidos(lista) {
           const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
           const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
-          form.innerHTML += `
+          form.innerHTML += 
             <div class="material-bloco" data-item-id="${itemId}">
               <h4>${item.nome_produto}</h4>
               <p>
@@ -120,19 +93,26 @@ function renderizarPedidos(lista) {
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
               <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
             </div>
-          `;
+          ;
         });
 
-        form.innerHTML += `
+        form.innerHTML += 
           <div class="upload-ticket">
             <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
             <input type="file" id="ticket-${p.id}" accept="image/*">
           </div>
           <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
-        `;
+        ;
       } else {
-        form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
+        form.innerHTML = <p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>;
       }
+
+      form.style.display = 'none';
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
+          form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+      });
 
       card.appendChild(form);
     }
@@ -143,29 +123,29 @@ function renderizarPedidos(lista) {
 
 function gerarBadgeStatus(status) {
   if (status === 'Aguardando Conferência do Peso') {
-    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
+    return <div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>;
   } else if (status === 'Coleta Iniciada') {
-    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
+    return <div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>;
   } else {
-    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
+    return <div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>;
   }
 }
 
 function adicionarDescontoMaterial(itemId) {
-  const container = document.getElementById(`grupo-descontos-${itemId}`);
+  const container = document.getElementById(grupo-descontos-${itemId});
   const existentes = descontosPorItem[itemId].map(d => d.motivo);
   if (existentes.length >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
   const index = container.querySelectorAll('.grupo-desconto').length;
-  const idMotivo = `motivo-${itemId}-${index}`;
-  const idQtd = `quantidade-${itemId}-${index}`;
-  const idLabel = `label-${itemId}-${index}`;
-  const idLinha = `linha-${itemId}-${index}`;
+  const idMotivo = motivo-${itemId}-${index};
+  const idQtd = quantidade-${itemId}-${index};
+  const idLabel = label-${itemId}-${index};
+  const idLinha = linha-${itemId}-${index};
 
   const div = document.createElement('div');
   div.className = 'grupo-desconto';
-  div.id = `grupo-desconto-${itemId}-${index}`;
-  div.innerHTML = `
+  div.id = grupo-desconto-${itemId}-${index};
+  div.innerHTML = 
     <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})">&times;</button>
     <div class="linha-desconto" id="${idLinha}">
       <div class="coluna-motivo">
@@ -185,12 +165,12 @@ function adicionarDescontoMaterial(itemId) {
         </div>
       </div>
     </div>
-  `;
+  ;
   container.appendChild(div);
 }
 
 function removerDescontoMaterial(itemId, index) {
-  const div = document.getElementById(`grupo-desconto-${itemId}-${index}`);
+  const div = document.getElementById(grupo-desconto-${itemId}-${index});
   if (div) div.remove();
   if (descontosPorItem[itemId]) {
     descontosPorItem[itemId] = descontosPorItem[itemId].filter((_, i) => i !== index);
@@ -198,9 +178,9 @@ function removerDescontoMaterial(itemId, index) {
 }
 
 function atualizarDescontoItem(itemId, index) {
-  const select = document.getElementById(`motivo-${itemId}-${index}`);
-  const input = document.getElementById(`quantidade-${itemId}-${index}`);
-  const label = document.getElementById(`label-${itemId}-${index}`);
+  const select = document.getElementById(motivo-${itemId}-${index});
+  const input = document.getElementById(quantidade-${itemId}-${index});
+  const label = document.getElementById(label-${itemId}-${index});
   const coluna = input.closest('.coluna-desconto');
   const sufixo = coluna.querySelector('.sufixo-unidade');
 
@@ -240,7 +220,7 @@ async function registrarPeso(pedidoId) {
   const pedido = pedidos.find(p => (p.id || p.pedido_id) === pedidoId);
   if (!pedido) return alert("Pedido não encontrado.");
 
-  const form = document.getElementById(`form-${pedidoId}`);
+  const form = document.getElementById(form-${pedidoId});
   if (!form) return alert("Formulário não encontrado.");
 
   const itens = [];
@@ -262,7 +242,7 @@ async function registrarPeso(pedidoId) {
 
   if (!itens.length) return alert("Informe ao menos um peso carregado.");
 
-  const ticketFile = document.getElementById(`ticket-${pedidoId}`)?.files[0];
+  const ticketFile = document.getElementById(ticket-${pedidoId})?.files[0];
   if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
 
   const formData = new FormData();
@@ -270,7 +250,7 @@ async function registrarPeso(pedidoId) {
   formData.append('ticket_balanca', ticketFile);
 
   try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
+    const res = await fetch(/api/pedidos/${pedidoId}/carga, {
       method: 'PUT',
       body: formData
     });
