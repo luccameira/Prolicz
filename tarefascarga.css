@@ -210,10 +210,10 @@ h1 {
 }
 
 .linha-peso input {
-  max-width: 200px;
-  margin: 0;
+  width: 100%;
 }
 
+/* Botões */
 .btn {
   border: none;
   padding: 10px 20px;
@@ -241,6 +241,7 @@ h1 {
   background-color: #e0a800;
 }
 
+/* Upload Ticket */
 .upload-ticket {
   margin-top: 20px;
   padding: 18px;
@@ -280,7 +281,9 @@ input[type="file"]::file-selector-button:hover {
   background-color: #e0a800;
 }
 
-/* Remove as setas dos campos de número */
+/* === Ajustes Finais === */
+
+/* Remove setas dos campos numéricos */
 .input-sem-seta::-webkit-inner-spin-button,
 .input-sem-seta::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -289,10 +292,13 @@ input[type="file"]::file-selector-button:hover {
 
 .input-sem-seta {
   -moz-appearance: textfield;
+  width: 100%;
+  max-width: 280px;
+  font-size: 14px;
 }
 
-.input-sem-seta {
+/* Aumenta largura do campo de upload */
+.upload-ticket input[type="file"] {
   width: 100%;
-  max-width: 280px; /* Aumentado de 200 para 280px */
-  font-size: 14px;
+  max-width: 360px;
 }
