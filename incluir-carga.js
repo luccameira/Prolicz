@@ -56,36 +56,21 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
-    const tarefaJaFinalizada = p.status !== 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
     form.style.display = formularioAberto[p.id] ? 'block' : 'none';
+    card.appendChild(form);
 
-    const btnToggle = document.createElement('button');
-    btnToggle.className = 'btn btn-toggle-tarefa';
-    btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
-    btnToggle.style.margin = '0 auto 20px';
-    btnToggle.style.display = 'block';
-
-    if (tarefaJaFinalizada) {
-      btnToggle.remove();
-    } else if (!podeExecutar) {
-      btnToggle.disabled = true;
-      btnToggle.style.opacity = 0.4;
-      btnToggle.style.cursor = 'not-allowed';
-    } else {
-      btnToggle.addEventListener('click', () => {
-        formularioAberto[p.id] = !formularioAberto[p.id];
-        form.style.display = formularioAberto[p.id] ? 'block' : 'none';
-        btnToggle.innerText = formularioAberto[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
-      });
-    }
-
-    card.appendChild(btnToggle);
+    header.style.cursor = podeExecutar ? 'pointer' : 'default';
 
     if (podeExecutar) {
+      header.addEventListener('click', () => {
+        formularioAberto[p.id] = !formularioAberto[p.id];
+        form.style.display = formularioAberto[p.id] ? 'block' : 'none';
+      });
+
       const materiais = [];
 
       if (p.produto && p.peso_previsto) {
@@ -133,8 +118,6 @@ function renderizarPedidos(lista) {
       } else {
         form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
       }
-
-      card.appendChild(form);
     }
 
     listaEl.appendChild(card);
@@ -288,11 +271,6 @@ async function registrarPeso(pedidoId) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidos();
-  document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
-  document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
-});
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
