@@ -46,10 +46,11 @@ function renderizarPedidos(lista) {
     const card = document.createElement('div');
     card.className = 'card';
 
-    card.addEventListener('click', () => {
-      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
-      renderizarPedidos(pedidos);
-    });
+    header.addEventListener('click', (e) => {
+  e.stopPropagation(); // previne propagação de clique interno
+  tarefasAbertas[p.id] = !tarefasAbertas[p.id];
+  renderizarPedidos(pedidos);
+});
 
     const header = document.createElement('div');
     header.className = 'card-header';
