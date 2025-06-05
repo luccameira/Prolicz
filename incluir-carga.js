@@ -236,7 +236,7 @@ async function registrarPeso(pedidoId) {
   formData.append('materiais', JSON.stringify(materiais));
 
   if (ticketInput && ticketInput.files.length > 0) {
-    formData.append('ticket', ticketInput.files[0]);
+    formData.append('ticket_balanca', ticketInput.files[0]);
   }
 
   const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
