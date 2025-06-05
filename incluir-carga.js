@@ -14,7 +14,7 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
-let tarefasAbertas = {}; // novo controle de visibilidade por ID
+let tarefasAbertas = {}; // controle de visibilidade por ID
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -46,6 +46,11 @@ function renderizarPedidos(lista) {
     const card = document.createElement('div');
     card.className = 'card';
 
+    card.addEventListener('click', () => {
+      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
+      renderizarPedidos(pedidos);
+    });
+
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -67,26 +72,12 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const podeExecutar = p.status === 'Coleta Iniciada';
-    const estaFinalizado = p.status === 'Aguardando Conferência do Peso';
-
-    const botao = document.createElement('button');
-    botao.textContent = tarefasAbertas[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
-    botao.className = 'btn abrir-tarefa';
-    if (!podeExecutar) botao.style.opacity = '0.5';
-    if (estaFinalizado) botao.style.display = 'none';
-
-    botao.addEventListener('click', () => {
-      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
-      renderizarPedidos(pedidos);
-    });
-
-    card.appendChild(botao);
+     const podeExecutar = p.status === 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
-    form.style.display = tarefasAbertas[p.id] ? 'block' : 'none';
+    form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
     const materiais = [];
 
@@ -100,7 +91,7 @@ function renderizarPedidos(lista) {
       });
     }
 
-      if (materiais.length > 0) {
+    if (materiais.length > 0) {
       materiais.forEach((item, index) => {
         const itemId = item.id;
         if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
@@ -111,9 +102,7 @@ function renderizarPedidos(lista) {
         form.innerHTML += `
           <div class="material-bloco" data-item-id="${itemId}">
             <h4>${item.nome_produto}</h4>
-            <p>
-              <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}
-            </p>
+            <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
             <div class="linha-peso">
               <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
               <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
@@ -292,3 +281,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
+
