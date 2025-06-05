@@ -317,3 +317,19 @@ input[type="file"]::file-selector-button:hover {
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* Posiciona o botão sob o ponto ativo da timeline */
+.timeline-step.active {
+  position: relative;
+}
+
+.timeline-step.active .btn-toggle-tarefa {
+  position: absolute;
+  top: 60px; /* distância do botão abaixo da bolinha */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  font-size: 13px;
+  margin-top: 0;
+}
+
