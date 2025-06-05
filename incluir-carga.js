@@ -157,21 +157,21 @@ function adicionarDescontoMaterial(itemId) {
   div.className = 'grupo-desconto';
   div.id = `grupo-desconto-${itemId}-${index}`;
   div.innerHTML = `
-    <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap;">
-      <div style="flex: 1; min-width: 240px;">
-        <label for="${idMotivo}" style="margin-bottom: 4px; display: inline-block;">Motivo do Desconto:</label>
-        <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="width: 100%;">
-          <option value="">Selecione</option>
-          <option value="Palete Pequeno">Palete Pequeno</option>
-          <option value="Palete Grande">Palete Grande</option>
-          <option value="Devolução de Material">Devolução de Material</option>
-        </select>
-      </div>
-      <div style="flex: 1; min-width: 240px;">
-        <label id="${idLabel}" for="${idQtd}" style="margin-bottom: 4px; display: inline-block;">Quantidade</label>
-        <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="width: 100%;">
-      </div>
-      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-left: auto; margin-top: 4px;">&times;</button>
+    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+      <label for="${idMotivo}" style="min-width: 160px;">Motivo do Desconto:</label>
+      <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="flex: 1; padding: 6px;">
+        <option value="">Selecione</option>
+        <option value="Palete Pequeno">Palete Pequeno</option>
+        <option value="Palete Grande">Palete Grande</option>
+        <option value="Devolução de Material">Devolução de Material</option>
+      </select>
+    </div>
+    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+      <label id="${idLabel}" for="${idQtd}" style="min-width: 160px;">Quantidade de Paletes:</label>
+      <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
+    </div>
+    <div style="text-align: right;">
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-top: -6px;">&times;</button>
     </div>
   `;
   container.appendChild(div);
