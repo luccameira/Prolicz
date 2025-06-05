@@ -302,3 +302,40 @@ input[type="file"]::file-selector-button:hover {
   width: 100%;
   max-width: 360px;
 }
+
+/* Bloco da linha do desconto */
+.linha-desconto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+/* Colunas do motivo e da quantidade */
+.coluna-motivo,
+.coluna-desconto {
+  flex: 1;
+  min-width: 240px;
+}
+
+/* Container do grupo completo */
+.grupo-desconto {
+  background: #f1f1f1;
+  border: 1px solid #ccc;
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 8px;
+  position: relative;
+}
+
+/* Botão X para fechar o desconto */
+.grupo-desconto .fechar-desconto {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #333;
+  cursor: pointer;
+}
