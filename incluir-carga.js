@@ -14,7 +14,7 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
-let tarefaAtivaId = null;
+let tarefasAbertas = {}; // controle de visibilidade por ID
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -57,6 +57,12 @@ function renderizarPedidos(lista) {
         ${gerarBadgeStatus(p.status)}
       </div>
     `;
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
+      renderizarPedidos(pedidos);
+    });
+
     card.appendChild(header);
 
     const tempDiv = document.createElement('div');
@@ -67,20 +73,12 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const podeExecutar = p.status === 'Coleta Iniciada';
+      const podeExecutar = p.status === 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
-    form.style.display = tarefaAtivaId === p.id ? 'block' : 'none';
-
-    if (podeExecutar) {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', () => {
-        tarefaAtivaId = tarefaAtivaId === p.id ? null : p.id;
-        renderizarPedidos(pedidos);
-      });
-    }
+    form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
     const materiais = [];
 
@@ -94,7 +92,7 @@ function renderizarPedidos(lista) {
       });
     }
 
-      if (materiais.length > 0) {
+    if (materiais.length > 0) {
       materiais.forEach((item, index) => {
         const itemId = item.id;
         if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
@@ -166,7 +164,7 @@ function adicionarDescontoMaterial(itemId) {
         <option value="Devolução de Material">Devolução de Material</option>
       </select>
     </div>
-    <div class="linha-desconto" style="margin-top: 14px;">
+    <div class="linha-desconto" id="linha-desconto-${index}" style="margin-top: 14px;">
       <label id="${idLabel}" for="${idQtd}">Quantidade</label>
       <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
       <span class="sufixo-unidade">-</span>
@@ -211,7 +209,6 @@ function atualizarDescontoItem(itemId, index) {
 
   label.textContent = labelTexto;
   input.placeholder = placeholder;
-
   const valor = parseFloat(input.value);
   const plural = valor > 1 ? '(s)' : '';
   sufixo.textContent = unidade + (unidade !== 'Kg' ? ` ${plural}` : '');
