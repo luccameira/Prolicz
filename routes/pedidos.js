@@ -292,15 +292,14 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
   const nomeArquivo = req.file?.filename || null;
 
   try {
-   await db.query(
-  `UPDATE pedidos
-   SET 
-     ticket_balanca = ?, 
-     status = 'Aguardando Conferência do Peso',
-     data_carga_finalizada = NOW()
-   WHERE id = ?`,
-  [nomeArquivo, id]
-);
+    await db.query(
+      `UPDATE pedidos
+       SET 
+         ticket_balanca = ?, 
+         status = 'Aguardando Conferência do Peso'
+       WHERE id = ?`,
+      [nomeArquivo, id]
+    );
 
     const listaItens = JSON.parse(itens || '[]');
 
