@@ -180,7 +180,7 @@ function adicionarDescontoMaterial(itemId) {
       <div class="coluna-desconto" style="display:none;">
         <label id="${idLabel}" for="${idQtd}">Quantidade</label>
         <div class="desconto-container">
-          <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
+          <input type="number" id="${idQtd}" class="input-sem-seta" oninput="atualizarDescontoItem(${itemId}, ${index})">
           <span class="sufixo-unidade">-</span>
         </div>
       </div>
@@ -211,22 +211,33 @@ function atualizarDescontoItem(itemId, index) {
 
   let unidade = 'kg';
   let labelTexto = 'Peso (kg)';
+  let placeholder = 'Digite o peso (kg)';
   let pesoPorUnidade = 1;
 
   if (motivo === 'Palete Pequeno') {
     unidade = 'unidade';
     labelTexto = 'Qtd. Paletes Pequenos';
+    placeholder = 'Digite a quantidade de paletes pequenos';
     pesoPorUnidade = 6;
   } else if (motivo === 'Palete Grande') {
     unidade = 'unidade';
     labelTexto = 'Qtd. Paletes Grandes';
+    placeholder = 'Digite a quantidade de paletes grandes';
     pesoPorUnidade = 14.37;
+  } else if (motivo === 'Devolução de Material') {
+    unidade = 'kg';
+    labelTexto = 'Peso devolvido (kg)';
+    placeholder = 'Digite o peso a ser descontado';
+    pesoPorUnidade = 1;
   }
 
   label.textContent = labelTexto;
-  sufixo.textContent = unidade;
+  input.placeholder = placeholder;
 
   const qtd = parseFloat(input.value);
+  const sufixoTexto = unidade === 'unidade' && qtd > 1 ? 'unidade(s)' : unidade;
+  sufixo.textContent = sufixoTexto;
+
   const pesoCalculado = motivo.includes('Palete') && !isNaN(qtd) ? qtd * pesoPorUnidade : qtd;
 
   descontosPorItem[itemId][index] = {
@@ -293,3 +304,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
   document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
+
