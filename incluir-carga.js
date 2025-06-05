@@ -141,167 +141,110 @@ function renderizarPedidos(lista) {
   });
 }
 
-function gerarBadgeStatus(status) {
-  if (status === 'Aguardando Conferência do Peso') {
-    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
-  } else if (status === 'Coleta Iniciada') {
-    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
-  } else {
-    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
-  }
-}
-
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
-  const existentes = descontosPorItem[itemId].map(d => d.motivo);
-  if (existentes.length >= 3) return alert("Limite de 3 tipos de desconto atingido.");
+  const index = descontosPorItem[itemId].length;
 
-  const index = container.querySelectorAll('.grupo-desconto').length;
-  const idMotivo = `motivo-${itemId}-${index}`;
-  const idQtd = `quantidade-${itemId}-${index}`;
-  const idLabel = `label-${itemId}-${index}`;
-  const idLinha = `linha-${itemId}-${index}`;
+  const bloco = document.createElement('div');
+  bloco.className = 'bloco-desconto';
+  bloco.style.marginTop = '20px';
 
-  const div = document.createElement('div');
-  div.className = 'grupo-desconto';
-  div.id = `grupo-desconto-${itemId}-${index}`;
-  div.innerHTML = `
-    <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})">&times;</button>
-    <div class="linha-desconto" id="${idLinha}">
-      <div class="coluna-motivo">
-        <label for="${idMotivo}">Motivo do Desconto:</label>
-        <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})">
-          <option value="">Selecione</option>
-          <option value="Palete Pequeno">Palete Pequeno</option>
-          <option value="Palete Grande">Palete Grande</option>
-          <option value="Devolução de Material">Devolução de Material</option>
-        </select>
-      </div>
-      <div class="coluna-desconto" style="display:none;">
-        <label id="${idLabel}" for="${idQtd}">Quantidade</label>
-        <div class="desconto-container">
-          <input type="number" id="${idQtd}" class="input-sem-seta" oninput="atualizarDescontoItem(${itemId}, ${index})">
-          <span class="sufixo-unidade">-</span>
-        </div>
-      </div>
+  bloco.innerHTML = `
+    <div class="linha-peso">
+      <label for="motivo-${itemId}-${index}">Motivo do Desconto:</label>
+      <select id="motivo-${itemId}-${index}" onchange="atualizarDescontoItem(${itemId}, ${index})">
+        <option value="">Selecione</option>
+        <option value="Palete Grande">Palete Grande</option>
+        <option value="Palete Pequeno">Palete Pequeno</option>
+        <option value="Devolução de Material">Devolução de Material</option>
+      </select>
+    </div>
+    <div class="linha-peso" id="campo-quantidade-${itemId}-${index}" style="display:none; flex-wrap: wrap; align-items: flex-end;">
+      <label id="label-quantidade-${itemId}-${index}" for="quantidade-${itemId}-${index}" style="margin-top: 14px;">Quantidade:</label>
+      <input type="text" id="quantidade-${itemId}-${index}" class="input-sem-seta" style="margin-top: 8px; max-width: 220px;" placeholder="">
+      <span id="sufixo-${itemId}-${index}" style="margin-left: 8px;">Kg</span>
     </div>
   `;
-  container.appendChild(div);
-}
 
-function removerDescontoMaterial(itemId, index) {
-  const div = document.getElementById(`grupo-desconto-${itemId}-${index}`);
-  if (div) div.remove();
-  if (descontosPorItem[itemId]) {
-    descontosPorItem[itemId] = descontosPorItem[itemId].filter((_, i) => i !== index);
-  }
+  container.appendChild(bloco);
+  descontosPorItem[itemId].push({ motivo: '', quantidade: 0 });
+
+  const inputQtd = bloco.querySelector(`#quantidade-${itemId}-${index}`);
+  aplicarMascaraMilhar(inputQtd);
 }
 
 function atualizarDescontoItem(itemId, index) {
-  const select = document.getElementById(`motivo-${itemId}-${index}`);
+  const motivo = document.getElementById(`motivo-${itemId}-${index}`).value;
+  const campo = document.getElementById(`campo-quantidade-${itemId}-${index}`);
+  const label = document.getElementById(`label-quantidade-${itemId}-${index}`);
   const input = document.getElementById(`quantidade-${itemId}-${index}`);
-  const label = document.getElementById(`label-${itemId}-${index}`);
-  const coluna = input.closest('.coluna-desconto');
-  const sufixo = coluna.querySelector('.sufixo-unidade');
+  const sufixo = document.getElementById(`sufixo-${itemId}-${index}`);
 
-  const motivo = select.value;
-  if (!motivo) return (coluna.style.display = 'none');
+  campo.style.display = motivo ? 'flex' : 'none';
 
-  coluna.style.display = 'block';
-
-  let unidade = 'kg';
-  let labelTexto = 'Peso (kg)';
-  let placeholder = 'Digite o peso (kg)';
-  let pesoPorUnidade = 1;
-
-  if (motivo === 'Palete Pequeno') {
-    unidade = 'unidade';
-    labelTexto = 'Qtd. Paletes Pequenos';
-    placeholder = 'Digite a quantidade de paletes pequenos';
-    pesoPorUnidade = 6;
-  } else if (motivo === 'Palete Grande') {
-    unidade = 'unidade';
-    labelTexto = 'Qtd. Paletes Grandes';
-    placeholder = 'Digite a quantidade de paletes grandes';
-    pesoPorUnidade = 14.37;
+  if (motivo === 'Palete Grande') {
+    label.textContent = 'Qtd. Paletes Grandes:';
+    input.placeholder = 'Insira a quantidade de paletes grandes';
+    sufixo.textContent = 'unidade(s)';
+  } else if (motivo === 'Palete Pequeno') {
+    label.textContent = 'Qtd. Paletes Pequenos:';
+    input.placeholder = 'Insira a quantidade de paletes pequenos';
+    sufixo.textContent = 'unidade(s)';
   } else if (motivo === 'Devolução de Material') {
-    unidade = 'kg';
-    labelTexto = 'Peso devolvido (kg)';
-    placeholder = 'Digite o peso a ser descontado';
-    pesoPorUnidade = 1;
+    label.textContent = 'Peso Devolvido: (Kg)';
+    input.placeholder = 'Insira o peso do material devolvido';
+    sufixo.textContent = 'Kg';
   }
 
-  label.textContent = labelTexto;
-  input.placeholder = placeholder;
-
-  const qtd = parseFloat(input.value);
-  const sufixoTexto = unidade === 'unidade' && qtd > 1 ? 'unidade(s)' : unidade;
-  sufixo.textContent = sufixoTexto;
-
-  const pesoCalculado = motivo.includes('Palete') && !isNaN(qtd) ? qtd * pesoPorUnidade : qtd;
-
-  descontosPorItem[itemId][index] = {
-    motivo,
-    quantidade: qtd || 0,
-    peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
-  };
+  descontosPorItem[itemId][index].motivo = motivo;
 }
 
 async function registrarPeso(pedidoId) {
-  const pedido = pedidos.find(p => (p.id || p.pedido_id) === pedidoId);
-  if (!pedido) return alert("Pedido não encontrado.");
-
   const form = document.getElementById(`form-${pedidoId}`);
-  if (!form) return alert("Formulário não encontrado.");
-
-  const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
+  const materiais = [];
 
-  blocos.forEach((bloco) => {
-    const itemId = parseInt(bloco.getAttribute('data-item-id'));
-    const input = bloco.querySelector('input[type="text"]');
-    const peso = parseFloat(input.value.replace(/\./g, ''));
+  blocos.forEach(bloco => {
+    const itemId = bloco.dataset.itemId;
+    const peso = bloco.querySelector(`#peso-${pedidoId}-0`).value.replace(/\./g, '');
+    const pesoNum = parseFloat(peso);
+    const descontos = [];
 
-    if (!isNaN(peso)) {
-      itens.push({
-        item_id: itemId,
-        peso_carregado: peso,
-        descontos: (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0)
-      });
-    }
-  });
-
-  if (!itens.length) return alert("Informe ao menos um peso carregado.");
-
-  const ticketFile = document.getElementById(`ticket-${pedidoId}`)?.files[0];
-  if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
-
-  const formData = new FormData();
-  formData.append('itens', JSON.stringify(itens));
-  formData.append('ticket_balanca', ticketFile);
-
-  try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
-      method: 'PUT',
-      body: formData
+    const descontosBlocos = bloco.querySelectorAll('.bloco-desconto');
+    descontosBlocos.forEach((blocoDesconto, index) => {
+      const motivo = blocoDesconto.querySelector(`#motivo-${itemId}-${index}`).value;
+      let quantidade = blocoDesconto.querySelector(`#quantidade-${itemId}-${index}`).value;
+      quantidade = quantidade.replace(/\./g, '');
+      descontos.push({ motivo, quantidade: parseFloat(quantidade) || 0 });
     });
 
-    const data = await res.json();
-    if (res.ok) {
-      alert('Peso registrado com sucesso!');
-      carregarPedidos();
-    } else {
-      alert(data.erro || 'Erro ao registrar peso.');
-    }
-  } catch (error) {
-    console.error('Erro ao registrar peso:', error);
-    alert('Erro de conexão ao registrar peso.');
+    materiais.push({ itemId, peso: pesoNum, descontos });
+  });
+
+  const ticketInput = document.getElementById(`ticket-${pedidoId}`);
+  const formData = new FormData();
+  formData.append('materiais', JSON.stringify(materiais));
+
+  if (ticketInput && ticketInput.files.length > 0) {
+    formData.append('ticket', ticketInput.files[0]);
+  }
+
+  const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
+    method: 'PUT',
+    body: formData
+  });
+
+  if (res.ok) {
+    alert('Peso registrado com sucesso!');
+    await carregarPedidos();
+  } else {
+    alert('Erro ao registrar peso.');
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('filtro-cliente').addEventListener('input', () => renderizarPedidos(pedidos));
+  document.getElementById('ordenar').addEventListener('change', () => renderizarPedidos(pedidos));
   carregarPedidos();
-  document.getElementById('filtro-cliente').addEventListener('input', () => carregarPedidos());
-  document.getElementById('ordenar').addEventListener('change', () => carregarPedidos());
 });
 
