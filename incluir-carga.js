@@ -14,7 +14,6 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
-let tarefasAbertas = {}; // controle de visibilidade por ID
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -57,12 +56,6 @@ function renderizarPedidos(lista) {
         ${gerarBadgeStatus(p.status)}
       </div>
     `;
-    header.addEventListener('click', (e) => {
-      e.stopPropagation();
-      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
-      renderizarPedidos(pedidos);
-    });
-
     card.appendChild(header);
 
     const tempDiv = document.createElement('div');
@@ -73,12 +66,11 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-      const podeExecutar = p.status === 'Coleta Iniciada';
+    const podeExecutar = p.status === 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
-    form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
     const materiais = [];
 
@@ -103,7 +95,9 @@ function renderizarPedidos(lista) {
         form.innerHTML += `
           <div class="material-bloco" data-item-id="${itemId}">
             <h4>${item.nome_produto}</h4>
-            <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
+            <p>
+              <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}
+            </p>
             <div class="linha-peso">
               <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
               <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
@@ -276,6 +270,12 @@ async function registrarPeso(pedidoId) {
     alert('Erro de conexão ao registrar peso.');
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidos();
+  document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
+  document.getElementById('ordenar').addEventListener('change', carregarPedidos);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
