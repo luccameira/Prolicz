@@ -30,8 +30,16 @@ router.get('/portaria', async (req, res) => {
   try {
     const sql = `
       SELECT 
-        p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-        p.codigo_interno, p.observacao, p.empresa, p.prazo_pagamento,
+        p.id AS pedido_id,
+        p.data_criacao,
+        p.tipo,
+        p.status,
+        p.data_coleta,
+        p.data_coleta_iniciada,  -- ✅ novo campo incluído
+        p.codigo_interno,
+        p.observacao,
+        p.empresa,
+        p.prazo_pagamento,
         p.ticket_balanca,
         c.nome_fantasia AS cliente
       FROM pedidos p
