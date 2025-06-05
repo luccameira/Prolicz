@@ -13,7 +13,6 @@ body {
   min-height: 100vh;
 }
 
-/* Título da página */
 h1 {
   font-size: 28px;
   margin-bottom: 25px;
@@ -44,7 +43,7 @@ h1 {
   font-size: 14px;
 }
 
-/* Card padrão */
+/* Card */
 .card {
   background-color: #fff;
   border-radius: 10px;
@@ -109,7 +108,8 @@ h1 {
   min-width: 540px;
 }
 
-.timeline-bar-bg, .timeline-bar-fg {
+.timeline-bar-bg,
+.timeline-bar-fg {
   position: absolute;
   left: 0;
   right: 0;
@@ -173,7 +173,7 @@ h1 {
   text-align: center;
 }
 
-/* Formulário da tarefa */
+/* Formulário */
 .formulario {
   padding: 10px 25px 25px;
 }
@@ -264,6 +264,8 @@ input[type="file"] {
   border: 1px solid #ccc;
   font-size: 14px;
   color: #444;
+  width: 100%;
+  max-width: 360px;
 }
 
 input[type="file"]::file-selector-button {
@@ -289,7 +291,6 @@ input[type="file"]::file-selector-button:hover {
   -webkit-appearance: none;
   margin: 0;
 }
-
 .input-sem-seta {
   -moz-appearance: textfield;
   width: 100%;
@@ -297,13 +298,7 @@ input[type="file"]::file-selector-button:hover {
   font-size: 14px;
 }
 
-/* Aumenta largura do campo de upload */
-.upload-ticket input[type="file"] {
-  width: 100%;
-  max-width: 360px;
-}
-
-/* Bloco da linha do desconto */
+/* Descontos - Estilo atualizado */
 .linha-desconto {
   display: flex;
   flex-wrap: wrap;
@@ -311,14 +306,12 @@ input[type="file"]::file-selector-button:hover {
   margin-top: 16px;
 }
 
-/* Colunas do motivo e da quantidade */
 .coluna-motivo,
 .coluna-desconto {
   flex: 1;
   min-width: 240px;
 }
 
-/* Container do grupo completo */
 .grupo-desconto {
   background: #f1f1f1;
   border: 1px solid #ccc;
@@ -328,7 +321,6 @@ input[type="file"]::file-selector-button:hover {
   position: relative;
 }
 
-/* Botão X para fechar o desconto */
 .grupo-desconto .fechar-desconto {
   position: absolute;
   top: 8px;
