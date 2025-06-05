@@ -38,10 +38,16 @@ function gerarLinhaTempoCompleta(pedido) {
     }
   ];
 
-  // Define a etapa ativa com base no status atual do pedido
+  // === Regra principal de status ===
   let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
 
-  // Caso o status esteja ausente ou inválido, busca a última etapa com data registrada
+  // ✅ Regra especial da portaria:
+  // Sempre marcar "Aguardando Coleta" como concluído e ativar "Coleta Iniciada"
+  if (pedido.status === 'Aguardando Início da Coleta') {
+    idxAtivo = 1; // Marca "Aguardando Coleta" como done, e "Coleta Iniciada" como ativa
+  }
+
+  // Caso o status não exista, tenta usar o último com data registrada
   if (idxAtivo === -1) {
     for (let i = etapas.length - 1; i >= 0; i--) {
       if (pedido[etapas[i].campoData]) {
