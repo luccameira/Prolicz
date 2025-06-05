@@ -528,3 +528,26 @@ background: #fff;
   padding: 18px 20px;
   margin-top: 8px;
 }
+
+/* === AJUSTES MAIS COMPACTOS NO CARD DO MOTORISTA === */
+
+/* Reduz ainda mais a margem entre a linha do tempo e o card */
+.timeline-simples {
+  margin-bottom: 4px;
+}
+
+/* Reduz ainda mais a margem inferior da linha do CPF */
+.linha-cpf-status {
+  margin-bottom: 6px;
+}
+
+/* Reduz o espaçamento interno do bloco do motorista */
+.bloco-motorista {
+  padding: 14px 18px;
+  margin-top: 6px;
+}
+
+/* Reduz espaço entre campos do formulário (linha-motorista) */
+.linha-motorista {
+  margin-bottom: 10px;
+}
