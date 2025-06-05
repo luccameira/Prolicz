@@ -18,7 +18,6 @@ h1 {
   margin-bottom: 25px;
 }
 
-/* Filtros */
 .filtros-tarefa {
   display: flex;
   flex-wrap: wrap;
@@ -43,7 +42,6 @@ h1 {
   font-size: 14px;
 }
 
-/* Card */
 .card {
   background-color: #fff;
   border-radius: 10px;
@@ -145,7 +143,6 @@ h1 {
   justify-content: center;
   font-weight: bold;
   font-size: 17px;
-  position: relative;
 }
 
 .timeline-step.done .dot {
@@ -241,7 +238,7 @@ h1 {
   background-color: #e0a800;
 }
 
-/* Upload Ticket */
+/* Upload */
 .upload-ticket {
   margin-top: 20px;
   padding: 18px;
@@ -283,9 +280,7 @@ input[type="file"]::file-selector-button:hover {
   background-color: #e0a800;
 }
 
-/* === Ajustes Finais === */
-
-/* Remove setas dos campos numéricos */
+/* Remove setas de campos numéricos */
 .input-sem-seta::-webkit-inner-spin-button,
 .input-sem-seta::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -298,36 +293,62 @@ input[type="file"]::file-selector-button:hover {
   font-size: 14px;
 }
 
-/* Descontos - Estilo atualizado */
-.linha-desconto {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.coluna-motivo,
-.coluna-desconto {
-  flex: 1;
-  min-width: 240px;
-}
-
+/* Estilo aprimorado do bloco de desconto */
 .grupo-desconto {
-  background: #f1f1f1;
+  background: #f8f8f8;
   border: 1px solid #ccc;
-  padding: 16px;
-  margin-top: 16px;
-  border-radius: 8px;
+  padding: 18px 20px;
+  margin-top: 20px;
+  border-radius: 10px;
   position: relative;
 }
 
 .grupo-desconto .fechar-desconto {
   position: absolute;
-  top: 8px;
-  right: 12px;
+  top: 10px;
+  right: 14px;
   background: none;
   border: none;
   font-size: 18px;
   color: #333;
   cursor: pointer;
+  font-weight: bold;
 }
+
+.linha-desconto {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.coluna-motivo,
+.coluna-desconto {
+  display: flex;
+  flex-direction: column;
+}
+
+.coluna-motivo label,
+.coluna-desconto label {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.desconto-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.desconto-container input {
+  max-width: 180px;
+}
+
+.sufixo-unidade {
+  font-size: 14px;
+  color: #555;
+  white-space: nowrap;
+}
+
