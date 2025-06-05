@@ -46,12 +46,6 @@ function renderizarPedidos(lista) {
     const card = document.createElement('div');
     card.className = 'card';
 
-    header.addEventListener('click', (e) => {
-  e.stopPropagation(); // previne propagação de clique interno
-  tarefasAbertas[p.id] = !tarefasAbertas[p.id];
-  renderizarPedidos(pedidos);
-});
-
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -63,6 +57,12 @@ function renderizarPedidos(lista) {
         ${gerarBadgeStatus(p.status)}
       </div>
     `;
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
+      renderizarPedidos(pedidos);
+    });
+
     card.appendChild(header);
 
     const tempDiv = document.createElement('div');
@@ -73,7 +73,7 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-     const podeExecutar = p.status === 'Coleta Iniciada';
+      const podeExecutar = p.status === 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
@@ -282,4 +282,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
-
