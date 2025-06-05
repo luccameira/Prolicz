@@ -128,7 +128,6 @@ function renderizarPedidos(lista) {
     card.appendChild(form);
     listaEl.appendChild(card);
 
-    // aplica máscara de milhar
     form.querySelectorAll('input[type="text"]').forEach(input => aplicarMascaraMilhar(input));
   });
 }
@@ -157,6 +156,9 @@ function adicionarDescontoMaterial(itemId) {
   div.className = 'grupo-desconto';
   div.id = `grupo-desconto-${itemId}-${index}`;
   div.innerHTML = `
+    <div style="text-align: right;">
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-bottom: 6px;">&times;</button>
+    </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
       <label for="${idMotivo}" style="min-width: 160px;">Motivo do Desconto:</label>
       <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="flex: 1; padding: 6px;">
@@ -167,11 +169,8 @@ function adicionarDescontoMaterial(itemId) {
       </select>
     </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label id="${idLabel}" for="${idQtd}" style="min-width: 160px;">Quantidade de Paletes:</label>
-      <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
-    </div>
-    <div style="text-align: right;">
-      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-top: -6px;">&times;</button>
+      <label id="${idLabel}" for="${idQtd}" style="min-width: 160px;">Qtd. Paletes Grandes:</label>
+      <input type="number" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
     </div>
   `;
   container.appendChild(div);
@@ -195,16 +194,14 @@ function atualizarDescontoItem(itemId, index) {
 
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
-  let placeholder = 'Digite o peso a ser descontado';
+  let placeholder = 'Digite a quantidade de paletes';
 
   if (motivo === 'Palete Pequeno') {
-    labelTexto = 'Qtd. Paletes Pequenos';
+    labelTexto = 'Qtd. Paletes Pequenos:';
     pesoPorUnidade = 6;
-    placeholder = 'Digite a quantidade de palete';
   } else if (motivo === 'Palete Grande') {
-    labelTexto = 'Qtd. Paletes Grandes';
+    labelTexto = 'Qtd. Paletes Grandes:';
     pesoPorUnidade = 14.37;
-    placeholder = 'Digite a quantidade de palete';
   }
 
   label.textContent = labelTexto;
@@ -280,4 +277,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
-
