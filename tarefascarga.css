@@ -301,8 +301,8 @@ input[type="file"]::file-selector-button:hover {
 /* Descontos - Estilo atualizado */
 .linha-desconto {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
   margin-top: 16px;
 }
 
