@@ -510,3 +510,21 @@ background: #fff;
 .botao-iniciar-coleta.btn-reduzido:hover {
   background-color: #1565c0;
 }
+
+/* === AJUSTES DE ALTURA E ESPAÇAMENTO NO CARD DO MOTORISTA === */
+
+/* Reduz espaço entre timeline e formulário */
+.timeline-simples {
+  margin-bottom: 12px; /* Reduzido para aproximar do card */
+}
+
+/* Reduz a margem inferior da linha do CPF */
+.linha-cpf-status {
+  margin-bottom: 10px; /* Reduzido de 16px para 10px */
+}
+
+/* Reduz o padding interno do bloco do motorista */
+.bloco-motorista {
+  padding: 18px 20px;
+  margin-top: 8px;
+}
