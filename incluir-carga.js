@@ -127,6 +127,9 @@ function renderizarPedidos(lista) {
 
     card.appendChild(form);
     listaEl.appendChild(card);
+
+    // aplica máscara de milhar
+    form.querySelectorAll('input[type="text"]').forEach(input => aplicarMascaraMilhar(input));
   });
 }
 
@@ -154,20 +157,21 @@ function adicionarDescontoMaterial(itemId) {
   div.className = 'grupo-desconto';
   div.id = `grupo-desconto-${itemId}-${index}`;
   div.innerHTML = `
-    <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})">&times;</button>
-    <div class="linha-desconto">
-      <label for="${idMotivo}">Motivo do Desconto:</label>
-      <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})">
-        <option value="">Selecione</option>
-        <option value="Palete Pequeno">Palete Pequeno</option>
-        <option value="Palete Grande">Palete Grande</option>
-        <option value="Devolução de Material">Devolução de Material</option>
-      </select>
-    </div>
-    <div class="linha-desconto" id="linha-desconto-${index}" style="margin-top: 14px;">
-      <label id="${idLabel}" for="${idQtd}">Quantidade</label>
-      <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
-      <span class="sufixo-unidade">-</span>
+    <div class="linha-desconto" style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+      <div style="flex: 1;">
+        <label for="${idMotivo}">Motivo do Desconto:</label>
+        <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})">
+          <option value="">Selecione</option>
+          <option value="Palete Pequeno">Palete Pequeno</option>
+          <option value="Palete Grande">Palete Grande</option>
+          <option value="Devolução de Material">Devolução de Material</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label id="${idLabel}" for="${idQtd}">Quantidade</label>
+        <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
+      </div>
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-left: auto;">&times;</button>
     </div>
   `;
   container.appendChild(div);
@@ -185,23 +189,19 @@ function atualizarDescontoItem(itemId, index) {
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const input = document.getElementById(`quantidade-${itemId}-${index}`);
   const label = document.getElementById(`label-${itemId}-${index}`);
-  const sufixo = input.nextElementSibling;
 
   const motivo = select.value;
   if (!motivo) return;
 
-  let unidade = 'Kg';
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
   let placeholder = 'Digite o peso a ser descontado';
 
   if (motivo === 'Palete Pequeno') {
-    unidade = 'unidade';
     labelTexto = 'Qtd. Paletes Pequenos';
     pesoPorUnidade = 6;
     placeholder = 'Digite a quantidade de palete';
   } else if (motivo === 'Palete Grande') {
-    unidade = 'unidade';
     labelTexto = 'Qtd. Paletes Grandes';
     pesoPorUnidade = 14.37;
     placeholder = 'Digite a quantidade de palete';
@@ -209,10 +209,8 @@ function atualizarDescontoItem(itemId, index) {
 
   label.textContent = labelTexto;
   input.placeholder = placeholder;
-  const valor = parseFloat(input.value);
-  const plural = valor > 1 ? '(s)' : '';
-  sufixo.textContent = unidade + (unidade !== 'Kg' ? ` ${plural}` : '');
 
+  const valor = parseFloat(input.value);
   const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
 
   descontosPorItem[itemId][index] = {
@@ -282,3 +280,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
+
