@@ -14,6 +14,7 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
+let tarefasAbertas = {}; // novo controle de visibilidade por ID
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -67,10 +68,25 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
+    const estaFinalizado = p.status === 'Aguardando Conferência do Peso';
+
+    const botao = document.createElement('button');
+    botao.textContent = tarefasAbertas[p.id] ? 'Fechar Tarefa' : 'Abrir Tarefa';
+    botao.className = 'btn abrir-tarefa';
+    if (!podeExecutar) botao.style.opacity = '0.5';
+    if (estaFinalizado) botao.style.display = 'none';
+
+    botao.addEventListener('click', () => {
+      tarefasAbertas[p.id] = !tarefasAbertas[p.id];
+      renderizarPedidos(pedidos);
+    });
+
+    card.appendChild(botao);
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
+    form.style.display = tarefasAbertas[p.id] ? 'block' : 'none';
 
     const materiais = [];
 
@@ -84,7 +100,7 @@ function renderizarPedidos(lista) {
       });
     }
 
-    if (materiais.length > 0) {
+      if (materiais.length > 0) {
       materiais.forEach((item, index) => {
         const itemId = item.id;
         if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
