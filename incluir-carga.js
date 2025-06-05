@@ -67,10 +67,12 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
+    const estaFinalizado = p.status === 'Aguardando Conferência do Peso';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
+    form.style.display = podeExecutar && !estaFinalizado ? 'block' : 'none';
 
     const materiais = [];
 
@@ -120,6 +122,11 @@ function renderizarPedidos(lista) {
     }
 
     card.appendChild(form);
+    card.addEventListener('click', () => {
+      const display = form.style.display;
+      form.style.display = display === 'block' ? 'none' : 'block';
+    });
+
     listaEl.appendChild(card);
   });
 }
@@ -271,11 +278,6 @@ async function registrarPeso(pedidoId) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidos();
-  document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
-  document.getElementById('ordenar').addEventListener('change', carregarPedidos);
-});
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
