@@ -290,3 +290,9 @@ input[type="file"]::file-selector-button:hover {
 .input-sem-seta {
   -moz-appearance: textfield;
 }
+
+.input-sem-seta {
+  width: 100%;
+  max-width: 280px; /* Aumentado de 200 para 280px */
+  font-size: 14px;
+}
