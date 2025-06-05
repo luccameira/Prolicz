@@ -141,6 +141,16 @@ function renderizarPedidos(lista) {
   });
 }
 
+function gerarBadgeStatus(status) {
+  if (status === 'Aguardando Conferência do Peso') {
+    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
+  } else if (status === 'Coleta Iniciada') {
+    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
+  } else {
+    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
+  }
+}
+
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const index = descontosPorItem[itemId].length;
@@ -161,7 +171,7 @@ function adicionarDescontoMaterial(itemId) {
     </div>
     <div class="linha-peso" id="campo-quantidade-${itemId}-${index}" style="display:none; flex-wrap: wrap; align-items: flex-end;">
       <label id="label-quantidade-${itemId}-${index}" for="quantidade-${itemId}-${index}" style="margin-top: 14px;">Quantidade:</label>
-      <input type="text" id="quantidade-${itemId}-${index}" class="input-sem-seta" style="margin-top: 8px; max-width: 220px;" placeholder="">
+      <input type="text" id="quantidade-${itemId}-${index}" class="input-sem-seta" style="margin-top: 8px; max-width: 280px;" placeholder="">
       <span id="sufixo-${itemId}-${index}" style="margin-left: 8px;">Kg</span>
     </div>
   `;
@@ -184,15 +194,15 @@ function atualizarDescontoItem(itemId, index) {
 
   if (motivo === 'Palete Grande') {
     label.textContent = 'Qtd. Paletes Grandes:';
-    input.placeholder = 'Insira a quantidade de paletes grandes';
+    input.placeholder = 'Digite a quantidade de paletes grandes';
     sufixo.textContent = 'unidade(s)';
   } else if (motivo === 'Palete Pequeno') {
     label.textContent = 'Qtd. Paletes Pequenos:';
-    input.placeholder = 'Insira a quantidade de paletes pequenos';
+    input.placeholder = 'Digite a quantidade de paletes pequenos';
     sufixo.textContent = 'unidade(s)';
   } else if (motivo === 'Devolução de Material') {
     label.textContent = 'Peso Devolvido: (Kg)';
-    input.placeholder = 'Insira o peso do material devolvido';
+    input.placeholder = 'Digite o peso a ser descontado (Kg)';
     sufixo.textContent = 'Kg';
   }
 
@@ -247,4 +257,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ordenar').addEventListener('change', () => renderizarPedidos(pedidos));
   carregarPedidos();
 });
-
