@@ -4,6 +4,14 @@ function formatarPeso(valor) {
   return Math.round(valor).toLocaleString('pt-BR');
 }
 
+function aplicarMascaraMilhar(input) {
+  input.addEventListener('input', () => {
+    let valor = input.value.replace(/\D/g, '');
+    valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    input.value = valor;
+  });
+}
+
 let pedidos = [];
 let descontosPorItem = {};
 let formularioAberto = {};
@@ -78,7 +86,7 @@ function renderizarPedidos(lista) {
           id: p.id,
           nome_produto: p.produto,
           quantidade: parseFloat(p.peso_previsto),
-          unidade: 'Kg', // Corrigido aqui
+          unidade: 'Kg',
           tipo_peso: 'Aproximado'
         });
       }
@@ -100,12 +108,18 @@ function renderizarPedidos(lista) {
               </p>
               <div class="linha-peso">
                 <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-                <input type="number" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui" min="0">
+                <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
               </div>
               <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
               <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
             </div>
           `;
+
+          // Aplica a máscara ao input recém-criado
+          setTimeout(() => {
+            const input = document.getElementById(`peso-${p.id}-${index}`);
+            aplicarMascaraMilhar(input);
+          }, 10);
         });
 
         form.innerHTML += `
@@ -231,8 +245,8 @@ async function registrarPeso(pedidoId) {
 
   blocos.forEach((bloco) => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
-    const input = bloco.querySelector('input[type="number"]');
-    const peso = parseFloat(input.value);
+    const input = bloco.querySelector('input[type="text"]');
+    const peso = parseFloat(input.value.replace(/\./g, ''));
 
     if (!isNaN(peso)) {
       itens.push({
