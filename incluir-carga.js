@@ -99,23 +99,26 @@ function renderizarPedidos(lista) {
           const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
           const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
-          form.innerHTML += `
-            <div class="material-bloco" data-item-id="${itemId}">
-              <h4>${item.nome_produto}</h4>
-              <p>
-                <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade}
-                ${icone}
-              </p>
-              <div class="linha-peso">
-                <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-                <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
-              </div>
-              <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
-              <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
+          const bloco = document.createElement('div');
+          bloco.className = 'material-bloco';
+          bloco.setAttribute('data-item-id', itemId);
+
+          bloco.innerHTML = `
+            <h4>${item.nome_produto}</h4>
+            <p>
+              <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} ${item.unidade}
+              ${icone}
+            </p>
+            <div class="linha-peso">
+              <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
+              <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
             </div>
+            <div class="grupo-descontos" id="grupo-descontos-${itemId}"></div>
+            <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
           `;
 
-          // Aplica a máscara ao input recém-criado
+          form.appendChild(bloco);
+
           setTimeout(() => {
             const input = document.getElementById(`peso-${p.id}-${index}`);
             aplicarMascaraMilhar(input);
