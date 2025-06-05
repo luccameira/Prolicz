@@ -38,10 +38,17 @@ function gerarLinhaTempoCompleta(pedido) {
     }
   ];
 
-  // Corrige exibição: se o status for "Aguardando Início da Coleta", consideramos a primeira etapa como já concluída
+  // Define a etapa ativa com base no status atual do pedido
   let idxAtivo = etapas.findIndex(et => et.key === pedido.status);
-  if (pedido.status === 'Aguardando Início da Coleta') {
-    idxAtivo = 1; // Ativa visualmente "Coleta Iniciada", marcando "Aguardando Coleta" como concluída
+
+  // Caso o status esteja ausente ou inválido, busca a última etapa com data registrada
+  if (idxAtivo === -1) {
+    for (let i = etapas.length - 1; i >= 0; i--) {
+      if (pedido[etapas[i].campoData]) {
+        idxAtivo = i;
+        break;
+      }
+    }
   }
 
   let html = `<div class="timeline-simples">
@@ -80,7 +87,9 @@ function animarLinhaProgresso(container) {
   let ultimoFeito = -1;
 
   steps.forEach((step, idx) => {
-    if (step.classList.contains('done') || step.classList.contains('active')) ultimoFeito = idx;
+    if (step.classList.contains('done') || step.classList.contains('active')) {
+      ultimoFeito = idx;
+    }
   });
 
   if (steps.length > 1 && fg && bg) {
@@ -88,15 +97,13 @@ function animarLinhaProgresso(container) {
     const lastDot = steps[steps.length - 1].querySelector('.dot').getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    // Linha cinza de fundo (vai do primeiro ao último ponto)
     const start = (firstDot.left + firstDot.width / 2) - containerRect.left;
     const end = (lastDot.left + lastDot.width / 2) - containerRect.left;
 
     bg.style.left = `${start}px`;
     bg.style.width = `${end - start}px`;
 
-    // Linha verde de progresso vai até a última etapa concluída
-    if (ultimoFeito > 0) {
+    if (ultimoFeito >= 0) {
       const doneDot = steps[ultimoFeito].querySelector('.dot').getBoundingClientRect();
       const done = (doneDot.left + doneDot.width / 2) - containerRect.left;
       fg.style.left = `${start}px`;
