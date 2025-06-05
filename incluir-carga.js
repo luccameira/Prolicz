@@ -14,6 +14,7 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
+let tarefaAtivaId = null;
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -67,12 +68,19 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
-    const estaFinalizado = p.status === 'Aguardando Conferência do Peso';
 
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
-    form.style.display = podeExecutar && !estaFinalizado ? 'block' : 'none';
+    form.style.display = tarefaAtivaId === p.id ? 'block' : 'none';
+
+    if (podeExecutar) {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        tarefaAtivaId = tarefaAtivaId === p.id ? null : p.id;
+        renderizarPedidos(pedidos);
+      });
+    }
 
     const materiais = [];
 
@@ -86,7 +94,7 @@ function renderizarPedidos(lista) {
       });
     }
 
-    if (materiais.length > 0) {
+      if (materiais.length > 0) {
       materiais.forEach((item, index) => {
         const itemId = item.id;
         if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
@@ -97,9 +105,7 @@ function renderizarPedidos(lista) {
         form.innerHTML += `
           <div class="material-bloco" data-item-id="${itemId}">
             <h4>${item.nome_produto}</h4>
-            <p>
-              <strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}
-            </p>
+            <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
             <div class="linha-peso">
               <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
               <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
@@ -122,11 +128,6 @@ function renderizarPedidos(lista) {
     }
 
     card.appendChild(form);
-    card.addEventListener('click', () => {
-      const display = form.style.display;
-      form.style.display = display === 'block' ? 'none' : 'block';
-    });
-
     listaEl.appendChild(card);
   });
 }
@@ -165,7 +166,7 @@ function adicionarDescontoMaterial(itemId) {
         <option value="Devolução de Material">Devolução de Material</option>
       </select>
     </div>
-    <div class="linha-desconto" id="linha-desconto-${index}" style="margin-top: 14px;">
+    <div class="linha-desconto" style="margin-top: 14px;">
       <label id="${idLabel}" for="${idQtd}">Quantidade</label>
       <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
       <span class="sufixo-unidade">-</span>
@@ -210,6 +211,7 @@ function atualizarDescontoItem(itemId, index) {
 
   label.textContent = labelTexto;
   input.placeholder = placeholder;
+
   const valor = parseFloat(input.value);
   const plural = valor > 1 ? '(s)' : '';
   sufixo.textContent = unidade + (unidade !== 'Kg' ? ` ${plural}` : '');
