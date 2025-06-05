@@ -157,10 +157,10 @@ function adicionarDescontoMaterial(itemId) {
   div.className = 'grupo-desconto';
   div.id = `grupo-desconto-${itemId}-${index}`;
   div.innerHTML = `
-    <div class="linha-desconto" style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 10px;">
       <div style="flex: 1;">
         <label for="${idMotivo}">Motivo do Desconto:</label>
-        <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})">
+        <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="width: 100%;">
           <option value="">Selecione</option>
           <option value="Palete Pequeno">Palete Pequeno</option>
           <option value="Palete Grande">Palete Grande</option>
@@ -169,9 +169,9 @@ function adicionarDescontoMaterial(itemId) {
       </div>
       <div style="flex: 1;">
         <label id="${idLabel}" for="${idQtd}">Quantidade</label>
-        <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta">
+        <input type="number" id="${idQtd}" placeholder="" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="width: 100%;">
       </div>
-      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-left: auto;">&times;</button>
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-top: 6px;">&times;</button>
     </div>
   `;
   container.appendChild(div);
