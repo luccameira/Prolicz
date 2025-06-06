@@ -35,7 +35,8 @@ router.get('/portaria', async (req, res) => {
         p.tipo,
         p.status,
         p.data_coleta,
-        p.data_coleta_iniciada,  -- ✅ novo campo incluído
+        p.data_coleta_iniciada,     -- ✅ já estava incluído
+        p.data_carga_finalizada,    -- ✅ necessário para exibir na timeline
         p.codigo_interno,
         p.observacao,
         p.empresa,
