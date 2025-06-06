@@ -76,6 +76,7 @@ router.get('/carga', async (req, res) => {
       i.nome_produto AS produto,
       p.data_coleta,
       p.data_coleta_iniciada,
+      p.data_carga_finalizada,  -- ✅ ADICIONE ESTA LINHA
       SUM(i.peso) AS peso_previsto,
       p.status
     FROM pedidos p
@@ -83,7 +84,7 @@ router.get('/carga', async (req, res) => {
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
     WHERE DATE(p.data_coleta) = CURDATE()
       AND p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso')
-    GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta, p.data_coleta_iniciada, p.status
+    GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.status
     ORDER BY 
       CASE 
         WHEN p.status = 'Coleta Iniciada' THEN 1
