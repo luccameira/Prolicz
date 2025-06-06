@@ -145,9 +145,13 @@ function gerarBadgeStatus(status) {
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const existentes = descontosPorItem[itemId].map(d => d.motivo);
-  if (existentes.length >= 3) return alert("Limite de 3 tipos de desconto atingido.");
+  const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
 
-  const index = container.querySelectorAll('.grupo-desconto').length;
+  if (blocosAtuais >= 3) {
+    return alert("Limite de 3 tipos de desconto atingido.");
+  }
+
+  const index = blocosAtuais;
   const idMotivo = `motivo-${itemId}-${index}`;
   const idQtd = `quantidade-${itemId}-${index}`;
   const idLabel = `label-${itemId}-${index}`;
@@ -157,10 +161,10 @@ function adicionarDescontoMaterial(itemId) {
   div.id = `grupo-desconto-${itemId}-${index}`;
   div.innerHTML = `
     <div style="text-align: right;">
-      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" style="margin-bottom: 6px;">&times;</button>
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" title="Remover desconto">&times;</button>
     </div>
-    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label for="${idMotivo}" style="min-width: 160px;">Motivo do Desconto:</label>
+    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; padding-right: 10px;">
+      <label for="${idMotivo}" style="min-width: 150px;">Motivo do Desconto:</label>
       <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="flex: 1; padding: 6px;">
         <option value="">Selecione</option>
         <option value="Palete Pequeno">Palete Pequeno</option>
@@ -169,7 +173,7 @@ function adicionarDescontoMaterial(itemId) {
       </select>
     </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label id="${idLabel}" for="${idQtd}" style="min-width: 160px;">Qtd. Paletes Grandes:</label>
+      <label id="${idLabel}" for="${idQtd}" style="min-width: 150px;">Qtd. Paletes Grandes:</label>
       <input type="number" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
     </div>
   `;
