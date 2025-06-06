@@ -67,7 +67,7 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA – exibe apenas pedidos com coleta iniciada (liberados pela portaria)
+// ROTA CARGA – exibe pedidos com coleta iniciada ou aguardando conferência
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
@@ -82,9 +82,15 @@ router.get('/carga', async (req, res) => {
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
     WHERE DATE(p.data_coleta) = CURDATE()
-      AND p.status = 'Coleta Iniciada'
+      AND p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso')
     GROUP BY p.id, c.nome_fantasia, i.nome_produto, p.data_coleta, p.data_coleta_iniciada, p.status
-    ORDER BY p.data_coleta ASC
+    ORDER BY 
+      CASE 
+        WHEN p.status = 'Coleta Iniciada' THEN 1
+        WHEN p.status = 'Aguardando Conferência do Peso' THEN 2
+        ELSE 99
+      END,
+      p.data_coleta ASC
   `;
   try {
     const [results] = await db.query(sql);
