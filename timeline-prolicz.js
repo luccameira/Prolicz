@@ -14,7 +14,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Coleta Finalizada',
       nome: 'Coleta Finalizada',
-      campoData: 'data_coleta_finalizada'
+      campoData: 'data_carga_finalizada' // ✅ CORRETO AGORA
     },
     {
       key: 'Aguardando Conferência do Peso',
