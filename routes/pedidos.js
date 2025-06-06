@@ -408,41 +408,58 @@ router.delete('/:id', async (req, res) => {
 router.get('/conferencia', async (req, res) => {
   const sql = `
     SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa,
+      p.id AS pedido_id,
+      p.data_criacao,
+      p.tipo,
+      p.status,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,
+      p.data_financeiro,
+      p.data_emissao_nf,
+      p.data_finalizado,
+      p.codigo_interno,
+      p.observacao,
+      p.empresa,
+      p.ticket_balanca,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE p.status = 'Aguardando Conferência do Peso'
     ORDER BY p.data_coleta ASC
   `;
+
   try {
     const [pedidos] = await db.query(sql);
+
+    for (const pedido of pedidos) {
+      const [materiais] = await db.query(
+        `SELECT 
+            i.id, i.nome_produto, i.peso AS quantidade, i.tipo_peso, 
+            i.unidade, i.peso_carregado
+         FROM itens_pedido i
+         WHERE i.pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      for (const item of materiais) {
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
+
+      pedido.materiais = materiais;
+    }
+
     res.json(pedidos);
   } catch (err) {
     console.error('Erro ao buscar pedidos para conferência:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos para conferência' });
-  }
-});
-
-// GET /api/pedidos/financeiro
-router.get('/financeiro', async (req, res) => {
-  const sql = `
-    SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa,
-      c.nome_fantasia AS cliente
-    FROM pedidos p
-    INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE p.status = 'Em Análise pelo Financeiro'
-    ORDER BY p.data_coleta ASC
-  `;
-  try {
-    const [pedidos] = await db.query(sql);
-    res.json(pedidos);
-  } catch (err) {
-    console.error('Erro ao buscar pedidos para financeiro:', err);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos para financeiro' });
   }
 });
 
