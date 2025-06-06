@@ -172,6 +172,7 @@
         <th>Cliente</th>
         <th>Status</th>
         <th>Criado em</th>
+        <th>Nota Fiscal</th>
         <th>Ações</th>
       </tr>
       </thead>
@@ -219,7 +220,7 @@
     const res = await fetch(url);
     const pedidos = await res.json();
 
-    pedidos.sort((a, b) => new Date(b.data_coleta) - new Date(a.data_coleta)); // ORDENACAO DESC
+    pedidos.sort((a, b) => new Date(b.data_coleta) - new Date(a.data_coleta));
 
     const tbody = document.querySelector("#tabela-vendas tbody");
     tbody.innerHTML = "";
@@ -227,7 +228,7 @@
     const hojeISO = new Date().toISOString().split("T")[0];
     let primeiroHoje = null;
 
-    pedidos.forEach((p, index) => {
+    pedidos.forEach((p) => {
       const dataColeta = new Date(p.data_coleta).toISOString().split("T")[0];
       const isHoje = dataColeta === hojeISO;
       const linha = document.createElement("tr");
@@ -243,6 +244,7 @@
         <td>${p.cliente}</td>
         <td>${p.status}</td>
         <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
+        <td>${p.nota_fiscal || '-'}</td>
         <td>
           <button class="btn btn-editar" onclick="event.stopPropagation(); window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
           <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirPedido(${p.pedido_id}, this)">Excluir</button>
