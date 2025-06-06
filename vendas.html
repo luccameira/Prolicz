@@ -133,8 +133,8 @@
 
   <div class="filtros">
     <div class="filtro-bloco">
-      <label for="buscaCliente">Nome do Cliente</label>
-      <input type="text" id="buscaCliente" placeholder="Buscar por cliente...">
+      <label for="buscaCliente">Cliente ou Nota Fiscal</label>
+      <input type="text" id="buscaCliente" placeholder="Buscar por cliente ou nota fiscal...">
     </div>
     <div class="filtro-bloco">
       <label for="filtroStatus">Status</label>
@@ -152,15 +152,6 @@
     <div class="filtro-bloco">
       <label for="intervaloDatas">Filtrar por Período</label>
       <input type="text" id="intervaloDatas" placeholder="Filtrar por Período">
-    </div>
-    <div class="filtro-bloco">
-      <label for="ordenar">Ordenar por</label>
-      <select id="ordenar">
-        <option value="">Ordenar por...</option>
-        <option value="cliente_az">Nome (A-Z)</option>
-        <option value="cliente_za">Nome (Z-A)</option>
-        <option value="data_coleta">Data de Coleta (Mais Próxima)</option>
-      </select>
     </div>
   </div>
 
@@ -198,10 +189,9 @@
   }
 
   async function carregarPedidos() {
-    const cliente = document.getElementById("buscaCliente").value;
+    const cliente = document.getElementById("buscaCliente").value.toLowerCase();
     const status = document.getElementById("filtroStatus").value;
     const intervalo = document.getElementById("intervaloDatas").value;
-    const ordenar = document.getElementById("ordenar").value;
 
     let de = "", ate = "";
     if (intervalo.includes(" a ")) {
@@ -211,16 +201,14 @@
     }
 
     const url = new URL("/api/pedidos", window.location.origin);
-    if (cliente) url.searchParams.append("cliente", cliente);
     if (status) url.searchParams.append("status", status);
     if (de) url.searchParams.append("de", de);
     if (ate) url.searchParams.append("ate", ate);
-    if (ordenar) url.searchParams.append("ordenar", ordenar);
 
     const res = await fetch(url);
     const pedidos = await res.json();
 
-    pedidos.sort((a, b) => new Date(b.data_coleta) - new Date(a.data_coleta));
+    pedidos.sort((a, b) => new Date(b.data_coleta) - new Date(a.data_coleta)); // ordem decrescente
 
     const tbody = document.querySelector("#tabela-vendas tbody");
     tbody.innerHTML = "";
@@ -228,30 +216,34 @@
     const hojeISO = new Date().toISOString().split("T")[0];
     let primeiroHoje = null;
 
-    pedidos.forEach((p) => {
-      const dataColeta = new Date(p.data_coleta).toISOString().split("T")[0];
-      const isHoje = dataColeta === hojeISO;
-      const linha = document.createElement("tr");
-      if (isHoje) {
-        linha.classList.add("hoje-row");
-        if (!primeiroHoje) primeiroHoje = linha;
-      }
-      linha.addEventListener("click", () => {
-        window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
+    pedidos
+      .filter(p => {
+        return !cliente || p.cliente?.toLowerCase().includes(cliente) || p.nota_fiscal?.toLowerCase().includes(cliente);
+      })
+      .forEach(p => {
+        const dataColeta = new Date(p.data_coleta).toISOString().split("T")[0];
+        const isHoje = dataColeta === hojeISO;
+        const linha = document.createElement("tr");
+        if (isHoje) {
+          linha.classList.add("hoje-row");
+          if (!primeiroHoje) primeiroHoje = linha;
+        }
+        linha.addEventListener("click", () => {
+          window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
+        });
+        linha.innerHTML = `
+          <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
+          <td>${p.cliente}</td>
+          <td>${p.status}</td>
+          <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
+          <td>${p.nota_fiscal || '-'}</td>
+          <td>
+            <button class="btn btn-editar" onclick="event.stopPropagation(); window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
+            <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirPedido(${p.pedido_id}, this)">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(linha);
       });
-      linha.innerHTML = `
-        <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
-        <td>${p.cliente}</td>
-        <td>${p.status}</td>
-        <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
-        <td>${p.nota_fiscal || '-'}</td>
-        <td>
-          <button class="btn btn-editar" onclick="event.stopPropagation(); window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
-          <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirPedido(${p.pedido_id}, this)">Excluir</button>
-        </td>
-      `;
-      tbody.appendChild(linha);
-    });
 
     if (primeiroHoje) {
       setTimeout(() => {
@@ -268,7 +260,7 @@
     carregarPedidos();
   }
 
-  document.querySelectorAll("#buscaCliente, #filtroStatus, #intervaloDatas, #ordenar").forEach(el => {
+  document.querySelectorAll("#buscaCliente, #filtroStatus, #intervaloDatas").forEach(el => {
     el.addEventListener("input", carregarPedidos);
     el.addEventListener("change", carregarPedidos);
   });
