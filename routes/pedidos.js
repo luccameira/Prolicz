@@ -303,7 +303,8 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
       `UPDATE pedidos
        SET 
          ticket_balanca = ?, 
-         status = 'Aguardando Conferência do Peso'
+         status = 'Aguardando Conferência do Peso',
+         data_carga_finalizada = NOW()
        WHERE id = ?`,
       [nomeArquivo, id]
     );
