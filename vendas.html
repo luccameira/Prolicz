@@ -9,128 +9,40 @@
   <script defer src="incluir-layout.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-      font-weight: 600;
-      font-size: 22px;
-    }
-
-    .filtros {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .filtro-bloco {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filtro-bloco label {
-      font-size: 13px;
-      margin-bottom: 4px;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .filtros input,
-    .filtros select {
-      padding: 8px;
-      font-size: 14px;
-    }
-
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
+    h1 { margin-bottom: 20px; font-weight: 600; font-size: 22px; }
+    .filtros { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+    .filtro-bloco { display: flex; flex-direction: column; }
+    .filtro-bloco label { font-size: 13px; margin-bottom: 4px; font-weight: 500; color: #333; }
+    .filtros input, .filtros select { padding: 8px; font-size: 14px; }
     .tabela-wrapper {
       max-height: 450px;
       overflow-y: auto !important;
       overflow-x: auto !important;
       border: 1px solid #ccc;
     }
-
-    table {
-      width: 100%;
-      min-width: 600px;
-      border-collapse: collapse;
-      background-color: white;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
+    table { width: 100%; min-width: 600px; border-collapse: collapse; background-color: white; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
     th {
-      background-color: #f0f0f0;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      cursor: pointer;
+      background-color: #f0f0f0; font-weight: 600;
+      position: sticky !important; top: 0; z-index: 2;
+      background-clip: padding-box; cursor: pointer;
     }
-
-    th.sort-asc::after {
-      content: " \25B2";
-    }
-
-    th.sort-desc::after {
-      content: " \25BC";
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
-    tr:hover {
-      background-color: #e2e2e2;
-      cursor: pointer;
-    }
-
-    .cinza {
-      color: #666;
-      font-weight: bold;
-    }
-
-    .hoje-row td:first-child {
-      border-left: 6px solid gold;
-    }
-
-    .hoje-row .icone-alerta {
-      color: orange;
-      margin-right: 6px;
-    }
-
+    th.sort-asc::after { content: " \25B2"; }
+    th.sort-desc::after { content: " \25BC"; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    tr:hover { background-color: #e2e2e2; cursor: pointer; }
+    .cinza { color: #666; font-weight: bold; }
+    .hoje-row td:first-child { border-left: 6px solid gold; }
+    .hoje-row .icone-alerta { color: orange; margin-right: 6px; }
     .btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
+      padding: 6px 12px; border: none; border-radius: 4px;
+      cursor: pointer; font-size: 14px;
       transition: background-color 0.2s ease;
     }
-
-    .btn-editar,
-    .btn-excluir {
-      background-color: #f1f1f1;
-      color: #212529;
-    }
-
-    .btn-editar:hover,
-    .btn-excluir:hover {
-      background-color: #e2e6ea;
-    }
-
-    .btn-adicionar {
-      background-color: #ffc107;
-      color: black;
-      margin-bottom: 10px;
-    }
+    .btn-editar, .btn-excluir { background-color: #f1f1f1; color: #212529; }
+    .btn-editar:hover, .btn-excluir:hover { background-color: #e2e6ea; }
+    .btn-adicionar { background-color: #ffc107; color: black; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -164,7 +76,7 @@
     </div>
   </div>
 
-  <div class="tabela-wrapper">
+  <div class="tabela-wrapper" id="tabelaWrapper">
     <table id="tabela-vendas">
       <thead>
       <tr>
@@ -240,6 +152,7 @@
 
   function renderizarTabela() {
     const tbody = document.querySelector("#tabela-vendas tbody");
+    const wrapper = document.getElementById("tabelaWrapper");
     tbody.innerHTML = "";
 
     const hojeISO = new Date().toISOString().split("T")[0];
@@ -272,8 +185,9 @@
 
     if (primeiroHoje) {
       setTimeout(() => {
-        primeiroHoje.scrollIntoView({ behavior: 'instant', block: 'start' });
-      }, 100);
+        const offsetTop = primeiroHoje.offsetTop;
+        wrapper.scrollTop = offsetTop - 30; // Ajuste para mostrar com margem superior
+      }, 150);
     }
   }
 
