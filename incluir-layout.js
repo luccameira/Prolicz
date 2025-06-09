@@ -1,4 +1,3 @@
-// incluir-layout.js
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
 
@@ -13,18 +12,36 @@ document.addEventListener("DOMContentLoaded", () => {
       const topbar = tempDiv.querySelector(".topbar");
       const sidebar = tempDiv.querySelector(".sidebar");
 
-      if (topbar) {
-        const topbarContainer = document.querySelector(".topbar");
-        if (topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
-      }
+      const topbarContainer = document.querySelector(".topbar");
+      const sidebarContainer = document.querySelector(".sidebar");
 
-      if (sidebar) {
-        const sidebarContainer = document.querySelector(".sidebar");
-        if (sidebarContainer) sidebarContainer.innerHTML = sidebar.innerHTML;
+      if (window.location.pathname.endsWith("/login.html")) {
+        // Para login.html, remover sidebar e customizar topbar
+        if (sidebarContainer) {
+          sidebarContainer.style.display = "none";
+        }
+        if (topbarContainer) {
+          topbarContainer.innerHTML = `<div style="color:#ffc107; font-weight:bold; font-size:28px; padding:10px 40px; user-select:none;">PRONASA</div>`;
+          topbarContainer.style.backgroundColor = "#000";
+          topbarContainer.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+          topbarContainer.style.display = "flex";
+          topbarContainer.style.justifyContent = "flex-start";
+          topbarContainer.style.alignItems = "center";
+        }
+      } else {
+        // Para as demais páginas, carrega topbar e sidebar normalmente
+        if (topbar && topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
+        if (sidebar && sidebarContainer) sidebarContainer.innerHTML = sidebar.innerHTML;
 
-        // Ativar o link da sidebar correspondente à página atual
+        // Corrigir link do menu "Usuários"
+        const linkUsuarios = sidebarContainer.querySelector('a[href="login.html"]');
+        if (linkUsuarios) {
+          linkUsuarios.setAttribute('href', 'usuarios.html');
+        }
+
+        // Ativar link da sidebar correspondente à página atual
         const path = window.location.pathname;
-        const links = document.querySelectorAll(".sidebar a");
+        const links = sidebarContainer.querySelectorAll("a");
         links.forEach(link => {
           if (path.includes(link.getAttribute("href"))) {
             link.classList.add("active");
@@ -39,6 +56,3 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("🔴 Erro ao carregar layout.html:", err);
     });
 });
-
-
-
