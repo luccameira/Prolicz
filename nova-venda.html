@@ -263,6 +263,7 @@
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
+
         const prSel = $("#prazosCheckboxes input:checked").map((i,c) => c.value).get();
         if (!prSel.length) {
           $(".error-prazos").show();
@@ -286,13 +287,32 @@
         });
         if (erroPersonalizar) return;
 
+        // Início da alteração para confirmação
+        const avistaCheckbox = $("#prazosCheckboxes input[type=checkbox]").filter((_, el) => el.value.toLowerCase().includes("vista"));
+        const avistaMarcado = avistaCheckbox.length > 0 && avistaCheckbox.is(":checked");
+        const condicaoPagamento = $("#condicao_pagamento_a_vista").val();
+
+        let mensagem = "Você tem certeza que deseja gravar este pedido?";
+        if (avistaMarcado) {
+          if (condicaoPagamento) {
+            mensagem += `\n(Condição de pagamento A Vista: ${condicaoPagamento.toLowerCase()})`;
+          } else {
+            mensagem += `\n(Condição de pagamento A Vista: não selecionada)`;
+          }
+        }
+
+        if (!confirm(mensagem)) {
+          return; // Aborta o envio se cancelar
+        }
+        // Fim da alteração para confirmação
+
         const dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
           tipo: $("#pedido-para").val(),
           data_coleta: $("#data-coleta").val(),
           prazos: prSel,
-          condicao_pagamento_a_vista: $("#condicao_pagamento_a_vista").val(),
+          condicao_pagamento_a_vista: condicaoPagamento,
           observacao: $("#observacao").val(),
           itens: []
         };
@@ -327,7 +347,10 @@
           if (r.mensagem) window.location.href = "vendas.html?sucesso=1";
           else alert("Erro ao salvar o pedido.");
         })
-        .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
+        .catch(err => {
+          console.error(err);
+          alert("Erro ao salvar o pedido.");
+        });
       });
     });
   </script>
