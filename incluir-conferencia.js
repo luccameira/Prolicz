@@ -27,7 +27,7 @@ async function carregarPedidosConferencia() {
     card.className = 'card';
     if (finalizado) card.classList.add('finalizado');
 
-    // ✅ Linha do tempo padrão
+    // ✅ Linha do tempo
     const timeline = gerarLinhaTempoCompleta(pedido);
     card.innerHTML = timeline;
     animarLinhaProgresso(card);
@@ -151,6 +151,7 @@ async function carregarPedidosConferencia() {
       `;
     }
 
+    // ✅ Comportamento padrão: formulário abre com clique no card-header
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
@@ -197,4 +198,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-
