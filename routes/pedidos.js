@@ -103,8 +103,15 @@ router.get('/', async (req, res) => {
 
   let sqlPedidos = `
     SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa,
+      p.id AS pedido_id,
+      p.data_criacao,
+      p.tipo,
+      p.status,
+      p.data_coleta,
+      p.codigo_interno,
+      p.observacao,
+      p.empresa,
+      p.nota_fiscal,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -112,18 +119,22 @@ router.get('/', async (req, res) => {
   `;
   const params = [];
 
+  // 🔄 Correção: busca por nome ou nota fiscal em vez de c.id
   if (cliente) {
-    sqlPedidos += " AND c.id = ?";
-    params.push(cliente);
+    sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
+    params.push(`%${cliente}%`, `%${cliente}%`);
   }
+
   if (status) {
     sqlPedidos += " AND p.status = ?";
     params.push(status);
   }
+
   if (tipo) {
     sqlPedidos += " AND p.tipo = ?";
     params.push(tipo);
   }
+
   if (de && ate) {
     sqlPedidos += " AND DATE(p.data_criacao) BETWEEN ? AND ?";
     params.push(de, ate);
@@ -155,7 +166,6 @@ router.get('/', async (req, res) => {
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
 
-      // Ajuste para buscar os prazos do pedido
       const [prazosPedido] = await db.query(
         `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
