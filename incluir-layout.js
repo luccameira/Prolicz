@@ -1,8 +1,10 @@
 // incluir-layout.js
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
+  const layoutPath = "layout.html";
+  console.log("📁 Buscando:", layoutPath);
 
-  fetch("layout.html")
+  fetch(layoutPath)
     .then(res => res.text())
     .then(layout => {
       console.log("🟢 layout.html carregado com sucesso");
@@ -14,13 +16,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const sidebar = tempDiv.querySelector(".sidebar");
 
       if (topbar) {
-        const topbarContainer = document.querySelector(".topbar");
-        if (topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
+        const topbarContainer =
+          document.querySelector("#topbar") || document.querySelector(".topbar");
+        if (topbarContainer) {
+          topbarContainer.innerHTML = topbar.innerHTML;
+          console.log("🔵 Topbar inserida");
+        }
       }
 
       if (sidebar) {
-        const sidebarContainer = document.querySelector(".sidebar");
-        if (sidebarContainer) sidebarContainer.innerHTML = sidebar.innerHTML;
+        const sidebarContainer =
+          document.querySelector("#sidebar") || document.querySelector(".sidebar");
+        if (sidebarContainer) {
+          sidebarContainer.innerHTML = sidebar.innerHTML;
+          console.log("🔵 Sidebar inserida");
+        }
 
         // Ativar o link da sidebar correspondente à página atual
         const path = window.location.pathname;
