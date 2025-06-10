@@ -1,7 +1,7 @@
 // incluir-layout.js
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
-  const layoutPath = "layout.html";
+  const layoutPath = "/layout.html";
   console.log("📁 Buscando:", layoutPath);
 
   fetch(layoutPath)
