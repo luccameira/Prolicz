@@ -24,10 +24,14 @@
     table { width: 100%; min-width: 600px; border-collapse: collapse; background-color: white; font-size: 14px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
     th {
-      background-color: #f0f0f0; font-weight: 600;
-      position: sticky !important; top: 0; z-index: 2;
-      background-clip: padding-box; cursor: pointer;
-      text-transform: uppercase; /* Aqui está a mudança para maiúsculas */
+      background-color: #f0f0f0; 
+      font-weight: 600;
+      position: sticky !important; 
+      top: 0; 
+      z-index: 2;
+      background-clip: padding-box; 
+      cursor: pointer;
+      text-transform: uppercase; /* TITULOS EM MAIÚSCULAS */
     }
     th.sort-asc::after { content: " \25B2"; }
     th.sort-desc::after { content: " \25BC"; }
@@ -41,8 +45,21 @@
       cursor: pointer; font-size: 14px;
       transition: background-color 0.2s ease;
     }
-    .btn-editar, .btn-excluir { background-color: #f1f1f1; color: #212529; }
-    .btn-editar:hover, .btn-excluir:hover { background-color: #e2e6ea; }
+    .btn-editar {
+      background-color: #28a745;
+      color: white;
+      margin-right: 6px;
+    }
+    .btn-editar:hover {
+      background-color: #218838;
+    }
+    .btn-excluir {
+      background-color: #dc3545;
+      color: white;
+    }
+    .btn-excluir:hover {
+      background-color: #c82333;
+    }
     .btn-adicionar { background-color: #ffc107; color: black; margin-bottom: 10px; }
   </style>
 </head>
@@ -81,12 +98,12 @@
     <table id="tabela-vendas">
       <thead>
       <tr>
-        <th data-campo="data_coleta">DATA DA COLETA</th>
-        <th data-campo="cliente">CLIENTE</th>
-        <th data-campo="status">STATUS</th>
-        <th data-campo="data_criacao">CRIADO EM</th>
-        <th data-campo="nota_fiscal">NOTA FISCAL</th>
-        <th>AÇÕES</th>
+        <th data-campo="data_coleta">Data da Coleta</th>
+        <th data-campo="cliente">Cliente</th>
+        <th data-campo="status">Status</th>
+        <th data-campo="data_criacao">Criado em</th>
+        <th data-campo="nota_fiscal">Nota Fiscal</th>
+        <th>Ações</th>
       </tr>
       </thead>
       <tbody></tbody>
