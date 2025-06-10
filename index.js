@@ -1,10 +1,17 @@
-// index.js
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
 const app = express();
 const port = 3000;
 
 const connection = require('./db'); // conexão com banco
+
+// Middleware para usar sessão
+app.use(session({
+  secret: 'proliczsecret',
+  resave: false,
+  saveUninitialized: false
+}));
 
 // Middlewares para JSON e form data
 app.use(express.json());
@@ -12,9 +19,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname)));
-
-// Permitir acesso à pasta uploads
 app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
+
+// ⚠️ BLOQUEIO DE ROTAS DESATIVADO TEMPORARIAMENTE ⚠️
+// Se quiser ativar depois, é só remover os comentários abaixo.
+/*
+app.use((req, res, next) => {
+  if (!req.session.usuarioLogado &&
+      req.path !== '/login' &&
+      !req.path.endsWith('.html') &&
+      !req.path.startsWith('/api/')
+  ) {
+    return res.redirect('/login.html');
+  }
+  next();
+});
+*/
 
 // Função para injetar conexão nas rotas
 function withConnection(routePath) {
@@ -28,9 +48,31 @@ app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos'));
 app.use('/api/usuarios', withConnection('./routes/usuarios'));
-app.use('/api/motoristas', require('./routes/motoristas')); // esta rota não usa conexão
+app.use('/api/motoristas', require('./routes/motoristas'));
 
-// Rotas de páginas HTML
+// Rota de login (mantida, mas sem obrigatoriedade de uso)
+app.post('/login', async (req, res) => {
+  const { email, senha } = req.body;
+  try {
+    const [rows] = await connection.execute(
+      'SELECT id, nome, email, tipo, permissoes FROM usuarios WHERE email = ? AND senha = ?',
+      [email, senha]
+    );
+
+    if (rows.length === 1) {
+      const usuario = rows[0];
+      req.session.usuarioLogado = usuario;
+      res.json({ usuario });
+    } else {
+      res.status(401).json({ erro: 'Usuário ou senha inválidos' });
+    }
+  } catch (error) {
+    console.error('Erro no login:', error);
+    res.status(500).json({ erro: 'Erro interno no servidor' });
+  }
+});
+
+// Rotas HTML
 app.get('/visualizar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
 });
