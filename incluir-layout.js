@@ -2,6 +2,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
 
+  // Se estivermos na página login.html, não carregue o layout para topbar e sidebar
+  if (window.location.pathname.endsWith("login.html")) {
+    console.log("Página login.html detectada, não carregando topbar/layout.");
+    return;
+  }
+
   fetch("layout.html")
     .then(res => res.text())
     .then(layout => {
@@ -20,16 +26,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (sidebar) {
         const sidebarContainer = document.querySelector(".sidebar");
-        if (sidebarContainer) sidebarContainer.innerHTML = sidebar.innerHTML;
+        if (sidebarContainer) {
+          sidebarContainer.innerHTML = sidebar.innerHTML;
 
-        // Ativar o link da sidebar correspondente à página atual
-        const path = window.location.pathname;
-        const links = document.querySelectorAll(".sidebar a");
-        links.forEach(link => {
-          if (path.includes(link.getAttribute("href"))) {
-            link.classList.add("active");
+          // Corrigir link do menu "Usuários" se estiver errado (apontando para login.html)
+          const linkUsuarios = sidebarContainer.querySelector('a[href="login.html"]');
+          if (linkUsuarios) {
+            linkUsuarios.setAttribute('href', 'usuarios.html');
           }
-        });
+
+          // Ativar o link da sidebar correspondente à página atual
+          const path = window.location.pathname;
+          const links = sidebarContainer.querySelectorAll("a");
+          links.forEach(link => {
+            if (path.includes(link.getAttribute("href"))) {
+              link.classList.add("active");
+            }
+          });
+        }
       }
 
       // Disparar evento global indicando que o layout foi carregado
@@ -39,6 +53,3 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("🔴 Erro ao carregar layout.html:", err);
     });
 });
-
-
-
