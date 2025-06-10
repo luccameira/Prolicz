@@ -42,6 +42,7 @@
       font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
+      margin-bottom: 20px; /* Adicionado para dar espaçamento */
     }
 
     .btn-adicionar:hover {
@@ -118,21 +119,24 @@
   <div class="main-content">
     <h1>Produtos</h1>
 
-    <div class="card">
-      <div class="top-actions">
-        <button class="btn-adicionar" onclick="window.location.href='novo-produto.html'">+ Adicionar Produto</button>
-        <div class="input-wrapper">
-          <i class="fa fa-search"></i>
-          <input type="text" id="filtroNome" class="input-filtro" placeholder="Buscar produto..." oninput="filtrarTabela()" />
-        </div>
-        <select id="ordenar" class="select-ordenar" onchange="carregarProdutos()">
-          <option value="mais_recente">Cadastro mais recente</option>
-          <option value="mais_antigo">Cadastro mais antigo</option>
-          <option value="nome_az">Nome (A-Z)</option>
-          <option value="nome_za">Nome (Z-A)</option>
-        </select>
+    <!-- Campos de busca e filtro ficam aqui -->
+    <div class="top-actions">
+      <div class="input-wrapper">
+        <i class="fa fa-search"></i>
+        <input type="text" id="filtroNome" class="input-filtro" placeholder="Buscar produto..." oninput="filtrarTabela()" />
       </div>
+      <select id="ordenar" class="select-ordenar" onchange="carregarProdutos()">
+        <option value="mais_recente">Cadastro mais recente</option>
+        <option value="mais_antigo">Cadastro mais antigo</option>
+        <option value="nome_az">Nome (A-Z)</option>
+        <option value="nome_za">Nome (Z-A)</option>
+      </select>
+    </div>
 
+    <!-- Botão amarelo fica abaixo dos filtros -->
+    <button class="btn-adicionar" onclick="window.location.href='novo-produto.html'">+ Adicionar Produto</button>
+
+    <div class="card">
       <table>
         <thead>
           <tr>
