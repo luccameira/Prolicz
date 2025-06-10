@@ -8,29 +8,31 @@ function formatarPeso(valor) {
 }
 
 async function carregarPedidosConferencia() {
-  const res = await fetch('/api/pedidos/conferencia');
-  const pedidos = await res.json();
+  const [resPendentes, resFinalizados] = await Promise.all([
+    fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso'),
+    fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro')
+  ]);
+
+  const pendentes = await resPendentes.json();
+  const finalizados = await resFinalizados.json();
 
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
-  if (!pedidos.length) {
+  const todos = [...pendentes, ...finalizados];
+
+  if (!todos.length) {
     lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido disponível para conferência.</p>";
     return;
   }
 
-  pedidos.forEach(pedido => {
+  todos.forEach(pedido => {
     const idPedido = pedido.pedido_id || pedido.id;
     const finalizado = pedido.status === 'Em Análise pelo Financeiro';
 
     const card = document.createElement('div');
     card.className = 'card';
     if (finalizado) card.classList.add('finalizado');
-
-    // ✅ Linha do tempo
-    const timeline = gerarLinhaTempoCompleta(pedido);
-    card.innerHTML = timeline;
-    animarLinhaProgresso(card);
 
     const statusHtml = finalizado
       ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Confirmado</div>`
@@ -46,6 +48,12 @@ async function carregarPedidosConferencia() {
       ${statusHtml}
     `;
     card.appendChild(header);
+    // Timeline padronizada abaixo do cabeçalho
+    card.innerHTML += gerarLinhaTempoCompleta(pedido);
+    setTimeout(() => {
+      const timeline = card.querySelector('.timeline-simples');
+      if (timeline) animarLinhaProgresso(timeline);
+    }, 20);
 
     const form = document.createElement('div');
     form.className = 'formulario';
@@ -147,11 +155,10 @@ async function carregarPedidosConferencia() {
 
     if (!finalizado) {
       form.innerHTML += `
-        <button class="btn btn-confirmar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
+        <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
       `;
     }
 
-    // ✅ Comportamento padrão: formulário abre com clique no card-header
     if (!finalizado) {
       header.addEventListener('click', () => {
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
@@ -172,7 +179,8 @@ async function confirmarPeso(pedidoId, botao) {
 
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/conferencia`, {
-      method: 'PUT'
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
     });
 
     const data = await res.json();
@@ -193,6 +201,11 @@ async function confirmarPeso(pedidoId, botao) {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosConferencia();
+  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
+  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
+});
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
