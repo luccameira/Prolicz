@@ -104,14 +104,14 @@
     });
 
     function formatarDataBR(dataIso) {
-      if (!dataIso) return '-';
-      const data = new Date(dataIso);
-      if (isNaN(data)) return '-';
-      const dia = String(data.getDate()).padStart(2, '0');
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const ano = data.getFullYear();
-      return ${dia}/${mes}/${ano};
-    }
+  if (!dataIso) return '-';
+  const data = new Date(dataIso);
+  if (isNaN(data)) return '-';
+  const dia = String(data.getDate()).padStart(2, '0');
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const ano = data.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
 
     let pedidosAtuais = [];
     let campoOrdenado = '';
