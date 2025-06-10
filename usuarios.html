@@ -1,71 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Usuários - Prolicz</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <title>Usuários - Pronasa</title>
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script defer src="incluir-layout.js"></script>
   <style>
     .main-content {
       margin-left: 280px;
-      padding: 100px 20px 40px;
+      padding: 100px 40px 40px;
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      min-height: 100vh;
     }
-
     h1 {
-      font-size: 26px;
       margin-bottom: 20px;
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 28px;
+      color: #333;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
     }
-
     th, td {
       padding: 12px 15px;
-      text-align: left;
       border-bottom: 1px solid #ddd;
       font-size: 15px;
+      text-align: left;
     }
-
     th {
       background-color: #007bff;
       color: white;
       text-transform: uppercase;
-      font-size: 13px;
+      font-weight: 600;
     }
-
     tr:hover {
-      background-color: #f1f1f1;
+      background-color: #eef6ff;
     }
-
     .btn {
-      padding: 6px 12px;
-      margin-right: 5px;
-      text-decoration: none;
-      background-color: #007bff;
-      color: white;
-      border-radius: 4px;
-      font-size: 13px;
+      padding: 6px 14px;
+      margin-right: 8px;
+      font-size: 14px;
       border: none;
+      border-radius: 4px;
       cursor: pointer;
+      color: white;
+      font-weight: 600;
+      user-select: none;
     }
-
-    .btn-danger {
-      background-color: #dc3545;
+    /* Botão Novo Usuário amarelo com letra preta */
+    .btn-novo {
+      background-color: #ffc107;
+      color: black;
+      margin-bottom: 20px;
+      display: inline-block;
     }
-
-    .btn-success {
+    .btn-edit {
       background-color: #28a745;
     }
-
-    #acoes {
-      margin-bottom: 15px;
+    .btn-delete {
+      background-color: #dc3545;
     }
   </style>
 </head>
@@ -75,7 +75,7 @@
 
   <div class="main-content">
     <h1>Usuários</h1>
-    <div id="acoes"></div>
+    <button class="btn btn-novo" onclick="alert('Funcionalidade para criar usuário ainda não implementada')">+ Novo Usuário</button>
     <table>
       <thead>
         <tr>
@@ -85,74 +85,54 @@
           <th>Ações</th>
         </tr>
       </thead>
-      <tbody id="lista-usuarios"></tbody>
+      <tbody id="usuarios-tbody"></tbody>
     </table>
   </div>
 
-  <script src="auth.js"></script>
   <script>
-    function loadUsuarioLogado() {
-      return JSON.parse(localStorage.getItem('usuarioLogado'));
+    // Array estático simulando dados de usuários
+    const usuarios = [
+      { id: 1, nome: "Lucas", email: "lucas@prolicz.com", tipo: "Administrador" },
+      { id: 2, nome: "Rodrigo", email: "rodrigo@prolicz.com", tipo: "Master" },
+      { id: 3, nome: "Carlos Mendes", email: "carlos@email.com", tipo: "Usuário" }
+    ];
+
+    // Função para montar a tabela de usuários
+    function carregarUsuarios() {
+      const tbody = document.getElementById('usuarios-tbody');
+      tbody.innerHTML = ''; // limpa a tabela
+
+      usuarios.forEach(usuario => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${usuario.nome}</td>
+          <td>${usuario.email}</td>
+          <td>${usuario.tipo}</td>
+          <td>
+            <button class="btn btn-edit" onclick="editarUsuario(${usuario.id})">Editar</button>
+            <button class="btn btn-delete" onclick="excluirUsuario(${usuario.id})">Excluir</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
     }
 
-    window.onload = () => {
-      const usuarioLogado = loadUsuarioLogado();
-      if (!usuarioLogado) return;
+    // Funções simuladas para editar e excluir
+    function editarUsuario(id) {
+      alert('Editar usuário com ID ' + id);
+    }
 
-      const span = document.getElementById('usuario-nome');
-      if (span) span.textContent = usuarioLogado.nome;
-
-      if (usuarioLogado.permissoes.includes('criar_usuario')) {
-        document.getElementById('acoes').innerHTML = '<a href="novo-usuario.html" class="btn">+ Novo Usuário</a>';
-      }
-
-      carregarUsuarios(usuarioLogado);
-    };
-
-    async function carregarUsuarios(usuarioLogado) {
-      try {
-        const res = await fetch('/api/usuarios');
-        const usuarios = await res.json();
-        const tbody = document.getElementById('lista-usuarios');
-        tbody.innerHTML = '';
-
-        usuarios.forEach(usuario => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${usuario.nome}</td>
-            <td>${usuario.email}</td>
-            <td>${usuario.tipo}</td>
-            <td>
-              ${usuarioLogado.permissoes.includes('editar_usuario') ? `<a href="editar-usuario.html?id=${usuario.id}" class="btn btn-success">Editar</a>` : ''}
-              ${usuarioLogado.permissoes.includes('excluir_usuario') ? `<button onclick="excluirUsuario(${usuario.id})" class="btn btn-danger">Excluir</button>` : ''}
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-      } catch (err) {
-        console.error('Erro ao carregar usuários:', err);
+    function excluirUsuario(id) {
+      if (confirm('Deseja realmente excluir o usuário com ID ' + id + '?')) {
+        alert('Usuário excluído (simulado): ' + id);
+        // Aqui você pode remover do array e recarregar a tabela para simular exclusão
       }
     }
 
-    async function excluirUsuario(id) {
-      if (confirm('Tem certeza que deseja excluir este usuário?')) {
-        try {
-          const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
-          const result = await res.text();
-          alert(result);
-          window.location.reload();
-        } catch (error) {
-          alert('Erro ao excluir usuário.');
-        }
-      }
-    }
-
-    function logout() {
-      localStorage.removeItem('usuarioLogado');
-      window.location.href = 'login.html';
-    }
+    // Carrega os usuários ao abrir a página
+    window.onload = carregarUsuarios;
   </script>
 </body>
 </html>
-
