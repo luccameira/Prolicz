@@ -146,7 +146,7 @@
         th.classList.remove('sort-asc', 'sort-desc');
       });
 
-      const thAtual = document.querySelector(th[data-campo="${campo}"]);
+      const thAtual = document.querySelector(`th[data-campo="${campo}"]`);
       if (thAtual) {
         thAtual.classList.add(direcaoAscendente ? 'sort-asc' : 'sort-desc');
       }
