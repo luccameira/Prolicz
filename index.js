@@ -1,18 +1,10 @@
 // index.js
 const express = require('express');
 const path = require('path');
-const session = require('express-session');
 const app = express();
 const port = 3000;
 
 const connection = require('./db'); // conexão com banco
-
-// Middleware para usar sessão
-app.use(session({
-  secret: 'proliczsecret', // altere para um segredo seguro
-  resave: false,
-  saveUninitialized: false
-}));
 
 // Middlewares para JSON e form data
 app.use(express.json());
@@ -23,19 +15,6 @@ app.use(express.static(path.join(__dirname)));
 
 // Permitir acesso à pasta uploads
 app.use('/uploads/tickets', express.static(path.join(__dirname, 'uploads/tickets')));
-
-// Middleware para proteger rotas - só permitir se logado
-app.use((req, res, next) => {
-  // Permite acessar login.html, rota /login e rotas /api/* sem estar logado
-  if (!req.session.usuarioLogado &&
-      req.path !== '/login' &&
-      !req.path.endsWith('.html') &&
-      !req.path.startsWith('/api/')
-  ) {
-    return res.redirect('/login.html');
-  }
-  next();
-});
 
 // Função para injetar conexão nas rotas
 function withConnection(routePath) {
@@ -50,29 +29,6 @@ app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos'));
 app.use('/api/usuarios', withConnection('./routes/usuarios'));
 app.use('/api/motoristas', require('./routes/motoristas')); // esta rota não usa conexão
-
-// Login via POST
-app.post('/login', async (req, res) => {
-  const { email, senha } = req.body;
-  try {
-    // Usando connection.execute() conforme pool promisificado
-    const [rows] = await connection.execute(
-      'SELECT id, nome, email, tipo, permissoes FROM usuarios WHERE email = ? AND senha = ?',
-      [email, senha]
-    );
-
-    if (rows.length === 1) {
-      const usuario = rows[0];
-      req.session.usuarioLogado = usuario;
-      res.json({ usuario });
-    } else {
-      res.status(401).json({ erro: 'Usuário ou senha inválidos' });
-    }
-  } catch (error) {
-    console.error('Erro no login:', error);
-    res.status(500).json({ erro: 'Erro interno no servidor' });
-  }
-});
 
 // Rotas de páginas HTML
 app.get('/visualizar-venda', (req, res) => {
