@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const port = 3000;
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const connection = require('./db'); // ✅ conexão com callback
 
