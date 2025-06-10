@@ -1,176 +1,91 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Visualizar Cliente</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script defer src="incluir-layout.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visualizar Cliente - PRONASA</title>
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    body {
-      margin: 0;
-      font-family: 'Roboto', Arial, sans-serif;
-      background: #f5f6fa;
-    }
-
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-      font-weight: 500;
-      font-size: 22px;
-    }
-
-    .card {
-      background-color: white;
-      padding: 20px;
+    /* Bordas amarelas leves e sutis nas seções */
+    .detalhe-cliente-section {
+      background: #fff;
+      border: 1.5px solid #ffc107cc; /* amarelo com transparência */
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 25px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-sizing: border-box;
     }
-
-    .card h2 {
-      font-size: 18px;
-      border-bottom: 1px solid #ddd;
+    .detalhe-cliente-section h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #ffc107cc;
       padding-bottom: 8px;
-      margin-bottom: 15px;
+      color: #444;
     }
-
-    .card p {
-      margin: 6px 0;
-      font-size: 14px;
-    }
-
+    /* Botão Voltar */
     .btn-voltar {
-      padding: 10px 20px;
       background-color: #6c757d;
       color: white;
+      padding: 8px 15px;
+      border-radius: 5px;
       border: none;
-      border-radius: 4px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+    .btn-voltar:hover {
+      background-color: #5a6268;
     }
   </style>
 </head>
 <body>
+
   <div class="topbar"></div>
   <div class="sidebar"></div>
 
-  <div class="main-content">
-  <a href="clientes.html" class="btn-voltar">Voltar</a>
-  <h1>Detalhes do Cliente</h1>
+  <div class="content" style="padding: 80px 40px 40px;">
+    <button class="btn-voltar" onclick="window.history.back();">Voltar</button>
+    <h1>Detalhes do Cliente</h1>
 
-    <div class="card">
+    <section class="detalhe-cliente-section">
       <h2>Dados Principais</h2>
-      <p><strong>Nome Fantasia:</strong> <span id="nome_fantasia"></span></p>
-      <p><strong>Tipo Pessoa:</strong> <span id="tipo_pessoa"></span></p>
-      <p><strong>Documento:</strong> <span id="documento"></span></p>
-      <p><strong>Situação Tributária:</strong> <span id="situacao_tributaria"></span></p>
-      <p><strong>Código Fiscal:</strong> <span id="codigo_fiscal"></span></p>
-    </div>
+      <p><strong>Nome Fantasia:</strong> Seven Price Brasil</p>
+      <p><strong>Tipo Pessoa:</strong> juridica</p>
+      <p><strong>Documento:</strong> 55.624.044/0001-84</p>
+      <p><strong>Situação Tributária:</strong> simples</p>
+      <p><strong>Código Fiscal:</strong></p>
+    </section>
 
-    <div class="card">
+    <section class="detalhe-cliente-section">
       <h2>Endereço</h2>
-      <p><strong>CEP:</strong> <span id="cep"></span></p>
-      <p><strong>Logradouro:</strong> <span id="logradouro"></span></p>
-      <p><strong>Número:</strong> <span id="numero"></span></p>
-      <p><strong>Bairro:</strong> <span id="bairro"></span></p>
-      <p><strong>Cidade:</strong> <span id="cidade"></span></p>
-      <p><strong>Estado:</strong> <span id="estado"></span></p>
-    </div>
+      <p><strong>CEP:</strong> 08664-111</p>
+      <p><strong>Logradouro:</strong> Rua Carmo Ignácio da Silva</p>
+      <p><strong>Número:</strong> 118</p>
+      <p><strong>Bairro:</strong> Parque Santa Rosa</p>
+      <p><strong>Cidade:</strong> Suzano</p>
+      <p><strong>Estado:</strong> SP</p>
+    </section>
 
-    <div class="card">
+    <section class="detalhe-cliente-section">
       <h2>Produtos Autorizados</h2>
-      <div id="produtos_autorizados"></div>
-    </div>
+      <p>Scrap - R$ 3.50</p>
+      <p>Polpa - R$ 5.00</p>
+    </section>
 
-    <div class="card">
+    <section class="detalhe-cliente-section">
       <h2>Contatos</h2>
-      <div id="contatos"></div>
-    </div>
+      <p><strong>LUCAS MEIRA</strong> - (11) 96306-5208 - lucasmpronasa@gmail.com</p>
+    </section>
 
-    <div class="card">
+    <section class="detalhe-cliente-section">
       <h2>Prazos de Pagamento</h2>
-      <div id="prazos_pagamento"></div>
-    </div>
+      <p>Prazo: À vista</p>
+      <p>Prazo: 3 Dias</p>
+      <p>Prazo: 7 Dias</p>
+      <p>Prazo: 30 Dias</p>
+    </section>
+  </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
-      if (!id) {
-        alert("ID do cliente não informado.");
-        window.location.href = "clientes.html";
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/clientes/${id}`);
-        if (!res.ok) throw new Error("Erro ao buscar dados do cliente");
-        const cliente = await res.json();
-
-        // Dados principais
-        document.getElementById("nome_fantasia").textContent = cliente.nome_fantasia || '';
-        document.getElementById("tipo_pessoa").textContent = cliente.tipo_pessoa || '';
-        document.getElementById("documento").textContent = cliente.documento || '';
-        document.getElementById("situacao_tributaria").textContent = cliente.situacao_tributaria || '';
-        document.getElementById("codigo_fiscal").textContent = cliente.codigo_fiscal || '';
-
-        // Endereço
-        document.getElementById("cep").textContent = cliente.cep || '';
-        document.getElementById("logradouro").textContent = cliente.logradouro || '';
-        document.getElementById("numero").textContent = cliente.numero || '';
-        document.getElementById("bairro").textContent = cliente.bairro || '';
-        document.getElementById("cidade").textContent = cliente.cidade || '';
-        document.getElementById("estado").textContent = cliente.estado || '';
-
-        // Produtos Autorizados
-        const produtosDiv = document.getElementById("produtos_autorizados");
-        if (cliente.produtos_autorizados?.length) {
-          cliente.produtos_autorizados.forEach(produto => {
-            const p = document.createElement("p");
-            p.textContent = `${produto.nome} - R$ ${parseFloat(produto.valor_unitario).toFixed(2)}`;
-            produtosDiv.appendChild(p);
-          });
-        } else {
-          produtosDiv.innerHTML = '<p>Sem produtos cadastrados.</p>';
-        }
-
-        // Contatos
-        const contatosDiv = document.getElementById("contatos");
-        if (cliente.contatos?.length) {
-          cliente.contatos.forEach(c => {
-            const p = document.createElement("p");
-            p.textContent = `${c.nome} - ${c.telefone} - ${c.email}`;
-            contatosDiv.appendChild(p);
-          });
-        } else {
-          contatosDiv.innerHTML = '<p>Sem contatos cadastrados.</p>';
-        }
-
-        // Prazos de Pagamento
-        const prazosDiv = document.getElementById("prazos_pagamento");
-        if (cliente.prazos_pagamento?.length) {
-          cliente.prazos_pagamento.forEach(p => {
-            const item = document.createElement("p");
-            item.textContent = `Prazo: ${p.descricao}`;
-            prazosDiv.appendChild(item);
-          });
-        } else {
-          prazosDiv.innerHTML = '<p>Sem prazos cadastrados.</p>';
-        }
-
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao carregar dados do cliente.");
-        window.location.href = "clientes.html";
-      }
-    });
-  </script>
+  <script src="incluir-layout.js"></script>
 </body>
 </html>
-
