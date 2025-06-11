@@ -1,148 +1,116 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Login</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <title>Login - PRONASA</title>
+  <link rel="stylesheet" href="layout.css" />
+  <script defer src="incluir-layout.js"></script>
   <style>
     body {
-      background-color: #f4f6f8;
+      background: #f5f6fa;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      background-color: #000;
+      font-weight: bold;
+      font-size: 28px;
+      padding: 10px 40px; /* diminuiu a altura */
+      user-select: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      display: flex;
+      justify-content: flex-start; /* só à esquerda */
+      align-items: center;
+    }
+    .topbar .logo-pro {
+      color: #ffc107;
+      margin: 0;
+      padding: 0;
+    }
+    .topbar .logo-nasa {
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      font-family: 'Roboto', sans-serif;
-      margin: 0;
+      padding: 20px;
     }
-
-    .login-container {
+    .login-box {
       background: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 360px;
+      padding: 30px 40px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
       text-align: center;
     }
-
-    h2 {
-      margin-bottom: 24px;
+    .login-box h2 {
+      margin-bottom: 15px;
+      font-weight: 600;
+      color: #333;
     }
-
-    .input-group {
-      position: relative;
-      width: 100%;
-      margin-bottom: 16px;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-      padding-right: 40px;
-    }
-
-    .input-group .toggle-password {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #888;
+    .login-box p {
+      margin-bottom: 25px;
+      color: #555;
       font-size: 16px;
     }
-
-    button {
+    .login-box label {
+      display: block;
+      text-align: left;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #444;
+    }
+    .login-box input[type="email"],
+    .login-box input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .login-box button {
       background-color: #ffc107;
       border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      font-weight: bold;
+      padding: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: black;
+      border-radius: 5px;
       cursor: pointer;
       width: 100%;
-      font-size: 15px;
+      transition: background-color 0.3s ease;
     }
-
-    .topbar {
-      height: 60px;
-      background-color: #202124;
-      color: white;
-      display: flex;
-      align-items: center;
-      padding: 0 30px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .topbar .logo {
-      font-size: 22px;
-      font-weight: bold;
-      display: flex;
-      gap: 0;
-    }
-
-    .topbar .logo span:first-child {
-      color: #ffc107;
-    }
-
-    .topbar .logo span:last-child {
-      color: white;
+    .login-box button:hover {
+      background-color: #e6b800;
     }
   </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="logo">
-      <span>PRO</span><span>NASA</span>
+    <span class="logo-pro">PRO</span><span class="logo-nasa">NASA</span>
+  </div>
+  <div class="container">
+    <div class="login-box">
+      <h2>Login</h2>
+      <p>Seja bem-vindo(a), por gentileza, insira suas credenciais para acessar o sistema.</p>
+      <form id="login-form" action="/login" method="POST">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="username" />
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" required autocomplete="current-password" />
+        <button type="submit">Entrar</button>
+      </form>
     </div>
   </div>
-
-  <div class="login-container">
-    <h2>Acesso ao Sistema</h2>
-    <form id="form-login">
-      <div class="input-group">
-        <input type="text" id="usuario" placeholder="Usuário" required />
-      </div>
-      <div class="input-group">
-        <input type="password" id="senha" placeholder="Senha" required />
-        <i class="fa fa-eye toggle-password" onclick="toggleSenha(this)"></i>
-      </div>
-      <button type="submit">Entrar</button>
-    </form>
-  </div>
-
-  <script>
-    document.getElementById("form-login").addEventListener("submit", function(e) {
-      e.preventDefault();
-
-      const usuario = document.getElementById("usuario").value.trim();
-
-      if (usuario) {
-        localStorage.setItem("nomeUsuario", usuario);
-        window.location.href = "dashboard.html";
-      } else {
-        alert("Digite o nome do usuário.");
-      }
-    });
-
-    function toggleSenha(icon) {
-      const campoSenha = document.getElementById("senha");
-      if (campoSenha.type === "password") {
-        campoSenha.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-      } else {
-        campoSenha.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-      }
-    }
-  </script>
 </body>
 </html>
