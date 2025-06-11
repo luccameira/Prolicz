@@ -210,17 +210,20 @@ function atualizarDescontoItem(itemId, index) {
 
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
+  let placeholder = 'Digite o peso devolvido em Kg'; // <-- Aqui está o valor exato que você quer
 
   if (motivo === 'Palete Pequeno') {
     labelTexto = 'Qtd. Paletes Pequenos:';
     pesoPorUnidade = 6;
+    placeholder = 'Digite a quantidade de paletes';
   } else if (motivo === 'Palete Grande') {
     labelTexto = 'Qtd. Paletes Grandes:';
     pesoPorUnidade = 14.37;
+    placeholder = 'Digite a quantidade de paletes';
   }
 
   label.textContent = labelTexto;
-  input.placeholder = 'Digite a quantidade de paletes';
+  input.placeholder = placeholder;
 
   const valor = parseFloat(input.value);
   const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
