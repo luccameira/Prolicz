@@ -19,8 +19,12 @@ let tarefasAbertas = {};
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
-  pedidos = listaPedidos;
-  renderizarPedidos(listaPedidos);
+
+  // Exibir apenas pedidos com coleta iniciada ou posterior
+  const listaFiltrada = listaPedidos.filter(p => p.status !== 'Aguardando Início da Coleta');
+
+  pedidos = listaFiltrada;
+  renderizarPedidos(listaFiltrada);
 }
 
 function renderizarPedidos(lista) {
@@ -36,15 +40,15 @@ function renderizarPedidos(lista) {
     pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
   }
 
-  const pendentes = pedidosFiltrados.filter(p => 
-  p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0)
-);
+  const pendentes = pedidosFiltrados.filter(p =>
+    p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0)
+  );
 
-const concluidos = pedidosFiltrados.filter(p =>
-  !(p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0))
-);
+  const concluidos = pedidosFiltrados.filter(p =>
+    !(p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0))
+  );
 
-const pedidosOrdenados = [...pendentes, ...concluidos];
+  const pedidosOrdenados = [...pendentes, ...concluidos];
 
   listaEl.innerHTML = '';
 
@@ -60,7 +64,7 @@ const pedidosOrdenados = [...pendentes, ...concluidos];
         <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
       </div>
       <div class="status-box">
-        ${gerarBadgeStatus(p.status)}
+        ${gerarBadgeStatus(p.status, p)}
       </div>
     `;
     header.addEventListener('click', (e) => {
@@ -138,8 +142,8 @@ const pedidosOrdenados = [...pendentes, ...concluidos];
   });
 }
 
-function gerarBadgeStatus(status) {
-  if (status === 'Aguardando Conferência do Peso') {
+function gerarBadgeStatus(status, pedido) {
+  if (pedido.peso_carregado && status !== 'Finalizado') {
     return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
   } else if (status === 'Coleta Iniciada') {
     return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
@@ -150,12 +154,8 @@ function gerarBadgeStatus(status) {
 
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
-  const existentes = descontosPorItem[itemId].map(d => d.motivo);
   const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
-
-  if (blocosAtuais >= 3) {
-    return alert("Limite de 3 tipos de desconto atingido.");
-  }
+  if (blocosAtuais >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
   const index = blocosAtuais;
   const idMotivo = `motivo-${itemId}-${index}`;
@@ -204,7 +204,6 @@ function atualizarDescontoItem(itemId, index) {
 
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
-  let placeholder = 'Digite a quantidade de paletes';
 
   if (motivo === 'Palete Pequeno') {
     labelTexto = 'Qtd. Paletes Pequenos:';
@@ -215,7 +214,7 @@ function atualizarDescontoItem(itemId, index) {
   }
 
   label.textContent = labelTexto;
-  input.placeholder = placeholder;
+  input.placeholder = 'Digite a quantidade de paletes';
 
   const valor = parseFloat(input.value);
   const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
