@@ -14,7 +14,7 @@ function aplicarMascaraMilhar(input) {
 
 let pedidos = [];
 let descontosPorItem = {};
-let tarefasAbertas = {}; // controle de visibilidade por ID
+let tarefasAbertas = {};
 
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
@@ -73,7 +73,7 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-      const podeExecutar = p.status === 'Coleta Iniciada';
+    const podeExecutar = p.status === 'Coleta Iniciada';
 
     const form = document.createElement('div');
     form.className = 'formulario';
@@ -82,9 +82,9 @@ function renderizarPedidos(lista) {
 
     const materiais = [];
 
-    if (p.produto && p.peso_previsto) {
+    if (p.produto && p.peso_previsto && p.item_id) {
       materiais.push({
-        id: p.id,
+        item_id: p.item_id,
         nome_produto: p.produto,
         quantidade: parseFloat(p.peso_previsto),
         unidade: 'Kg',
@@ -94,7 +94,7 @@ function renderizarPedidos(lista) {
 
     if (materiais.length > 0) {
       materiais.forEach((item, index) => {
-        const itemId = item.id;
+        const itemId = item.item_id;
         if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
         const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
