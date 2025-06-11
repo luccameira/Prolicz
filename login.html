@@ -30,13 +30,28 @@
     }
 
     h2 {
+      margin-bottom: 12px;
+      font-size: 22px;
+    }
+
+    .descricao {
+      font-size: 13px;
       margin-bottom: 24px;
+      color: #555;
     }
 
     .input-group {
       position: relative;
       width: 100%;
       margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 14px;
     }
 
     .input-group input {
@@ -46,14 +61,14 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 15px;
-      box-sizing: border-box;
+      line-height: 1.4;
     }
 
     .input-group .toggle-password {
       position: absolute;
       right: 12px;
       top: 50%;
-      transform: translateY(-50%);
+      transform: translateY(-40%);
       cursor: pointer;
       color: #888;
       font-size: 16px;
@@ -72,7 +87,7 @@
 
     .topbar {
       height: 60px;
-      background-color: #202124;
+      background-color: #000;
       color: white;
       display: flex;
       align-items: center;
@@ -109,13 +124,16 @@
   </div>
 
   <div class="login-container">
-    <h2>Acesso ao Sistema</h2>
+    <h2>Login</h2>
+    <p class="descricao">Seja bem-vindo(a), por gentileza, insira suas credenciais para acessar o sistema.</p>
     <form id="form-login">
       <div class="input-group">
-        <input type="text" id="usuario" placeholder="Usuário" required />
+        <label for="usuario">E-mail</label>
+        <input type="text" id="usuario" placeholder="Digite seu e-mail" required />
       </div>
       <div class="input-group">
-        <input type="password" id="senha" placeholder="Senha" required />
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" placeholder="Digite sua senha" required />
         <i class="fa fa-eye toggle-password" onclick="toggleSenha(this)"></i>
       </div>
       <button type="submit">Entrar</button>
