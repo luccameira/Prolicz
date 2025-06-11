@@ -418,26 +418,26 @@ router.delete('/:id', async (req, res) => {
 router.get('/conferencia', async (req, res) => {
   const sql = `
     SELECT 
-  p.id AS pedido_id,
-  p.data_criacao,
-  p.tipo,
-  p.status,
-  p.data_coleta,
-  p.data_coleta_iniciada,
-  p.data_carga_finalizada,
-  p.data_peso_confirmado AS data_conferencia_peso,
-  p.data_financeiro,
-  p.data_emissao_nf,
-  p.data_finalizado,
-  p.codigo_interno,
-  p.observacao,
-  p.empresa,
-  p.ticket_balanca,
-  c.nome_fantasia AS cliente
-FROM pedidos p
-INNER JOIN clientes c ON p.cliente_id = c.id
-WHERE p.status = 'Aguardando Conferência do Peso'
-ORDER BY p.data_coleta ASC
+      p.id AS pedido_id,
+      p.data_criacao,
+      p.tipo,
+      p.status,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_peso_confirmado AS data_conferencia_peso,
+      p.data_financeiro,
+      p.data_emissao_nf,
+      p.data_finalizado,
+      p.codigo_interno,
+      p.observacao,
+      p.empresa,
+      p.ticket_balanca,
+      c.nome_fantasia AS cliente
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    WHERE p.status = 'Aguardando Conferência do Peso'
+    ORDER BY p.data_coleta ASC
   `;
 
   try {
@@ -452,6 +452,8 @@ ORDER BY p.data_coleta ASC
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
       );
+
+      console.log(`Materiais do pedido ${pedido.pedido_id}:`, materiais);
 
       for (const item of materiais) {
         const [descontos] = await db.query(
