@@ -6,17 +6,20 @@
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
   <script defer src="incluir-layout.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
     .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    select:disabled { background-color: #e9ecef; }
     .produto-bloco {
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -85,7 +88,7 @@
       </div>
       <div class="form-group">
         <label for="cliente">Cliente</label>
-        <select id="cliente" required></select>
+        <select id="cliente" required style="width: 100%"></select>
       </div>
       <div class="form-group">
         <label for="data-coleta">Data Prevista da Coleta</label>
@@ -124,17 +127,34 @@
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
+
   <script>
     $(function(){
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      $.get("/api/clientes", function(clientes){
-        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
-        clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
+      // Inicialização do Select2 com busca digitável
+      $('#cliente').select2({
+        placeholder: 'Selecione um cliente',
+        allowClear: true,
+        width: 'resolve',
+        ajax: {
+          url: '/api/clientes',
+          dataType: 'json',
+          delay: 250,
+          data: function (params) {
+            return { search: params.term };
+          },
+          processResults: function (data) {
+            return {
+              results: data.map(c => ({ id: c.id, text: c.nome_fantasia }))
+            };
+          },
+          cache: true
+        }
       });
 
-      $("#cliente").change(function(){
+      $('#cliente').on('change', function () {
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
         $("#produtos").empty();
@@ -190,7 +210,6 @@
           if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
         }
         bloco.append('<div class="form-group"><label>Código Fiscal</label></div>').children().last().append(selCod);
-
         const gp = $(`\
           <div class="grupo-personalizar">\
             <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota"></div>\
@@ -287,7 +306,6 @@
         });
         if (erroPersonalizar) return;
 
-        // Início da alteração para confirmação
         const avistaCheckbox = $("#prazosCheckboxes input[type=checkbox]").filter((_, el) => el.value.toLowerCase().includes("vista"));
         const avistaMarcado = avistaCheckbox.length > 0 && avistaCheckbox.is(":checked");
         const condicaoPagamento = $("#condicao_pagamento_a_vista").val();
@@ -301,10 +319,7 @@
           }
         }
 
-        if (!confirm(mensagem)) {
-          return; // Aborta o envio se cancelar
-        }
-        // Fim da alteração para confirmação
+        if (!confirm(mensagem)) return;
 
         const dados = {
           cliente_id: $("#cliente").val(),
@@ -356,4 +371,3 @@
   </script>
 </body>
 </html>
-
