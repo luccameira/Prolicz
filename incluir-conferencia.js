@@ -25,11 +25,21 @@ async function carregarPedidosConferencia() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    const statusHtml = `
-      <div class="status-badge status-amarelo">
-        <i class="fa fa-balance-scale"></i> ${pedido.status}
-      </div>
-    `;
+    // Define a etiqueta de status
+    let statusHtml = '';
+    if (pedido.status === 'Em Análise pelo Financeiro') {
+      statusHtml = `
+        <div class="status-badge status-verde">
+          <i class="fa fa-check-circle"></i> Tarefa Finalizada
+        </div>
+      `;
+    } else {
+      statusHtml = `
+        <div class="status-badge status-amarelo">
+          <i class="fa fa-balance-scale"></i> ${pedido.status}
+        </div>
+      `;
+    }
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -108,7 +118,7 @@ async function carregarPedidosConferencia() {
         const img = document.getElementById(ticketId);
         if (img) {
           img.addEventListener('click', (event) => {
-            event.stopPropagation(); // não fecha o card ao abrir modal
+            event.stopPropagation();
 
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -137,7 +147,7 @@ async function carregarPedidosConferencia() {
             let zoomed = false;
 
             modalImg.addEventListener('click', (e) => {
-              e.stopPropagation(); // impedir o clique de fechar o card
+              e.stopPropagation();
               if (!zoomed) {
                 const rect = modalImg.getBoundingClientRect();
                 const offsetX = e.clientX - rect.left;
@@ -165,7 +175,7 @@ async function carregarPedidosConferencia() {
             closeBtn.style.color = '#fff';
             closeBtn.style.cursor = 'pointer';
             closeBtn.onclick = (e) => {
-              e.stopPropagation(); // impedir o fechamento do card
+              e.stopPropagation();
               document.body.removeChild(overlay);
             };
 
@@ -177,9 +187,16 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    form.innerHTML += `
-      <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
-    `;
+    const botaoConfirmar = document.createElement('button');
+    botaoConfirmar.className = 'btn btn-registrar';
+    botaoConfirmar.innerText = 'Confirmar Peso';
+    botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
+
+    if (pedido.status === 'Em Análise pelo Financeiro') {
+      botaoConfirmar.disabled = true;
+    }
+
+    form.appendChild(botaoConfirmar);
 
     card.addEventListener('click', (event) => {
       if (event.target.closest('button')) return;
