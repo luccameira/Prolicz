@@ -35,16 +35,6 @@
     .error-prazos { color: red; display: none; font-size: 13px; }
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
-    .select-codigo-fiscal {
-      appearance: menulist !important;
-      background-color: #fff !important;
-      color: #000 !important;
-      pointer-events: auto !important;
-    }
-    .select-codigo-fiscal option {
-      color: #000 !important;
-      background-color: #fff !important;
-    }
     .valor-total-previsto {
       background: #fffbe6;
       border: 1.5px solid #ffe066;
@@ -112,6 +102,14 @@
       <div class="form-group">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
+        <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
+          <label for="condicao_pagamento_a_vista"><strong>Condição para pagamento à vista:</strong></label>
+          <select id="condicao_pagamento_a_vista">
+            <option value="">Selecione</option>
+            <option value="Liberar caminhão">Liberar caminhão</option>
+            <option value="Aguardar pagamento">Aguardar pagamento</option>
+          </select>
+        </div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
       <div id="produtos"></div>
@@ -131,19 +129,18 @@
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
       });
 
-      // ao mudar cliente
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
         $("#produtos").empty();
         $("#valor-total").text("R$ 0,00");
         $(".error-prazos").hide();
+        $("#condicao-a-vista").hide();
         if (!id) return;
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
@@ -158,6 +155,12 @@
         });
       });
 
+      $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
+        const avistaMarcado = $("#prazosCheckboxes input[type=checkbox]")
+          .filter((_, el) => el.value.toLowerCase().includes("vista") && el.checked).length > 0;
+        $("#condicao-a-vista").toggle(avistaMarcado);
+      });
+
       $("#adicionar-produto").click(adicionarProduto);
 
       function adicionarProduto(){
@@ -168,36 +171,26 @@
         if (!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
 
-        // Produto
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
-        bloco.append('<div class="form-group"><label>Produto</label></div>')
-             .children().last().append(selProd);
+        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
-        // Valor por Quilo (não editável)
         bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
-        bloco.find(".valor-por-quilo").mask("R$ 000.000.000,00", { reverse: true });
 
-        // Peso
-        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
 
-        // Tipo de Peso (com "Selecione" obrigatório)
         bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
 
-        // Subtotal (não editável)
         bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-        // Código Fiscal (com "Selecione" obrigatório)
         const selCod = $('<select class="select-codigo-fiscal" required></select>');
         selCod.append('<option value="">Selecione</option>');
         windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
         if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
           if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
         }
-        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
-             .children().last().append(selCod);
+        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>').children().last().append(selCod);
 
-        // Personalizar
         const gp = $(`\
           <div class="grupo-personalizar">\
             <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota"></div>\
@@ -205,9 +198,7 @@
             <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
           </div>`);
         bloco.append(gp);
-        gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
 
-        // eventos internos
         selCod.change(function(){
           if ($(this).val() === "Personalizar") {
             gp.show();
@@ -216,14 +207,19 @@
             bloco.find(".error-soma").hide();
           }
         });
+
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
-          bloco.find(".valor-por-quilo").val(`R$ ${v.toFixed(2).replace(".",",")}`);
+          bloco.find(".valor-por-quilo").val("R$ " + formatarNumero(v));
           atualizarSub(); atualizarTotal();
         });
-        bloco.find(".peso").on("input", () => { atualizarSub(); atualizarTotal(); });
 
-        // Validação da soma (personalizar)
+        bloco.find(".peso").on("input", function(){
+          const valor = parseMask($(this).val());
+          $(this).val(formatarNumero(valor, true));
+          atualizarSub(); atualizarTotal();
+        });
+
         gp.on("input blur", "input", function() {
           const vComNota = parseMask(gp.find(".valor-com-nota").val()),
                 vSemNota = parseMask(gp.find(".valor-sem-nota").val()),
@@ -232,18 +228,18 @@
           gp.find(".error-soma").toggle(erro);
         });
 
-        // Remover produto
         if ($(".produto-bloco").length) {
           const btn = $('<button type="button" class="btn-remove">Remover</button>')
             .click(() => { bloco.remove(); atualizarTotal(); });
           bloco.append(btn);
         }
+
         $("#produtos").append(bloco);
 
         function atualizarSub(){
           const v = parseMask(bloco.find(".valor-por-quilo").val()),
-                p = parseFloat(bloco.find(".peso").val()) || 0;
-          bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
+                p = parseMask(bloco.find(".peso").val());
+          bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
         }
       }
 
@@ -252,22 +248,28 @@
         $(".produto-bloco").each(function(){
           tot += parseMask($(this).find(".subtotal").val());
         });
-        $("#valor-total").text(`R$ ${tot.toFixed(2).replace(".",",")}`);
+        $("#valor-total").text("R$ " + formatarNumero(tot));
       }
 
       function parseMask(str){
-        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",",".")) || 0;
+        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", ".")) || 0;
+      }
+
+      function formatarNumero(valor, inteiro = false){
+        const partes = inteiro ? [Math.floor(valor).toString()] : valor.toFixed(2).replace(".", ",").split(",");
+        partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return inteiro ? partes[0] : partes.join(",");
       }
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
+
         const prSel = $("#prazosCheckboxes input:checked").map((i,c) => c.value).get();
         if (!prSel.length) {
           $(".error-prazos").show();
           return;
         }
 
-        // Validação da soma dos campos personalizáveis
         let erroPersonalizar = false;
         $(".produto-bloco").each(function(){
           const cod = $(this).find(".select-codigo-fiscal").val();
@@ -285,19 +287,40 @@
         });
         if (erroPersonalizar) return;
 
+        // Início da alteração para confirmação
+        const avistaCheckbox = $("#prazosCheckboxes input[type=checkbox]").filter((_, el) => el.value.toLowerCase().includes("vista"));
+        const avistaMarcado = avistaCheckbox.length > 0 && avistaCheckbox.is(":checked");
+        const condicaoPagamento = $("#condicao_pagamento_a_vista").val();
+
+        let mensagem = "Você tem certeza que deseja gravar este pedido?";
+        if (avistaMarcado) {
+          if (condicaoPagamento) {
+            mensagem += `\n(Condição de pagamento A Vista: ${condicaoPagamento.toLowerCase()})`;
+          } else {
+            mensagem += `\n(Condição de pagamento A Vista: não selecionada)`;
+          }
+        }
+
+        if (!confirm(mensagem)) {
+          return; // Aborta o envio se cancelar
+        }
+        // Fim da alteração para confirmação
+
         const dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
           tipo: $("#pedido-para").val(),
           data_coleta: $("#data-coleta").val(),
           prazos: prSel,
+          condicao_pagamento_a_vista: condicaoPagamento,
           observacao: $("#observacao").val(),
           itens: []
         };
+
         $(".produto-bloco").each(function(){
           const nome = $(this).find(".select-produto").val(),
                 valor = parseMask($(this).find(".valor-por-quilo").val()),
-                peso  = parseFloat($(this).find(".peso").val()) || 0,
+                peso  = parseMask($(this).find(".peso").val()),
                 tpeso = $(this).find(".tipo-peso").val(),
                 cod   = $(this).find(".select-codigo-fiscal").val(),
                 vcn   = parseMask($(this).find(".valor-com-nota").val()),
@@ -314,6 +337,7 @@
             });
           }
         });
+
         fetch("/api/pedidos", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dados)
@@ -323,9 +347,13 @@
           if (r.mensagem) window.location.href = "vendas.html?sucesso=1";
           else alert("Erro ao salvar o pedido.");
         })
-        .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
+        .catch(err => {
+          console.error(err);
+          alert("Erro ao salvar o pedido.");
+        });
       });
     });
   </script>
 </body>
 </html>
+
