@@ -68,12 +68,12 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA (corrigida: todos os pedidos do dia com data_coleta_iniciada + item_id)
+// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
       p.id,
-      i.id AS item_id,                -- ✅ Adicionado: ID do item
+      i.id AS item_id,
       p.data_criacao,
       c.nome_fantasia AS cliente,
       i.nome_produto AS produto,
@@ -85,7 +85,7 @@ router.get('/carga', async (req, res) => {
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
-    WHERE DATE(p.data_coleta) = CURDATE()
+    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
     GROUP BY 
       p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
       p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.status
