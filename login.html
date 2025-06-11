@@ -29,14 +29,29 @@
       margin-bottom: 24px;
     }
 
-    input[type="text"],
-    input[type="password"] {
+    .input-group {
+      position: relative;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .input-group input {
       width: 100%;
       padding: 12px;
-      margin-bottom: 16px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 15px;
+      padding-right: 40px;
+    }
+
+    .input-group .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #888;
+      font-size: 16px;
     }
 
     button {
@@ -91,8 +106,13 @@
   <div class="login-container">
     <h2>Acesso ao Sistema</h2>
     <form id="form-login">
-      <input type="text" id="usuario" placeholder="Usuário" required />
-      <input type="password" id="senha" placeholder="Senha" required />
+      <div class="input-group">
+        <input type="text" id="usuario" placeholder="Usuário" required />
+      </div>
+      <div class="input-group">
+        <input type="password" id="senha" placeholder="Senha" required />
+        <i class="fa fa-eye toggle-password" onclick="toggleSenha(this)"></i>
+      </div>
       <button type="submit">Entrar</button>
     </form>
   </div>
@@ -103,14 +123,26 @@
 
       const usuario = document.getElementById("usuario").value.trim();
 
-      // Simulação de login simples: salva o nome no localStorage
       if (usuario) {
         localStorage.setItem("nomeUsuario", usuario);
-        window.location.href = "dashboard.html"; // ou qualquer outra página inicial
+        window.location.href = "dashboard.html";
       } else {
         alert("Digite o nome do usuário.");
       }
     });
+
+    function toggleSenha(icon) {
+      const campoSenha = document.getElementById("senha");
+      if (campoSenha.type === "password") {
+        campoSenha.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        campoSenha.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
   </script>
 </body>
 </html>
