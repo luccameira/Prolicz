@@ -25,7 +25,7 @@ async function carregarPedidosConferencia() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Define a etiqueta de status
+    // Etiqueta de status
     let statusHtml = '';
     if (pedido.status === 'Em Análise pelo Financeiro') {
       statusHtml = `
@@ -187,13 +187,16 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
+    // Botão Confirmar Peso
     const botaoConfirmar = document.createElement('button');
     botaoConfirmar.className = 'btn btn-registrar';
     botaoConfirmar.innerText = 'Confirmar Peso';
-    botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
 
-    if (pedido.status === 'Em Análise pelo Financeiro') {
+    if (pedido.status === 'Aguardando Conferência do Peso') {
+      botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
+    } else {
       botaoConfirmar.disabled = true;
+      botaoConfirmar.classList.add('btn-disabled');
     }
 
     form.appendChild(botaoConfirmar);
