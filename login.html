@@ -1,98 +1,98 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Login</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
-      background-color: #f4f6f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      background-color: #f5f6f8;
       font-family: 'Roboto', sans-serif;
       margin: 0;
     }
-
-    .login-container {
-      background: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 360px;
-      text-align: center;
-    }
-
-    h2 {
-      margin-bottom: 24px;
-    }
-
-    .input-group {
-      position: relative;
-      width: 100%;
-      margin-bottom: 16px;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-      padding-right: 40px;
-    }
-
-    .input-group .toggle-password {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #888;
-      font-size: 16px;
-    }
-
-    button {
-      background-color: #ffc107;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      font-size: 15px;
-    }
-
     .topbar {
       height: 60px;
-      background-color: #202124;
+      background-color: #000;
       color: white;
       display: flex;
       align-items: center;
       padding: 0 30px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .topbar .logo {
       font-size: 22px;
       font-weight: bold;
-      display: flex;
-      gap: 0;
     }
-
     .topbar .logo span:first-child {
       color: #ffc107;
     }
-
     .topbar .logo span:last-child {
       color: white;
+    }
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 60px);
+    }
+    .login-box {
+      background-color: white;
+      padding: 40px 50px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-box h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    .login-box p {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+      color: #555;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    .senha-wrapper {
+      position: relative;
+    }
+    .senha-wrapper input {
+      padding-right: 40px;
+    }
+    .senha-wrapper i {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #555;
+    }
+    .btn-login {
+      width: 100%;
+      background-color: #ffc107;
+      color: #000;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .btn-login:hover {
+      background-color: #e0a800;
     }
   </style>
 </head>
@@ -104,45 +104,34 @@
   </div>
 
   <div class="login-container">
-    <h2>Acesso ao Sistema</h2>
-    <form id="form-login">
-      <div class="input-group">
-        <input type="text" id="usuario" placeholder="Usuário" required />
-      </div>
-      <div class="input-group">
-        <input type="password" id="senha" placeholder="Senha" required />
-        <i class="fa fa-eye toggle-password" onclick="toggleSenha(this)"></i>
-      </div>
-      <button type="submit">Entrar</button>
-    </form>
+    <div class="login-box">
+      <h2>Login</h2>
+      <p>Seja bem-vindo(a), por gentileza, insira suas credenciais para acessar o sistema.</p>
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="text" id="email" name="email" required />
+        </div>
+        <div class="form-group senha-wrapper">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" required />
+          <i id="toggleSenha" class="fas fa-eye"></i>
+        </div>
+        <button type="submit" class="btn-login">Entrar</button>
+      </form>
+    </div>
   </div>
 
   <script>
-    document.getElementById("form-login").addEventListener("submit", function(e) {
-      e.preventDefault();
+    const senhaInput = document.getElementById("senha");
+    const toggleSenha = document.getElementById("toggleSenha");
 
-      const usuario = document.getElementById("usuario").value.trim();
-
-      if (usuario) {
-        localStorage.setItem("nomeUsuario", usuario);
-        window.location.href = "dashboard.html";
-      } else {
-        alert("Digite o nome do usuário.");
-      }
+    toggleSenha.addEventListener("click", () => {
+      const isSenha = senhaInput.type === "password";
+      senhaInput.type = isSenha ? "text" : "password";
+      toggleSenha.classList.toggle("fa-eye");
+      toggleSenha.classList.toggle("fa-eye-slash");
     });
-
-    function toggleSenha(icon) {
-      const campoSenha = document.getElementById("senha");
-      if (campoSenha.type === "password") {
-        campoSenha.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-      } else {
-        campoSenha.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-      }
-    }
   </script>
 </body>
 </html>
