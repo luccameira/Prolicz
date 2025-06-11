@@ -8,35 +8,28 @@ function formatarPeso(valor) {
 }
 
 async function carregarPedidosConferencia() {
-  const [resPendentes, resFinalizados] = await Promise.all([
-    fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso'),
-    fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro')
-  ]);
-
-  const pendentes = await resPendentes.json();
-  const finalizados = await resFinalizados.json();
+  const res = await fetch('/api/pedidos/conferencia');
+  const pedidos = await res.json();
 
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
-  const todos = [...pendentes, ...finalizados];
-
-  if (!todos.length) {
+  if (!pedidos.length) {
     lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido disponível para conferência.</p>";
     return;
   }
 
-  todos.forEach(pedido => {
+  pedidos.forEach(pedido => {
     const idPedido = pedido.pedido_id || pedido.id;
-    const finalizado = pedido.status === 'Em Análise pelo Financeiro';
 
     const card = document.createElement('div');
     card.className = 'card';
-    if (finalizado) card.classList.add('finalizado');
 
-    const statusHtml = finalizado
-      ? `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Confirmado</div>`
-      : `<div class="status-badge status-amarelo"><i class="fa fa-balance-scale"></i> ${pedido.status}</div>`;
+    const statusHtml = `
+      <div class="status-badge status-amarelo">
+        <i class="fa fa-balance-scale"></i> ${pedido.status}
+      </div>
+    `;
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -153,16 +146,14 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    if (!finalizado) {
-      form.innerHTML += `
-        <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
-      `;
+    form.innerHTML += `
+      <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
+    `;
 
-      card.addEventListener('click', (event) => {
-        if (event.target.closest('button')) return;
-        form.style.display = form.style.display === 'block' ? 'none' : 'block';
-      });
-    }
+    card.addEventListener('click', (event) => {
+      if (event.target.closest('button')) return;
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    });
 
     card.appendChild(form);
     lista.appendChild(card);
@@ -202,8 +193,6 @@ async function confirmarPeso(pedidoId, botao) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
