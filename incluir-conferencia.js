@@ -105,47 +105,93 @@ async function carregarPedidosConferencia() {
       `;
 
       setTimeout(() => {
-  const img = document.getElementById(ticketId);
-  if (img) {
-    img.addEventListener('click', () => {
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100vw';
-      overlay.style.height = '100vh';
-      overlay.style.background = 'rgba(0, 0, 0, 0.8)';
-      overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
-      overlay.style.zIndex = '9999';
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', () => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
 
-      const modalImg = document.createElement('img');
-      modalImg.src = img.src;
-      modalImg.style.maxWidth = '90vw';
-      modalImg.style.maxHeight = '90vh';
-      modalImg.style.width = 'auto';
-      modalImg.style.height = 'auto';
-      modalImg.style.objectFit = 'contain';
-      modalImg.style.borderRadius = '8px';
-      modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.maxWidth = '90vw';
+            modalImg.style.maxHeight = '90vh';
+            modalImg.style.width = 'auto';
+            modalImg.style.height = 'auto';
+            modalImg.style.objectFit = 'contain';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            modalImg.style.cursor = 'zoom-in';
 
-      const closeBtn = document.createElement('div');
-      closeBtn.innerHTML = '&times;';
-      closeBtn.style.position = 'absolute';
-      closeBtn.style.top = '20px';
-      closeBtn.style.right = '30px';
-      closeBtn.style.fontSize = '40px';
-      closeBtn.style.color = '#fff';
-      closeBtn.style.cursor = 'pointer';
+            let zoomed = false;
 
-      closeBtn.onclick = () => document.body.removeChild(overlay);
-      overlay.appendChild(modalImg);
-      overlay.appendChild(closeBtn);
-      document.body.appendChild(overlay);
-    });
-  }
-}, 100);
+            modalImg.addEventListener('click', () => {
+              if (!zoomed) {
+                modalImg.style.transform = 'scale(2.5)';
+                modalImg.style.cursor = 'zoom-out';
+                modalImg.style.transition = 'transform 0.3s ease';
+                modalImg.style.maxWidth = 'unset';
+                modalImg.style.maxHeight = 'unset';
+                modalImg.style.position = 'relative';
+                zoomed = true;
+
+                let isDragging = false;
+                let startX, startY;
+
+                modalImg.addEventListener('mousedown', e => {
+                  isDragging = true;
+                  startX = e.pageX - modalImg.offsetLeft;
+                  startY = e.pageY - modalImg.offsetTop;
+                  modalImg.style.cursor = 'grabbing';
+                  e.preventDefault();
+                });
+
+                document.addEventListener('mouseup', () => {
+                  isDragging = false;
+                  modalImg.style.cursor = 'zoom-out';
+                });
+
+                document.addEventListener('mousemove', e => {
+                  if (isDragging) {
+                    modalImg.style.left = `${e.pageX - startX}px`;
+                    modalImg.style.top = `${e.pageY - startY}px`;
+                  }
+                });
+
+              } else {
+                modalImg.style.transform = 'scale(1)';
+                modalImg.style.cursor = 'zoom-in';
+                modalImg.style.position = 'static';
+                modalImg.style.left = 'unset';
+                modalImg.style.top = 'unset';
+                zoomed = false;
+              }
+            });
+
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
+
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
+      }, 100);
     }
 
     form.innerHTML += `
@@ -195,10 +241,7 @@ async function confirmarPeso(pedidoId, botao) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosConferencia();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+  
