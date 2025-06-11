@@ -68,26 +68,30 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA (corrigida: todos os pedidos do dia com data_coleta_iniciada)
+// ROTA CARGA (corrigida: todos os pedidos do dia com data_coleta_iniciada + item_id)
 router.get('/carga', async (req, res) => {
   const sql = `
     SELECT 
       p.id,
-      p.data_criacao,              -- ✅ ADICIONADO AQUI
+      i.id AS item_id,                -- ✅ Adicionado: ID do item
+      p.data_criacao,
       c.nome_fantasia AS cliente,
       i.nome_produto AS produto,
       p.data_coleta,
       p.data_coleta_iniciada,
-      p.data_carga_finalizada,    -- já incluído anteriormente
+      p.data_carga_finalizada,
       SUM(i.peso) AS peso_previsto,
       p.status
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
     WHERE DATE(p.data_coleta) = CURDATE()
-    GROUP BY p.id, p.data_criacao, c.nome_fantasia, i.nome_produto, p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.status
+    GROUP BY 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.status
     ORDER BY p.data_coleta ASC
   `;
+
   try {
     const [results] = await db.query(sql);
     res.json(results);
