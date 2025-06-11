@@ -190,6 +190,10 @@ function adicionarDescontoMaterial(itemId) {
     </div>
   `;
   container.appendChild(div);
+
+// ✅ Aplica a máscara ao campo de desconto assim que ele é inserido
+aplicarMascaraMilhar(div.querySelector('input[type="number"]'));
+
 }
 
 function removerDescontoMaterial(itemId, index) {
