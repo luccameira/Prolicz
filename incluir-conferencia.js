@@ -48,7 +48,7 @@ async function carregarPedidosConferencia() {
       ${statusHtml}
     `;
     card.appendChild(header);
-    // Timeline padronizada abaixo do cabeçalho
+
     card.innerHTML += gerarLinhaTempoCompleta(pedido);
     setTimeout(() => {
       const timeline = card.querySelector('.timeline-simples');
@@ -157,10 +157,9 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `
         <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
       `;
-    }
 
-    if (!finalizado) {
-      header.addEventListener('click', () => {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
         form.style.display = form.style.display === 'block' ? 'none' : 'block';
       });
     }
@@ -206,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
