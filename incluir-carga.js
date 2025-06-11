@@ -20,7 +20,6 @@ async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
 
-  // Exibir apenas pedidos com coleta iniciada ou posterior
   const listaFiltrada = listaPedidos.filter(p => p.status !== 'Aguardando Início da Coleta');
 
   pedidos = listaFiltrada;
@@ -186,17 +185,12 @@ function adicionarDescontoMaterial(itemId) {
     </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
       <label id="${idLabel}" for="${idQtd}" style="min-width: 150px;">Qtd. Paletes Grandes:</label>
-      <input type="number" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      <input type="text" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" class="input-sem-seta" style="flex: 1; padding: 6px;">
     </div>
   `;
   container.appendChild(div);
 
-function aplicarMascaraMilhar(input) {
-  input.addEventListener('input', () => {
-    let valor = input.value.replace(/\D/g, ''); // Remove tudo que não for número
-    valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Aplica ponto a cada milhar
-    input.value = valor;
-  });
+  aplicarMascaraMilhar(div.querySelector('input[type="text"]'));
 }
 
 function removerDescontoMaterial(itemId, index) {
@@ -217,7 +211,7 @@ function atualizarDescontoItem(itemId, index) {
 
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
-  let placeholder = 'Digite o peso devolvido em Kg'; // <-- Aqui está o valor exato que você quer
+  let placeholder = 'Digite o peso devolvido em Kg';
 
   if (motivo === 'Palete Pequeno') {
     labelTexto = 'Qtd. Paletes Pequenos:';
@@ -232,7 +226,7 @@ function atualizarDescontoItem(itemId, index) {
   label.textContent = labelTexto;
   input.placeholder = placeholder;
 
-  const valor = parseFloat(input.value);
+  const valor = parseFloat(input.value.replace(/\./g, ''));
   const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
 
   descontosPorItem[itemId][index] = {
@@ -302,3 +296,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
+
