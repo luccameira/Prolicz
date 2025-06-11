@@ -140,7 +140,11 @@ body {
 }
 
 .btn-disabled {
-  background-color: #cdd7e1 !important;
+  background-color: #a8c4e3 !important;
+  color: #fff !important;
   cursor: not-allowed !important;
-  opacity: 0.7;
+  opacity: 0.7 !important;
+  border: none !important;
+  pointer-events: none !important;
 }
+
