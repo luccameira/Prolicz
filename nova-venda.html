@@ -127,23 +127,25 @@
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
-
+  
   <script>
     $(function(){
+      // Inicializações
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
-
+      
+      // Carregar clientes e aplicar Select2
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty();
-        clientes.forEach(c => {
-          sel.append(new Option(c.nome_fantasia, c.id));
-        });
+        clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
         $("#cliente").select2({
           placeholder: "Digite para buscar cliente",
           allowClear: true
         });
       });
 
+      // Resto do script de mudança de cliente e carregamento...
+      // Quando o cliente muda, carrega dados
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
@@ -152,18 +154,15 @@
         $(".error-prazos").hide();
         $("#condicao-a-vista").hide();
         if (!id) return;
-
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
-
           windowPrazos.forEach(pz => {
             $("#prazosCheckboxes").append(
               `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
             );
           });
-
           adicionarProduto();
         });
       });
@@ -175,6 +174,7 @@
       });
 
       $("#adicionar-produto").click(adicionarProduto);
+
       function adicionarProduto(){
         if (!windowProdutos.length) return;
         const usados = $(".produto-bloco")
@@ -183,75 +183,72 @@
         if (!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
 
+        // Produto
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
+        // Valor por Quilo
         bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
 
+        // Peso
         bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
 
+        // Tipo de Peso
         bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
 
+        // Subtotal
         bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
+        // Código
+        const selCod = $(`<select class="select-codigo-fiscal" required></select>`);
         selCod.append('<option value="">Selecione</option>');
         windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
-        if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
-          if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
-        }
         bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
 
-        const gp = $(`\
-          <div class="grupo-personalizar">\
-            <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota"></div>\
-            <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota"></div>\
-            <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
-          </div>`);
+        // Grupo Personalizar
+        const gp = $(`
+          <div class="grupo-personalizar">
+            <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
+            <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota" type="text" readonly></div>
+            <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
+          </div>
+        `);
         bloco.append(gp);
 
+        // Quando selecionar Personalizar
         selCod.change(function(){
-          if ($(this).val() === "Personalizar") {
-            gp.show();
-          } else {
-            gp.hide().find("input").val("");
-            bloco.find(".error-soma").hide();
-          }
+          gp.toggle($(this).val() === "Personalizar");
         });
 
+        // Ao digitar Valor com Nota, calcula Valor sem Nota
+        gp.find(".valor-com-nota").on("input", function(){
+          const total = parseMask(bloco.find(".valor-por-quilo").val());
+          const comNota = parseMask($(this).val());
+          const semNota = total - comNota;
+          bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(semNota,0)));
+        });
+
+        // Eventos produto e peso para subtotal
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
-          bloco.find(".valor-por-quilo").val("R$ " + formatarNumero(v));
-          atualizarSub(); atualizarTotal();
+          bloco.find(".valor-por-quilo").val(formatarNumero(v));
+          atualizarSub();
+          atualizarTotal();
         });
-
         bloco.find(".peso").on("input", function(){
           const valor = parseMask($(this).val());
-          $(this).val(formatarNumero(valor, true));
-          atualizarSub(); atualizarTotal();
+          $(this).val(formatarNumero(valor,true));
+          atualizarSub();
+          atualizarTotal();
         });
-
-        gp.on("input blur", "input", function() {
-          const vComNota = parseMask(gp.find(".valor-com-nota").val()),
-                vSemNota = parseMask(gp.find(".valor-sem-nota").val()),
-                vUnitario = parseMask(bloco.find(".valor-por-quilo").val());
-          const erro = Math.abs((vComNota + vSemNota) - vUnitario) > 0.01;
-          gp.find(".error-soma").toggle(erro);
-        });
-
-        if ($(".produto-bloco").length) {
-          const btn = $('<button type="button" class="btn-remove">Remover</button>')
-            .click(() => { bloco.remove(); atualizarTotal(); });
-          bloco.append(btn);
-        }
 
         $("#produtos").append(bloco);
 
         function atualizarSub(){
-          const v = parseMask(bloco.find(".valor-por-quilo").val()),
-                p = parseMask(bloco.find(".peso").val());
-          bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
+          const v = parseMask(bloco.find(".valor-por-quilo").val());
+          const p = parseMask(bloco.find(".peso").val());
+          bloco.find(".subtotal").val("R$ "+formatarNumero(v*p));
         }
       }
       function atualizarTotal(){
@@ -305,9 +302,9 @@
         let mensagem = "Você tem certeza que deseja gravar este pedido?";
         if (avistaMarcado) {
           if (condicaoPagamento) {
-            mensagem += `\n(Condição de pagamento A Vista: ${condicaoPagamento.toLowerCase()})`;
+            mensagem += `\n(Condição de pagamento À vista: ${condicaoPagamento})`;
           } else {
-            mensagem += `\n(Condição de pagamento A Vista: não selecionada)`;
+            mensagem += `\n(Condição de pagamento À vista: não selecionada)`;
           }
         }
 
@@ -339,8 +336,8 @@
               peso,
               tipo_peso: tpeso,
               codigo_fiscal: cod,
-              valor_com_nota: cod === "Personalizar" ? vcn : null,
-              valor_sem_nota: cod === "Personalizar" ? vsn : null
+              valor_com_nota: vcn,
+              valor_sem_nota: vsn
             });
           }
         });
