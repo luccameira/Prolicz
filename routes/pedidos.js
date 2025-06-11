@@ -440,8 +440,15 @@ router.get('/conferencia', async (req, res) => {
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE p.status = 'Aguardando Conferência do Peso'
-    ORDER BY p.data_coleta ASC
+    WHERE p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso', 'Em Análise pelo Financeiro')
+    ORDER BY 
+      CASE 
+        WHEN p.status = 'Coleta Iniciada' THEN 1
+        WHEN p.status = 'Aguardando Conferência do Peso' THEN 2
+        WHEN p.status = 'Em Análise pelo Financeiro' THEN 3
+        ELSE 99
+      END,
+      p.data_coleta ASC
   `;
 
   try {
@@ -456,8 +463,6 @@ router.get('/conferencia', async (req, res) => {
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
       );
-
-      console.log(`Materiais do pedido ${pedido.pedido_id}:`, materiais);
 
       for (const item of materiais) {
         const [descontos] = await db.query(
