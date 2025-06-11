@@ -36,9 +36,15 @@ function renderizarPedidos(lista) {
     pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
   }
 
-  const naoFinalizados = pedidosFiltrados.filter(p => p.status !== 'Aguardando Conferência do Peso');
-  const finalizados = pedidosFiltrados.filter(p => p.status === 'Aguardando Conferência do Peso');
-  const pedidosOrdenados = [...naoFinalizados, ...finalizados];
+  const pendentes = pedidosFiltrados.filter(p => 
+  p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0)
+);
+
+const concluidos = pedidosFiltrados.filter(p =>
+  !(p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0))
+);
+
+const pedidosOrdenados = [...pendentes, ...concluidos];
 
   listaEl.innerHTML = '';
 
