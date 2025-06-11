@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="layout.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
       background-color: #f4f6f8;
@@ -13,127 +12,103 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
       font-family: 'Roboto', sans-serif;
+      margin: 0;
     }
 
     .login-container {
-      background-color: white;
+      background: white;
       padding: 40px;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 360px;
       text-align: center;
     }
 
-    .logo {
-      font-weight: bold;
-      font-family: inherit;
-      white-space: nowrap;
-      font-size: 28px;
-      display: flex;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 20px;
+    h2 {
+      margin-bottom: 24px;
     }
 
-    .logo span:first-child {
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    button {
+      background-color: #ffc107;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      font-size: 15px;
+    }
+
+    .topbar {
+      height: 60px;
+      background-color: #202124;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 30px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .topbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      display: flex;
+      gap: 0;
+    }
+
+    .topbar .logo span:first-child {
       color: #ffc107;
     }
 
-    .logo span:last-child {
-      color: #000;
-    }
-
-    .login-container h2 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .login-container input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    .login-container button {
-      width: 100%;
-      padding: 12px;
-      background-color: #ffc107;
-      color: #1f1f1f;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .login-container button:hover {
-      background-color: #e0a800;
-    }
-
-    .login-container .mensagem-erro {
-      color: red;
-      margin-top: 10px;
-      font-size: 14px;
+    .topbar .logo span:last-child {
+      color: white;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
+  <div class="topbar">
     <div class="logo">
       <span>PRO</span><span>NASA</span>
     </div>
+  </div>
 
+  <div class="login-container">
     <h2>Acesso ao Sistema</h2>
-
-    <input type="text" id="usuario" placeholder="Usuário" />
-    <input type="password" id="senha" placeholder="Senha" />
-
-    <button onclick="fazerLogin()">Entrar</button>
-
-    <div class="mensagem-erro" id="mensagemErro"></div>
+    <form id="form-login">
+      <input type="text" id="usuario" placeholder="Usuário" required />
+      <input type="password" id="senha" placeholder="Senha" required />
+      <button type="submit">Entrar</button>
+    </form>
   </div>
 
   <script>
-    async function fazerLogin() {
+    document.getElementById("form-login").addEventListener("submit", function(e) {
+      e.preventDefault();
+
       const usuario = document.getElementById("usuario").value.trim();
-      const senha = document.getElementById("senha").value.trim();
-      const erroEl = document.getElementById("mensagemErro");
-      erroEl.textContent = "";
 
-      if (!usuario || !senha) {
-        erroEl.textContent = "Preencha todos os campos.";
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuario, senha }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          window.location.href = "dashboard.html";
-        } else {
-          erroEl.textContent = data.mensagem || "Credenciais inválidas.";
-        }
-      } catch (err) {
-        console.error(err);
-        erroEl.textContent = "Erro ao tentar fazer login.";
-      }
-    }
-
-    document.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        fazerLogin();
+      // Simulação de login simples: salva o nome no localStorage
+      if (usuario) {
+        localStorage.setItem("nomeUsuario", usuario);
+        window.location.href = "dashboard.html"; // ou qualquer outra página inicial
+      } else {
+        alert("Digite o nome do usuário.");
       }
     });
   </script>
