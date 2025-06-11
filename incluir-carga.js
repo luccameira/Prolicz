@@ -191,9 +191,12 @@ function adicionarDescontoMaterial(itemId) {
   `;
   container.appendChild(div);
 
-// ✅ Aplica a máscara ao campo de desconto assim que ele é inserido
-aplicarMascaraMilhar(div.querySelector('input[type="number"]'));
-
+function aplicarMascaraMilhar(input) {
+  input.addEventListener('input', () => {
+    let valor = input.value.replace(/\D/g, ''); // Remove tudo que não for número
+    valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Aplica ponto a cada milhar
+    input.value = valor;
+  });
 }
 
 function removerDescontoMaterial(itemId, index) {
