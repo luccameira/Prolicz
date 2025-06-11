@@ -25,6 +25,7 @@ async function carregarPedidosConferencia() {
     const card = document.createElement('div');
     card.className = 'card';
 
+    // Etiqueta de status
     let statusHtml = '';
     if (pedido.status === 'Em Análise pelo Financeiro') {
       statusHtml = `
@@ -186,7 +187,7 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    // Botão Confirmar Peso
+    // Botão Confirmar Peso (condicional por status)
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -196,12 +197,12 @@ async function carregarPedidosConferencia() {
     } else if (pedido.status === 'Coleta Iniciada') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar btn-disabled';
-      botaoConfirmar.innerText = 'Confirmar Peso';
+      botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
       botaoConfirmar.disabled = true;
       form.appendChild(botaoConfirmar);
     }
 
-    // 🔒 Bloqueia abertura se a tarefa estiver finalizada
+    // Bloqueia abertura se tarefa estiver finalizada
     card.addEventListener('click', (event) => {
       if (pedido.status === 'Em Análise pelo Financeiro') return;
       if (event.target.closest('button')) return;
