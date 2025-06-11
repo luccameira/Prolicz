@@ -5,7 +5,8 @@
   </div>
   <div>
     <i class="fa fa-user-circle" style="font-size: 20px; margin-right: 8px;"></i>
-    <a href="login.html" style="color: white; margin-left: 10px;">Sair</a>
+    <span id="usuarioLogado" style="margin-right: 16px;"></span>
+    <a href="login.html" style="color: white;">Sair</a>
   </div>
 </div>
 
@@ -27,3 +28,14 @@
     <a href="tarefas-liberacao.html"><i class="fa fa-check-circle"></i> Liberação Final</a>
   </nav>
 </div>
+
+<script>
+  // Este trecho será executado após a topbar ser carregada
+  document.addEventListener("DOMContentLoaded", () => {
+    const nomeUsuario = localStorage.getItem("nomeUsuario");
+    const el = document.getElementById("usuarioLogado");
+    if (nomeUsuario && el) {
+      el.textContent = nomeUsuario;
+    }
+  });
+</script>
