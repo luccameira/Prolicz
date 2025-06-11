@@ -9,12 +9,55 @@
   <style>
     body {
       background-color: #f4f6f8;
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+    }
+
+    .topbar {
+      height: 60px;
+      background-color: #202124;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 30px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 14px;
+    }
+
+    .topbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .topbar .logo span:first-child {
+      color: #ffc107;
+    }
+
+    .topbar .logo span:last-child {
+      color: white;
+    }
+
+    .topbar a {
+      color: white;
+      margin-left: 10px;
+      text-decoration: none;
+    }
+
+    .login-wrapper {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
+      height: calc(100vh - 60px);
+      padding-top: 60px;
     }
 
     .login-container {
@@ -25,25 +68,6 @@
       width: 100%;
       max-width: 400px;
       text-align: center;
-    }
-
-    .logo {
-      font-weight: bold;
-      font-family: inherit;
-      white-space: nowrap;
-      font-size: 28px;
-      display: flex;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 20px;
-    }
-
-    .logo span:first-child {
-      color: #ffc107;
-    }
-
-    .logo span:last-child {
-      color: #000;
     }
 
     .login-container h2 {
@@ -76,7 +100,7 @@
       background-color: #e0a800;
     }
 
-    .login-container .mensagem-erro {
+    .mensagem-erro {
       color: red;
       margin-top: 10px;
       font-size: 14px;
@@ -84,19 +108,28 @@
   </style>
 </head>
 <body>
-  <div class="login-container">
+
+  <div class="topbar">
     <div class="logo">
       <span>PRO</span><span>NASA</span>
     </div>
+    <div>
+      <i class="fa fa-user-circle" style="font-size: 20px; margin-right: 8px;"></i>
+      <a href="login.html">Sair</a>
+    </div>
+  </div>
 
-    <h2>Acesso ao Sistema</h2>
+  <div class="login-wrapper">
+    <div class="login-container">
+      <h2>Acesso ao Sistema</h2>
 
-    <input type="text" id="usuario" placeholder="Usuário" />
-    <input type="password" id="senha" placeholder="Senha" />
+      <input type="text" id="usuario" placeholder="Usuário" />
+      <input type="password" id="senha" placeholder="Senha" />
 
-    <button onclick="fazerLogin()">Entrar</button>
+      <button onclick="fazerLogin()">Entrar</button>
 
-    <div class="mensagem-erro" id="mensagemErro"></div>
+      <div class="mensagem-erro" id="mensagemErro"></div>
+    </div>
   </div>
 
   <script>
