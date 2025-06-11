@@ -107,7 +107,9 @@ async function carregarPedidosConferencia() {
       setTimeout(() => {
         const img = document.getElementById(ticketId);
         if (img) {
-          img.addEventListener('click', () => {
+          img.addEventListener('click', (event) => {
+            event.stopPropagation(); // não fecha o card ao abrir modal
+
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.top = '0';
@@ -130,48 +132,26 @@ async function carregarPedidosConferencia() {
             modalImg.style.borderRadius = '8px';
             modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
             modalImg.style.cursor = 'zoom-in';
+            modalImg.style.transition = 'transform 0.3s ease';
 
             let zoomed = false;
 
-            modalImg.addEventListener('click', () => {
+            modalImg.addEventListener('click', (e) => {
+              e.stopPropagation(); // impedir o clique de fechar o card
               if (!zoomed) {
+                const rect = modalImg.getBoundingClientRect();
+                const offsetX = e.clientX - rect.left;
+                const offsetY = e.clientY - rect.top;
+                const percentX = (offsetX / rect.width) * 100;
+                const percentY = (offsetY / rect.height) * 100;
+
+                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
                 modalImg.style.transform = 'scale(2.5)';
                 modalImg.style.cursor = 'zoom-out';
-                modalImg.style.transition = 'transform 0.3s ease';
-                modalImg.style.maxWidth = 'unset';
-                modalImg.style.maxHeight = 'unset';
-                modalImg.style.position = 'relative';
                 zoomed = true;
-
-                let isDragging = false;
-                let startX, startY;
-
-                modalImg.addEventListener('mousedown', e => {
-                  isDragging = true;
-                  startX = e.pageX - modalImg.offsetLeft;
-                  startY = e.pageY - modalImg.offsetTop;
-                  modalImg.style.cursor = 'grabbing';
-                  e.preventDefault();
-                });
-
-                document.addEventListener('mouseup', () => {
-                  isDragging = false;
-                  modalImg.style.cursor = 'zoom-out';
-                });
-
-                document.addEventListener('mousemove', e => {
-                  if (isDragging) {
-                    modalImg.style.left = `${e.pageX - startX}px`;
-                    modalImg.style.top = `${e.pageY - startY}px`;
-                  }
-                });
-
               } else {
                 modalImg.style.transform = 'scale(1)';
                 modalImg.style.cursor = 'zoom-in';
-                modalImg.style.position = 'static';
-                modalImg.style.left = 'unset';
-                modalImg.style.top = 'unset';
                 zoomed = false;
               }
             });
@@ -184,8 +164,11 @@ async function carregarPedidosConferencia() {
             closeBtn.style.fontSize = '40px';
             closeBtn.style.color = '#fff';
             closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = (e) => {
+              e.stopPropagation(); // impedir o fechamento do card
+              document.body.removeChild(overlay);
+            };
 
-            closeBtn.onclick = () => document.body.removeChild(overlay);
             overlay.appendChild(modalImg);
             overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
@@ -244,4 +227,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-  
