@@ -105,45 +105,47 @@ async function carregarPedidosConferencia() {
       `;
 
       setTimeout(() => {
-        const img = document.getElementById(ticketId);
-        if (img) {
-          img.addEventListener('click', () => {
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.zIndex = '9999';
+  const img = document.getElementById(ticketId);
+  if (img) {
+    img.addEventListener('click', () => {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100vw';
+      overlay.style.height = '100vh';
+      overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '9999';
 
-            const modalImg = document.createElement('img');
-            modalImg.src = img.src;
-            modalImg.style.width = '95vw';
-            modalImg.style.height = 'auto';
-            modalImg.style.maxHeight = '95vh';
-            modalImg.style.borderRadius = '8px';
-            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+      const modalImg = document.createElement('img');
+      modalImg.src = img.src;
+      modalImg.style.maxWidth = '90vw';
+      modalImg.style.maxHeight = '90vh';
+      modalImg.style.width = 'auto';
+      modalImg.style.height = 'auto';
+      modalImg.style.objectFit = 'contain';
+      modalImg.style.borderRadius = '8px';
+      modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
 
-            const closeBtn = document.createElement('div');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.style.position = 'absolute';
-            closeBtn.style.top = '20px';
-            closeBtn.style.right = '30px';
-            closeBtn.style.fontSize = '40px';
-            closeBtn.style.color = '#fff';
-            closeBtn.style.cursor = 'pointer';
+      const closeBtn = document.createElement('div');
+      closeBtn.innerHTML = '&times;';
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.top = '20px';
+      closeBtn.style.right = '30px';
+      closeBtn.style.fontSize = '40px';
+      closeBtn.style.color = '#fff';
+      closeBtn.style.cursor = 'pointer';
 
-            closeBtn.onclick = () => document.body.removeChild(overlay);
-            overlay.appendChild(modalImg);
-            overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
-          });
-        }
-      }, 100);
+      closeBtn.onclick = () => document.body.removeChild(overlay);
+      overlay.appendChild(modalImg);
+      overlay.appendChild(closeBtn);
+      document.body.appendChild(overlay);
+    });
+  }
+}, 100);
     }
 
     form.innerHTML += `
