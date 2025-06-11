@@ -1,25 +1,56 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
-// GET /api/pedidos
+const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
+if (!fs.existsSync(pastaTickets)) {
+  fs.mkdirSync(pastaTickets, { recursive: true });
+}
+
+const storageTickets = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, pastaTickets),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nome = `ticket_${Date.now()}${ext}`;
+    cb(null, nome);
+  }
+});
+const uploadTicket = multer({ storage: storageTickets });
+
+function formatarDataBRparaISO(dataBR) {
+  const [dia, mes, ano] = dataBR.split('/');
+  return `${ano}-${mes}-${dia}`;
+}
+
+// Rotas específicas (portaria, carga, etc.) omitidas para foco principal
+
+// GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos = `
     SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.nota_fiscal,
+      p.id AS pedido_id,
+      p.data_criacao,
+      p.tipo,
+      p.status,
+      p.data_coleta,
+      p.codigo_interno,
+      p.observacao,
+      p.empresa,
+      p.nota_fiscal,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE 1 = 1
   `;
-
   const params = [];
 
   if (cliente) {
-    sqlPedidos += ` AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)`;
+    sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
     params.push(`%${cliente}%`, `%${cliente}%`);
   }
 
@@ -38,7 +69,7 @@ router.get('/', async (req, res) => {
     params.push(de, ate);
   }
 
-  sqlPedidos += " ORDER BY p.data_coleta DESC";
+  sqlPedidos += " ORDER BY p.data_criacao DESC";
 
   try {
     const [pedidos] = await db.query(sqlPedidos, params);
@@ -87,15 +118,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/pedidos - cria novo pedido
+// POST /api/pedidos
 router.post('/', async (req, res) => {
   const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens, nota_fiscal } = req.body;
-
-  const formatarDataBRparaISO = (dataBR) => {
-    const [dia, mes, ano] = data_coleta.split('/');
-    return `${ano}-${mes}-${dia}`;
-  };
-
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
@@ -112,32 +137,18 @@ router.post('/', async (req, res) => {
         await db.query(
           `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            pedido_id,
-            item.nome_produto,
-            item.valor_unitario,
-            item.peso,
-            item.tipo_peso,
-            item.unidade || '',
-            item.codigo_fiscal || ''
-          ]
+          [pedido_id, item.nome_produto, item.valor_unitario, item.peso, item.tipo_peso, item.unidade || '', item.codigo_fiscal || '']
         );
       }
     }
 
     if (Array.isArray(prazos)) {
       for (const prazo of prazos) {
-        let descricao = '';
-        let dias = 0;
+        let descricao = '', dias = 0;
 
         if (typeof prazo === 'string') {
           descricao = prazo;
-          if (prazo.toLowerCase() === 'à vista') {
-            dias = 0;
-          } else {
-            const match = prazo.match(/\d+/);
-            dias = match ? parseInt(match[0], 10) : 0;
-          }
+          dias = prazo.toLowerCase() === 'à vista' ? 0 : (parseInt(prazo.match(/\d+/)?.[0], 10) || 0);
         } else if (typeof prazo === 'object' && prazo !== null) {
           descricao = prazo.descricao || '';
           dias = prazo.dias || 0;
