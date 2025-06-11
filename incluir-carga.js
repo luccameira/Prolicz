@@ -64,7 +64,7 @@ function renderizarPedidos(lista) {
         <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
       </div>
       <div class="status-box">
-        ${gerarBadgeStatus(p.status, p)}
+        ${gerarBadgeStatus(p.status)}
       </div>
     `;
     header.addEventListener('click', (e) => {
@@ -142,8 +142,14 @@ function renderizarPedidos(lista) {
   });
 }
 
-function gerarBadgeStatus(status, pedido) {
-  if (pedido.peso_carregado && status !== 'Finalizado') {
+function gerarBadgeStatus(status) {
+  const statusComPesoRegistrado = [
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF'
+  ];
+
+  if (statusComPesoRegistrado.includes(status)) {
     return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
   } else if (status === 'Coleta Iniciada') {
     return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
