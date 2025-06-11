@@ -201,7 +201,7 @@
         if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
           if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
         }
-        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>').children().last().append(selCod);
+        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
 
         const gp = $(`\
           <div class="grupo-personalizar">\
