@@ -21,7 +21,7 @@
 
     h1 {
       margin-bottom: 20px;
-      font-weight: 500;
+      font-weight: 700; /* negrito */
       font-size: 22px;
     }
 
@@ -32,17 +32,27 @@
       cursor: pointer;
       font-size: 14px;
       transition: background-color 0.2s ease;
+      font-weight: 600;
+      user-select: none;
     }
 
-    .btn-editar,
+    .btn-editar {
+      background-color: #28a745;
+      color: white;
+      margin-right: 6px;
+    }
+
+    .btn-editar:hover {
+      background-color: #218838;
+    }
+
     .btn-excluir {
-      background-color: #f1f1f1;
-      color: #212529;
+      background-color: #dc3545;
+      color: white;
     }
 
-    .btn-editar:hover,
     .btn-excluir:hover {
-      background-color: #e2e6ea;
+      background-color: #c82333;
     }
 
     .btn-adicionar {
@@ -95,9 +105,12 @@
       border-bottom: 1px solid #ddd;
     }
 
+    /* Aqui está o fundo neutro nos títulos da tabela */
     th {
-      background-color: #f0f0f0;
+      background-color: #f0f0f0; /* cinza claro neutro */
+      color: #333; /* texto cinza escuro */
       font-weight: 600;
+      text-transform: uppercase;
     }
 
     tr:nth-child(even) {
@@ -105,41 +118,14 @@
     }
 
     tr:hover {
-      background-color: #e2e2e2;
+      background-color: #e2e6ea;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="logo">
-      <span style="color: #ffc107; font-weight: bold;">Pronasa</span>
-      <span style="color: white;">Ambiental</span>
-    </div>
-    <div>
-      <i class="fa fa-user-circle" style="font-size: 20px; margin-right: 8px;"></i>
-      <span style="margin-right: 10px;">Lucas</span> |
-      <a href="#" style="margin-left: 10px;">Sair</a>
-    </div>
-  </div>
-  <div class="sidebar">
-    <nav>
-      <div class="menu-section-title">Menu Principal</div>
-      <a href="dashboard.html"><i class="fa fa-chart-line"></i> Dashboard</a>
-      <a href="clientes.html"><i class="fa fa-users"></i> Clientes</a>
-      <a href="vendas.html"><i class="fa fa-dollar-sign"></i> Vendas</a>
-      <a href="produtos.html"><i class="fa fa-box"></i> Produtos</a>
-      <a href="usuarios.html"><i class="fa fa-user-cog"></i> Usuários</a>
-
-      <div class="menu-section-title">Tarefas Operacionais</div>
-      <a href="tarefas-portaria.html"><i class="fa fa-door-open"></i> Portaria</a>
-      <a href="tarefas-carga.html"><i class="fa fa-truck"></i> Carga e Descarga</a>
-      <a href="tarefas-conferencia.html"><i class="fa fa-balance-scale"></i> Conferência de Peso</a>
-      <a href="tarefas-financeiro.html"><i class="fa fa-dollar-sign"></i> Financeiro</a>
-      <a href="tarefas-nf.html"><i class="fa fa-file-invoice"></i> Emissão de NF</a>
-      <a href="tarefas-liberacao.html"><i class="fa fa-check-circle"></i> Liberação Final</a>
-    </nav>
-  </div>
+  <div class="topbar"></div>
+  <div class="sidebar"></div>
 
   <div class="main-content">
     <h1>Clientes</h1>
