@@ -6,6 +6,10 @@
   <link rel="stylesheet" href="layout.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       background-color: #f4f6f8;
       display: flex;
@@ -38,10 +42,11 @@
     .input-group input {
       width: 100%;
       padding: 12px;
+      padding-right: 40px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 15px;
-      padding-right: 40px;
+      box-sizing: border-box;
     }
 
     .input-group .toggle-password {
@@ -120,9 +125,7 @@
   <script>
     document.getElementById("form-login").addEventListener("submit", function(e) {
       e.preventDefault();
-
       const usuario = document.getElementById("usuario").value.trim();
-
       if (usuario) {
         localStorage.setItem("nomeUsuario", usuario);
         window.location.href = "dashboard.html";
