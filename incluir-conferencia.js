@@ -197,7 +197,7 @@ async function carregarPedidosConferencia() {
     } else if (pedido.status === 'Coleta Iniciada') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar btn-disabled';
-      botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
+      botaoConfirmar.innerText = 'Ainda não é sua vez';
       botaoConfirmar.disabled = true;
       form.appendChild(botaoConfirmar);
     }
