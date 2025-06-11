@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Usuários - Prolicz (Simulado com Layout)</title>
+  <title>Usuários - Pronasa</title>
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script defer src="incluir-layout.js"></script>
@@ -34,9 +34,10 @@
       font-size: 15px;
       text-align: left;
     }
+    /* AQUI: removendo fundo azul e colocando cor preta no texto do cabeçalho */
     th {
-      background-color: #007bff;
-      color: white;
+      background-color: transparent !important;
+      color: black !important;
       text-transform: uppercase;
       font-weight: 600;
     }
@@ -54,8 +55,10 @@
       font-weight: 600;
       user-select: none;
     }
+    /* Botão Novo Usuário amarelo com letra preta */
     .btn-novo {
-      background-color: #007bff;
+      background-color: #ffc107;
+      color: black;
       margin-bottom: 20px;
       display: inline-block;
     }
