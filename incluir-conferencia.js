@@ -136,8 +136,6 @@ async function carregarPedidosConferencia() {
             modalImg.src = img.src;
             modalImg.style.maxWidth = '90vw';
             modalImg.style.maxHeight = '90vh';
-            modalImg.style.width = 'auto';
-            modalImg.style.height = 'auto';
             modalImg.style.objectFit = 'contain';
             modalImg.style.borderRadius = '8px';
             modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
@@ -148,13 +146,13 @@ async function carregarPedidosConferencia() {
 
             modalImg.addEventListener('click', (e) => {
               e.stopPropagation();
-              if (!zoomed) {
-                const rect = modalImg.getBoundingClientRect();
-                const offsetX = e.clientX - rect.left;
-                const offsetY = e.clientY - rect.top;
-                const percentX = (offsetX / rect.width) * 100;
-                const percentY = (offsetY / rect.height) * 100;
+              const rect = modalImg.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const percentX = (offsetX / rect.width) * 100;
+              const percentY = (offsetY / rect.height) * 100;
 
+              if (!zoomed) {
                 modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
                 modalImg.style.transform = 'scale(2.5)';
                 modalImg.style.cursor = 'zoom-out';
@@ -187,24 +185,24 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    // Botão Confirmar Peso (condicional por status)
+    // Botão Confirmar Peso
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
       botaoConfirmar.innerText = 'Confirmar Peso';
       botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
       form.appendChild(botaoConfirmar);
-    } else if (pedido.status === 'Coleta Iniciada') {
+    } else {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar btn-disabled';
-      botaoConfirmar.innerText = 'Ainda não é sua vez';
+      botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
       botaoConfirmar.disabled = true;
       form.appendChild(botaoConfirmar);
     }
 
-    // Bloqueia abertura se tarefa estiver finalizada
+    // Card só abre se estiver na vez da conferência
     card.addEventListener('click', (event) => {
-      if (pedido.status === 'Em Análise pelo Financeiro') return;
+      if (pedido.status !== 'Aguardando Conferência do Peso') return;
       if (event.target.closest('button')) return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
@@ -250,3 +248,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+
