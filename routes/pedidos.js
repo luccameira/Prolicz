@@ -360,7 +360,9 @@ router.put('/:id/conferencia', async (req, res) => {
 
   try {
     const [resultado] = await db.query(
-      'UPDATE pedidos SET status = ? WHERE id = ?',
+      `UPDATE pedidos 
+       SET status = ?, data_peso_confirmado = NOW() 
+       WHERE id = ?`,
       ['Em Análise pelo Financeiro', id]
     );
 
