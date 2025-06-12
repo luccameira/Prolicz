@@ -85,11 +85,14 @@ async function carregarPedidosFinanceiro() {
     card.className = 'card';
 
     // Timeline padronizada oficial
-    const timelineWrapper = document.createElement('div');
-    timelineWrapper.innerHTML = gerarLinhaTempoCompleta(pedido);
-    const timelineElement = timelineWrapper.querySelector('.timeline-simples');
-    animarLinhaProgresso(timelineElement);
-    card.appendChild(timelineElement);
+   const timelineHTML = gerarLinhaTempoCompleta(pedido);
+   const tempDiv = document.createElement('div');
+   tempDiv.innerHTML = timelineHTML;
+   const timelineElement = tempDiv.querySelector('.timeline-simples');
+   if (timelineElement) {
+   card.appendChild(timelineElement);
+   setTimeout(() => animarLinhaProgresso(timelineElement), 0);
+   }
 
     // Header
     const header = document.createElement('div');
