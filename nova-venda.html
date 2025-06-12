@@ -25,6 +25,7 @@
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
@@ -34,14 +35,7 @@
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
     .valor-total-previsto { background: #fffbe6; border: 1.5px solid #ffe066; border-radius: 7px; padding: 16px 20px; margin: 22px 0 10px 0; font-size: 18px; font-weight: 500; color: #333; display: flex; align-items: center; justify-content: flex-start; max-width: 380px; flex-wrap: nowrap; }
     .valor-total-previsto #valor-total { font-size: 22px; font-weight: bold; color: #178009; margin-left: 10px; letter-spacing: 0.5px; white-space: nowrap; display: inline-block; }
-    .input-nao-editavel {
-      background: #ececec !important;
-      color: #495057 !important;
-      border: 1.5px solid #d1d1d1 !important;
-      cursor: not-allowed;
-      font-weight: bold;
-      opacity: 0.6;
-    }
+    .input-nao-editavel { background: #ececec !important; color: #495057 !important; border: 1.5px solid #d1d1d1 !important; cursor: not-allowed; font-weight: bold; opacity: 0.6; }
   </style>
 </head>
 <body>
@@ -105,61 +99,45 @@
   <script>
     $(function(){
       // inicializa flatpickr com bloqueio de datas passadas
-      flatpickr("#data-coleta", {
-        locale: "pt",
-        dateFormat: "d/m/Y",
-        minDate: "today"
-      });
+      flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y", minDate: "today" });
 
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // carrega clientes e deixa sem seleção inicial
+      // carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
         $("#cliente")
-          .select2({
-            placeholder: "Digite um nome de cliente",
-            allowClear: true,
-            width: "resolve"
-          })
+          .select2({ placeholder: "Digite um nome de cliente", allowClear: true, width: "resolve" })
           .on("select2:open", () => {
-            document
-              .querySelector(".select2-container--open .select2-search__field")
+            document.querySelector(".select2-container--open .select2-search__field")
               .setAttribute("placeholder", "Digite um nome de cliente");
           });
       });
 
-      // Atualiza o estado do botão "Adicionar outro produto"
+      function updateRemoveButtons() {
+        const cnt = $(".produto-bloco").length;
+        $(".btn-remove").prop("disabled", cnt <= 1);
+      }
       function updateAddButton() {
         const count = $(".produto-bloco").length;
-        const max = windowProdutos.length;
-        $("#adicionar-produto").prop("disabled", count >= max);
+        $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
       }
 
-      // ao mudar cliente, busca prazos e produtos e reseta blocos
       $("#cliente").change(function(){
         const id = $(this).val();
-        $("#prazosCheckboxes").empty();
-        $("#produtos").empty();
+        $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("R$ 0,00");
-        $(".error-prazos").hide();
-        $("#condicao-a-vista").hide();
+        $(".error-prazos, #condicao-a-vista").hide();
         windowProdutos = [];
-        if (!id) {
-          updateAddButton();
-          return;
-        }
+        if (!id) { updateAddButton(); return; }
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
           windowPrazos.forEach(pz => {
-            $("#prazosCheckboxes").append(
-              `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
-            );
+            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
           });
-          // após carregar, resetamos e atualizamos botão
           updateAddButton();
           adicionarProduto();
         });
@@ -174,77 +152,52 @@
       $("#adicionar-produto").click(adicionarProduto);
 
       function adicionarProduto(){
-        // impede adicionar além do limite
         if ($(".produto-bloco").length >= windowProdutos.length) return;
-
-        const usados = $(".produto-bloco")
-          .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+        const usados = $(".produto-bloco").map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
 
         const bloco = $('<div class="produto-bloco"></div>');
-
-        // Botão de remover bloco
-        const btnRemove = $('<button type="button" class="btn-remove">×</button>');
-        btnRemove.click(function(){
+        const btnRemove = $('<button type="button" class="btn-remove">×</button>').click(function(){
           bloco.remove();
           atualizarTotal();
           updateAddButton();
+          updateRemoveButtons();
         });
         bloco.append(btnRemove);
 
-        // PRODUTO
-        const selProd = $(
-          '<select class="select-produto" required><option value="">Produto</option></select>'
-        );
-        dispon.forEach(p =>
-          selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`)
-        );
-        bloco.append('<div class="form-group"><label>Produto</label></div>')
-          .children().last().append(selProd);
+        // Produto
+        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+        dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
+        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
-        // VALOR POR QUILO
-        bloco.append(
-          '<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>'
-        );
+        // Valor por Quilo (readonly)
+        bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
 
-        // PESO
-        bloco.append(
-          '<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>'
-        );
+        // Peso
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
 
-        // TIPO DE PESO
-        bloco.append(
-          '<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>'
-        );
+        // Tipo de Peso
+        bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
 
-        // SUBTOTAL
-        bloco.append(
-          '<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>'
-        );
+        // Subtotal
+        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-        // CÓDIGO
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
-        selCod.append('<option value="">Selecione</option>');
-        windowCodigos.forEach(c =>
-          selCod.append(`<option value="${c}">${c}</option>`)
-        );
-        bloco.append('<div class="form-group"><label>Código</label></div>')
-          .children().last().append(selCod);
+        // Código
+        const selCod = $('<select class="select-codigo-fiscal" required></select>').append('<option value="">Selecione</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
+        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
 
-        // GRUPO PERSONALIZAR
-        const gp = $(`\
-<div class="grupo-personalizar">\
-  <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>\
-  <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" type="text" readonly></div>\
-  <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
-</div>\
-`);
+        // Grupo Personalizar
+        const gp = $(`<div class="grupo-personalizar">
+  <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
+  <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" type="text" readonly></div>
+  <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
+</div>`);
         bloco.append(gp);
+        selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
 
-        selCod.change(function(){ gp.toggle($(this).val() === "Personalizar"); });
-
-        // lógica de máscara e atualização do valor sem nota
+        // Máscaras e cálculos
         gp.find(".valor-com-nota")
           .on("input", function(){
             const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
@@ -265,17 +218,20 @@
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
           bloco.find(".valor-por-quilo").val(formatarNumero(v));
-          atualizarSub(); atualizarTotal();
+          atualizarSub();
+          atualizarTotal();
         });
 
         bloco.find(".peso").on("input", function(){
           const val = parseMask($(this).val());
           $(this).val(formatarNumero(val, true));
-          atualizarSub(); atualizarTotal();
+          atualizarSub();
+          atualizarTotal();
         });
 
         $("#produtos").append(bloco);
         updateAddButton();
+        updateRemoveButtons();
 
         function atualizarSub(){
           const v = parseMask(bloco.find(".valor-por-quilo").val());
@@ -324,10 +280,7 @@
           }
         });
         if(err) return;
-
-        // Confirmação simplificada
-        const msg = "Você tem certeza que deseja gravar este pedido?";
-        if(!confirm(msg)) return;
+        if(!confirm("Você tem certeza que deseja gravar este pedido?")) return;
 
         const cond = $("#condicao_pagamento_a_vista").val();
         const dados = {
