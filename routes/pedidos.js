@@ -114,6 +114,12 @@ router.get('/', async (req, res) => {
       p.tipo,
       p.status,
       p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,
+      p.data_financeiro,
+      p.data_emissao_nf,
+      p.data_finalizado,
       p.codigo_interno,
       p.observacao,
       p.empresa,
@@ -125,7 +131,6 @@ router.get('/', async (req, res) => {
   `;
   const params = [];
 
-  // 🔄 Correção: busca por nome ou nota fiscal em vez de c.id
   if (cliente) {
     sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
     params.push(`%${cliente}%`, `%${cliente}%`);
