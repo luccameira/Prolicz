@@ -431,7 +431,7 @@ router.get('/conferencia', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
-      p.data_peso_confirmado AS data_conferencia_peso,
+      p.data_conferencia_peso,          -- ✅ AGORA USA O CAMPO REAL
       p.data_financeiro,
       p.data_emissao_nf,
       p.data_finalizado,
