@@ -35,8 +35,9 @@ router.get('/portaria', async (req, res) => {
         p.tipo,
         p.status,
         p.data_coleta,
-        p.data_coleta_iniciada,     -- ✅ já estava incluído
-        p.data_carga_finalizada,    -- ✅ necessário para exibir na timeline
+        p.data_coleta_iniciada,
+        p.data_carga_finalizada,
+        p.data_conferencia_peso,     -- ✅ Adicionado
         p.codigo_interno,
         p.observacao,
         p.empresa,
@@ -80,6 +81,7 @@ router.get('/carga', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
+      p.data_conferencia_peso,       -- ✅ Adicionado
       SUM(i.peso) AS peso_previsto,
       p.status
     FROM pedidos p
@@ -88,7 +90,7 @@ router.get('/carga', async (req, res) => {
     WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
     GROUP BY 
       p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
-      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.status
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
     ORDER BY p.data_coleta ASC
   `;
 
