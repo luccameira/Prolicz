@@ -121,7 +121,9 @@ async function carregarPedidosFinanceiro() {
     card.className = 'card';
 
     // Linha do tempo visual no topo
-    card.innerHTML = gerarLinhaTempo(pedido.status);
+   const timelineElement = gerarLinhaTempoCompleta(pedido);
+animarLinhaProgresso(timelineElement);
+card.appendChild(timelineElement);
 
     // Header
     const header = document.createElement('div');
