@@ -296,12 +296,12 @@
           }
         });
         if(err) return;
-        const avista = $("#prazosCheckboxes input:checked")
-          .filter((_,el)=>el.value.toLowerCase().includes("vista")).length > 0;
-        const cond = $("#condicao_pagamento_a_vista").val();
-        let msg = "Você tem certeza que deseja gravar este pedido?";
-        if(avista) msg += `\n(Condição de pagamento À vista: ${cond||"não selecionada"})`;
+
+        // Confirmação simplificada
+        const msg = "Você tem certeza que deseja gravar este pedido?";
         if(!confirm(msg)) return;
+
+        const cond = $("#condicao_pagamento_a_vista").val();
         const dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
