@@ -107,12 +107,12 @@
       flatpickr("#data-coleta", {
         locale: "pt",
         dateFormat: "d/m/Y",
-        minDate: "today"  // data mínima = hoje, impede selecionar passado
+        minDate: "today"
       });
 
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // carrega clientes E deixa sem seleção inicial
+      // carrega clientes e deixa sem seleção inicial
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
@@ -207,23 +207,22 @@
 
         // GRUPO PERSONALIZAR
         const gp = $(`\
-          <div class="grupo-personalizar">\
-            <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>\
-            <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" type="text" readonly></div>\
-            <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
-          </div>\
-        `);
+<div class="grupo-personalizar">\
+  <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>\
+  <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" type="text" readonly></div>\
+  <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
+</div>\
+`);
         bloco.append(gp);
 
         selCod.change(function(){ gp.toggle($(this).val() === "Personalizar"); });
 
-        // máscara monetária, clamp e atualização do Valor sem Nota
+        // máscara, clamp (unitário–0,01) e atualização do Valor sem Nota
         gp.find(".valor-com-nota")
           .on("input", function(){
             const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
-            let digits = $(this).val().replace(/\D/g, "");
-            let rawCents = parseInt(digits || "0", 10);
-            rawCents = Math.min(rawCents, vUnitCent, 99999);
+            let rawCents = parseInt($(this).val().replace(/\D/g, "") || "0", 10);
+            rawCents = Math.min(rawCents, Math.max(vUnitCent - 1, 0), 99999);
             const valor = rawCents / 100;
             $(this).val(formatarNumero(valor));
             const vPorQuilo = parseMask(bloco.find(".valor-por-quilo").val());
@@ -232,7 +231,7 @@
           .on("blur", function(){
             const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
             let raw = parseMask($(this).val());
-            raw = Math.min(raw, vUnit);
+            raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
             $(this).val(formatarNumero(raw));
           });
 
