@@ -213,15 +213,23 @@
 
         selCod.change(function(){ gp.toggle($(this).val() === "Personalizar"); });
 
-        // atualiza sem travar durante input; formata on blur
-        gp.find(".valor-com-nota").on("input", function(){
-          const raw = parseMask($(this).val());
-          const total = parseMask(bloco.find(".valor-por-quilo").val());
-          bloco.find(".valor-sem-nota")
-            .val(formatarNumero(Math.max(total - raw, 0)));
-        }).on("blur", function(){
-          $(this).val(formatarNumero(parseMask($(this).val())));
-        });
+        // atualiza sem travar durante input; clampa para não ultrapassar o unitário e formata on blur
+        gp.find(".valor-com-nota")
+          .on("input", function(){
+            const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
+            let raw = parseMask($(this).val());
+            if (raw > vUnit) {
+              raw = vUnit;
+              $(this).val(formatarNumero(raw));
+            }
+            bloco.find(".valor-sem-nota")
+              .val(formatarNumero(vUnit - raw));
+          })
+          .on("blur", function(){
+            const v = parseMask($(this).val());
+            const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
+            $(this).val(formatarNumero(Math.min(v, vUnit)));
+          });
 
         selProd.change(function(){
           const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
