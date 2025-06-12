@@ -23,6 +23,7 @@
     .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; position: relative; }
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
@@ -129,7 +130,14 @@
           });
       });
 
-      // ao mudar cliente, busca prazos e produtos
+      // Atualiza o estado do botão "Adicionar outro produto"
+      function updateAddButton() {
+        const count = $(".produto-bloco").length;
+        const max = windowProdutos.length;
+        $("#adicionar-produto").prop("disabled", count >= max);
+      }
+
+      // ao mudar cliente, busca prazos e produtos e reseta blocos
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
@@ -137,7 +145,11 @@
         $("#valor-total").text("R$ 0,00");
         $(".error-prazos").hide();
         $("#condicao-a-vista").hide();
-        if (!id) return;
+        windowProdutos = [];
+        if (!id) {
+          updateAddButton();
+          return;
+        }
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
@@ -147,9 +159,12 @@
               `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
             );
           });
+          // após carregar, resetamos e atualizamos botão
+          updateAddButton();
           adicionarProduto();
         });
       });
+
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
         const avista = $("#prazosCheckboxes input:checked")
           .filter((_,el) => el.value.toLowerCase().includes("vista")).length > 0;
@@ -159,12 +174,24 @@
       $("#adicionar-produto").click(adicionarProduto);
 
       function adicionarProduto(){
-        if (!windowProdutos.length) return;
+        // impede adicionar além do limite
+        if ($(".produto-bloco").length >= windowProdutos.length) return;
+
         const usados = $(".produto-bloco")
           .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
         const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
         if (!dispon.length) return;
+
         const bloco = $('<div class="produto-bloco"></div>');
+
+        // Botão de remover bloco
+        const btnRemove = $('<button type="button" class="btn-remove">×</button>');
+        btnRemove.click(function(){
+          bloco.remove();
+          atualizarTotal();
+          updateAddButton();
+        });
+        bloco.append(btnRemove);
 
         // PRODUTO
         const selProd = $(
@@ -217,7 +244,7 @@
 
         selCod.change(function(){ gp.toggle($(this).val() === "Personalizar"); });
 
-        // máscara, clamp (unitário–0,01) e atualização do Valor sem Nota
+        // lógica de máscara e atualização do valor sem nota
         gp.find(".valor-com-nota")
           .on("input", function(){
             const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
@@ -248,6 +275,7 @@
         });
 
         $("#produtos").append(bloco);
+        updateAddButton();
 
         function atualizarSub(){
           const v = parseMask(bloco.find(".valor-por-quilo").val());
