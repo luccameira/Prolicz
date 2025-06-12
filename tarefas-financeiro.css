@@ -1,0 +1,299 @@
+/* tarefas-financeiro.css - Estilo exclusivo para página Financeiro */
+
+body {
+  background-color: #e2e4e7;
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+}
+
+.content {
+  background-color: #e2e4e7;
+  margin-left: 280px;
+  padding: 100px 40px 40px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+
+/* Cards */
+.card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 25px;
+  border-left: 8px solid #ffc107;
+  overflow: hidden;
+  transition: background 0.2s;
+}
+
+.card.finalizado {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  cursor: pointer;
+}
+
+.card-header .info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.card-header .info p {
+  font-size: 15px;
+  color: #555;
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 13px;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-amarelo {
+  background-color: #ffc107;
+  color: #1f1f1f;
+}
+
+/* Formulário */
+.formulario {
+  padding: 0 25px 25px;
+}
+
+.material-bloco {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 18px;
+  margin-top: 20px;
+}
+
+.material-bloco h4 {
+  font-size: 20px;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.material-bloco p {
+  font-size: 15px;
+  margin: 6px 0;
+  color: #333;
+}
+
+.material-bloco ul {
+  margin-top: 6px;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #444;
+}
+
+.material-bloco ul li {
+  margin-bottom: 4px;
+}
+
+/* Descontos aplicados */
+.material-bloco .descontos-aplicados {
+  background-color: #fff9e6;
+  border: 1px solid #ffe08a;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 14px;
+}
+
+.material-bloco .descontos-aplicados p {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #000;
+}
+
+.etiqueta-valor-item {
+  display: inline-block;
+  background-color: #28a745;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+/* Separador entre materiais e resumo financeiro */
+.divider-financeiro {
+  border-top: 1px solid #ddd;
+  margin: 32px 0 20px;
+}
+
+/* Resumo financeiro */
+.resumo-financeiro {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+}
+
+.resumo-financeiro .obs-pedido {
+  background: #fff3cd;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+/* Timeline */
+.timeline-simples {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  padding: 38px 32px 18px 32px;
+  background: #fff;
+  border-radius: 10px 10px 0 0;
+}
+
+.timeline-bar-bg, .timeline-bar-fg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52px;
+  height: 7px;
+  background: #e6e8ea;
+  border-radius: 3.5px;
+  z-index: 0;
+}
+.timeline-bar-fg {
+  background: #45b36b;
+  z-index: 1;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 0;
+  position: relative;
+  z-index: 2;
+}
+.timeline-step .dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid #e6e8ea;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+.timeline-step.done .dot {
+  border-color: #45b36b;
+  background: #45b36b;
+  color: white;
+}
+.timeline-step.active .dot {
+  border-color: #007bff;
+}
+
+.timeline-step .label {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+}
+.timeline-step .data {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+/* Vencimentos */
+.vencimentos-container {
+  margin-top: 20px;
+}
+
+.vencimento-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.venc-label {
+  background: #eee;
+  color: #555;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.venc-data {
+  min-width: 105px;
+  font-size: 14px;
+}
+
+.vencimento-row input {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: right;
+  font-size: 14px;
+}
+
+.vencimento-row button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* Bloco final de observações e liberação */
+.bloco-fin {
+  margin-top: 20px;
+}
+
+.bloco-fin label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.bloco-fin textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.bloco-fin .btn-registrar {
+  margin-top: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
