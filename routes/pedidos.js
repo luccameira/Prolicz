@@ -361,7 +361,7 @@ router.put('/:id/conferencia', async (req, res) => {
   try {
     const [resultado] = await db.query(
       `UPDATE pedidos 
-       SET status = ?, data_peso_confirmado = NOW() 
+       SET status = ?, data_conferencia_peso = NOW() 
        WHERE id = ?`,
       ['Em Análise pelo Financeiro', id]
     );
