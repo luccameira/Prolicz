@@ -1,4 +1,4 @@
-/* tarefas-financeiro.css - Estilo exclusivo para página Financeiro */
+/* tarefas-financeiro.css */
 
 body {
   background-color: #e2e4e7;
@@ -13,287 +13,143 @@ body {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 28px;
-  margin-bottom: 25px;
-}
-
-/* Cards */
 .card {
   background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  margin-bottom: 25px;
-  border-left: 8px solid #ffc107;
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
   overflow: hidden;
-  transition: background 0.2s;
-}
-
-.card.finalizado {
-  opacity: 0.6;
-  pointer-events: none;
 }
 
 .card-header {
+  background-color: #f5f5f5;
+  padding: 20px 25px;
+  font-size: 22px;
+  font-weight: 500;
+  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 25px;
-  cursor: pointer;
 }
 
-.card-header .info h3 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-}
-
-.card-header .info p {
-  font-size: 15px;
-  color: #555;
-  margin: 0;
-}
-
-.status-badge {
-  font-size: 13px;
-  font-weight: bold;
-  padding: 6px 12px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.status-amarelo {
-  background-color: #ffc107;
-  color: #1f1f1f;
-}
-
-/* Formulário */
-.formulario {
-  padding: 0 25px 25px;
-}
-
-.material-bloco {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 18px;
-  margin-top: 20px;
-}
-
-.material-bloco h4 {
-  font-size: 20px;
-  margin-bottom: 16px;
-  color: #333;
-}
-
-.material-bloco p {
-  font-size: 15px;
-  margin: 6px 0;
-  color: #333;
-}
-
-.material-bloco ul {
-  margin-top: 6px;
-  padding-left: 20px;
+.card-header span {
   font-size: 14px;
-  color: #444;
+  color: #888;
 }
 
-.material-bloco ul li {
-  margin-bottom: 4px;
+.formulario {
+  display: none;
+  padding: 25px;
+  font-size: 16px;
 }
 
-/* Descontos aplicados */
-.material-bloco .descontos-aplicados {
-  background-color: #fff9e6;
-  border: 1px solid #ffe08a;
-  padding: 12px;
+h4 {
+  font-size: 20px;
+  margin: 20px 0 10px;
+  font-weight: 500;
+}
+
+.dados-pedido p,
+.material-financeiro p,
+.obs-financeiro label,
+.vencimento-linha {
+  margin: 5px 0;
+}
+
+.material-financeiro {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-left: 4px solid #ccc;
+  border-radius: 8px;
+}
+
+.obs-financeiro textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  font-size: 15px;
+  margin-top: 8px;
   border-radius: 6px;
-  margin-top: 14px;
+  border: 1px solid #ccc;
 }
 
-.material-bloco .descontos-aplicados p {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #000;
+.linha-divisoria {
+  margin: 30px 0;
+  border: none;
+  height: 1px;
+  background-color: #ddd;
 }
 
 .etiqueta-valor-item {
-  display: inline-block;
-  background-color: #28a745;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 15px;
+  background-color: #007bff;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  margin-left: 5px;
 }
 
-/* Separador entre materiais e resumo financeiro */
-.divider-financeiro {
-  border-top: 1px solid #ddd;
-  margin: 32px 0 20px;
-}
-
-/* Resumo financeiro */
-.resumo-financeiro {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin-top: 20px;
-  border: 1px solid #ddd;
-}
-
-.resumo-financeiro .obs-pedido {
-  background: #fff3cd;
-  padding: 10px;
-  border-radius: 6px;
-  margin-top: 20px;
-}
-
-/* Timeline */
-.timeline-simples {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  position: relative;
-  padding: 38px 32px 18px 32px;
-  background: #fff;
-  border-radius: 10px 10px 0 0;
-}
-
-.timeline-bar-bg, .timeline-bar-fg {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 52px;
-  height: 7px;
-  background: #e6e8ea;
-  border-radius: 3.5px;
-  z-index: 0;
-}
-.timeline-bar-fg {
-  background: #45b36b;
-  z-index: 1;
-}
-
-.timeline-step {
+.vencimentos-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  flex: 1 1 0;
-  position: relative;
-  z-index: 2;
-}
-.timeline-step .dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 3px solid #e6e8ea;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-}
-.timeline-step.done .dot {
-  border-color: #45b36b;
-  background: #45b36b;
-  color: white;
-}
-.timeline-step.active .dot {
-  border-color: #007bff;
-}
-
-.timeline-step .label {
-  margin-top: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #333;
-  text-align: center;
-}
-.timeline-step .data {
-  margin-top: 2px;
-  font-size: 13px;
-  color: #888;
-  text-align: center;
-}
-
-/* Vencimentos */
-.vencimentos-container {
-  margin-top: 20px;
-}
-
-.vencimento-row {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-top: 10px;
 }
 
-.venc-label {
-  background: #eee;
-  color: #555;
-  padding: 5px 10px;
-  border-radius: 20px;
+.vencimento-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.badge-venc {
+  background-color: #ffc107;
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
 }
 
-.venc-data {
-  min-width: 105px;
+.data-venc {
   font-size: 14px;
+  color: #555;
+  min-width: 130px;
 }
 
-.vencimento-row input {
-  width: 80px;
-  padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  text-align: right;
-  font-size: 14px;
-}
-
-.vencimento-row button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-/* Bloco final de observações e liberação */
-.bloco-fin {
-  margin-top: 20px;
-}
-
-.bloco-fin label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.bloco-fin textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
+.valor-venc {
+  padding: 6px 10px;
   border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 120px;
   font-size: 14px;
-  min-height: 80px;
-  resize: vertical;
 }
 
-.bloco-fin .btn-registrar {
-  margin-top: 12px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+.btn-confirmar {
+  margin-top: 25px;
+  background-color: #28a745;
+  color: #fff;
   font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
 }
 
+.btn-confirmar.btn-desativado {
+  background-color: #ccc !important;
+  cursor: not-allowed;
+}
+
+.descontos-aplicados ul {
+  margin-top: 5px;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.timeline-simples {
+  margin: 25px 25px 15px;
+}
