@@ -98,6 +98,26 @@ router.get('/', (req, res) => {
     });
 });
 
+// DELETE /api/clientes/:id - Excluir cliente e relacionamentos
+router.delete('/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    // Apaga relacionamentos primeiro
+    await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
+    // Em seguida apaga o cliente
+    const [result] = await connection.query('DELETE FROM clientes WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ erro: 'Cliente não encontrado.' });
+    }
+    res.status(200).json({ mensagem: 'Cliente excluído com sucesso.' });
+  } catch (err) {
+    console.error('Erro ao excluir cliente:', err);
+    res.status(500).json({ erro: 'Erro ao excluir cliente.' });
+  }
+});
+
 // GET /api/clientes/produtos - Listar produtos disponíveis
 router.get('/produtos', (req, res) => {
   connection.query(`SELECT id, nome, unidade FROM produtos ORDER BY nome ASC`)
@@ -136,7 +156,6 @@ router.get('/:id', async (req, res) => {
     FROM produtos_autorizados pa
     JOIN produtos p ON p.id = pa.produto_id
     WHERE pa.cliente_id = ?`;
-  // ALTERAÇÃO AQUI: Ordenando os prazos pelo campo "dias" (mais próximo para mais distante)
   const queryPrazos = `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ? ORDER BY dias ASC`;
 
   try {
@@ -150,12 +169,10 @@ router.get('/:id', async (req, res) => {
     const [prazosRes] = await connection.query(queryPrazos, [id]);
 
     const cliente = clienteRes[0];
-
-    // CORREÇÃO PRINCIPAL: sempre envie array para o frontend
     cliente.codigosFiscais = cliente.codigos_fiscais || [];
     if (typeof cliente.codigosFiscais === "string") {
       try {
-        cliente.codigosFiscais = JSON.parse(cliente.codigosFiscais);
+        cliente.codigosFiscais = JSON.parse(cliente.codigos_fiscais);
       } catch {
         cliente.codigosFiscais = [];
       }
@@ -227,20 +244,18 @@ router.put('/:id', async (req, res) => {
     ]);
 
     // Limpa relacionamentos antigos
-    await connection.query('DELETE FROM contatos_cliente       WHERE cliente_id = ?', [id]);
-    await connection.query('DELETE FROM produtos_autorizados   WHERE cliente_id = ?', [id]);
-    await connection.query('DELETE FROM prazos_pagamento       WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
+    await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
 
-    // Reinsere novos
+    // Reinsere novos relacionamentos
     const promises = [];
-
     contatos.forEach(c => {
       promises.push(connection.query(
         'INSERT INTO contatos_cliente (cliente_id, nome, telefone, email) VALUES (?, ?, ?, ?)',
         [id, c.nome, c.telefone, c.email]
       ));
     });
-
     produtos.forEach(p => {
       const valor = parseFloat(
         typeof p.valor === "string"
@@ -252,14 +267,12 @@ router.put('/:id', async (req, res) => {
         [id, p.id, valor]
       ));
     });
-
     prazos.forEach(p => {
       promises.push(connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
         [id, p.descricao, p.dias]
       ));
     });
-
     await Promise.all(promises);
 
     res.status(200).json({ mensagem: 'Cliente atualizado com sucesso!' });
@@ -277,4 +290,3 @@ Object.defineProperty(router, 'connection', {
 });
 
 module.exports = router;
-
