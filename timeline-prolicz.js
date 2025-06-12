@@ -1,4 +1,3 @@
-// ==== Gera a timeline padronizada ====
 function gerarLinhaTempoCompleta(pedido) {
   const etapas = [
     {
@@ -14,7 +13,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Coleta Finalizada',
       nome: 'Coleta Finalizada',
-      campoData: 'data_carga_finalizada' // ✅ CORRETO
+      campoData: 'data_carga_finalizada'
     },
     {
       key: 'Aguardando Conferência do Peso',
@@ -24,7 +23,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Em Análise pelo Financeiro',
       nome: 'Financeiro',
-      campoData: 'data_peso_confirmado' // ✅ CORRIGIDO AQUI
+      campoData: 'data_conferencia_peso' // ✅ Corrigido aqui
     },
     {
       key: 'Aguardando Emissão de NF',
