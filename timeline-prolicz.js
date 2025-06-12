@@ -14,7 +14,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Coleta Finalizada',
       nome: 'Coleta Finalizada',
-      campoData: 'data_carga_finalizada' // ✅ CORRETO AGORA
+      campoData: 'data_carga_finalizada' // ✅ CORRETO
     },
     {
       key: 'Aguardando Conferência do Peso',
@@ -24,7 +24,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Em Análise pelo Financeiro',
       nome: 'Financeiro',
-      campoData: 'data_financeiro'
+      campoData: 'data_peso_confirmado' // ✅ CORRIGIDO AQUI
     },
     {
       key: 'Aguardando Emissão de NF',
