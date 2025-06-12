@@ -442,3 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
 });
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidosFinanceiro();
+  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
+  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
+});
