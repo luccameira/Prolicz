@@ -46,42 +46,6 @@ function calcularValoresFiscais(item) {
   return { valorComNota, valorSemNota };
 }
 
-// Linha do tempo visual
-function gerarLinhaTempo(statusAtual) {
-  const etapas = [
-    'Aguardando Início da Coleta',
-    'Coleta Iniciada',
-    'Aguardando Conferência do Peso',
-    'Em Análise pelo Financeiro',
-    'Aguardando Emissão de NF',
-    'Cliente Liberado',
-    'Finalizado'
-  ];
-  let etapaAtiva = false;
-  return `
-    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
-      ${etapas.map((etapa, idx) => {
-        if (etapa === statusAtual) etapaAtiva = true;
-        return `
-          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
-            style="
-              padding: 2px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
-              color: #222;
-              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
-              border: 1px solid #d7d7d7;
-              ">
-            ${etapa}
-          </span>
-          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
 async function carregarPedidosFinanceiro() {
   const [resPendentes, resAnteriores] = await Promise.all([
     fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
@@ -120,8 +84,12 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Linha do tempo visual no topo
-    card.innerHTML = gerarLinhaTempo(pedido.status);
+    // === Substituído para seguir padrão visual correto ===
+    const linhaTempo = gerarLinhaTempoCompleta(pedido);
+    const divTimeline = document.createElement('div');
+    divTimeline.innerHTML = linhaTempo;
+    card.appendChild(divTimeline);
+    setTimeout(() => animarLinhaProgresso(divTimeline), 100);
 
     // Header
     const header = document.createElement('div');
@@ -142,303 +110,201 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- Materiais da venda ----
-    pedido.materiais?.forEach(item => {
-      const bloco = document.createElement('div');
-      bloco.className = 'material-bloco';
+      // Dados principais
+    const info = document.createElement('div');
+    info.className = 'dados-pedido';
+    info.innerHTML = `
+      <p><strong>Data Prevista da Coleta:</strong> ${formatarData(pedido.data_coleta)}</p>
+      <p><strong>Tipo de Pedido:</strong> ${pedido.tipo_pedido || '—'}</p>
+      <p><strong>Observações do Pedido:</strong> ${pedido.observacoes || '—'}</p>
+    `;
+    form.appendChild(info);
 
-      // dados do item
-      const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
-      const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
-      const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
-      let descontosKg = 0;
-      if (item.descontos?.length) {
-        descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-      }
+    // Bloco com os materiais
+    if (!pedido.materiais || !pedido.materiais.length) {
+      const aviso = document.createElement('p');
+      aviso.textContent = 'Nenhum material cadastrado neste pedido.';
+      aviso.style.margin = '12px 0';
+      form.appendChild(aviso);
+    } else {
+      const materiaisTitulo = document.createElement('h4');
+      materiaisTitulo.textContent = 'Materiais do Pedido';
+      materiaisTitulo.style.marginTop = '20px';
+      form.appendChild(materiaisTitulo);
+
+      pedido.materiais.forEach(item => {
+        const bloco = document.createElement('div');
+        bloco.className = 'material-financeiro';
+
+        const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
+        const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
+        const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
+        let descontosKg = item.descontos?.reduce((s, d) => s + Number(d.peso_calculado || 0), 0) || 0;
+        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
+        const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
+        const valorTotal = pesoFinalNum * (Number(item.valor_unitario) || 0);
+
+        bloco.innerHTML = `
+          <p><strong>${item.nome_produto}</strong> (${formatarMoeda(item.valor_unitario)}/Kg)</p>
+          <p>Peso Previsto (${tipoPeso}): ${pesoPrevisto} Kg</p>
+          <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
+          ${item.descontos?.length ? `
+            <div class="descontos-aplicados">
+              <p><i class="fa fa-tags"></i> Descontos:</p>
+              <ul>
+                ${item.descontos.map(d =>
+                  `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+                ).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          <p><strong>Peso Final:</strong> ${pesoFinal} Kg</p>
+          <p><strong>Valor do Item:</strong> <span class="etiqueta-valor-item">${formatarMoeda(valorTotal)}</span></p>
+        `;
+        form.appendChild(bloco);
+      });
+    }
+
+    // Separador visual
+    const linha = document.createElement('hr');
+    linha.className = 'linha-divisoria';
+    form.appendChild(linha);
+
+    // Bloco de vencimentos
+    const containerVenc = document.createElement('div');
+    containerVenc.className = 'vencimentos-bloco';
+
+    const totalFinal = pedido.materiais.reduce((soma, item) => {
+      let descontosKg = item.descontos?.reduce((s, d) => s + Number(d.peso_calculado || 0), 0) || 0;
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-      const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
+      return soma + pesoFinalNum * (Number(item.valor_unitario) || 0);
+    }, 0);
 
-      bloco.innerHTML = `
-        <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
-        <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
-        <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${item.descontos?.length ? `
-          <div class="descontos-aplicados" style="margin-top:16px;">
-            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul>
-              ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
-              ).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
-        <div style="margin-top:12px; margin-bottom:4px;">
-          <strong>Valor Total do Item:</strong>
-          <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
+    const prazos = pedido.prazos_pagamento || [];
+    const valores = [];
+    const base = Math.floor((totalFinal * 100) / prazos.length) / 100;
+    let acumulado = 0;
+
+    for (let i = 0; i < prazos.length; i++) {
+      valores[i] = i < prazos.length - 1 ? base : (totalFinal - acumulado);
+      acumulado += valores[i];
+    }
+
+    const camposVencimentos = valores.map((valor, i) => {
+      const data = new Date(prazos[i]);
+      const dataFormatada = formatarData(data);
+      return `
+        <div class="vencimento-linha">
+          <span class="badge-venc">Vencimento ${i + 1}</span>
+          <span class="data-venc">${dataFormatada}</span>
+          <input type="text" class="valor-venc" value="${valor.toFixed(2).replace('.', ',')}" />
         </div>
       `;
-      form.appendChild(bloco);
+    }).join('');
+
+    containerVenc.innerHTML = `
+      <h4>Resumo Financeiro</h4>
+      <p><strong>Valor Total do Pedido:</strong> <span class="etiqueta-valor-item">${formatarMoeda(totalFinal)}</span></p>
+      <div class="vencimentos-container">${camposVencimentos}</div>
+    `;
+    form.appendChild(containerVenc);
+
+      // Observações do financeiro
+    const obsFinanceiro = document.createElement('div');
+    obsFinanceiro.className = 'obs-financeiro';
+    obsFinanceiro.innerHTML = `
+      <label for="obs-fin-${id}">Observações do Financeiro:</label>
+      <textarea id="obs-fin-${id}" rows="3" placeholder="Digite aqui as observações...">${pedido.obs_financeiro || ''}</textarea>
+    `;
+    form.appendChild(obsFinanceiro);
+
+    // Botão de liberação
+    const btn = document.createElement('button');
+    btn.textContent = 'Confirmar Liberação Financeira';
+    btn.className = 'btn-confirmar';
+    btn.disabled = true;
+    form.appendChild(btn);
+
+    // Evento para verificar vencimentos válidos
+    const inputs = form.querySelectorAll('.valor-venc');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        const valores = Array.from(inputs).map(inp => parseFloat(inp.value.replace(',', '.')) || 0);
+        const soma = valores.reduce((acc, val) => acc + val, 0);
+        const labelTotal = form.querySelector('.etiqueta-valor-item');
+        const esperado = parseFloat(labelTotal.textContent.replace(/[^\d,]/g, '').replace(',', '.'));
+
+        if (Math.abs(soma - esperado) < 0.05) {
+          btn.disabled = false;
+          btn.classList.remove('btn-desativado');
+        } else {
+          btn.disabled = true;
+          btn.classList.add('btn-desativado');
+        }
+      });
     });
 
-    // separador visual
-    const separador = document.createElement('div');
-    separador.className = 'divider-financeiro';
-    form.appendChild(separador);
+    // Clique do botão para confirmar
+    btn.addEventListener('click', async () => {
+      const valores = Array.from(inputs).map(inp => parseFloat(inp.value.replace(',', '.')) || 0);
+      const prazos = pedido.prazos_pagamento || [];
 
-    // resumo financeiro
-    const containerCinza = document.createElement('div');
-    containerCinza.className = 'resumo-financeiro';
+      const vencimentos = valores.map((valor, i) => ({
+        data: prazos[i],
+        valor: valor
+      }));
 
-    // total da venda (soma total dos itens: com nota + sem nota)
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
-    if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (!cod) cod = '(não informado)';
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        let descontosKg = 0;
-        if (item.descontos?.length) {
-          descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        }
-        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-        const totalCom = pesoFinalNum * valorComNota;
-        const totalSem = pesoFinalNum * valorSemNota;
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
+      const dados = {
+        id: pedido.pedido_id || pedido.id,
+        vencimentos,
+        obs_financeiro: document.getElementById(`obs-fin-${id}`).value,
+        status: 'Aguardando Emissão de NF',
+        data_financeiro: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      };
 
-        return `
-          <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
-            <span class="etiqueta-codigo-fiscal">
-              <strong>Código Fiscal: ${cod}</strong> |
-              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
-              <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
-              <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
-              <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-            </span>
-          </div>
-        `;
-      }).join('');
-    }
-    const totalVenda = totalComNota + totalSemNota;
-    const totalVendaFmt = formatarMoeda(totalVenda);
-
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
-
-    function calcularValoresVencimentos() {
-      let parcelas = [];
-      // Cálculo com precisão para centavos
-      let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
-      let totalParcial = 0;
-
-      for (let i = 0; i < numVencimentos; i++) {
-        if (i < numVencimentos - 1) {
-          parcelas.push(base);
-          totalParcial += base;
-        } else {
-          let ultima = (totalVenda - totalParcial);
-          parcelas.push(ultima);
-        }
-      }
-      return parcelas;
-    }
-
-    containerCinza.innerHTML = `
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
-      <div class="vencimentos-container"></div>
-      <p class="venc-soma-error" style="color:red;"></p>
-      ${codigosFiscaisBarraAzul}
-      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
-    `;
-
-    const vencContainer = containerCinza.querySelector('.vencimentos-container');
-    const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
-
-    function renderizarVencimentos(valores) {
-      vencContainer.innerHTML = '';
-      for (let i = 0; i < numVencimentos; i++) {
-        const dt = new Date(pedido.prazos_pagamento[i]);
-        const ok = !isNaN(dt.getTime());
-        const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        const row = document.createElement('div');
-        row.className = 'vencimento-row';
-        row.dataset.confirmado = 'false';
-        row.innerHTML = `
-          <span class="venc-label">Vencimento ${i + 1}</span>
-          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" />
-          <button type="button">✓</button>
-        `;
-
-        const inp = row.querySelector('input');
-        const btn = row.querySelector('button');
-        inputs[i] = inp;
-
-        // elemento de confirmação alternável
-        const etiquetaConfirmado = document.createElement('span');
-        etiquetaConfirmado.className = 'etiqueta-valor-item';
-        etiquetaConfirmado.textContent = 'CONFIRMADO';
-        etiquetaConfirmado.style.cursor = 'pointer';
-
-        inp.addEventListener('blur', () => {
-          const raw = inp.value.replace(/\./g, '').replace(',', '.');
-          const num = parseFloat(raw);
-          if (!isNaN(num)) {
-            inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          }
-          const lastIndex = inputs.length - 1;
-          const curIndex = i;
-          if (curIndex !== lastIndex) {
-            const somaExcUlt = inputs.slice(0, lastIndex)
-              .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
-              .reduce((s, v) => s + v, 0);
-            const restante = totalVenda - somaExcUlt;
-            let rowErr = row.querySelector('.row-error');
-            if (restante < 0) {
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Parcela excede o valor total da venda.';
-                row.appendChild(rowErr);
-              }
-            } else {
-              if (rowErr) row.removeChild(rowErr);
-              inputs[lastIndex].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-          }
-          atualizarBotaoLiberar();
+      try {
+        const res = await fetch(`/api/pedidos/${dados.id}/financeiro`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
         });
 
-        function toggleConfirmacao() {
-          const isConf = row.dataset.confirmado === 'true';
-          if (!isConf) {
-            const raw = inp.value.replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(raw);
-            if (isNaN(num) || num < 0) {
-              let rowErr = row.querySelector('.row-error');
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Valor inválido.';
-                row.appendChild(rowErr);
-              }
-              inp.focus();
-              return;
-            }
-            pedido.vencimentosValores = pedido.vencimentosValores || [];
-            pedido.vencimentosValores[i] = num;
-            row.dataset.confirmado = 'true';
-            inp.disabled = true;
-            btn.replaceWith(etiquetaConfirmado);
-          } else {
-            row.dataset.confirmado = 'false';
-            inp.disabled = false;
-            etiquetaConfirmado.replaceWith(btn);
-          }
-          atualizarBotaoLiberar();
+        if (res.ok) {
+          alert('Liberação financeira registrada com sucesso!');
+          location.reload();
+        } else {
+          throw new Error('Erro ao salvar');
         }
-
-        btn.addEventListener('click', toggleConfirmacao);
-        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-
-        vencContainer.appendChild(row);
+      } catch (erro) {
+        alert('Erro ao registrar liberação financeira.');
+        console.error(erro);
       }
-    }
+    });
 
-    function resetarVencimentosPadrao() {
-      valoresPadrao = calcularValoresVencimentos();
-      renderizarVencimentos(valoresPadrao);
-      atualizarBotaoLiberar();
-    }
-
-    // Ao clicar no valor total, reseta os vencimentos
-    setTimeout(() => {
-      const valorTotalTag = document.getElementById('reset-vencimentos');
-      if (valorTotalTag) {
-        valorTotalTag.style.cursor = 'pointer';
-        valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-        valorTotalTag.onclick = resetarVencimentosPadrao;
-      }
-    }, 200);
-
-    renderizarVencimentos(valoresPadrao);
-
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach((r, idx) => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-      } else {
-        erroEl.textContent = '';
-      }
-      const btnFin = form.querySelector('.btn-registrar');
-      if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
-    }
-
-    atualizarBotaoLiberar();
-
-    // Observações do Financeiro e botão
-    const blocoFin = document.createElement('div');
-    blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = `
-      <label>Observações do Financeiro:</label>
-      <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    `;
-    const taFin = blocoFin.querySelector('textarea');
-    const btnFin = blocoFin.querySelector('button');
-    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(containerCinza);
-    form.appendChild(blocoFin);
-
-    // toggle form visibility
     card.appendChild(form);
+
+    // Clique no cabeçalho do card para abrir/fechar
     header.addEventListener('click', () => {
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+      const estaAberto = form.style.display === 'block';
+      document.querySelectorAll('.formulario').forEach(f => f.style.display = 'none');
+      form.style.display = estaAberto ? 'none' : 'block';
     });
 
     lista.appendChild(card);
   });
 }
 
-async function confirmarFinanceiro(pedidoId, observacoes) {
-  try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/financeiro`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ observacoes_financeiro: observacoes })
-    });
-    if (res.ok) {
-      alert('Cliente liberado com sucesso!');
-      carregarPedidosFinanceiro();
-    } else {
-      const data = await res.json();
-      alert(data.erro || 'Erro ao confirmar liberação.');
-    }
-  } catch (err) {
-    console.error('Erro ao confirmar liberação:', err);
-    alert('Erro de comunicação com o servidor.');
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
+
+  const filtroInput = document.getElementById('filtro-cliente');
+  const ordenarSelect = document.getElementById('ordenar');
+
+  if (filtroInput) {
+    filtroInput.addEventListener('input', carregarPedidosFinanceiro);
+  }
+
+  if (ordenarSelect) {
+    ordenarSelect.addEventListener('change', carregarPedidosFinanceiro);
+  }
 });
