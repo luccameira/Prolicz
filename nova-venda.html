@@ -60,7 +60,9 @@
       </div>
       <div class="form-group">
         <label for="cliente">Cliente</label>
-        <select id="cliente" required style="width: 100%"></select>
+        <select id="cliente" required style="width: 100%">
+          <option value="">Selecione</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="data-coleta">Data Prevista da Coleta</label>
@@ -99,15 +101,16 @@
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
-
   <script>
     $(function(){
+      // inicializa flatpickr
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
+
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // carrega clientes e Select2
+      // carrega clientes E deixa sem seleção inicial
       $.get("/api/clientes", function(clientes){
-        const sel = $("#cliente").empty();
+        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
         $("#cliente")
           .select2({
@@ -122,7 +125,7 @@
           });
       });
 
-      // resto original
+      // ao mudar cliente, busca prazos e produtos
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
@@ -136,48 +139,67 @@
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
           windowPrazos.forEach(pz => {
-            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
+            $("#prazosCheckboxes").append(
+              `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
+            );
           });
           adicionarProduto();
         });
       });
-
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
-        const avista = $("#prazosCheckboxes input:checked").filter((_,el)=>el.value.toLowerCase().includes("vista")).length>0;
+        const avista = $("#prazosCheckboxes input:checked")
+          .filter((_,el) => el.value.toLowerCase().includes("vista")).length > 0;
         $("#condicao-a-vista").toggle(avista);
       });
 
       $("#adicionar-produto").click(adicionarProduto);
 
       function adicionarProduto(){
-        if(!windowProdutos.length) return;
-        const usados = $(".produto-bloco").map((i,el)=>$(el).find(".select-produto").val()).get().filter(Boolean);
-        const dispon = windowProdutos.filter(p=>!usados.includes(p.nome));
-        if(!dispon.length) return;
+        if (!windowProdutos.length) return;
+        const usados = $(".produto-bloco")
+          .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+        const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
+        if (!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
 
         // PRODUTO
-        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
-        dispon.forEach(p=>selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
-        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
+        const selProd = $(
+          '<select class="select-produto" required><option value="">Produto</option></select>'
+        );
+        dispon.forEach(p =>
+          selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`)
+        );
+        bloco.append('<div class="form-group"><label>Produto</label></div>')
+          .children().last().append(selProd);
 
         // VALOR POR QUILO
-        bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
+        bloco.append(
+          '<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>'
+        );
 
         // PESO
-        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
+        bloco.append(
+          '<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>'
+        );
 
         // TIPO DE PESO
-        bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
+        bloco.append(
+          '<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>'
+        );
 
         // SUBTOTAL
-        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
+        bloco.append(
+          '<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>'
+        );
 
         // CÓDIGO
         const selCod = $('<select class="select-codigo-fiscal" required></select>');
         selCod.append('<option value="">Selecione</option>');
-        windowCodigos.forEach(c=>selCod.append(`<option value="${c}">${c}</option>`));
-        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
+        windowCodigos.forEach(c =>
+          selCod.append(`<option value="${c}">${c}</option>`)
+        );
+        bloco.append('<div class="form-group"><label>Código</label></div>')
+          .children().last().append(selCod);
 
         // GRUPO PERSONALIZAR
         const gp = $(`\
@@ -188,90 +210,124 @@
           </div>\
         `);
         bloco.append(gp);
-        // exibir grupo
-        selCod.change(function(){ gp.toggle($(this).val()==="Personalizar"); });
 
-        // **Atualiza sem formatar durante input**
+        selCod.change(function(){ gp.toggle($(this).val() === "Personalizar"); });
+
+        // atualiza sem travar durante input; formata on blur
         gp.find(".valor-com-nota").on("input", function(){
           const raw = parseMask($(this).val());
-          // só atualiza sem formatar
-          bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(parseMask(bloco.find(".valor-por-quilo").val()) - raw, 0)));
-        });
-        // e formata ao sair do campo
-        gp.find(".valor-com-nota").on("blur", function(){
-          const raw = parseMask($(this).val());
-          $(this).val(formatarNumero(raw));
+          const total = parseMask(bloco.find(".valor-por-quilo").val());
+          bloco.find(".valor-sem-nota")
+            .val(formatarNumero(Math.max(total - raw, 0)));
+        }).on("blur", function(){
+          $(this).val(formatarNumero(parseMask($(this).val())));
         });
 
         selProd.change(function(){
-          const v=parseFloat($(this).find("option:selected").data("valor"))||0;
+          const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
           bloco.find(".valor-por-quilo").val(formatarNumero(v));
           atualizarSub(); atualizarTotal();
         });
-        bloco.find(".peso").on("input",function(){
-          const val=parseMask($(this).val());
-          $(this).val(formatarNumero(val,true));
+
+        bloco.find(".peso").on("input", function(){
+          const val = parseMask($(this).val());
+          $(this).val(formatarNumero(val, true));
           atualizarSub(); atualizarTotal();
         });
 
         $("#produtos").append(bloco);
+
         function atualizarSub(){
-          const v=parseMask(bloco.find(".valor-por-quilo").val());
-          const p=parseMask(bloco.find(".peso").val());
-          bloco.find(".subtotal").val("R$ "+formatarNumero(v*p));
+          const v = parseMask(bloco.find(".valor-por-quilo").val());
+          const p = parseMask(bloco.find(".peso").val());
+          bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
         }
       }
 
       function atualizarTotal(){
-        let tot=0;
-        $(".produto-bloco").each(function(){ tot+=parseMask($(this).find(".subtotal").val()); });
-        $("#valor-total").text("R$ "+formatarNumero(tot));
+        let tot = 0;
+        $(".produto-bloco").each(function(){
+          tot += parseMask($(this).find(".subtotal").val());
+        });
+        $("#valor-total").text("R$ " + formatarNumero(tot));
       }
 
-      function parseMask(str){ return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", "."))||0; }
-      function formatarNumero(valor,inteiro=false){
-        const partes=inteiro?[Math.floor(valor).toString()]:valor.toFixed(2).replace(".", ",").split(",");
-        partes[0]=partes[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
-        return inteiro?partes[0]:partes.join(",");
+      function parseMask(str){
+        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", ".")) || 0;
+      }
+
+      function formatarNumero(valor, inteiro = false){
+        const partes = inteiro
+          ? [Math.floor(valor).toString()]
+          : valor.toFixed(2).replace(".", ",").split(",");
+        partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return inteiro ? partes[0] : partes.join(",");
       }
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
-        const prSel=$("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
+        const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
         if(!prSel.length){ $(".error-prazos").show(); return; }
-        let err=false;
+        let err = false;
         $(".produto-bloco").each(function(){
-          const cod=$(this).find(".select-codigo-fiscal").val();
-          if(cod==="Personalizar"){
-            const vCom=parseMask($(this).find(".valor-com-nota").val());
-            const vSem=parseMask($(this).find(".valor-sem-nota").val());
-            const vUnit=parseMask($(this).find(".valor-por-quilo").val());
-            if(Math.abs((vCom+vSem)-vUnit)>0.01){ $(this).find(".error-soma").show(); err=true; }
-            else $(this).find(".error-soma").hide();
+          const cod = $(this).find(".select-codigo-fiscal").val();
+          if(cod === "Personalizar"){
+            const vCom = parseMask($(this).find(".valor-com-nota").val());
+            const vSem = parseMask($(this).find(".valor-sem-nota").val());
+            const vUnit = parseMask($(this).find(".valor-por-quilo").val());
+            if(Math.abs((vCom + vSem) - vUnit) > 0.01){
+              $(this).find(".error-soma").show();
+              err = true;
+            } else {
+              $(this).find(".error-soma").hide();
+            }
           }
         });
         if(err) return;
-        const avista=$("#prazosCheckboxes input[type=checkbox]").filter((_,el)=>el.value.toLowerCase().includes("vista")&&el.checked).length>0;
-        const cond=$("#condicao_pagamento_a_vista").val();
-        let msg="Você tem certeza que deseja gravar este pedido?";
-        if(avista) msg+=`\n(Condição de pagamento À vista: ${cond||"não selecionada"})`;
+        const avista = $("#prazosCheckboxes input:checked")
+          .filter((_,el)=>el.value.toLowerCase().includes("vista")).length > 0;
+        const cond = $("#condicao_pagamento_a_vista").val();
+        let msg = "Você tem certeza que deseja gravar este pedido?";
+        if(avista) msg += `\n(Condição de pagamento À vista: ${cond||"não selecionada"})`;
         if(!confirm(msg)) return;
-        const dados={ cliente_id:$("#cliente").val(), empresa:$("#empresa").val(), tipo:$("#pedido-para").val(), data_coleta:$("#data-coleta").val(), prazos:prSel, condicao_pagamento_a_vista:cond, observacao:$("#observacao").val(), itens:[] };
+        const dados = {
+          cliente_id: $("#cliente").val(),
+          empresa: $("#empresa").val(),
+          tipo: $("#pedido-para").val(),
+          data_coleta: $("#data-coleta").val(),
+          prazos: prSel,
+          condicao_pagamento_a_vista: cond,
+          observacao: $("#observacao").val(),
+          itens: []
+        };
         $(".produto-bloco").each(function(){
-          const nome=$(this).find(".select-produto").val(),
-                valor=parseMask($(this).find(".valor-por-quilo").val()),
-                peso=parseMask($(this).find(".peso").val()),
-                tpeso=$(this).find(".tipo-peso").val(),
-                cod=$(this).find(".select-codigo-fiscal").val(),
-                vcn=parseMask($(this).find(".valor-com-nota").val()),
-                vsn=parseMask($(this).find(".valor-sem-nota").val());
-          if(nome&&valor&&peso){
-            dados.itens.push({ nome_produto:nome, valor_unitario:valor, peso, tipo_peso:tpeso, codigo_fiscal:cod, valor_com_nota:vcn, valor_sem_nota:vsn });
+          const nome = $(this).find(".select-produto").val(),
+                valor = parseMask($(this).find(".valor-por-quilo").val()),
+                peso = parseMask($(this).find(".peso").val()),
+                tpeso = $(this).find(".tipo-peso").val(),
+                cod = $(this).find(".select-codigo-fiscal").val(),
+                vcn = parseMask($(this).find(".valor-com-nota").val()),
+                vsn = parseMask($(this).find(".valor-sem-nota").val());
+          if(nome && valor && peso){
+            dados.itens.push({
+              nome_produto: nome,
+              valor_unitario: valor,
+              peso,
+              tipo_peso: tpeso,
+              codigo_fiscal: cod,
+              valor_com_nota: vcn,
+              valor_sem_nota: vsn
+            });
           }
         });
-        fetch("/api/pedidos",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(dados)})
-          .then(r=>r.json()).then(r=>{ if(r.mensagem) window.location.href="vendas.html?sucesso=1"; else alert("Erro ao salvar o pedido."); })
-          .catch(err=>{ console.error(err); alert("Erro ao salvar o pedido."); });
+        fetch("/api/pedidos", {
+          method: "POST",
+          headers: { "Content-Type":"application/json" },
+          body: JSON.stringify(dados)
+        })
+        .then(r=>r.json())
+        .then(r=>{ if(r.mensagem) window.location.href="vendas.html?sucesso=1"; else alert("Erro ao salvar o pedido."); })
+        .catch(err=>{ console.error(err); alert("Erro ao salvar o pedido."); });
       });
     });
   </script>
