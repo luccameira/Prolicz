@@ -84,17 +84,7 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Timeline padronizada oficial
-   const timelineHTML = gerarLinhaTempoCompleta(pedido);
-   const tempDiv = document.createElement('div');
-   tempDiv.innerHTML = timelineHTML;
-   const timelineElement = tempDiv.querySelector('.timeline-simples');
-   if (timelineElement) {
-   card.appendChild(timelineElement);
-   setTimeout(() => animarLinhaProgresso(timelineElement), 0);
-   }
-
-    // Header
+     // Header
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -107,6 +97,16 @@ async function carregarPedidosFinanceiro() {
       </div>
     `;
     card.appendChild(header);
+
+    // Timeline padronizada oficial
+   const timelineHTML = gerarLinhaTempoCompleta(pedido);
+   const tempDiv = document.createElement('div');
+   tempDiv.innerHTML = timelineHTML;
+   const timelineElement = tempDiv.querySelector('.timeline-simples');
+   if (timelineElement) {
+   card.appendChild(timelineElement);
+   setTimeout(() => animarLinhaProgresso(timelineElement), 0);
+   }
 
     // Formulário oculto
     const form = document.createElement('div');
