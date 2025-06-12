@@ -58,11 +58,11 @@ function gerarLinhaTempo(statusAtual) {
     'Finalizado'
   ];
   let etapaAtiva = false;
-  return 
+  return `
     <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
       ${etapas.map((etapa, idx) => {
         if (etapa === statusAtual) etapaAtiva = true;
-        return 
+        return `
           <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
             style="
               padding: 2px 12px;
@@ -76,10 +76,10 @@ function gerarLinhaTempo(statusAtual) {
             ${etapa}
           </span>
           ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
-        ;
+        `;
       }).join('')}
     </div>
-  ;
+  `;
 }
 
 async function carregarPedidosFinanceiro() {
@@ -94,7 +94,7 @@ async function carregarPedidosFinanceiro() {
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
     document.getElementById('lista-pedidos').innerHTML =
-      <p style="padding:0 25px;">Erro ao carregar tarefas financeiras.</p>;
+      `<p style="padding:0 25px;">Erro ao carregar tarefas financeiras.</p>`;
     return;
   }
 
@@ -111,7 +111,7 @@ async function carregarPedidosFinanceiro() {
 
   lista.innerHTML = '';
   if (!filtrados.length) {
-    lista.innerHTML = <p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>;
+    lista.innerHTML = `<p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>`;
     return;
   }
 
@@ -126,7 +126,7 @@ async function carregarPedidosFinanceiro() {
     // Header
     const header = document.createElement('div');
     header.className = 'card-header';
-    header.innerHTML = 
+    header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
         <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
@@ -134,7 +134,7 @@ async function carregarPedidosFinanceiro() {
       <div class="status-badge status-amarelo">
         <i class="fa fa-money-bill"></i> ${pedido.status}
       </div>
-    ;
+    `;
     card.appendChild(header);
 
     // Formulário oculto
@@ -158,26 +158,26 @@ async function carregarPedidosFinanceiro() {
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
       const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
 
-      bloco.innerHTML = 
+      bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${item.descontos?.length ? 
+        ${item.descontos?.length ? `
           <div class="descontos-aplicados" style="margin-top:16px;">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(d =>
-                <li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>
+                `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
               ).join('')}
             </ul>
           </div>
-         : ''}
+        ` : ''}
         <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
           <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
         </div>
-      ;
+      `;
       form.appendChild(bloco);
     });
 
@@ -200,7 +200,7 @@ async function carregarPedidosFinanceiro() {
         let cod = (item.codigo_fiscal || '').toUpperCase();
         if (!cod) cod = '(não informado)';
         if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ?  (${item.nome_produto}) : '';
+        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
         let descontosKg = 0;
         if (item.descontos?.length) {
           descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
@@ -211,7 +211,7 @@ async function carregarPedidosFinanceiro() {
         totalComNota += totalCom;
         totalSemNota += totalSem;
 
-        return 
+        return `
           <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
             <span class="etiqueta-codigo-fiscal">
               <strong>Código Fiscal: ${cod}</strong> |
@@ -222,7 +222,7 @@ async function carregarPedidosFinanceiro() {
               <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
             </span>
           </div>
-        ;
+        `;
       }).join('');
     }
     const totalVenda = totalComNota + totalSemNota;
@@ -248,13 +248,13 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
-    containerCinza.innerHTML = 
+    containerCinza.innerHTML = `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
       <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
-    ;
+    `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
@@ -270,12 +270,12 @@ async function carregarPedidosFinanceiro() {
         const row = document.createElement('div');
         row.className = 'vencimento-row';
         row.dataset.confirmado = 'false';
-        row.innerHTML = 
+        row.innerHTML = `
           <span class="venc-label">Vencimento ${i + 1}</span>
           <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
           <input type="text" value="${valorFmt}" />
           <button type="button">✓</button>
-        ;
+        `;
 
         const inp = row.querySelector('input');
         const btn = row.querySelector('button');
@@ -383,7 +383,7 @@ async function carregarPedidosFinanceiro() {
       });
       const erroEl = containerCinza.querySelector('.venc-soma-error');
       if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.;
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
       } else {
         erroEl.textContent = '';
       }
@@ -396,11 +396,11 @@ async function carregarPedidosFinanceiro() {
     // Observações do Financeiro e botão
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = 
+    blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
       <textarea placeholder="Digite suas observações aqui..."></textarea>
       <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    ;
+    `;
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
@@ -419,7 +419,7 @@ async function carregarPedidosFinanceiro() {
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
-    const res = await fetch(/api/pedidos/${pedidoId}/financeiro, {
+    const res = await fetch(`/api/pedidos/${pedidoId}/financeiro`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ observacoes_financeiro: observacoes })
@@ -437,11 +437,6 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosFinanceiro();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
-});
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
