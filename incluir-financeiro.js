@@ -85,9 +85,9 @@ async function carregarPedidosFinanceiro() {
     card.className = 'card';
 
     // Timeline padronizada oficial
-    const timelineHTML = gerarLinhaTempoCompleta(pedido); // string
-    const timelineElement = document.createElement('div');
-    timelineElement.innerHTML = timelineHTML;
+    const timelineWrapper = document.createElement('div');
+    timelineWrapper.innerHTML = gerarLinhaTempoCompleta(pedido);
+    const timelineElement = timelineWrapper.querySelector('.timeline-simples');
     animarLinhaProgresso(timelineElement);
     card.appendChild(timelineElement);
 
