@@ -39,7 +39,7 @@
       border: 1.5px solid #d1d1d1 !important;
       cursor: not-allowed;
       font-weight: bold;
-      opacity: 0.6; /* torna o campo opaco */
+      opacity: 0.6;
     }
   </style>
 </head>
@@ -105,7 +105,7 @@
       flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // Carrega clientes e inicializa Select2 com placeholder externo e interno
+      // carrega clientes e Select2
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty();
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
@@ -122,21 +122,19 @@
           });
       });
 
-      // Resto das funcionalidades originais
+      // resto original
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes").empty();
         $("#produtos").empty();
         $("#valor-total").text("R$ 0,00");
-      });
-      $("#cliente").change(function(){
-        const id = $(this).val();
+        $(".error-prazos").hide();
+        $("#condicao-a-vista").hide();
         if (!id) return;
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           windowProdutos = cli.produtos_autorizados || [];
-          $("#prazosCheckboxes").empty();
           windowPrazos.forEach(pz => {
             $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
           });
@@ -145,9 +143,8 @@
       });
 
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
-        const avistaMarcado = $("#prazosCheckboxes input[type=checkbox]")
-          .filter((_,el)=>el.value.toLowerCase().includes("vista")&&el.checked).length>0;
-        $("#condicao-a-vista").toggle(avistaMarcado);
+        const avista = $("#prazosCheckboxes input:checked").filter((_,el)=>el.value.toLowerCase().includes("vista")).length>0;
+        $("#condicao-a-vista").toggle(avista);
       });
 
       $("#adicionar-produto").click(adicionarProduto);
@@ -159,28 +156,30 @@
         if(!dispon.length) return;
         const bloco = $('<div class="produto-bloco"></div>');
 
-        // Produto
+        // PRODUTO
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p=>selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
-        // Valor por Quilo
+        // VALOR POR QUILO
         bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
 
-        // Peso
+        // PESO
         bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
-        // Tipo de Peso
+
+        // TIPO DE PESO
         bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
-        // Subtotal
+
+        // SUBTOTAL
         bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-        // Código
+        // CÓDIGO
         const selCod = $('<select class="select-codigo-fiscal" required></select>');
         selCod.append('<option value="">Selecione</option>');
         windowCodigos.forEach(c=>selCod.append(`<option value="${c}">${c}</option>`));
         bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
 
-        // Grupo Personalizar
+        // GRUPO PERSONALIZAR
         const gp = $(`\
           <div class="grupo-personalizar">\
             <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>\
@@ -189,12 +188,19 @@
           </div>\
         `);
         bloco.append(gp);
+        // exibir grupo
         selCod.change(function(){ gp.toggle($(this).val()==="Personalizar"); });
 
-        gp.find(".valor-com-nota").on("input",function(){
-          const total=parseMask(bloco.find(".valor-por-quilo").val());
-          const com=parseMask($(this).val());
-          bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(total-com,0)));
+        // **Atualiza sem formatar durante input**
+        gp.find(".valor-com-nota").on("input", function(){
+          const raw = parseMask($(this).val());
+          // só atualiza sem formatar
+          bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(parseMask(bloco.find(".valor-por-quilo").val()) - raw, 0)));
+        });
+        // e formata ao sair do campo
+        gp.find(".valor-com-nota").on("blur", function(){
+          const raw = parseMask($(this).val());
+          $(this).val(formatarNumero(raw));
         });
 
         selProd.change(function(){
@@ -202,7 +208,6 @@
           bloco.find(".valor-por-quilo").val(formatarNumero(v));
           atualizarSub(); atualizarTotal();
         });
-
         bloco.find(".peso").on("input",function(){
           const val=parseMask($(this).val());
           $(this).val(formatarNumero(val,true));
@@ -210,7 +215,6 @@
         });
 
         $("#produtos").append(bloco);
-
         function atualizarSub(){
           const v=parseMask(bloco.find(".valor-por-quilo").val());
           const p=parseMask(bloco.find(".peso").val());
@@ -226,8 +230,7 @@
 
       function parseMask(str){ return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", "."))||0; }
       function formatarNumero(valor,inteiro=false){
-        const partes=inteiro?[Math.floor(valor).toString()]:
-          valor.toFixed(2).replace(".", ",").split(",");
+        const partes=inteiro?[Math.floor(valor).toString()]:valor.toFixed(2).replace(".", ",").split(",");
         partes[0]=partes[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
         return inteiro?partes[0]:partes.join(",");
       }
