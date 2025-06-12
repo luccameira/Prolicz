@@ -103,8 +103,12 @@
   </div>
   <script>
     $(function(){
-      // inicializa flatpickr
-      flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
+      // inicializa flatpickr com bloqueio de datas passadas
+      flatpickr("#data-coleta", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        minDate: "today"  // data mínima = hoje, impede selecionar passado
+      });
 
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
@@ -217,19 +221,15 @@
         gp.find(".valor-com-nota")
           .on("input", function(){
             const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
-            // extrai só dígitos, trata como centavos
             let digits = $(this).val().replace(/\D/g, "");
             let rawCents = parseInt(digits || "0", 10);
-            // limites: centavos não acima do unitário nem mais que 99999 (999,99)
             rawCents = Math.min(rawCents, vUnitCent, 99999);
             const valor = rawCents / 100;
             $(this).val(formatarNumero(valor));
-            // atualiza Valor sem Nota
             const vPorQuilo = parseMask(bloco.find(".valor-por-quilo").val());
             bloco.find(".valor-sem-nota").val(formatarNumero(vPorQuilo - valor));
           })
           .on("blur", function(){
-            // reforça clamp no blur
             const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
             let raw = parseMask($(this).val());
             raw = Math.min(raw, vUnit);
