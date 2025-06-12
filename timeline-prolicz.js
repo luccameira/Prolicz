@@ -23,7 +23,7 @@ function gerarLinhaTempoCompleta(pedido) {
     {
       key: 'Em Análise pelo Financeiro',
       nome: 'Financeiro',
-      campoData: 'data_conferencia_peso' // ✅ Corrigido aqui
+      campoData: 'data_financeiro' // ✅ Corrigido aqui
     },
     {
       key: 'Aguardando Emissão de NF',
