@@ -429,7 +429,7 @@ router.get('/conferencia', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
-      p.data_peso_confirmado AS data_conferencia_peso,  -- ✅ alias correto para a timeline
+      p.data_peso_confirmado AS data_conferencia_peso,
       p.data_financeiro,
       p.data_emissao_nf,
       p.data_finalizado,
@@ -440,8 +440,15 @@ router.get('/conferencia', async (req, res) => {
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE p.status IN ('Aguardando Conferência do Peso', 'Em Análise pelo Financeiro')
-    ORDER BY p.data_coleta ASC
+    WHERE p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso', 'Em Análise pelo Financeiro')
+    ORDER BY 
+      CASE 
+        WHEN p.status = 'Coleta Iniciada' THEN 1
+        WHEN p.status = 'Aguardando Conferência do Peso' THEN 2
+        WHEN p.status = 'Em Análise pelo Financeiro' THEN 3
+        ELSE 99
+      END,
+      p.data_coleta ASC
   `;
 
   try {
