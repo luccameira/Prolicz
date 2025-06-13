@@ -147,7 +147,7 @@ async function carregarPedidosFinanceiro() {
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    const containerCinza = document.createElement('div');
+      const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
     let totalComNota = 0;
@@ -187,35 +187,30 @@ async function carregarPedidosFinanceiro() {
 
     const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
-
-      const numVencimentos = pedido.prazos_pagamento?.length || 1;
+    const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     function calcularValoresVencimentos() {
       let parcelas = [];
       let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
       let totalParcial = 0;
-
       for (let i = 0; i < numVencimentos; i++) {
         if (i < numVencimentos - 1) {
           parcelas.push(base);
           totalParcial += base;
         } else {
-          let ultima = (totalVenda - totalParcial);
-          parcelas.push(ultima);
+          parcelas.push(totalVenda - totalParcial);
         }
       }
       return parcelas;
     }
 
-   containerCinza.innerHTML = `
-  <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
-  <div class="vencimentos-container"></div>
-  <p class="venc-soma-error" style="color:red;"></p>
-  ${codigosFiscaisBarraAzul}
-  ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `
-    <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>
-  ` : ''}
-`;
+    containerCinza.innerHTML = `
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
+      <div class="vencimentos-container"></div>
+      <p class="venc-soma-error" style="color:red;"></p>
+      ${codigosFiscaisBarraAzul}
+      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+    `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
@@ -234,7 +229,7 @@ async function carregarPedidosFinanceiro() {
         row.innerHTML = `
           <span class="venc-label">Vencimento ${i + 1}</span>
           <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" />
+          <input type="text" value="${valorFmt}" ${i === numVencimentos - 1 ? 'readonly' : ''}/>
           <button type="button">✓</button>
         `;
 
@@ -248,33 +243,19 @@ async function carregarPedidosFinanceiro() {
         etiquetaConfirmado.style.cursor = 'pointer';
 
         inp.addEventListener('blur', () => {
+          if (i >= numVencimentos - 1) return;
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
           if (!isNaN(num)) {
             inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           }
-          const lastIndex = inputs.length - 1;
-          const curIndex = i;
-          if (curIndex !== lastIndex) {
-            const somaExcUlt = inputs.slice(0, lastIndex)
-              .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
-              .reduce((s, v) => s + v, 0);
-            const restante = totalVenda - somaExcUlt;
-            let rowErr = row.querySelector('.row-error');
-            if (restante < 0) {
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Parcela excede o valor total da venda.';
-                row.appendChild(rowErr);
-              }
-            } else {
-              if (rowErr) row.removeChild(rowErr);
-              inputs[lastIndex].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-          }
+          const somaExcUlt = inputs.slice(0, numVencimentos - 1)
+            .map(el => parseFloat(el.value.replace(/\./g, '').replace(',', '.')) || 0)
+            .reduce((a, b) => a + b, 0);
+          const restante = totalVenda - somaExcUlt;
+          const ultInput = inputs[numVencimentos - 1];
+          ultInput.value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
           atualizarBotaoLiberar();
         });
 
@@ -283,21 +264,7 @@ async function carregarPedidosFinanceiro() {
           if (!isConf) {
             const raw = inp.value.replace(/\./g, '').replace(',', '.');
             const num = parseFloat(raw);
-            if (isNaN(num) || num < 0) {
-              let rowErr = row.querySelector('.row-error');
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Valor inválido.';
-                row.appendChild(rowErr);
-              }
-              inp.focus();
-              return;
-            }
-            pedido.vencimentosValores = pedido.vencimentosValores || [];
-            pedido.vencimentosValores[i] = num;
+            if (isNaN(num) || num < 0) return;
             row.dataset.confirmado = 'true';
             inp.disabled = true;
             btn.replaceWith(etiquetaConfirmado);
@@ -311,7 +278,6 @@ async function carregarPedidosFinanceiro() {
 
         btn.addEventListener('click', toggleConfirmacao);
         etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-
         vencContainer.appendChild(row);
       }
     }
@@ -336,7 +302,7 @@ async function carregarPedidosFinanceiro() {
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
-      rows.forEach((r, idx) => {
+      rows.forEach(r => {
         const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
         if (!isNaN(val)) soma += val;
       });
@@ -366,7 +332,7 @@ async function carregarPedidosFinanceiro() {
     form.appendChild(blocoFin);
 
     card.appendChild(form);
-     header.addEventListener('click', () => {
+    header.addEventListener('click', () => {
       if (pedido.status !== 'Em Análise pelo Financeiro') return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
