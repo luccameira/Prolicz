@@ -5,9 +5,21 @@ let connection;
 // POST /api/clientes
 router.post('/', async (req, res) => {
   const {
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
-    cep, logradouro, numero, bairro, cidade, estado,
-    meio_pagamento, codigosFiscais = [], contatos = [], produtos = [], prazos = []
+    tipo_pessoa,
+    documento,
+    nome_fantasia,
+    situacao_tributaria,
+    cep,
+    logradouro,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    meio_pagamento,
+    codigosFiscais = [],
+    contatos = [],
+    produtos = [],
+    prazos = []
   } = req.body;
 
   const sql = `
@@ -18,9 +30,18 @@ router.post('/', async (req, res) => {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = [
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
-    cep, logradouro, numero, bairro, cidade, estado,
-    meio_pagamento, JSON.stringify(codigosFiscais)
+    tipo_pessoa,
+    documento,
+    nome_fantasia,
+    situacao_tributaria,
+    cep,
+    logradouro,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    meio_pagamento,
+    JSON.stringify(codigosFiscais)
   ];
 
   try {
@@ -66,7 +87,15 @@ router.post('/', async (req, res) => {
 
 // GET /api/clientes
 router.get('/', (req, res) => {
-  const sql = 'SELECT id, nome_fantasia FROM clientes ORDER BY nome_fantasia';
+  const sql = `
+    SELECT
+      id,
+      nome_fantasia,
+      documento               AS cnpj,
+      situacao_tributaria     AS status
+    FROM clientes
+    ORDER BY nome_fantasia
+  `;
   connection.query(sql)
     .then(([results]) => res.json(results))
     .catch(err => {
@@ -132,16 +161,13 @@ router.get('/:id', async (req, res) => {
     const rawCodigos = cliente.codigos_fiscais;
     let codigosArray = [];
 
-    // Se já for array, use diretamente
     if (Array.isArray(rawCodigos)) {
       codigosArray = rawCodigos;
     } else if (typeof rawCodigos === 'string') {
-      // Tenta parsear JSON
       try {
         codigosArray = JSON.parse(rawCodigos);
         if (!Array.isArray(codigosArray)) codigosArray = [codigosArray];
       } catch {
-        // fallback para split
         codigosArray = rawCodigos.split(',').map(s => s.trim()).filter(Boolean);
       }
     }
@@ -149,22 +175,18 @@ router.get('/:id', async (req, res) => {
     cliente.codigosFiscais = codigosArray;
     delete cliente.codigos_fiscais;
 
-    // buscar contatos, produtos e prazos
     const [contatosRes] = await connection.query(
       'SELECT nome, telefone, email FROM contatos_cliente WHERE cliente_id = ?',
       [id]
     );
-    const [produtosRes] = await connection.query(
-      `
+    const [produtosRes] = await connection.query(`
       SELECT
         p.id,
         p.nome,
         COALESCE(pa.valor_unitario, 0) AS valor_unitario
       FROM produtos_autorizados pa
       JOIN produtos p ON p.id = pa.produto_id
-      WHERE pa.cliente_id = ?
-      `,
-      [id]
+      WHERE pa.cliente_id = ?`, [id]
     );
     const [prazosRes] = await connection.query(
       'SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?',
@@ -192,7 +214,6 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   try {
-    // atualiza dados principais
     await connection.query(`
       UPDATE clientes SET
         tipo_pessoa = ?, documento = ?, nome_fantasia = ?, situacao_tributaria = ?,
@@ -205,7 +226,6 @@ router.put('/:id', async (req, res) => {
       meio_pagamento, JSON.stringify(codigosFiscais), id
     ]);
 
-    // contatos: limpa e reinsere
     await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
     for (const c of contatos) {
       await connection.query(
@@ -214,7 +234,6 @@ router.put('/:id', async (req, res) => {
       );
     }
 
-    // produtos autorizados: só limpa/reinsere se vierem dados
     if (produtos.length) {
       await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
       for (const p of produtos) {
@@ -231,7 +250,6 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // prazos de pagamento: só limpa/reinsere se vierem dados
     if (prazos.length) {
       await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
       for (const p of prazos) {
