@@ -25,12 +25,19 @@ async function carregarPedidos() {
   listaPedidos.forEach(p => {
     if (!pedidosAgrupados[p.id]) {
       pedidosAgrupados[p.id] = {
-        id: p.id,
-        cliente: p.cliente,
-        data_coleta: p.data_coleta,
-        status: p.status,
-        materiais: []
-      };
+      id: p.id,
+      cliente: p.cliente,
+      data_coleta: p.data_coleta,
+      status: p.status,
+      materiais: [],
+      data_criacao: p.data_criacao,
+      data_coleta_iniciada: p.data_coleta_iniciada,
+      data_carga_finalizada: p.data_carga_finalizada,
+      data_conferencia_peso: p.data_conferencia_peso,
+      data_financeiro: p.data_financeiro,
+      data_nf_emitida: p.data_nf_emitida,
+      data_finalizado: p.data_finalizado
+     };
     }
 
     pedidosAgrupados[p.id].materiais.push({
