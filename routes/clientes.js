@@ -22,6 +22,20 @@ router.post('/', async (req, res) => {
     prazos = []
   } = req.body;
 
+  // Verifica unicidade de CNPJ
+  try {
+    const [jaExiste] = await connection.query(
+      'SELECT 1 FROM clientes WHERE documento = ? LIMIT 1',
+      [documento]
+    );
+    if (jaExiste.length) {
+      return res.status(400).json({ erro: 'Já existe um cliente cadastrado com este CNPJ.' });
+    }
+  } catch (err) {
+    console.error('Erro na verificação de duplicata:', err);
+    return res.status(500).json({ erro: 'Erro interno ao validar CNPJ.' });
+  }
+
   const sql = `
     INSERT INTO clientes (
       tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
@@ -29,6 +43,7 @@ router.post('/', async (req, res) => {
       meio_pagamento, codigos_fiscais
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
+
   const values = [
     tipo_pessoa,
     documento,
@@ -48,7 +63,7 @@ router.post('/', async (req, res) => {
     const [resultado] = await connection.query(sql, values);
     const clienteId = resultado.insertId;
 
-    // contatos
+    // Insere contatos
     for (const c of contatos) {
       await connection.query(
         'INSERT INTO contatos_cliente (cliente_id, nome, telefone, email) VALUES (?, ?, ?, ?)',
@@ -56,13 +71,11 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // produtos autorizados
+    // Insere produtos autorizados
     for (const p of produtos) {
       const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
-        typeof raw === "string"
-          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
-          : raw
+        typeof raw === "string" ? raw.replace(/[^\d,\-]/g, '').replace(',', '.') : raw
       ) || 0;
       await connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
@@ -70,7 +83,7 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // prazos
+    // Insere prazos
     for (const p of prazos) {
       await connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
@@ -78,10 +91,14 @@ router.post('/', async (req, res) => {
       );
     }
 
-    res.status(201).json({ mensagem: 'Cliente cadastrado com sucesso!', id: clienteId });
+    return res.status(201).json({ mensagem: 'Cliente cadastrado com sucesso!', id: clienteId });
   } catch (err) {
+    // Captura violação de UNIQUE no banco
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ erro: 'Já existe um cliente cadastrado com este CNPJ.' });
+    }
     console.error('Erro ao cadastrar cliente:', err);
-    res.status(500).json({ erro: 'Erro ao cadastrar cliente.', detalhes: err.message });
+    return res.status(500).json({ erro: 'Erro ao cadastrar cliente.', detalhes: err.message });
   }
 });
 
@@ -239,12 +256,10 @@ router.put('/:id', async (req, res) => {
       for (const p of produtos) {
         const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
         const valor = parseFloat(
-          typeof raw === "string"
-            ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
-            : raw
+          typeof raw === "string" ? raw.replace(/[^\d,\-]/g, '').replace(',', '.') : raw
         ) || 0;
         await connection.query(
-          'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
+          'INSERT INTO produtos_autorizados (cliente_id, produtos_autorizados_id, valor_unitario) VALUES (?, ?, ?)',
           [id, p.id, valor]
         );
       }
