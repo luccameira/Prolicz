@@ -20,8 +20,29 @@ async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
 
-  const listaFiltrada = listaPedidos.filter(p => p.status !== 'Aguardando Início da Coleta');
+  const pedidosAgrupados = {};
 
+  listaPedidos.forEach(p => {
+    if (!pedidosAgrupados[p.id]) {
+      pedidosAgrupados[p.id] = {
+        id: p.id,
+        cliente: p.cliente,
+        data_coleta: p.data_coleta,
+        status: p.status,
+        materiais: []
+      };
+    }
+
+    pedidosAgrupados[p.id].materiais.push({
+      item_id: p.item_id,
+      nome_produto: p.produto,
+      quantidade: parseFloat(p.peso_previsto),
+      unidade: 'Kg',
+      tipo_peso: p.tipo_peso
+    });
+  });
+
+  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
   pedidos = listaFiltrada;
   renderizarPedidos(listaFiltrada);
 }
@@ -40,15 +61,16 @@ function renderizarPedidos(lista) {
   }
 
   const pendentes = pedidosFiltrados.filter(p =>
-    p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0)
+    p.status === 'Coleta Iniciada' &&
+    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
   );
 
   const concluidos = pedidosFiltrados.filter(p =>
-    !(p.status === 'Coleta Iniciada' && (!p.peso_carregado || parseFloat(p.peso_carregado) === 0))
+    !(p.status === 'Coleta Iniciada' &&
+    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
   );
 
   const pedidosOrdenados = [...pendentes, ...concluidos];
-
   listaEl.innerHTML = '';
 
   pedidosOrdenados.forEach(p => {
@@ -83,56 +105,39 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
-
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
     form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
-    const materiais = [];
+      p.materiais.forEach((item, index) => {
+      const itemId = item.item_id;
+      if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
-    if (p.produto && p.peso_previsto && p.item_id) {
-      materiais.push({
-        item_id: p.item_id,
-        nome_produto: p.produto,
-        quantidade: parseFloat(p.peso_previsto),
-        unidade: 'Kg',
-        tipo_peso: 'Aproximado'
-      });
-    }
-
-    if (materiais.length > 0) {
-      materiais.forEach((item, index) => {
-        const itemId = item.item_id;
-        if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
-
-        const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-        const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
-
-        form.innerHTML += `
-          <div class="material-bloco" data-item-id="${itemId}">
-            <h4>${item.nome_produto}</h4>
-            <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
-            <div class="linha-peso">
-              <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-              <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
-            </div>
-            <div id="grupo-descontos-${itemId}"></div>
-            <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
-          </div>
-        `;
-      });
+      const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
       form.innerHTML += `
-        <div class="upload-ticket">
-          <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
-          <input type="file" id="ticket-${p.id}" accept="image/*">
+        <div class="material-bloco" data-item-id="${itemId}">
+          <h4>${item.nome_produto}</h4>
+          <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
+          <div class="linha-peso">
+            <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
+            <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
+          </div>
+          <div id="grupo-descontos-${itemId}"></div>
+          <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
         </div>
-        <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
       `;
-    } else {
-      form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
-    }
+    });
+
+    form.innerHTML += `
+      <div class="upload-ticket">
+        <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
+        <input type="file" id="ticket-${p.id}" accept="image/*">
+      </div>
+      <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
+    `;
 
     card.appendChild(form);
     listaEl.appendChild(card);
@@ -189,7 +194,6 @@ function adicionarDescontoMaterial(itemId) {
     </div>
   `;
   container.appendChild(div);
-
   aplicarMascaraMilhar(div.querySelector('input[type="text"]'));
 }
 
@@ -296,4 +300,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
-
