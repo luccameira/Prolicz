@@ -366,7 +366,8 @@ async function carregarPedidosFinanceiro() {
     form.appendChild(blocoFin);
 
     card.appendChild(form);
-    header.addEventListener('click', () => {
+     header.addEventListener('click', () => {
+      if (pedido.status !== 'Em Análise pelo Financeiro') return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
 
