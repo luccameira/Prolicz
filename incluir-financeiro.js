@@ -316,21 +316,22 @@ async function carregarPedidosFinanceiro() {
 }
     
     function resetarVencimentosPadrao() {
-      valoresPadrao = calcularValoresVencimentos();
-      renderizarVencimentos(valoresPadrao);
-      atualizarBotaoLiberar();
-    }
+  valoresPadrao = calcularValoresVencimentos();
+  inputs.length = 0; // limpa o array de inputs antes de renderizar de novo
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
 
-    setTimeout(() => {
-      const valorTotalTag = document.getElementById('reset-vencimentos');
-      if (valorTotalTag) {
-        valorTotalTag.style.cursor = 'pointer';
-        valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-        valorTotalTag.onclick = resetarVencimentosPadrao;
-      }
-    }, 200);
+setTimeout(() => {
+  const valorTotalTag = document.getElementById('reset-vencimentos');
+  if (valorTotalTag) {
+    valorTotalTag.style.cursor = 'pointer';
+    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+    valorTotalTag.onclick = resetarVencimentosPadrao;
+  }
+}, 200);
 
-    renderizarVencimentos(valoresPadrao);
+renderizarVencimentos(valoresPadrao);
 
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
