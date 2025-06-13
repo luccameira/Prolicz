@@ -37,16 +37,37 @@
         <input type="hidden" id="clienteId">
 
         <label for="tipoPessoa">Tipo de Pessoa</label>
-        <select id="tipoPessoa" required></select>
+        <select id="tipoPessoa" required onchange="atualizarCamposPessoa()">
+          <option value="">Selecione</option>
+          <option value="Fisica">Física</option>
+          <option value="Juridica">Jurídica</option>
+        </select>
 
         <label for="documento">Documento</label>
-        <input type="text" id="documento" required>
+        <input
+          type="text"
+          id="documento"
+          required
+          maxlength="18"
+          pattern="(\d{3}\.\d{3}\.\d{3}-\d{2})|(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})"
+          title="Digite no formato CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"
+        >
 
         <label for="nomeFantasia">Nome Fantasia</label>
-        <input type="text" id="nomeFantasia" required>
+        <input
+          type="text"
+          id="nomeFantasia"
+          required
+          maxlength="50"
+        >
 
         <label for="situacaoTributaria">Situação Tributária</label>
-        <input type="text" id="situacaoTributaria">
+        <select id="situacaoTributaria">
+          <option value="">Selecione</option>
+          <option value="simples">Simples Nacional</option>
+          <option value="lucroPresumido">Lucro Presumido</option>
+          <option value="lucroReal">Lucro Real</option>
+        </select>
 
         <label>Códigos Fiscais Permitidos</label>
         <div id="codigosFiscaisCheckboxes" class="checkbox-group">
@@ -62,22 +83,58 @@
         </div>
 
         <label for="cep">CEP</label>
-        <input type="text" id="cep">
+        <input
+          type="text"
+          id="cep"
+          required
+          maxlength="9"
+          pattern="\d{5}-?\d{3}"
+          title="Digite um CEP válido"
+          onblur="buscarEndereco()"
+        >
 
         <label for="logradouro">Logradouro</label>
-        <input type="text" id="logradouro">
+        <input
+          type="text"
+          id="logradouro"
+          required
+          maxlength="50"
+        >
 
         <label for="numero">Número</label>
-        <input type="text" id="numero">
+        <input
+          type="text"
+          id="numero"
+          required
+          maxlength="10"
+          pattern="\d+"
+          title="Apenas números, até 10 dígitos"
+        >
 
         <label for="bairro">Bairro</label>
-        <input type="text" id="bairro">
+        <input
+          type="text"
+          id="bairro"
+          required
+          maxlength="60"
+        >
 
         <label for="cidade">Cidade</label>
-        <input type="text" id="cidade">
+        <input
+          type="text"
+          id="cidade"
+          required
+          maxlength="60"
+        >
 
         <label for="estado">Estado</label>
-        <input type="text" id="estado">
+        <select id="estado" required>
+          <option value="">Selecione</option>
+          <option value="SP">SP</option>
+          <option value="RJ">RJ</option>
+          <option value="MG">MG</option>
+          <option value="RS">RS</option>
+        </select>
 
         <h3>Contatos</h3>
         <div id="contatos"></div>
@@ -97,120 +154,114 @@
   </div>
 
   <script>
-    const usuario = JSON.parse(localStorage.getItem('usuarioLogado')) || {};
-    document.getElementById('usuario-nome').textContent = usuario.nome || 'Usuário';
-    const podeEditar = ['Administrador Master', 'Administrador Coordenador'].includes(usuario.tipo);
-    let listaProdutos = [];
-
-    async function carregarProdutosDoSistema() {
-      try {
-        const res = await fetch('/api/clientes/produtos');
-        listaProdutos = await res.json();
-      } catch (err) {
-        console.error('Erro ao buscar produtos:', err);
-        alert('Erro ao carregar lista de produtos');
+    // atualizar máscaras e preenchimento
+    function atualizarCamposPessoa() {
+      const tipo = $('#tipoPessoa').val();
+      if (tipo === 'Fisica') {
+        $('#documento').unmask().mask('000.000.000-00');
+      } else {
+        $('#documento').unmask().mask('00.000.000/0000-00');
       }
     }
 
+    // busca e preenche endereço pelo CEP
+    function buscarEndereco() {
+      const cep = $('#cep').val().replace(/\D/g, '');
+      if (cep.length !== 8) return;
+      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.erro) {
+            $('#logradouro').val(data.logradouro);
+            $('#bairro').val(data.bairro);
+            $('#cidade').val(data.localidade);
+            $('#estado').val(data.uf);
+          }
+        })
+        .catch(() => console.warn('CEP não encontrado'));
+    }
+
+    // carregamento de produtos e cliente
+    let listaProdutos = [];
+    async function carregarProdutosDoSistema() {
+      listaProdutos = await fetch('/api/clientes/produtos').then(r => r.json()).catch(() => []);
+    }
     async function carregarCliente() {
       const id = new URLSearchParams(window.location.search).get('id');
-      if (!id) return alert('ID inválido');
-      document.getElementById('clienteId').value = id;
-
-      try {
-        const res = await fetch(`/api/clientes/${id}`);
-        const cliente = await res.json();
-
-        $('#tipoPessoa').val(cliente.tipo_pessoa);
-        $('#documento').val(cliente.documento);
-        $('#nomeFantasia').val(cliente.nome_fantasia);
-        $('#situacaoTributaria').val(cliente.situacao_tributaria);
-
-        // preencher checkboxes de códigos fiscais
-        if (cliente.codigosFiscais && Array.isArray(cliente.codigosFiscais)) {
-          cliente.codigosFiscais.forEach(cod => {
-            const cb = document.querySelector(
-              `#codigosFiscaisCheckboxes input[type=checkbox][value="${cod}"]`
-            );
-            if (cb) cb.checked = true;
-          });
-        }
-
-        $('#cep').val(cliente.cep);
-        $('#logradouro').val(cliente.logradouro);
-        $('#numero').val(cliente.numero);
-        $('#bairro').val(cliente.bairro);
-        $('#cidade').val(cliente.cidade);
-        $('#estado').val(cliente.estado);
-
-        cliente.contatos.forEach(adicionarContato);
-        cliente.produtos_autorizados.forEach(adicionarProduto);
-        cliente.prazos_pagamento.forEach(p => adicionarPrazo(p.descricao));
-
-        if (!podeEditar) {
-          document.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar cliente:', err);
-        alert('Erro ao carregar dados do cliente.');
-      }
+      $('#clienteId').val(id);
+      const c = await fetch(`/api/clientes/${id}`).then(r => r.json());
+      $('#tipoPessoa').val(c.tipo_pessoa.charAt(0).toUpperCase() + c.tipo_pessoa.slice(1));
+      atualizarCamposPessoa();
+      $('#documento').val(c.documento);
+      $('#nomeFantasia').val(c.nome_fantasia);
+      $('#situacaoTributaria').val(c.situacao_tributaria);
+      $('#cep').val(c.cep);
+      $('#logradouro').val(c.logradouro);
+      $('#numero').val(c.numero);
+      $('#bairro').val(c.bairro);
+      $('#cidade').val(c.cidade);
+      $('#estado').val(c.estado);
+      // contatos
+      c.contatos.forEach(adicionarContato);
+      // produtos
+      c.produtos_autorizados.forEach(p => {
+        adicionarProduto();
+        const g = $('#produtosAutorizados .grupo-dinamico').last();
+        g.find('select').val(p.id);
+        g.find('.valor').val('R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ','));
+      });
+      // prazos
+      c.prazos_pagamento.forEach(p => adicionarPrazo(p.descricao));
+      // códigos fiscais
+      (c.codigosFiscais || []).forEach(code => 
+        $(`#codigosFiscaisCheckboxes input[value="${code}"]`).prop('checked', true)
+      );
     }
 
-    function adicionarContato(c = {}) {
-      const div = document.createElement('div');
-      div.className = 'grupo-dinamico';
-      div.innerHTML = `
-        <input type="text" placeholder="Nome" value="${c.nome || ''}" required>
-        <input type="text" class="tel" placeholder="Telefone" value="${c.telefone || ''}" required>
-        <input type="email" placeholder="E-mail" value="${c.email || ''}" required>
-        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-      `;
-      document.getElementById('contatos').appendChild(div);
-      $(div).find('.tel').mask('(00) 00000-0000');
+    // adição dinâmica de itens
+    function adicionarContato(ct = {}) {
+      const d = $('<div class="grupo-dinamico">\
+        <input type="text" placeholder="Nome" value="'+(ct.nome||'')+'" required maxlength="35">\
+        <input type="text" class="tel" placeholder="Telefone" value="'+(ct.telefone||'')+'" required maxlength="15">\
+        <input type="email" placeholder="E-mail" value="'+(ct.email||'')+'" required maxlength="25">\
+        <button type="button" class="remover-btn">&times;</button>\
+      </div>');
+      d.find('.remover-btn').click(() => d.remove());
+      $('#contatos').append(d);
+      d.find('.tel').mask('(00) 00000-0000');
+    }
+    function adicionarProduto() {
+      const opts = listaProdutos.map(p =>
+        '<option value="'+p.id+'">'+p.nome+'</option>'
+      ).join('');
+      const d = $('<div class="grupo-dinamico">\
+        <select required><option value="">Selecione um produto</option>'+opts+'</select>\
+        <input type="text" class="valor" placeholder="Valor (R$)" value="R$ 0,00" required>\
+        <button type="button" class="remover-btn">&times;</button>\
+      </div>');
+      d.find('.remover-btn').click(() => d.remove());
+      $('#produtosAutorizados').append(d);
+      d.find('.valor').mask('R$ 000.000.000,00',{reverse:true});
+    }
+    function adicionarPrazo(desc = '') {
+      const d = $('<div class="grupo-dinamico">\
+        <input type="text" placeholder="Ex: À vista" value="'+desc+'" required maxlength="50">\
+        <button type="button" class="remover-btn">&times;</button>\
+      </div>');
+      d.find('.remover-btn').click(() => d.remove());
+      $('#prazosPagamento').append(d);
     }
 
-    function adicionarProduto(p = {}) {
-      const div = document.createElement('div');
-      div.className = 'grupo-dinamico';
-      const selectHTML = `
-        <select required>
-          <option value="">Selecione um produto</option>
-          ${listaProdutos.map(prod => {
-            const selected = p.nome === prod.nome ? 'selected' : '';
-            return `<option value="${prod.nome}" ${selected}>${prod.nome}</option>`;
-          }).join('')}
-        </select>
-      `;
-      div.innerHTML = `
-        ${selectHTML}
-        <input type="text" class="valor" placeholder="Valor (R$)" value="${
-          p.valor_unitario ? 'R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ',') : ''
-        }" required>
-        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-      `;
-      document.getElementById('produtosAutorizados').appendChild(div);
-      $(div).find('.valor').mask('R$ 000.000.000,00', { reverse: true });
-    }
-
-    function adicionarPrazo(p = '') {
-      const div = document.createElement('div');
-      div.className = 'grupo-dinamico';
-      div.innerHTML = `
-        <input type="text" placeholder="Ex: À vista" value="${p}" required>
-        <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-      `;
-      document.getElementById('prazosPagamento').appendChild(div);
-    }
-
-    document.getElementById('formEditarCliente').addEventListener('submit', async e => {
+    // envio do formulário
+    $('#formEditarCliente').submit(async e => {
       e.preventDefault();
-      const id = document.getElementById('clienteId').value;
+      const id = $('#clienteId').val();
       const cliente = {
-        tipo_pessoa: $('#tipoPessoa').val(),
+        tipo_pessoa: $('#tipoPessoa').val().toLowerCase(),
         documento: $('#documento').val(),
         nome_fantasia: $('#nomeFantasia').val(),
-        situacao_tributaria: $('#situacaoTributaria').val(),
-        codigosFiscais: Array.from(document.querySelectorAll('#codigosFiscaisCheckboxes input[type=checkbox]:checked')).map(cb => cb.value),
+        situacao_tributaria: $('#situacaoTributaria').val() || null,
+        codigosFiscais: $('#codigosFiscaisCheckboxes input:checked').map((_,cb)=>cb.value).get(),
         cep: $('#cep').val(),
         logradouro: $('#logradouro').val(),
         numero: $('#numero').val(),
@@ -219,24 +270,38 @@
         estado: $('#estado').val(),
         contatos: [], produtos: [], prazos: []
       };
-      $('#contatos .grupo-dinamico').each(function () {
-        const inputs = this.querySelectorAll('input');
-        cliente.contatos.push({ nome: inputs[0].value, telefone: inputs[1].value, email: inputs[2].value });
+      $('#contatos .grupo-dinamico').each(function(){
+        const inputs = $(this).find('input');
+        cliente.contatos.push({
+          nome: inputs.eq(0).val(),
+          telefone: inputs.eq(1).val(),
+          email: inputs.eq(2).val()
+        });
       });
-      $('#produtosAutorizados .grupo-dinamico').each(function () {
-        const select = this.querySelector('select');
-        const inputValor = this.querySelector('.valor');
-        cliente.produtos.push({ nome: select.value, valor: inputValor.value });
+      $('#produtosAutorizados .grupo-dinamico').each(function(){
+        const sel = $(this).find('select').val();
+        const raw = $(this).find('.valor').val();
+        const val = parseFloat(raw.replace(/[R$\.\s]/g,'').replace(',','.'))||0;
+        cliente.produtos.push({ id: parseInt(sel), valor_unitario: val });
       });
-      $('#prazosPagamento .grupo-dinamico').each(function () { cliente.prazos.push(this.querySelector('input').value); });
-      try {
-        const res = await fetch(`/api/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cliente) });
-        const result = await res.json();
-        if (res.ok) { alert('Cliente atualizado com sucesso!'); window.location.href = 'clientes.html'; }
-        else { alert('Erro: ' + (result.erro || 'Erro desconhecido')); }
-      } catch (err) { alert('Erro ao atualizar cliente'); console.error(err); }
+      $('#prazosPagamento .grupo-dinamico').each(function(){
+        cliente.prazos.push({ descricao: $(this).find('input').val(), dias: 0 });
+      });
+      const res = await fetch(`/api/clientes/${id}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(cliente)
+      });
+      if (res.ok) {
+        alert('Cliente atualizado com sucesso!');
+        window.location.href='clientes.html';
+      } else {
+        const err = await res.json();
+        alert('Erro: '+(err.erro||err.detalhes||'desconhecido'));
+      }
     });
 
+    // inicialização
     $(document).ready(async () => {
       await carregarProdutosDoSistema();
       $('#cep').mask('00000-000');
