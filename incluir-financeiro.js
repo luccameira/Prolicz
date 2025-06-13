@@ -46,7 +46,7 @@ function calcularValoresFiscais(item) {
 }
 
 async function carregarPedidosFinanceiro() {
-  const res = await fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro');
+  const res = await fetch('/api/pedidos/financeiro');
   let pedidos = [];
   try {
     pedidos = await res.json();
