@@ -514,4 +514,97 @@ router.get('/nf', async (req, res) => {
   }
 });
 
+// GET /api/pedidos/financeiro
+router.get('/financeiro', async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        p.id AS pedido_id,
+        p.data_criacao,
+        p.tipo,
+        p.status,
+        p.data_coleta,
+        p.data_coleta_iniciada,
+        p.data_carga_finalizada,
+        p.data_conferencia_peso,
+        p.data_financeiro,
+        p.data_emissao_nf,
+        p.data_finalizado,
+        p.codigo_interno,
+        p.observacao,
+        p.empresa,
+        p.nota_fiscal,
+        c.nome_fantasia AS cliente
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      WHERE DATE(p.data_coleta) = CURDATE()
+        AND p.status IN (
+          'Coleta Iniciada',
+          'Coleta Finalizada',
+          'Aguardando Conferência do Peso',
+          'Em Análise pelo Financeiro',
+          'Aguardando Emissão de NF',
+          'Cliente Liberado',
+          'Finalizado'
+        )
+      ORDER BY 
+        CASE 
+          WHEN p.status = 'Coleta Iniciada' THEN 1
+          WHEN p.status = 'Coleta Finalizada' THEN 2
+          WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+          WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+          WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+          WHEN p.status = 'Cliente Liberado' THEN 6
+          WHEN p.status = 'Finalizado' THEN 7
+          ELSE 99
+        END,
+        p.data_coleta ASC
+    `;
+
+    const [pedidos] = await db.query(sql);
+
+    for (const pedido of pedidos) {
+      const [materiais] = await db.query(
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
+         FROM itens_pedido
+         WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      for (const item of materiais) {
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
+
+      pedido.materiais = materiais;
+      pedido.observacoes = pedido.observacao || '';
+
+      const [prazosPedido] = await db.query(
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      pedido.prazos_pagamento = prazosPedido.map(prazo => {
+        let dataVencimento = null;
+        if (pedido.data_coleta) {
+          const dataColeta = new Date(pedido.data_coleta);
+          dataColeta.setDate(dataColeta.getDate() + prazo.dias);
+          dataVencimento = dataColeta.toISOString();
+        }
+        return dataVencimento;
+      });
+    }
+
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos para o financeiro:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos para o financeiro' });
+  }
+});
+
 module.exports = router;
