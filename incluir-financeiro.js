@@ -210,13 +210,15 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
-    containerCinza.innerHTML = `
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
-      <div class="vencimentos-container"></div>
-      <p class="venc-soma-error" style="color:red;"></p>
-      ${codigosFiscaisBarraAzul}
-      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
-    `;
+   containerCinza.innerHTML = `
+  <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
+  <div class="vencimentos-container"></div>
+  <p class="venc-soma-error" style="color:red;"></p>
+  ${codigosFiscaisBarraAzul}
+  ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `
+    <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>
+  ` : ''}
+`;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
