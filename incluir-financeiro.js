@@ -106,7 +106,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais?.forEach(item => {
+     pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -187,8 +187,9 @@ async function carregarPedidosFinanceiro() {
 
     const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
+    const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-      const numVencimentos = pedido.prazos_pagamento?.length || 1;
+    const prazosOrdenados = [...pedido.prazos_pagamento].sort((a, b) => new Date(a) - new Date(b)); // ✅ ORDENANDO
 
     function calcularValoresVencimentos() {
       let parcelas = [];
@@ -366,11 +367,10 @@ async function carregarPedidosFinanceiro() {
     form.appendChild(blocoFin);
 
     card.appendChild(form);
-     header.addEventListener('click', () => {
+    header.addEventListener('click', () => {
       if (pedido.status !== 'Em Análise pelo Financeiro') return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
-
     lista.appendChild(card);
   });
 }
