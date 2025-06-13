@@ -562,6 +562,44 @@ router.get('/financeiro', async (req, res) => {
     `;
 
     const [pedidos] = await db.query(sql);
+
+    for (const pedido of pedidos) {
+      const [materiais] = await db.query(
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
+         FROM itens_pedido
+         WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      for (const item of materiais) {
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
+
+      pedido.materiais = materiais;
+      pedido.observacoes = pedido.observacao || '';
+
+      const [prazosPedido] = await db.query(
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      pedido.prazos_pagamento = prazosPedido.map(prazo => {
+        let dataVencimento = null;
+        if (pedido.data_coleta) {
+          const dataColeta = new Date(pedido.data_coleta);
+          dataColeta.setDate(dataColeta.getDate() + prazo.dias);
+          dataVencimento = dataColeta.toISOString();
+        }
+        return dataVencimento;
+      });
+    }
+
     res.json(pedidos);
   } catch (err) {
     console.error('Erro ao buscar pedidos para o financeiro:', err);
