@@ -14,11 +14,10 @@ function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function formatarPesoSemDecimal(valor) {
+function formatarPesoComMilhar(valor) {
   if (valor == null) return '—';
   const numero = Number(valor);
-  if (Number.isInteger(numero)) return numero.toString();
-  return numero.toFixed(2).replace('.', ',');
+  return numero.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function calcularValoresFiscais(item) {
@@ -84,7 +83,6 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
-     // Header
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -98,36 +96,32 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    // Timeline padronizada oficial
-   const timelineHTML = gerarLinhaTempoCompleta(pedido);
-   const tempDiv = document.createElement('div');
-   tempDiv.innerHTML = timelineHTML;
-   const timelineElement = tempDiv.querySelector('.timeline-simples');
-   if (timelineElement) {
-   card.appendChild(timelineElement);
-   setTimeout(() => animarLinhaProgresso(timelineElement), 0);
-   }
+    const timelineHTML = gerarLinhaTempoCompleta(pedido);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = timelineHTML;
+    const timelineElement = tempDiv.querySelector('.timeline-simples');
+    if (timelineElement) {
+      card.appendChild(timelineElement);
+      setTimeout(() => animarLinhaProgresso(timelineElement), 0);
+    }
 
-    // Formulário oculto
     const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- Materiais da venda ----
     pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
-      // dados do item
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
-      const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
-      const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
+      const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
+      const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
       let descontosKg = 0;
       if (item.descontos?.length) {
         descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       }
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-      const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
+      const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
 
       bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
@@ -138,12 +132,12 @@ async function carregarPedidosFinanceiro() {
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+                `<li>${d.motivo}: ${formatarPesoComMilhar(d.quantidade)} UNIDADES (${formatarPesoComMilhar(d.peso_calculado)} Kg)</li>`
               ).join('')}
             </ul>
           </div>
         ` : ''}
-        <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
+        <p style="margin-top:16px;"><strong>${item.descontos?.length ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
           <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
@@ -152,16 +146,13 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // separador visual
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // resumo financeiro
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // total da venda (soma total dos itens: com nota + sem nota)
     let totalComNota = 0;
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
@@ -196,14 +187,14 @@ async function carregarPedidosFinanceiro() {
         `;
       }).join('');
     }
+
     const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
 
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
+      const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     function calcularValoresVencimentos() {
       let parcelas = [];
-      // Cálculo com precisão para centavos
       let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
       let totalParcial = 0;
 
@@ -252,7 +243,6 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
-        // elemento de confirmação alternável
         const etiquetaConfirmado = document.createElement('span');
         etiquetaConfirmado.className = 'etiqueta-valor-item';
         etiquetaConfirmado.textContent = 'CONFIRMADO';
@@ -333,7 +323,6 @@ async function carregarPedidosFinanceiro() {
       atualizarBotaoLiberar();
     }
 
-    // Ao clicar no valor total, reseta os vencimentos
     setTimeout(() => {
       const valorTotalTag = document.getElementById('reset-vencimentos');
       if (valorTotalTag) {
@@ -364,7 +353,6 @@ async function carregarPedidosFinanceiro() {
 
     atualizarBotaoLiberar();
 
-    // Observações do Financeiro e botão
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
@@ -378,7 +366,6 @@ async function carregarPedidosFinanceiro() {
     form.appendChild(containerCinza);
     form.appendChild(blocoFin);
 
-    // toggle form visibility
     card.appendChild(form);
     header.addEventListener('click', () => {
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
