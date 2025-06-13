@@ -46,13 +46,10 @@ function calcularValoresFiscais(item) {
 }
 
 async function carregarPedidosFinanceiro() {
-  const [resPendentes, resAnteriores] = await Promise.all([
-    fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
-    fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso')
-  ]);
+  const res = await fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro');
   let pedidos = [];
   try {
-    pedidos = [...await resPendentes.json(), ...await resAnteriores.json()];
+    pedidos = await res.json();
     if (!Array.isArray(pedidos)) throw new Error('Resposta inválida');
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
