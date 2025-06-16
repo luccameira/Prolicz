@@ -37,7 +37,37 @@
     .valor-total-previsto { background: #fffbe6; border: 1.5px solid #ffe066; border-radius: 7px; padding: 16px 20px; margin: 22px 0 10px 0; font-size: 18px; font-weight: 500; color: #333; display: flex; align-items: center; justify-content: flex-start; max-width: 380px; flex-wrap: nowrap; }
     .valor-total-previsto #valor-total { font-size: 22px; font-weight: bold; color: #178009; margin-left: 10px; letter-spacing: 0.5px; white-space: nowrap; display: inline-block; }
     .input-nao-editavel { background: #ececec !important; color: #495057 !important; border: 1.5px solid #d1d1d1 !important; cursor: not-allowed; font-weight: bold; opacity: 0.6; }
-    .btn-observacao { margin: 10px auto 30px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; font-weight: bold; }
+
+    /* Observação */
+    .observacao-bloco {
+      margin: 20px auto;
+      padding: 15px;
+      background: #f1f1f1;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      display: none;
+    }
+    .observacao-bloco select,
+    .observacao-bloco textarea {
+      margin-top: 10px;
+      width: 100%;
+    }
+    .btn-confirmar-observacao {
+      margin-top: 10px;
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+    .btn-observacao {
+      margin: 10px auto 30px auto;
+      padding: 10px 20px;
+      background: #ffc107;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: block;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -74,7 +104,7 @@
         </select>
       </div>
 
-      <!-- Prazos e Condição à Vista (visível somente após selecionar cliente) -->
+      <!-- Prazos e Condição à Vista -->
       <div id="prazos-container">
         <div class="form-group">
           <label>Prazos de Pagamento</label>
@@ -95,14 +125,31 @@
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
 
-      <!-- NOVO BOTÃO DE OBSERVAÇÃO -->
+      <!-- Botão Adicionar Observação -->
       <button type="button" id="btn-observacao" class="btn-observacao">Adicionar Observação</button>
+
+      <!-- Bloco de Observação (inicialmente oculto) -->
+      <div id="observacao-bloco" class="observacao-bloco">
+        <label for="setor-observacao">Setor</label>
+        <select id="setor-observacao">
+          <option value="">Selecione</option>
+          <option value="Portaria">Portaria</option>
+          <option value="Carga e Descarga">Carga e Descarga</option>
+          <option value="Conferência de Peso">Conferência de Peso</option>
+          <option value="Financeiro">Financeiro</option>
+          <option value="Emissão de NF">Emissão de NF</option>
+        </select>
+
+        <label for="texto-observacao">Observação</label>
+        <textarea id="texto-observacao" rows="4" disabled></textarea>
+
+        <button type="button" id="confirmar-observacao" class="btn btn-confirmar-observacao">Confirmar Observação</button>
+      </div>
 
       <!-- Valor Total -->
       <div id="valor-total-previsto" class="valor-total-previsto">
         Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
       </div>
-
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
@@ -115,6 +162,39 @@
       });
 
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
+
+      // Exibir bloco de observação
+      $("#btn-observacao").click(function(){
+        $("#observacao-bloco").slideDown();
+        $(this).hide(); // Esconde o botão após clicar
+      });
+
+      // Habilitar textarea ao selecionar setor
+      $("#setor-observacao").change(function(){
+        if ($(this).val()) {
+          $("#texto-observacao").prop("disabled", false);
+        } else {
+          $("#texto-observacao").prop("disabled", true);
+        }
+      });
+
+      // Confirmar observação e permitir adicionar outra
+      $("#confirmar-observacao").click(function(){
+        const setor = $("#setor-observacao").val();
+        const texto = $("#texto-observacao").val().trim();
+        if (!setor || !texto) {
+          alert("Preencha o setor e a observação.");
+          return;
+        }
+
+        // Aqui futuramente será salvo no backend ou exibido na tela
+        // Por agora só limpamos e permitimos adicionar outra
+        $("#observacao-bloco").slideUp();
+        $("#setor-observacao").val("");
+        $("#texto-observacao").val("").prop("disabled", true);
+        $("#btn-observacao").text("Adicionar outra observação").show();
+      });
+
       // Carregar clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
@@ -133,12 +213,12 @@
         const count = $(".produto-bloco").length;
         $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
       }
+
       function updateRemoveButtons() {
         const cnt = $(".produto-bloco").length;
         $(".btn-remove").prop("disabled", cnt <= 1);
       }
 
-      // Ao mudar cliente, buscar prazos/produtos
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes, #produtos").empty();
@@ -146,14 +226,12 @@
         $(".error-prazos, #condicao-a-vista").hide();
         windowProdutos = [];
 
-        // Oculta prazos se não tiver cliente
         if (!id) {
           $("#prazos-container").hide();
           updateAddButton();
           return;
         }
 
-        // Mostra prazos
         $("#prazos-container").show();
 
         $.get(`/api/clientes/${id}`, function(cli){
@@ -170,14 +248,12 @@
         });
       });
 
-      // Mostrar condição à vista se marcado
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
         const avista = $("#prazosCheckboxes input:checked")
           .filter((i,el)=>el.value.toLowerCase().includes("vista")).length > 0;
         $("#condicao-a-vista").toggle(avista);
       });
 
-      // Adicionar produto
       $("#adicionar-produto").click(adicionarProduto);
       function adicionarProduto(){
         if ($(".produto-bloco").length >= windowProdutos.length) return;
@@ -275,6 +351,7 @@
       function parseMask(str){
         return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", "."))||0;
       }
+
       function formatarNumero(valor, inteiro=false){
         const partes = inteiro
           ? [Math.floor(valor).toString()]
@@ -325,7 +402,7 @@
           data_coleta: $("#data-coleta").val(),
           prazos: prSel,
           condicao_pagamento_a_vista: cond,
-          observacao: "", // campo foi substituído por botão
+          observacao: "", // ainda não envia observações por setor
           itens: []
         };
         $(".produto-bloco").each(function(){
