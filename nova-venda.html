@@ -28,6 +28,7 @@
     .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
+    #prazos-container { display: none; }
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
@@ -36,6 +37,7 @@
     .valor-total-previsto { background: #fffbe6; border: 1.5px solid #ffe066; border-radius: 7px; padding: 16px 20px; margin: 22px 0 10px 0; font-size: 18px; font-weight: 500; color: #333; display: flex; align-items: center; justify-content: flex-start; max-width: 380px; flex-wrap: nowrap; }
     .valor-total-previsto #valor-total { font-size: 22px; font-weight: bold; color: #178009; margin-left: 10px; letter-spacing: 0.5px; white-space: nowrap; display: inline-block; }
     .input-nao-editavel { background: #ececec !important; color: #495057 !important; border: 1.5px solid #d1d1d1 !important; cursor: not-allowed; font-weight: bold; opacity: 0.6; }
+    .btn-observacao { margin: 10px auto 30px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -72,33 +74,33 @@
         </select>
       </div>
 
-      <!-- Prazos e Condição à Vista -->
-      <div class="form-group">
-        <label>Prazos de Pagamento</label>
-        <div id="prazosCheckboxes"></div>
-        <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
-          <label for="condicao_pagamento_a_vista"><strong>Condição para pagamento à vista:</strong></label>
-          <select id="condicao_pagamento_a_vista">
-            <option value="">Selecione</option>
-            <option value="Liberar caminhão">Liberar caminhão</option>
-            <option value="Aguardar pagamento">Aguardar pagamento</option>
-          </select>
+      <!-- Prazos e Condição à Vista (visível somente após selecionar cliente) -->
+      <div id="prazos-container">
+        <div class="form-group">
+          <label>Prazos de Pagamento</label>
+          <div id="prazosCheckboxes"></div>
+          <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
+            <label for="condicao_pagamento_a_vista"><strong>Condição para pagamento à vista:</strong></label>
+            <select id="condicao_pagamento_a_vista">
+              <option value="">Selecione</option>
+              <option value="Liberar caminhão">Liberar caminhão</option>
+              <option value="Aguardar pagamento">Aguardar pagamento</option>
+            </select>
+          </div>
+          <p class="error-prazos">Selecione ao menos um prazo.</p>
         </div>
-        <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
 
       <!-- Produtos Dinâmicos -->
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
 
+      <!-- NOVO BOTÃO DE OBSERVAÇÃO -->
+      <button type="button" id="btn-observacao" class="btn-observacao">Adicionar Observação</button>
+
       <!-- Valor Total -->
       <div id="valor-total-previsto" class="valor-total-previsto">
         Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
-      </div>
-
-      <div class="form-group">
-        <label for="observacao">Observação</label>
-        <textarea id="observacao"></textarea>
       </div>
 
       <button type="submit" class="btn">Gravar</button>
@@ -106,22 +108,19 @@
   </div>
   <script>
     $(function(){
-      // 1) Flatpickr
       flatpickr("#data-coleta", {
         locale: "pt",
         dateFormat: "d/m/Y",
         minDate: "today"
       });
 
-      // 2) Variáveis globais
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
-
-      // 3) Carregar clientes no select
+      // Carregar clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
         $("#cliente").select2({
-          placeholder: "Digite um nome de cliente",
+          placeholder: "Selecione um cliente",
           allowClear: true,
           width: "resolve"
         }).on("select2:open", () => {
@@ -130,7 +129,6 @@
         });
       });
 
-      // Atualizar estado dos botões de adicionar/remover
       function updateAddButton() {
         const count = $(".produto-bloco").length;
         $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
@@ -140,17 +138,24 @@
         $(".btn-remove").prop("disabled", cnt <= 1);
       }
 
-      // 4) Ao mudar cliente, buscar prazos/produtos
+      // Ao mudar cliente, buscar prazos/produtos
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("R$ 0,00");
         $(".error-prazos, #condicao-a-vista").hide();
         windowProdutos = [];
+
+        // Oculta prazos se não tiver cliente
         if (!id) {
+          $("#prazos-container").hide();
           updateAddButton();
           return;
         }
+
+        // Mostra prazos
+        $("#prazos-container").show();
+
         $.get(`/api/clientes/${id}`, function(cli){
           windowCodigos = cli.codigosFiscais || [];
           windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
@@ -165,17 +170,15 @@
         });
       });
 
-      // Mostrar/ocultar condição à vista
+      // Mostrar condição à vista se marcado
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
         const avista = $("#prazosCheckboxes input:checked")
           .filter((i,el)=>el.value.toLowerCase().includes("vista")).length > 0;
         $("#condicao-a-vista").toggle(avista);
       });
 
-      // Botão adicionar produto
+      // Adicionar produto
       $("#adicionar-produto").click(adicionarProduto);
-
-      // Função para adicionar um bloco de produto
       function adicionarProduto(){
         if ($(".produto-bloco").length >= windowProdutos.length) return;
         const usados = $(".produto-bloco").map((i,el)=>$(el).find(".select-produto").val()).get().filter(Boolean);
@@ -192,19 +195,13 @@
           });
         bloco.append(btnRemove);
 
-        // Produto select
         const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
         dispon.forEach(p=>selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
         bloco.append('<div class="form-group"><label>Produto</label></div>')
              .children().last().append(selProd);
 
-        // Valor por quilo (readonly)
         bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
-
-        // Peso
         bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
-
-        // Tipo de peso
         bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
           <select class="tipo-peso" required>
             <option value="">Selecione</option>
@@ -212,18 +209,14 @@
             <option value="Aproximado">Aproximado</option>
           </select>
         </div>`);
-
-        // Subtotal
         bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-        // Código fiscal
         const selCod = $('<select class="select-codigo-fiscal" required></select>')
           .append('<option value="">Selecione</option>');
         windowCodigos.forEach(c=>selCod.append(`<option value="${c}">${c}</option>`));
         bloco.append('<div class="form-group"><label>Código</label></div>')
              .children().last().append(selCod);
 
-        // Grupo personalizar
         const gp = $(`<div class="grupo-personalizar">
   <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
   <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
@@ -232,7 +225,6 @@
         bloco.append(gp);
         selCod.change(()=>gp.toggle(selCod.val()==="Personalizar"));
 
-        // Máscaras e cálculo interno
         gp.find(".valor-com-nota")
           .on("input", function(){
             const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val())*100);
@@ -272,7 +264,6 @@
         }
       }
 
-      // Atualiza valor total
       function atualizarTotal(){
         let tot=0;
         $(".produto-bloco").each(function(){
@@ -281,7 +272,6 @@
         $("#valor-total").text("R$ "+formatarNumero(tot));
       }
 
-      // Parse e formatação de strings monetárias
       function parseMask(str){
         return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",", "."))||0;
       }
@@ -293,18 +283,15 @@
         return inteiro ? partes[0] : partes.join(",");
       }
 
-      // SUBMIT com validação extra
       $("#form-pedido").submit(function(e){
         e.preventDefault();
 
-        // Valida prazos
         const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
         if(!prSel.length){
           $(".error-prazos").show();
           return;
         }
 
-        // Se tiver "à vista", exige condição
         const precisa = prSel.some(p=>p.toLowerCase().includes("vista"));
         const cond = $("#condicao_pagamento_a_vista").val();
         if(precisa && !cond){
@@ -312,7 +299,6 @@
           return;
         }
 
-        // Valida personalizar
         let err=false;
         $(".produto-bloco").each(function(){
           const cod = $(this).find(".select-codigo-fiscal").val();
@@ -330,10 +316,8 @@
         });
         if(err) return;
 
-        // Confirma
         if(!confirm("Você tem certeza que deseja gravar este pedido?")) return;
 
-        // Monta payload
         const dados = {
           cliente_id: $("#cliente").val(),
           empresa: $("#empresa").val(),
@@ -341,7 +325,7 @@
           data_coleta: $("#data-coleta").val(),
           prazos: prSel,
           condicao_pagamento_a_vista: cond,
-          observacao: $("#observacao").val(),
+          observacao: "", // campo foi substituído por botão
           itens: []
         };
         $(".produto-bloco").each(function(){
@@ -365,7 +349,6 @@
           }
         });
 
-        // Envia
         fetch("/api/pedidos",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -375,7 +358,6 @@
         .then(r=>{ if(r.mensagem) location.href="vendas.html?sucesso=1"; else alert("Erro ao salvar o pedido."); })
         .catch(()=>alert("Erro ao salvar o pedido."));
       });
-
     });
   </script>
 </body>
