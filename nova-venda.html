@@ -56,6 +56,10 @@
       margin-bottom: 8px;
       font-weight: 500;
     }
+    .btn-azul {
+      background-color: #007bff;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -65,7 +69,7 @@
     <h1>Novo Pedido</h1>
     <a href="vendas.html" class="btn-voltar">Voltar</a>
     <form id="form-pedido">
-      <!-- Campos iniciais -->
+      <!-- Empresa -->
       <div class="form-group">
         <label for="empresa">Empresa</label>
         <select id="empresa" required>
@@ -75,6 +79,7 @@
         </select>
       </div>
 
+      <!-- Cliente -->
       <div class="form-group">
         <label for="cliente">Cliente</label>
         <select id="cliente" required style="width: 100%">
@@ -82,11 +87,13 @@
         </select>
       </div>
 
+      <!-- Data Prevista -->
       <div class="form-group">
         <label for="data-coleta">Data Prevista da Coleta</label>
         <input type="text" id="data-coleta" required />
       </div>
 
+      <!-- Pedido para -->
       <div class="form-group">
         <label for="pedido-para">Pedido para</label>
         <select id="pedido-para" required>
@@ -96,8 +103,8 @@
         </select>
       </div>
 
-      <!-- Prazos -->
-      <div class="form-group">
+      <!-- Prazos de Pagamento -->
+      <div class="form-group" id="grupo-prazos" style="display: none;">
         <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
@@ -115,7 +122,15 @@
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
 
-      <!-- Observações -->
+      <!-- Valor Total Previsto -->
+      <div id="valor-total-previsto" class="valor-total-previsto">
+        Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
+      </div>
+
+      <!-- Botão azul de adicionar observação -->
+      <button type="button" id="btn-adicionar-observacao" class="btn btn-azul">Adicionar Observação</button>
+
+      <!-- Área de Observação (inicialmente oculta) -->
       <div id="observacao-bloco">
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
@@ -134,17 +149,12 @@
           <textarea id="texto-observacao" disabled></textarea>
         </div>
 
-        <button type="button" id="btn-confirmar-observacao" class="btn" style="background-color:#007bff;color:white">Confirmar Observação</button>
+        <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
       </div>
 
       <div id="observacoes-confirmadas" style="display:none;"></div>
-      <button type="button" id="btn-adicionar-observacao" class="btn">Adicionar Observação</button>
 
-      <!-- Total + Gravar -->
-      <div id="valor-total-previsto" class="valor-total-previsto">
-        Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
-      </div>
-
+      <!-- Botão Gravar -->
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
@@ -159,7 +169,7 @@
     let windowPrazos = [], windowProdutos = [], windowCodigos = [];
     let observacoes = [];
 
-    // Carrega clientes com Select2
+    // Carrega clientes
     $.get("/api/clientes", function(clientes){
       const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
       clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
@@ -173,9 +183,10 @@
       });
     });
 
-    // Cliente selecionado → carrega prazos e produtos
+    // Ao selecionar cliente → mostrar prazos e produtos
     $("#cliente").change(function(){
       const id = $(this).val();
+      $("#grupo-prazos").hide();
       $("#prazosCheckboxes, #produtos").empty();
       $("#valor-total").text("R$ 0,00");
       $(".error-prazos, #condicao-a-vista").hide();
@@ -191,6 +202,7 @@
         windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
         windowProdutos = cli.produtos_autorizados || [];
 
+        $("#grupo-prazos").show();
         windowPrazos.forEach(pz => {
           $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
         });
@@ -206,16 +218,15 @@
       $("#condicao-a-vista").toggle(avista);
     });
 
-    // Botão amarelo: mostrar bloco observação
+    // Mostrar bloco de observação
     $("#btn-adicionar-observacao").click(function(){
       $("#observacao-bloco").slideDown();
       $(this).hide();
     });
 
-    // Habilita campo de texto só após setor
+    // Habilita textarea após setor
     $("#setor-observacao").change(function(){
-      const setor = $(this).val();
-      $("#texto-observacao").prop("disabled", !setor);
+      $("#texto-observacao").prop("disabled", !$(this).val());
     });
 
     // Confirmar observação
