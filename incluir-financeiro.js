@@ -149,10 +149,9 @@ async function carregarPedidosFinanceiro() {
       const blocoTicket = document.createElement('div');
       blocoTicket.style.marginTop = '25px';
       blocoTicket.innerHTML = `
-        <label style="font-weight: bold;">Ticket da Balança:</label><br>
-        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
-          style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
-      `;
+  <label style="font-weight: bold;">Ticket da Balança:</label><br>
+  <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
+`;
       form.appendChild(blocoTicket);
 
       setTimeout(() => {
