@@ -420,15 +420,6 @@ function resetarVencimentosPadrao() {
   atualizarBotaoLiberar();
 }
 
-setTimeout(() => {
-  const valorTotalTag = document.getElementById('reset-vencimentos');
-  if (valorTotalTag) {
-    valorTotalTag.style.cursor = 'pointer';
-    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-    valorTotalTag.onclick = resetarVencimentosPadrao;
-  }
-}, 100);
-
 function atualizarBotaoLiberar() {
   const rows = containerCinza.querySelectorAll('.vencimento-row');
   let soma = 0;
@@ -450,6 +441,15 @@ function atualizarBotaoLiberar() {
 
 // Inicializa
 renderizarVencimentos(valoresPadrao);
+
+  setTimeout(() => {
+  const valorTotalTag = document.getElementById('reset-vencimentos');
+  if (valorTotalTag) {
+    valorTotalTag.style.cursor = 'pointer';
+    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+    valorTotalTag.onclick = resetarVencimentosPadrao;
+  }
+}, 100);
 
    const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
