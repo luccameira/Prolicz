@@ -66,7 +66,7 @@
         <label id="labelDocumento" for="documento">CNPJ</label>
         <input type="text" id="documento" required>
         <label id="labelNomeFantasia" for="nomeFantasia">Nome Fantasia</label>
-        <input type="text" id="nomeFantasia" required>
+        <input type="text" id="nomeFantasia" required maxlength="50">
         <div id="divSituacaoTributaria">
           <label for="situacaoTributaria">Situação Tributária</label>
           <select id="situacaoTributaria">
@@ -107,9 +107,21 @@
         <h3>Contato</h3>
         <div id="contatos">
           <div class="contato-group">
-            <input type="text" class="nome-contato" placeholder="Nome do contato" required>
+            <input
+  type="text"
+  class="nome-contato"
+  placeholder="Nome do contato"
+  required
+  maxlength="25"
+/>
             <input type="text" class="telefone-contato" placeholder="Telefone" required>
-            <input type="email" class="email-contato" placeholder="E-mail" required>
+            <input
+  type="email"
+  class="email-contato"
+  placeholder="E-mail"
+  required
+  maxlength="35"
+/>
             <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
           </div>
         </div>

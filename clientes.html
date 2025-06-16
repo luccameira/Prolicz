@@ -13,18 +13,15 @@
       font-family: 'Roboto', Arial, sans-serif;
       background: #f5f6fa;
     }
-
     .main-content {
       margin-left: 280px;
       padding: 100px 40px 40px;
     }
-
     h1 {
       margin-bottom: 20px;
-      font-weight: 700; /* negrito */
+      font-weight: 700;
       font-size: 22px;
     }
-
     .btn {
       padding: 6px 12px;
       border: none;
@@ -35,52 +32,39 @@
       font-weight: 600;
       user-select: none;
     }
-
     .btn-editar {
       background-color: #28a745;
       color: white;
       margin-right: 6px;
     }
-
-    .btn-editar:hover {
-      background-color: #218838;
-    }
-
+    .btn-editar:hover { background-color: #218838; }
     .btn-excluir {
       background-color: #dc3545;
       color: white;
     }
-
-    .btn-excluir:hover {
-      background-color: #c82333;
-    }
-
+    .btn-excluir:hover { background-color: #c82333; }
     .btn-adicionar {
       background-color: #ffc107;
       color: black;
       margin-bottom: 10px;
     }
-
     .filtros {
       display: flex;
       gap: 20px;
       flex-wrap: wrap;
       margin-bottom: 15px;
     }
-
     .filtro-item {
       display: flex;
       flex-direction: column;
       min-width: 180px;
       flex: 1;
     }
-
     .filtro-item label {
       font-weight: 500;
       font-size: 14px;
       margin-bottom: 5px;
     }
-
     .filtro-item input,
     .filtro-item select {
       padding: 6px;
@@ -90,7 +74,6 @@
       box-sizing: border-box;
       font-size: 14px;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -98,25 +81,20 @@
       margin-top: 20px;
       font-size: 14px;
     }
-
     th, td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #ddd;
     }
-
-    /* Aqui está o fundo neutro nos títulos da tabela */
     th {
-      background-color: #f0f0f0; /* cinza claro neutro */
-      color: #333; /* texto cinza escuro */
+      background-color: #f0f0f0;
+      color: #333;
       font-weight: 600;
       text-transform: uppercase;
     }
-
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
-
     tr:hover {
       background-color: #e2e6ea;
       cursor: pointer;
@@ -156,13 +134,12 @@
         <tr>
           <th>Nome</th>
           <th>CNPJ</th>
-          <th>Email</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody id="tabela-clientes">
-        <tr><td colspan="5">Carregando clientes...</td></tr>
+        <tr><td colspan="4">Carregando clientes...</td></tr>
       </tbody>
     </table>
   </div>
@@ -176,7 +153,7 @@
           tbody.innerHTML = '';
 
           if (!clientes.length) {
-            tbody.innerHTML = '<tr><td colspan="5">Nenhum cliente encontrado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4">Nenhum cliente encontrado.</td></tr>';
             return;
           }
 
@@ -184,8 +161,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td>${cliente.nome_fantasia}</td>
-              <td>${cliente.documento || '---'}</td>
-              <td>${cliente.email || '---'}</td>
+              <td>${cliente.cnpj || '---'}</td>
               <td>${cliente.status || 'Ativo'}</td>
               <td>
                 <button class="btn btn-editar" onclick="event.stopPropagation(); location.href='editar-cliente.html?id=${cliente.id}'">Editar</button>
@@ -199,7 +175,7 @@
           });
         })
         .catch(() => {
-          document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="5">Erro ao carregar clientes.</td></tr>';
+          document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4">Erro ao carregar clientes.</td></tr>';
         });
     });
 
