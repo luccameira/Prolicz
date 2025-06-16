@@ -222,10 +222,10 @@ router.post('/', async (req, res) => {
   try {
     // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta']
-    );
+  `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, condicao_pagamento_avista, status, data_criacao)
+   VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+  [cliente_id, empresa || null, tipo, dataISO, observacao, condicao_pagamento_a_vista || null, status || 'Aguardando Início da Coleta']
+);
 
     const pedido_id = pedidoResult.insertId;
 
