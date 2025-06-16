@@ -296,3 +296,14 @@ h1 {
   cursor: pointer;
   font-weight: 500;
 }
+
+/* Miniatura da imagem do ticket da balança */
+img.ticket-balanca {
+  max-height: 180px;         /* Limita a altura */
+  width: auto;               /* Mantém a proporção da imagem */
+  border-radius: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+  object-fit: contain;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
