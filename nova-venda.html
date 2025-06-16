@@ -70,12 +70,10 @@
       font-weight: bold;
       opacity: 0.6;
     }
-
     textarea:disabled {
       background-color: #e0e0e0;
       color: #666;
     }
-
     #observacao-bloco {
       margin-top: 20px;
       padding: 15px;
@@ -112,6 +110,26 @@
       font-weight: 500;
       border-bottom: 1px solid rgba(0,0,0,0.1);
       padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .obs-texto {
+      flex-grow: 1;
+    }
+
+    .obs-acoes {
+      white-space: nowrap;
+      margin-left: 10px;
+    }
+
+    .obs-acoes button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 4px;
     }
 
     .btn-azul {
@@ -127,6 +145,7 @@
     <h1>Novo Pedido</h1>
     <a href="vendas.html" class="btn-voltar">Voltar</a>
     <form id="form-pedido">
+
       <!-- Empresa -->
       <div class="form-group">
         <label for="empresa">Empresa</label>
@@ -211,6 +230,7 @@
         <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
       </div>
 
+      <!-- Lista de observações -->
       <div id="observacoes-confirmadas" style="display:none;"></div>
 
       <!-- Botão Gravar -->
@@ -228,9 +248,7 @@
       let windowPrazos = [], windowProdutos = [], windowCodigos = [];
       let observacoes = [];
       let editandoIndex = null;
-      let editandoObservacao = false; // <- controle para evitar o alerta indevido
 
-      // Carrega clientes
       $.get("/api/clientes", function(clientes){
         const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
         clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
@@ -244,7 +262,6 @@
         });
       });
 
-      // Mostra campo prazos + produtos ao escolher cliente
       $("#cliente").change(function(){
         const id = $(this).val();
         $("#grupo-prazos").hide();
@@ -273,36 +290,30 @@
         });
       });
 
-      // Mostrar condição à vista
       $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
         const avista = $("#prazosCheckboxes input:checked")
           .filter((i, el) => el.value.toLowerCase().includes("vista")).length > 0;
         $("#condicao-a-vista").toggle(avista);
       });
 
-      // Mostrar bloco observação
       $("#btn-adicionar-observacao").click(function(){
         $("#observacao-bloco").slideDown();
         $(this).hide();
         $("#btn-confirmar-observacao").text("Confirmar Observação");
       });
 
-      // Fechar observação
       $("#btn-fechar-observacao").click(function(){
         $("#observacao-bloco").slideUp();
         $("#btn-adicionar-observacao").show();
         $("#setor-observacao").val("");
         $("#texto-observacao").val("").prop("disabled", true);
         editandoIndex = null;
-        editandoObservacao = false;
       });
 
-      // Habilita textarea
       $("#setor-observacao").change(function(){
-        $("#texto-observacao").prop("disabled", !$(this).val()).css("background-color", $(this).val() ? "#fff" : "#e9ecef");
+        $("#texto-observacao").prop("disabled", !$(this).val());
       });
 
-      // Confirmar/editar observação
       $("#btn-confirmar-observacao").click(function(){
         const setor = $("#setor-observacao").val();
         const texto = $("#texto-observacao").val().trim();
@@ -320,34 +331,34 @@
 
         renderizarObservacoes();
         $("#setor-observacao").val("");
-        $("#texto-observacao").val("").prop("disabled", true).css("background-color", "#e9ecef");
+        $("#texto-observacao").val("").prop("disabled", true);
         $("#observacao-bloco").slideUp();
         $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
         editandoIndex = null;
-        editandoObservacao = false;
       });
 
-      // Renderiza observações confirmadas
       function renderizarObservacoes() {
         const html = observacoes.map((obs, i) => `
-          <div class="obs-item" style="border-top: 1px solid #ccc; padding-top: 8px; margin-top: 8px;">
-            🔹 <strong>${obs.setor}:</strong> ${obs.texto}
-            <button style="margin-left: 6px; font-size: 13px;" onclick="editarObservacao(${i})">✏️</button>
-            <button style="margin-left: 2px; font-size: 13px;" onclick="excluirObservacao(${i})">🗑️</button>
+          <div class="obs-item">
+            <div class="obs-texto">🔹 <strong>${obs.setor}:</strong> ${obs.texto}</div>
+            <div class="obs-acoes">
+              <button onclick="editarObservacao(${i}, event)">✏️</button>
+              <button onclick="excluirObservacao(${i})">🗑️</button>
+            </div>
           </div>`).join("");
         $("#observacoes-confirmadas").html(html).show();
       }
 
-      window.editarObservacao = function(i) {
-        const obs = observacoes[i];
-        $("#setor-observacao").val(obs.setor);
-        $("#texto-observacao").val(obs.texto).prop("disabled", false).css("background-color", "#fff");
-        $("#observacao-bloco").slideDown();
-        $("#btn-adicionar-observacao").hide();
-        $("#btn-confirmar-observacao").text("Editar Observação");
-        editandoIndex = i;
-        editandoObservacao = true;
-      };
+      window.editarObservacao = function(i, event) {
+  if (event) event.preventDefault(); // impede o envio do formulário
+  const obs = observacoes[i];
+  $("#setor-observacao").val(obs.setor);
+  $("#texto-observacao").val(obs.texto).prop("disabled", false);
+  $("#observacao-bloco").slideDown();
+  $("#btn-adicionar-observacao").hide();
+  $("#btn-confirmar-observacao").text("Editar Observação");
+  editandoIndex = i;
+};
 
       window.excluirObservacao = function(i) {
         observacoes.splice(i, 1);
@@ -471,11 +482,6 @@
       $("#form-pedido").submit(function(e){
         e.preventDefault();
 
-        // Se estiver apenas editando observação, não mostrar confirmação
-        if (editandoObservacao) {
-          return;
-        }
-
         const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
         if (!prSel.length) {
           $(".error-prazos").show();
@@ -489,7 +495,8 @@
           return;
         }
 
-        if (!confirm("Você tem certeza que deseja gravar este pedido?")) return;
+        // Só confirma se NÃO estiver editando uma observação
+        if (editandoIndex === null && !confirm("Você tem certeza que deseja gravar este pedido?")) return;
 
         const dados = {
           cliente_id: $("#cliente").val(),
