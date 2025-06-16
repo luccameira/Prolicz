@@ -216,7 +216,7 @@ router.get('/clientes/:id/produtos', async (req, res) => {
 
 // POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens } = req.body;
+  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens, condicao_pagamento_a_vista } = req.body;
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
