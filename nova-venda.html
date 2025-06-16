@@ -43,6 +43,19 @@
       background: #f5f5f5;
       border-radius: 8px;
       display: none;
+      position: relative;
+    }
+    .btn-fechar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: red;
+      color: white;
+      border: none;
+      font-size: 16px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     #observacoes-confirmadas {
       margin-top: 20px;
@@ -105,7 +118,6 @@
 
       <!-- Prazos de Pagamento -->
       <div class="form-group" id="grupo-prazos" style="display: none;">
-        <label>Prazos de Pagamento</label>
         <div id="prazosCheckboxes"></div>
         <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
           <label for="condicao_pagamento_a_vista"><strong>Condição para pagamento à vista:</strong></label>
@@ -132,6 +144,7 @@
 
       <!-- Área de Observação (inicialmente oculta) -->
       <div id="observacao-bloco">
+        <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
           <select id="setor-observacao">
@@ -222,6 +235,14 @@
     $("#btn-adicionar-observacao").click(function(){
       $("#observacao-bloco").slideDown();
       $(this).hide();
+    });
+
+    // Fechar bloco de observação com X
+    $("#btn-fechar-observacao").click(function(){
+      $("#observacao-bloco").slideUp();
+      $("#btn-adicionar-observacao").show();
+      $("#setor-observacao").val("");
+      $("#texto-observacao").val("").prop("disabled", true);
     });
 
     // Habilita textarea após setor
