@@ -25,11 +25,21 @@ async function carregarPedidosConferencia() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    const statusHtml = `
-      <div class="status-badge status-amarelo">
-        <i class="fa fa-balance-scale"></i> ${pedido.status}
-      </div>
-    `;
+    // Etiqueta de status
+    let statusHtml = '';
+    if (pedido.status === 'Em Análise pelo Financeiro') {
+      statusHtml = `
+        <div class="status-badge status-verde">
+          <i class="fa fa-check-circle"></i> Peso Conferido
+        </div>
+      `;
+    } else {
+      statusHtml = `
+        <div class="status-badge status-amarelo">
+          <i class="fa fa-balance-scale"></i> ${pedido.status}
+        </div>
+      `;
+    }
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -107,7 +117,9 @@ async function carregarPedidosConferencia() {
       setTimeout(() => {
         const img = document.getElementById(ticketId);
         if (img) {
-          img.addEventListener('click', () => {
+          img.addEventListener('click', (event) => {
+            event.stopPropagation();
+
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
             overlay.style.top = '0';
@@ -122,11 +134,35 @@ async function carregarPedidosConferencia() {
 
             const modalImg = document.createElement('img');
             modalImg.src = img.src;
-            modalImg.style.width = '95vw';
-            modalImg.style.height = 'auto';
-            modalImg.style.maxHeight = '95vh';
+            modalImg.style.maxWidth = '90vw';
+            modalImg.style.maxHeight = '90vh';
+            modalImg.style.objectFit = 'contain';
             modalImg.style.borderRadius = '8px';
             modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            modalImg.style.cursor = 'zoom-in';
+            modalImg.style.transition = 'transform 0.3s ease';
+
+            let zoomed = false;
+
+            modalImg.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const rect = modalImg.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const percentX = (offsetX / rect.width) * 100;
+              const percentY = (offsetY / rect.height) * 100;
+
+              if (!zoomed) {
+                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+                modalImg.style.transform = 'scale(2.5)';
+                modalImg.style.cursor = 'zoom-out';
+                zoomed = true;
+              } else {
+                modalImg.style.transform = 'scale(1)';
+                modalImg.style.cursor = 'zoom-in';
+                zoomed = false;
+              }
+            });
 
             const closeBtn = document.createElement('div');
             closeBtn.innerHTML = '&times;';
@@ -136,8 +172,11 @@ async function carregarPedidosConferencia() {
             closeBtn.style.fontSize = '40px';
             closeBtn.style.color = '#fff';
             closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = (e) => {
+              e.stopPropagation();
+              document.body.removeChild(overlay);
+            };
 
-            closeBtn.onclick = () => document.body.removeChild(overlay);
             overlay.appendChild(modalImg);
             overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
@@ -146,11 +185,24 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    form.innerHTML += `
-      <button class="btn btn-registrar" onclick="confirmarPeso(${idPedido}, this)">Confirmar Peso</button>
-    `;
+    // Botão Confirmar Peso
+    if (pedido.status === 'Aguardando Conferência do Peso') {
+      const botaoConfirmar = document.createElement('button');
+      botaoConfirmar.className = 'btn btn-registrar';
+      botaoConfirmar.innerText = 'Confirmar Peso';
+      botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
+      form.appendChild(botaoConfirmar);
+    } else {
+      const botaoConfirmar = document.createElement('button');
+      botaoConfirmar.className = 'btn btn-registrar btn-disabled';
+      botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
+      botaoConfirmar.disabled = true;
+      form.appendChild(botaoConfirmar);
+    }
 
+    // Card só abre se estiver na vez da conferência
     card.addEventListener('click', (event) => {
+      if (pedido.status !== 'Aguardando Conferência do Peso') return;
       if (event.target.closest('button')) return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
@@ -193,10 +245,7 @@ async function confirmarPeso(pedidoId, botao) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosConferencia();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  carregarPedidosConferencia();
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+

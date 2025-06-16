@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     const [resultado] = await connection.query(sql, values);
     const clienteId = resultado.insertId;
 
-    // contatos
+    // inserir contatos
     for (const c of contatos) {
       await connection.query(
         'INSERT INTO contatos_cliente (cliente_id, nome, telefone, email) VALUES (?, ?, ?, ?)',
@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // produtos autorizados
+    // inserir produtos autorizados
     for (const p of produtos) {
       const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // prazos
+    // inserir prazos de pagamento
     for (const p of prazos) {
       await connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
@@ -60,12 +60,12 @@ router.post('/', async (req, res) => {
     res.status(201).json({ mensagem: 'Cliente cadastrado com sucesso!', id: clienteId });
   } catch (err) {
     console.error('Erro ao cadastrar cliente:', err);
-    // tratamento de duplicidade de documento
+    // trata duplicidade de CPF/CNPJ
     if (err.code === 'ER_DUP_ENTRY') {
-      const tipo = tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ';
-      return res.status(400).json({
-        erro: `Não foi possível criar este cliente pois o ${tipo} digitado já foi cadastrado para outro cliente.`
-      });
+      const campo = tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ';
+      return res
+        .status(400)
+        .json({ erro: `Não foi possível criar este cliente pois o ${campo} digitado já foi cadastrado para outro cliente.` });
     }
     res.status(500).json({ erro: 'Erro ao cadastrar cliente.', detalhes: err.message });
   }
@@ -112,10 +112,7 @@ router.get('/produtos', (req, res) => {
 router.get('/:id/produtos', (req, res) => {
   const clienteId = req.params.id;
   const sql = `
-    SELECT
-      p.id,
-      p.nome AS nome,
-      COALESCE(pa.valor_unitario, 0) AS valor_unitario
+    SELECT p.id, p.nome AS nome, COALESCE(pa.valor_unitario, 0) AS valor_unitario
     FROM produtos_autorizados pa
     JOIN produtos p ON p.id = pa.produto_id
     WHERE pa.cliente_id = ?
@@ -136,7 +133,7 @@ router.get('/:id', async (req, res) => {
     if (clienteRes.length === 0) return res.status(404).json({ erro: 'Cliente não encontrado.' });
 
     const cliente = clienteRes[0];
-    // parse de codigos fiscais
+    // parse dos códigos fiscais
     const rawCodigos = cliente.codigos_fiscais;
     let codigosArray = [];
     if (Array.isArray(rawCodigos)) {
@@ -152,21 +149,16 @@ router.get('/:id', async (req, res) => {
     cliente.codigosFiscais = codigosArray;
     delete cliente.codigos_fiscais;
 
-    // busca contatos, produtos e prazos
+    // buscar contatos, produtos e prazos
     const [contatosRes] = await connection.query(
       'SELECT nome, telefone, email FROM contatos_cliente WHERE cliente_id = ?',
       [id]
     );
     const [produtosRes] = await connection.query(
-      `
-      SELECT
-        p.id,
-        p.nome,
-        COALESCE(pa.valor_unitario, 0) AS valor_unitario
-      FROM produtos_autorizados pa
-      JOIN produtos p ON p.id = pa.produto_id
-      WHERE pa.cliente_id = ?
-      `,
+      `SELECT p.id, p.nome, COALESCE(pa.valor_unitario,0) AS valor_unitario
+       FROM produtos_autorizados pa
+       JOIN produtos p ON p.id = pa.produto_id
+       WHERE pa.cliente_id = ?`,
       [id]
     );
     const [prazosRes] = await connection.query(
@@ -218,33 +210,43 @@ router.put('/:id', async (req, res) => {
     }
 
     // produtos autorizados: limpa e reinsere
-    await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
-    for (const p of produtos) {
-      const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
-      const valor = parseFloat(
-        typeof raw === "string"
-          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
-          : raw
-      ) || 0;
-      await connection.query(
-        'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
-        [id, p.id, valor]
-      );
+    if (produtos.length) {
+      await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
+      for (const p of produtos) {
+        const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
+        const valor = parseFloat(
+          typeof raw === "string"
+            ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+            : raw
+        ) || 0;
+        await connection.query(
+          'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
+          [id, p.id, valor]
+        );
+      }
     }
 
-    // prazos de pagamento: limpa e reinsere
-    await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
-    for (const p of prazos) {
-      await connection.query(
-        'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
-        [id, p.descricao, p.dias]
-      );
+    // prazos: limpa e reinsere
+    if (prazos.length) {
+      await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
+      for (const p of prazos) {
+        await connection.query(
+          'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
+          [id, p.descricao, p.dias]
+        );
+      }
     }
 
     res.json({ mensagem: 'Cliente atualizado com sucesso!' });
   } catch (err) {
     console.error('Erro ao atualizar cliente:', err);
-    // aqui também poderia tratar ER_DUP_ENTRY se quiser bloquear edição para documento repetido
+    // trata duplicidade de CPF/CNPJ
+    if (err.code === 'ER_DUP_ENTRY') {
+      const campo = tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ';
+      return res
+        .status(400)
+        .json({ erro: `Não foi possível atualizar este cliente pois o ${campo} digitado já está cadastrado para outro cliente.` });
+    }
     res.status(500).json({ erro: 'Erro ao atualizar cliente.' });
   }
 });

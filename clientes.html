@@ -161,7 +161,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td>${cliente.nome_fantasia}</td>
-              <td>${cliente.cnpj || '---'}</td>
+              <td>${cliente.documento || '---'}</td>
               <td>${cliente.status || 'Ativo'}</td>
               <td>
                 <button class="btn btn-editar" onclick="event.stopPropagation(); location.href='editar-cliente.html?id=${cliente.id}'">Editar</button>

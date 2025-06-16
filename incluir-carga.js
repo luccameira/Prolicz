@@ -19,8 +19,39 @@ let tarefasAbertas = {};
 async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
-  pedidos = listaPedidos;
-  renderizarPedidos(listaPedidos);
+
+  const pedidosAgrupados = {};
+
+  listaPedidos.forEach(p => {
+    if (!pedidosAgrupados[p.id]) {
+      pedidosAgrupados[p.id] = {
+      id: p.id,
+      cliente: p.cliente,
+      data_coleta: p.data_coleta,
+      status: p.status,
+      materiais: [],
+      data_criacao: p.data_criacao,
+      data_coleta_iniciada: p.data_coleta_iniciada,
+      data_carga_finalizada: p.data_carga_finalizada,
+      data_conferencia_peso: p.data_conferencia_peso,
+      data_financeiro: p.data_financeiro,
+      data_nf_emitida: p.data_nf_emitida,
+      data_finalizado: p.data_finalizado
+     };
+    }
+
+    pedidosAgrupados[p.id].materiais.push({
+      item_id: p.item_id,
+      nome_produto: p.produto,
+      quantidade: parseFloat(p.peso_previsto),
+      unidade: 'Kg',
+      tipo_peso: p.tipo_peso
+    });
+  });
+
+  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
+  pedidos = listaFiltrada;
+  renderizarPedidos(listaFiltrada);
 }
 
 function renderizarPedidos(lista) {
@@ -36,10 +67,17 @@ function renderizarPedidos(lista) {
     pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
   }
 
-  const naoFinalizados = pedidosFiltrados.filter(p => p.status !== 'Aguardando Conferência do Peso');
-  const finalizados = pedidosFiltrados.filter(p => p.status === 'Aguardando Conferência do Peso');
-  const pedidosOrdenados = [...naoFinalizados, ...finalizados];
+  const pendentes = pedidosFiltrados.filter(p =>
+    p.status === 'Coleta Iniciada' &&
+    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
+  );
 
+  const concluidos = pedidosFiltrados.filter(p =>
+    !(p.status === 'Coleta Iniciada' &&
+    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
+  );
+
+  const pedidosOrdenados = [...pendentes, ...concluidos];
   listaEl.innerHTML = '';
 
   pedidosOrdenados.forEach(p => {
@@ -74,56 +112,39 @@ function renderizarPedidos(lista) {
     }, 10);
 
     const podeExecutar = p.status === 'Coleta Iniciada';
-
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
     form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
-    const materiais = [];
+      p.materiais.forEach((item, index) => {
+      const itemId = item.item_id;
+      if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
-    if (p.produto && p.peso_previsto && p.item_id) {
-      materiais.push({
-        item_id: p.item_id,
-        nome_produto: p.produto,
-        quantidade: parseFloat(p.peso_previsto),
-        unidade: 'Kg',
-        tipo_peso: 'Aproximado'
-      });
-    }
-
-    if (materiais.length > 0) {
-      materiais.forEach((item, index) => {
-        const itemId = item.item_id;
-        if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
-
-        const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-        const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
-
-        form.innerHTML += `
-          <div class="material-bloco" data-item-id="${itemId}">
-            <h4>${item.nome_produto}</h4>
-            <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
-            <div class="linha-peso">
-              <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-              <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
-            </div>
-            <div id="grupo-descontos-${itemId}"></div>
-            <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
-          </div>
-        `;
-      });
+      const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
       form.innerHTML += `
-        <div class="upload-ticket">
-          <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
-          <input type="file" id="ticket-${p.id}" accept="image/*">
+        <div class="material-bloco" data-item-id="${itemId}">
+          <h4>${item.nome_produto}</h4>
+          <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
+          <div class="linha-peso">
+            <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
+            <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
+          </div>
+          <div id="grupo-descontos-${itemId}"></div>
+          <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
         </div>
-        <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
       `;
-    } else {
-      form.innerHTML = `<p style="padding: 15px; color: #555;">Este pedido ainda não possui materiais vinculados para registro de peso.</p>`;
-    }
+    });
+
+    form.innerHTML += `
+      <div class="upload-ticket">
+        <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
+        <input type="file" id="ticket-${p.id}" accept="image/*">
+      </div>
+      <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
+    `;
 
     card.appendChild(form);
     listaEl.appendChild(card);
@@ -133,7 +154,13 @@ function renderizarPedidos(lista) {
 }
 
 function gerarBadgeStatus(status) {
-  if (status === 'Aguardando Conferência do Peso') {
+  const statusComPesoRegistrado = [
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF'
+  ];
+
+  if (statusComPesoRegistrado.includes(status)) {
     return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
   } else if (status === 'Coleta Iniciada') {
     return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
@@ -144,12 +171,8 @@ function gerarBadgeStatus(status) {
 
 function adicionarDescontoMaterial(itemId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
-  const existentes = descontosPorItem[itemId].map(d => d.motivo);
   const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
-
-  if (blocosAtuais >= 3) {
-    return alert("Limite de 3 tipos de desconto atingido.");
-  }
+  if (blocosAtuais >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
   const index = blocosAtuais;
   const idMotivo = `motivo-${itemId}-${index}`;
@@ -174,10 +197,11 @@ function adicionarDescontoMaterial(itemId) {
     </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
       <label id="${idLabel}" for="${idQtd}" style="min-width: 150px;">Qtd. Paletes Grandes:</label>
-      <input type="number" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" min="0" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      <input type="text" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" class="input-sem-seta" style="flex: 1; padding: 6px;">
     </div>
   `;
   container.appendChild(div);
+  aplicarMascaraMilhar(div.querySelector('input[type="text"]'));
 }
 
 function removerDescontoMaterial(itemId, index) {
@@ -198,20 +222,22 @@ function atualizarDescontoItem(itemId, index) {
 
   let labelTexto = 'Peso devolvido (Kg)';
   let pesoPorUnidade = 1;
-  let placeholder = 'Digite a quantidade de paletes';
+  let placeholder = 'Digite o peso devolvido em Kg';
 
   if (motivo === 'Palete Pequeno') {
     labelTexto = 'Qtd. Paletes Pequenos:';
     pesoPorUnidade = 6;
+    placeholder = 'Digite a quantidade de paletes';
   } else if (motivo === 'Palete Grande') {
     labelTexto = 'Qtd. Paletes Grandes:';
     pesoPorUnidade = 14.37;
+    placeholder = 'Digite a quantidade de paletes';
   }
 
   label.textContent = labelTexto;
   input.placeholder = placeholder;
 
-  const valor = parseFloat(input.value);
+  const valor = parseFloat(input.value.replace(/\./g, ''));
   const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
 
   descontosPorItem[itemId][index] = {
