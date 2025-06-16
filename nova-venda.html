@@ -28,14 +28,53 @@
     .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
+
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
+
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
-    .valor-total-previsto { background: #fffbe6; border: 1.5px solid #ffe066; border-radius: 7px; padding: 16px 20px; margin: 22px 0 10px 0; font-size: 18px; font-weight: 500; color: #333; display: flex; align-items: center; justify-content: flex-start; max-width: 380px; flex-wrap: nowrap; }
-    .valor-total-previsto #valor-total { font-size: 22px; font-weight: bold; color: #178009; margin-left: 10px; letter-spacing: 0.5px; white-space: nowrap; display: inline-block; }
-    .input-nao-editavel { background: #ececec !important; color: #495057 !important; border: 1.5px solid #d1d1d1 !important; cursor: not-allowed; font-weight: bold; opacity: 0.6; }
+
+    .valor-total-previsto {
+      background: #fffbe6;
+      border: 1.5px solid #ffe066;
+      border-radius: 7px;
+      padding: 16px 20px;
+      margin: 22px 0 10px 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      max-width: 380px;
+      flex-wrap: nowrap;
+    }
+
+    .valor-total-previsto #valor-total {
+      font-size: 22px;
+      font-weight: bold;
+      color: #178009;
+      margin-left: 10px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .input-nao-editavel {
+      background: #ececec !important;
+      color: #495057 !important;
+      border: 1.5px solid #d1d1d1 !important;
+      cursor: not-allowed;
+      font-weight: bold;
+      opacity: 0.6;
+    }
+
+    textarea:disabled {
+      background-color: #e0e0e0;
+      color: #666;
+    }
 
     #observacao-bloco {
       margin-top: 20px;
@@ -45,6 +84,7 @@
       display: none;
       position: relative;
     }
+
     .btn-fechar {
       position: absolute;
       top: 10px;
@@ -57,6 +97,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     #observacoes-confirmadas {
       margin-top: 20px;
       padding: 15px;
@@ -65,12 +106,14 @@
       border-radius: 6px;
       font-size: 15px;
     }
+
     .obs-item {
       margin-bottom: 8px;
       font-weight: 500;
-      border-top: 1px solid #ccc;
-      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      padding-bottom: 6px;
     }
+
     .btn-azul {
       background-color: #007bff;
       color: white;
@@ -144,9 +187,10 @@
       <!-- Botão azul de adicionar observação -->
       <button type="button" id="btn-adicionar-observacao" class="btn btn-azul">Adicionar Observação</button>
 
-      <!-- Área de Observação (inicialmente oculta) -->
+      <!-- Área de Observação -->
       <div id="observacao-bloco">
         <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
+
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
           <select id="setor-observacao">
@@ -173,324 +217,325 @@
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
-<script>
-  $(function(){
-    flatpickr("#data-coleta", {
-      locale: "pt",
-      dateFormat: "d/m/Y",
-      minDate: "today"
-    });
-
-    let windowPrazos = [], windowProdutos = [], windowCodigos = [];
-    let observacoes = [];
-    let indiceEdicao = -1;
-
-    // Carrega clientes
-    $.get("/api/clientes", function(clientes){
-      const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
-      clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
-      $("#cliente").select2({
-        placeholder: "Selecione um cliente",
-        allowClear: true,
-        width: "resolve"
-      }).on("select2:open", () => {
-        document.querySelector(".select2-container--open .select2-search__field")
-                .setAttribute("placeholder", "Digite um nome de cliente");
+  <script>
+    $(function(){
+      flatpickr("#data-coleta", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        minDate: "today"
       });
-    });
 
-    // Ao selecionar cliente → mostrar prazos e produtos
-    $("#cliente").change(function(){
-      const id = $(this).val();
-      $("#grupo-prazos").hide();
-      $("#prazosCheckboxes, #produtos").empty();
-      $("#valor-total").text("R$ 0,00");
-      $(".error-prazos, #condicao-a-vista").hide();
-      windowProdutos = [];
+      let windowPrazos = [], windowProdutos = [], windowCodigos = [];
+      let observacoes = [];
+      let editandoIndex = null;
+      let editandoObservacao = false; // <- controle para evitar o alerta indevido
 
-      if (!id) {
-        updateAddButton();
-        return;
-      }
-
-      $.get(`/api/clientes/${id}`, function(cli){
-        windowCodigos = cli.codigosFiscais || [];
-        windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
-        windowProdutos = cli.produtos_autorizados || [];
-
-        $("#grupo-prazos").show();
-        windowPrazos.forEach(pz => {
-          $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
+      // Carrega clientes
+      $.get("/api/clientes", function(clientes){
+        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
+        clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
+        $("#cliente").select2({
+          placeholder: "Selecione um cliente",
+          allowClear: true,
+          width: "resolve"
+        }).on("select2:open", () => {
+          document.querySelector(".select2-container--open .select2-search__field")
+            .setAttribute("placeholder", "Digite um nome de cliente");
         });
-
-        updateAddButton();
-        adicionarProduto();
       });
-    });
 
-    $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
-      const avista = $("#prazosCheckboxes input:checked")
-        .filter((i, el) => el.value.toLowerCase().includes("vista")).length > 0;
-      $("#condicao-a-vista").toggle(avista);
-    });
+      // Mostra campo prazos + produtos ao escolher cliente
+      $("#cliente").change(function(){
+        const id = $(this).val();
+        $("#grupo-prazos").hide();
+        $("#prazosCheckboxes, #produtos").empty();
+        $("#valor-total").text("R$ 0,00");
+        $(".error-prazos, #condicao-a-vista").hide();
+        windowProdutos = [];
 
-    // Abrir bloco observação
-    $("#btn-adicionar-observacao").click(function(){
-      $("#observacao-bloco").slideDown();
-      $(this).hide();
-      $("#btn-confirmar-observacao").text(indiceEdicao >= 0 ? "Editar Observação" : "Confirmar Observação");
-    });
-
-    // Fechar bloco observação
-    $("#btn-fechar-observacao").click(function(){
-      $("#observacao-bloco").slideUp();
-      $("#btn-adicionar-observacao").text("Adicionar Observação").show();
-      limparObservacao();
-    });
-
-    // Habilita textarea
-    $("#setor-observacao").change(function(){
-      $("#texto-observacao").prop("disabled", !$(this).val());
-    });
-
-    // Confirmar ou editar observação
-    $("#btn-confirmar-observacao").click(function(){
-      const setor = $("#setor-observacao").val();
-      const texto = $("#texto-observacao").val().trim();
-      if (!setor || !texto) return alert("Preencha o setor e a observação.");
-
-      if (indiceEdicao >= 0) {
-        observacoes[indiceEdicao] = { setor, texto };
-        indiceEdicao = -1;
-        $("#btn-confirmar-observacao").text("Confirmar Observação");
-      } else {
-        observacoes.push({ setor, texto });
-      }
-
-      renderizarObservacoes();
-      limparObservacao();
-      $("#observacao-bloco").slideUp();
-      $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
-    });
-
-    // Renderizar observações com ações
-    function renderizarObservacoes() {
-      const html = observacoes.map((obs, i) => `
-        <div class="obs-item" style="border-top: 1px solid #ccc; padding: 8px 0;">
-          🔹 <strong>${obs.setor}:</strong> ${obs.texto}
-          <span style="float:right;">
-            <button type="button" class="btn-editar" data-i="${i}" title="Editar">✏️</button>
-            <button type="button" class="btn-remover" data-i="${i}" title="Excluir">🗑️</button>
-          </span>
-        </div>
-      `).join("");
-
-      $("#observacoes-confirmadas").html(html).show();
-    }
-
-    // Ações dos botões de edição/remover
-    $("#observacoes-confirmadas").on("click", ".btn-editar", function(){
-      const i = $(this).data("i");
-      const obs = observacoes[i];
-      $("#setor-observacao").val(obs.setor);
-      $("#texto-observacao").val(obs.texto).prop("disabled", false);
-      indiceEdicao = i;
-      $("#btn-confirmar-observacao").text("Editar Observação");
-      $("#btn-adicionar-observacao").hide();
-      $("#observacao-bloco").slideDown();
-    });
-
-    $("#observacoes-confirmadas").on("click", ".btn-remover", function(){
-      const i = $(this).data("i");
-      observacoes.splice(i, 1);
-      renderizarObservacoes();
-      if (!observacoes.length) $("#observacoes-confirmadas").hide();
-    });
-
-    function limparObservacao() {
-      $("#setor-observacao").val("");
-      $("#texto-observacao").val("").prop("disabled", true);
-      indiceEdicao = -1;
-    }
-
-    // (continua na parte 4)
-    function formatarNumero(valor, inteiro = false) {
-      const partes = inteiro
-        ? [Math.floor(valor).toString()]
-        : valor.toFixed(2).replace(".", ",").split(",");
-      partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      return inteiro ? partes[0] : partes.join(",");
-    }
-
-    function parseMask(str) {
-      return parseFloat((str || "").replace(/[R$.\s]/g, "").replace(",", ".")) || 0;
-    }
-
-    function updateAddButton() {
-      const count = $(".produto-bloco").length;
-      $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
-    }
-
-    function updateRemoveButtons() {
-      const cnt = $(".produto-bloco").length;
-      $(".btn-remove").prop("disabled", cnt <= 1);
-    }
-
-    function atualizarTotal() {
-      let tot = 0;
-      $(".produto-bloco").each(function(){
-        tot += parseMask($(this).find(".subtotal").val());
-      });
-      $("#valor-total").text("R$ " + formatarNumero(tot));
-    }
-
-    $("#adicionar-produto").click(adicionarProduto);
-
-    function adicionarProduto(){
-      if ($(".produto-bloco").length >= windowProdutos.length) return;
-      const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get().filter(Boolean);
-      const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
-      if (!dispon.length) return;
-
-      const bloco = $('<div class="produto-bloco"></div>');
-      const btnRemove = $('<button type="button" class="btn-remove">×</button>')
-        .click(function(){
-          bloco.remove();
-          atualizarTotal();
+        if (!id) {
           updateAddButton();
-          updateRemoveButtons();
+          return;
+        }
+
+        $.get(`/api/clientes/${id}`, function(cli){
+          windowCodigos = cli.codigosFiscais || [];
+          windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
+          windowProdutos = cli.produtos_autorizados || [];
+
+          $("#grupo-prazos").show();
+          windowPrazos.forEach(pz => {
+            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
+          });
+
+          updateAddButton();
+          adicionarProduto();
         });
-      bloco.append(btnRemove);
-
-      const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
-      dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
-      bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
-      bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
-      bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
-      bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
-        <select class="tipo-peso" required>
-          <option value="">Selecione</option>
-          <option value="Exato">Exato</option>
-          <option value="Aproximado">Aproximado</option>
-        </select>
-      </div>`);
-      bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
-
-      const selCod = $('<select class="select-codigo-fiscal" required></select>')
-        .append('<option value="">Selecione</option>');
-      windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
-      bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
-
-      const gp = $(`<div class="grupo-personalizar">
-        <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
-        <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
-        <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
-      </div>`);
-      bloco.append(gp);
-      selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
-
-      gp.find(".valor-com-nota")
-        .on("input", function(){
-          const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
-          let rawCents = parseInt($(this).val().replace(/\D/g, "") || "0", 10);
-          rawCents = Math.min(rawCents, Math.max(vUnitCent - 1, 0), 99999);
-          const valor = rawCents / 100;
-          $(this).val(formatarNumero(valor));
-          const vPor = parseMask(bloco.find(".valor-por-quilo").val());
-          bloco.find(".valor-sem-nota").val(formatarNumero(vPor - valor));
-        })
-        .on("blur", function(){
-          const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
-          let raw = parseMask($(this).val());
-          raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
-          $(this).val(formatarNumero(raw));
-        });
-
-      selProd.change(function(){
-        const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
-        bloco.find(".valor-por-quilo").val(formatarNumero(v));
-        atualizarSub(); atualizarTotal();
       });
 
-      bloco.find(".peso").on("input", function(){
-        const val = parseMask($(this).val());
-        $(this).val(formatarNumero(val, true));
-        atualizarSub(); atualizarTotal();
+      // Mostrar condição à vista
+      $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
+        const avista = $("#prazosCheckboxes input:checked")
+          .filter((i, el) => el.value.toLowerCase().includes("vista")).length > 0;
+        $("#condicao-a-vista").toggle(avista);
       });
 
-      function atualizarSub(){
-        const v = parseMask(bloco.find(".valor-por-quilo").val());
-        const p = parseMask(bloco.find(".peso").val());
-        bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
+      // Mostrar bloco observação
+      $("#btn-adicionar-observacao").click(function(){
+        $("#observacao-bloco").slideDown();
+        $(this).hide();
+        $("#btn-confirmar-observacao").text("Confirmar Observação");
+      });
+
+      // Fechar observação
+      $("#btn-fechar-observacao").click(function(){
+        $("#observacao-bloco").slideUp();
+        $("#btn-adicionar-observacao").show();
+        $("#setor-observacao").val("");
+        $("#texto-observacao").val("").prop("disabled", true);
+        editandoIndex = null;
+        editandoObservacao = false;
+      });
+
+      // Habilita textarea
+      $("#setor-observacao").change(function(){
+        $("#texto-observacao").prop("disabled", !$(this).val()).css("background-color", $(this).val() ? "#fff" : "#e9ecef");
+      });
+
+      // Confirmar/editar observação
+      $("#btn-confirmar-observacao").click(function(){
+        const setor = $("#setor-observacao").val();
+        const texto = $("#texto-observacao").val().trim();
+
+        if (!setor || !texto) {
+          alert("Selecione um setor e digite a observação.");
+          return;
+        }
+
+        if (editandoIndex !== null) {
+          observacoes[editandoIndex] = { setor, texto };
+        } else {
+          observacoes.push({ setor, texto });
+        }
+
+        renderizarObservacoes();
+        $("#setor-observacao").val("");
+        $("#texto-observacao").val("").prop("disabled", true).css("background-color", "#e9ecef");
+        $("#observacao-bloco").slideUp();
+        $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
+        editandoIndex = null;
+        editandoObservacao = false;
+      });
+
+      // Renderiza observações confirmadas
+      function renderizarObservacoes() {
+        const html = observacoes.map((obs, i) => `
+          <div class="obs-item" style="border-top: 1px solid #ccc; padding-top: 8px; margin-top: 8px;">
+            🔹 <strong>${obs.setor}:</strong> ${obs.texto}
+            <button style="margin-left: 6px; font-size: 13px;" onclick="editarObservacao(${i})">✏️</button>
+            <button style="margin-left: 2px; font-size: 13px;" onclick="excluirObservacao(${i})">🗑️</button>
+          </div>`).join("");
+        $("#observacoes-confirmadas").html(html).show();
       }
 
-      $("#produtos").append(bloco);
-      updateAddButton();
-      updateRemoveButtons();
-    }
-
-    // Gravar pedido
-    $("#form-pedido").submit(function(e){
-      e.preventDefault();
-
-      const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
-      if (!prSel.length) {
-        $(".error-prazos").show();
-        return;
-      }
-
-      const precisa = prSel.some(p => p.toLowerCase().includes("vista"));
-      const cond = $("#condicao_pagamento_a_vista").val();
-      if (precisa && !cond) {
-        alert('Marcou prazo "à vista", selecione a condição de pagamento.');
-        return;
-      }
-
-      if (!confirm("Você tem certeza que deseja gravar este pedido?")) return;
-
-      const dados = {
-        cliente_id: $("#cliente").val(),
-        empresa: $("#empresa").val(),
-        tipo: $("#pedido-para").val(),
-        data_coleta: $("#data-coleta").val(),
-        prazos: prSel,
-        condicao_pagamento_a_vista: cond,
-        observacoes: observacoes,
-        itens: []
+      window.editarObservacao = function(i) {
+        const obs = observacoes[i];
+        $("#setor-observacao").val(obs.setor);
+        $("#texto-observacao").val(obs.texto).prop("disabled", false).css("background-color", "#fff");
+        $("#observacao-bloco").slideDown();
+        $("#btn-adicionar-observacao").hide();
+        $("#btn-confirmar-observacao").text("Editar Observação");
+        editandoIndex = i;
+        editandoObservacao = true;
       };
 
-      $(".produto-bloco").each(function(){
-        const nome  = $(this).find(".select-produto").val();
-        const valor = parseMask($(this).find(".valor-por-quilo").val());
-        const peso  = parseMask($(this).find(".peso").val());
-        const tp    = $(this).find(".tipo-peso").val();
-        const cod   = $(this).find(".select-codigo-fiscal").val();
-        const vc    = parseMask($(this).find(".valor-com-nota").val());
-        const vs    = parseMask($(this).find(".valor-sem-nota").val());
-        if (nome && valor && peso) {
-          dados.itens.push({
-            nome_produto: nome,
-            valor_unitario: valor,
-            peso,
-            tipo_peso: tp,
-            codigo_fiscal: cod,
-            valor_com_nota: vc,
-            valor_sem_nota: vs
-          });
-        }
-      });
+      window.excluirObservacao = function(i) {
+        observacoes.splice(i, 1);
+        renderizarObservacoes();
+      };
+      function formatarNumero(valor, inteiro = false) {
+        const partes = inteiro
+          ? [Math.floor(valor).toString()]
+          : valor.toFixed(2).replace(".", ",").split(",");
+        partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return inteiro ? partes[0] : partes.join(",");
+      }
 
-      fetch("/api/pedidos", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(dados)
-      })
-      .then(r => r.json())
-      .then(r => {
-        if (r.mensagem) location.href = "vendas.html?sucesso=1";
-        else alert("Erro ao salvar o pedido.");
-      })
-      .catch(() => alert("Erro ao salvar o pedido."));
+      function parseMask(str) {
+        return parseFloat((str || "").replace(/[R$.\s]/g, "").replace(",", ".")) || 0;
+      }
+
+      function updateAddButton() {
+        const count = $(".produto-bloco").length;
+        $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
+      }
+
+      function updateRemoveButtons() {
+        const cnt = $(".produto-bloco").length;
+        $(".btn-remove").prop("disabled", cnt <= 1);
+      }
+
+      function atualizarTotal() {
+        let tot = 0;
+        $(".produto-bloco").each(function(){
+          tot += parseMask($(this).find(".subtotal").val());
+        });
+        $("#valor-total").text("R$ " + formatarNumero(tot));
+      }
+
+      $("#adicionar-produto").click(adicionarProduto);
+
+      function adicionarProduto(){
+        if ($(".produto-bloco").length >= windowProdutos.length) return;
+        const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+        const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
+        if (!dispon.length) return;
+
+        const bloco = $('<div class="produto-bloco"></div>');
+        const btnRemove = $('<button type="button" class="btn-remove">×</button>')
+          .click(function(){
+            bloco.remove();
+            atualizarTotal();
+            updateAddButton();
+            updateRemoveButtons();
+          });
+        bloco.append(btnRemove);
+
+        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+        dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
+        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
+        bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
+        bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
+          <select class="tipo-peso" required>
+            <option value="">Selecione</option>
+            <option value="Exato">Exato</option>
+            <option value="Aproximado">Aproximado</option>
+          </select>
+        </div>`);
+        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
+
+        const selCod = $('<select class="select-codigo-fiscal" required></select>')
+          .append('<option value="">Selecione</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
+        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
+
+        const gp = $(`<div class="grupo-personalizar">
+          <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
+          <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
+          <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
+        </div>`);
+        bloco.append(gp);
+        selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
+
+        gp.find(".valor-com-nota")
+          .on("input", function(){
+            const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
+            let rawCents = parseInt($(this).val().replace(/\D/g, "") || "0", 10);
+            rawCents = Math.min(rawCents, Math.max(vUnitCent - 1, 0), 99999);
+            const valor = rawCents / 100;
+            $(this).val(formatarNumero(valor));
+            const vPor = parseMask(bloco.find(".valor-por-quilo").val());
+            bloco.find(".valor-sem-nota").val(formatarNumero(vPor - valor));
+          })
+          .on("blur", function(){
+            const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
+            let raw = parseMask($(this).val());
+            raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
+            $(this).val(formatarNumero(raw));
+          });
+
+        selProd.change(function(){
+          const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
+          bloco.find(".valor-por-quilo").val(formatarNumero(v));
+          atualizarSub(); atualizarTotal();
+        });
+
+        bloco.find(".peso").on("input", function(){
+          const val = parseMask($(this).val());
+          $(this).val(formatarNumero(val, true));
+          atualizarSub(); atualizarTotal();
+        });
+
+        function atualizarSub(){
+          const v = parseMask(bloco.find(".valor-por-quilo").val());
+          const p = parseMask(bloco.find(".peso").val());
+          bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
+        }
+
+        $("#produtos").append(bloco);
+        updateAddButton();
+        updateRemoveButtons();
+      }
+
+      $("#form-pedido").submit(function(e){
+        e.preventDefault();
+
+        // Se estiver apenas editando observação, não mostrar confirmação
+        if (editandoObservacao) {
+          return;
+        }
+
+        const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
+        if (!prSel.length) {
+          $(".error-prazos").show();
+          return;
+        }
+
+        const precisa = prSel.some(p => p.toLowerCase().includes("vista"));
+        const cond = $("#condicao_pagamento_a_vista").val();
+        if (precisa && !cond) {
+          alert('Marcou prazo "à vista", selecione a condição de pagamento.');
+          return;
+        }
+
+        if (!confirm("Você tem certeza que deseja gravar este pedido?")) return;
+
+        const dados = {
+          cliente_id: $("#cliente").val(),
+          empresa: $("#empresa").val(),
+          tipo: $("#pedido-para").val(),
+          data_coleta: $("#data-coleta").val(),
+          prazos: prSel,
+          condicao_pagamento_a_vista: cond,
+          observacoes: observacoes,
+          itens: []
+        };
+
+        $(".produto-bloco").each(function(){
+          const nome  = $(this).find(".select-produto").val();
+          const valor = parseMask($(this).find(".valor-por-quilo").val());
+          const peso  = parseMask($(this).find(".peso").val());
+          const tp    = $(this).find(".tipo-peso").val();
+          const cod   = $(this).find(".select-codigo-fiscal").val();
+          const vc    = parseMask($(this).find(".valor-com-nota").val());
+          const vs    = parseMask($(this).find(".valor-sem-nota").val());
+          if (nome && valor && peso) {
+            dados.itens.push({
+              nome_produto: nome,
+              valor_unitario: valor,
+              peso,
+              tipo_peso: tp,
+              codigo_fiscal: cod,
+              valor_com_nota: vc,
+              valor_sem_nota: vs
+            });
+          }
+        });
+
+        fetch("/api/pedidos", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(dados)
+        })
+        .then(r => r.json())
+        .then(r => {
+          if (r.mensagem) location.href = "vendas.html?sucesso=1";
+          else alert("Erro ao salvar o pedido.");
+        })
+        .catch(() => alert("Erro ao salvar o pedido."));
+      });
     });
-  });
-</script>
+  </script>
+</body>
+</html>
