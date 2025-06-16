@@ -143,6 +143,89 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
+      // === Exibir imagem do ticket da balança ===
+    if (pedido.ticket_balanca) {
+      const ticketId = `ticket-${id}`;
+      const blocoTicket = document.createElement('div');
+      blocoTicket.style.marginTop = '25px';
+      blocoTicket.innerHTML = `
+        <label style="font-weight: bold;">Ticket da Balança:</label><br>
+        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança"
+          style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
+      `;
+      form.appendChild(blocoTicket);
+
+      setTimeout(() => {
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', (event) => {
+            event.stopPropagation();
+
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
+
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.maxWidth = '90vw';
+            modalImg.style.maxHeight = '90vh';
+            modalImg.style.objectFit = 'contain';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            modalImg.style.cursor = 'zoom-in';
+            modalImg.style.transition = 'transform 0.3s ease';
+
+            let zoomed = false;
+
+            modalImg.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const rect = modalImg.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const percentX = (offsetX / rect.width) * 100;
+              const percentY = (offsetY / rect.height) * 100;
+
+              if (!zoomed) {
+                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+                modalImg.style.transform = 'scale(2.5)';
+                modalImg.style.cursor = 'zoom-out';
+                zoomed = true;
+              } else {
+                modalImg.style.transform = 'scale(1)';
+                modalImg.style.cursor = 'zoom-in';
+                zoomed = false;
+              }
+            });
+
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = (e) => {
+              e.stopPropagation();
+              document.body.removeChild(overlay);
+            };
+
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
+      }, 200);
+    }
+    
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
