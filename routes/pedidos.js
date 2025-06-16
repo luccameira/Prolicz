@@ -517,51 +517,51 @@ router.get('/nf', async (req, res) => {
 // GET /api/pedidos/financeiro
 router.get('/financeiro', async (req, res) => {
   try {
-    const sql = `
-     SELECT 
-  p.id AS pedido_id,
-  p.data_criacao,
-  p.tipo,
-  p.status,
-  p.data_coleta,
-  p.data_coleta_iniciada,
-  p.data_carga_finalizada,
-  p.data_conferencia_peso,
-  p.data_financeiro,
-  p.data_emissao_nf,
-  p.data_finalizado,
-  p.codigo_interno,
-  p.observacao,
-  p.empresa,
-  p.nota_fiscal,
-  p.ticket_balanca, -- ✅ Adiciona isso aqui
-  pedido.condicao_pagamento_avista
-  c.nome_fantasia AS cliente
-FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status IN (
-          'Coleta Iniciada',
-          'Coleta Finalizada',
-          'Aguardando Conferência do Peso',
-          'Em Análise pelo Financeiro',
-          'Aguardando Emissão de NF',
-          'Cliente Liberado',
-          'Finalizado'
-        )
-      ORDER BY 
-        CASE 
-          WHEN p.status = 'Coleta Iniciada' THEN 1
-          WHEN p.status = 'Coleta Finalizada' THEN 2
-          WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
-          WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
-          WHEN p.status = 'Aguardando Emissão de NF' THEN 5
-          WHEN p.status = 'Cliente Liberado' THEN 6
-          WHEN p.status = 'Finalizado' THEN 7
-          ELSE 99
-        END,
-        p.data_coleta ASC
-    `;
+   const sql = `
+  SELECT 
+    p.id AS pedido_id,
+    p.data_criacao,
+    p.tipo,
+    p.status,
+    p.data_coleta,
+    p.data_coleta_iniciada,
+    p.data_carga_finalizada,
+    p.data_conferencia_peso,
+    p.data_financeiro,
+    p.data_emissao_nf,
+    p.data_finalizado,
+    p.codigo_interno,
+    p.observacao,
+    p.empresa,
+    p.nota_fiscal,
+    p.ticket_balanca,
+    p.condicao_pagamento_avista,
+    c.nome_fantasia AS cliente
+  FROM pedidos p
+  INNER JOIN clientes c ON p.cliente_id = c.id
+  WHERE DATE(p.data_coleta) = CURDATE()
+    AND p.status IN (
+      'Coleta Iniciada',
+      'Coleta Finalizada',
+      'Aguardando Conferência do Peso',
+      'Em Análise pelo Financeiro',
+      'Aguardando Emissão de NF',
+      'Cliente Liberado',
+      'Finalizado'
+    )
+  ORDER BY 
+    CASE 
+      WHEN p.status = 'Coleta Iniciada' THEN 1
+      WHEN p.status = 'Coleta Finalizada' THEN 2
+      WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+      WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+      WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+      WHEN p.status = 'Cliente Liberado' THEN 6
+      WHEN p.status = 'Finalizado' THEN 7
+      ELSE 99
+    END,
+    p.data_coleta ASC
+`;
 
     const [pedidos] = await db.query(sql);
 
