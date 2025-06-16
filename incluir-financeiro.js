@@ -106,7 +106,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais?.forEach(item => {
+      pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -222,59 +222,14 @@ async function carregarPedidosFinanceiro() {
       }, 200);
     }
 
-      const separador = document.createElement('div');
+    const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // Exibir condição para pagamento à vista
-    if (pedido.condicao_pagamento_avista) {
-      const blocoCondicao = document.createElement('div');
-      blocoCondicao.className = 'obs-pedido';
-      blocoCondicao.innerHTML = `
-        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
-      `;
-      containerCinza.appendChild(blocoCondicao);
-    }
-
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
-    if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (!cod) cod = '(não informado)';
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        let descontosKg = 0;
-        if (item.descontos?.length) {
-          descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        }
-        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-        const totalCom = pesoFinalNum * valorComNota;
-        const totalSem = pesoFinalNum * valorSemNota;
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
-
-        return `
-          <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
-            <span class="etiqueta-codigo-fiscal">
-              <strong>Código Fiscal: ${cod}</strong> |
-              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
-              <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
-              <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
-              <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-            </span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    const totalVenda = totalComNota + totalSemNota;
+        const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
@@ -294,6 +249,25 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
+    let valoresPadrao = calcularValoresVencimentos();
+    renderizarVencimentos(valoresPadrao);
+
+    // ✅ NOVO LOCAL DA CONDIÇÃO DE PAGAMENTO À VISTA (entre vencimentos e códigos)
+    if (pedido.condicao_pagamento_avista) {
+      const blocoCondicao = document.createElement('div');
+      blocoCondicao.className = 'obs-pedido';
+      blocoCondicao.style.marginTop = '16px';
+      blocoCondicao.style.marginBottom = '10px';
+      blocoCondicao.style.background = '#fff3cd';
+      blocoCondicao.style.border = '1px solid #ffeeba';
+      blocoCondicao.style.padding = '10px 16px';
+      blocoCondicao.style.borderRadius = '6px';
+      blocoCondicao.innerHTML = `
+        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+      `;
+      containerCinza.appendChild(blocoCondicao);
+    }
+
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
@@ -304,7 +278,6 @@ async function carregarPedidosFinanceiro() {
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
 
     function renderizarVencimentos(valores) {
       vencContainer.innerHTML = '';
@@ -329,7 +302,7 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
-        // Máscara de moeda no input
+        // Máscara moeda
         inp.addEventListener('input', () => {
           let valor = inp.value.replace(/\D/g, '');
           valor = (parseInt(valor, 10) / 100).toFixed(2);
@@ -339,7 +312,7 @@ async function carregarPedidosFinanceiro() {
           });
         });
 
-         inp.addEventListener('blur', () => {
+        inp.addEventListener('blur', () => {
           const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
           const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
 
@@ -361,7 +334,7 @@ async function carregarPedidosFinanceiro() {
         etiquetaConfirmado.textContent = 'CONFIRMADO';
         etiquetaConfirmado.style.cursor = 'pointer';
 
-        function toggleConfirmacao() {
+          function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
 
@@ -433,8 +406,6 @@ async function carregarPedidosFinanceiro() {
       const btnFin = form.querySelector('.btn-registrar');
       if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
     }
-
-    renderizarVencimentos(valoresPadrao);
 
     form.appendChild(containerCinza);
 
