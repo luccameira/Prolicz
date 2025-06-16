@@ -434,6 +434,15 @@ function atualizarBotaoLiberar() {
 // Chamada inicial
 renderizarVencimentos(valoresPadrao);
 
+  setTimeout(() => {
+  const valorTotalTag = document.getElementById('reset-vencimentos');
+  if (valorTotalTag) {
+    valorTotalTag.style.cursor = 'pointer';
+    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+    valorTotalTag.onclick = resetarVencimentosPadrao;
+  }
+}, 200);
+
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
