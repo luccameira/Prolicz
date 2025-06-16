@@ -518,24 +518,25 @@ router.get('/nf', async (req, res) => {
 router.get('/financeiro', async (req, res) => {
   try {
     const sql = `
-      SELECT 
-        p.id AS pedido_id,
-        p.data_criacao,
-        p.tipo,
-        p.status,
-        p.data_coleta,
-        p.data_coleta_iniciada,
-        p.data_carga_finalizada,
-        p.data_conferencia_peso,
-        p.data_financeiro,
-        p.data_emissao_nf,
-        p.data_finalizado,
-        p.codigo_interno,
-        p.observacao,
-        p.empresa,
-        p.nota_fiscal,
-        c.nome_fantasia AS cliente
-      FROM pedidos p
+     SELECT 
+  p.id AS pedido_id,
+  p.data_criacao,
+  p.tipo,
+  p.status,
+  p.data_coleta,
+  p.data_coleta_iniciada,
+  p.data_carga_finalizada,
+  p.data_conferencia_peso,
+  p.data_financeiro,
+  p.data_emissao_nf,
+  p.data_finalizado,
+  p.codigo_interno,
+  p.observacao,
+  p.empresa,
+  p.nota_fiscal,
+  p.ticket_balanca, -- ✅ Adiciona isso aqui
+  c.nome_fantasia AS cliente
+FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
       WHERE DATE(p.data_coleta) = CURDATE()
         AND p.status IN (
