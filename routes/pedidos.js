@@ -214,17 +214,44 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   }
 });
 
-// POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
+// POST /api/pedidos - criar pedido (inclui condicao_pagamento_avista)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens } = req.body;
+  const { 
+    cliente_id, 
+    empresa, 
+    tipo, 
+    data_coleta, 
+    observacao, 
+    status, 
+    prazos, 
+    itens, 
+    condicao_pagamento_avista  // ✅ novo campo
+  } = req.body;
+
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
     // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta']
+      `INSERT INTO pedidos (
+        cliente_id, 
+        empresa, 
+        tipo, 
+        data_coleta, 
+        observacao, 
+        status, 
+        condicao_pagamento_avista,  -- ✅ novo campo
+        data_criacao
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        cliente_id,
+        empresa || null,
+        tipo,
+        dataISO,
+        observacao,
+        status || 'Aguardando Início da Coleta',
+        condicao_pagamento_avista || null  // ✅ valor sendo salvo
+      ]
     );
 
     const pedido_id = pedidoResult.insertId;
@@ -278,34 +305,6 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Erro ao criar pedido:', error);
     res.status(500).json({ erro: 'Erro ao criar pedido.' });
-  }
-});
-
-// PUT /api/pedidos/:id/coleta
-router.put('/:id/coleta', async (req, res) => {
-  const pedidoId = req.params.id;
-  const { placa, motorista, ajudante } = req.body;
-
-  if (!placa || !motorista) {
-    return res.status(400).json({ erro: 'Placa e nome do motorista são obrigatórios.' });
-  }
-
-  try {
-    await db.query(
-      `UPDATE pedidos 
-       SET status = 'Coleta Iniciada', 
-           placa_veiculo = ?, 
-           nome_motorista = ?, 
-           nome_ajudante = ?, 
-           data_coleta_iniciada = NOW() 
-       WHERE id = ?`,
-      [placa, motorista, ajudante || '', pedidoId]
-    );
-
-    res.status(200).json({ mensagem: 'Coleta iniciada com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao iniciar coleta:', error);
-    res.status(500).json({ erro: 'Erro ao iniciar coleta.' });
   }
 });
 
