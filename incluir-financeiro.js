@@ -229,14 +229,15 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
+    // Exibir condição para pagamento à vista
     if (pedido.condicao_pagamento_avista) {
-  const blocoCondicao = document.createElement('div');
-  blocoCondicao.className = 'obs-pedido';
-  blocoCondicao.innerHTML = `
-    <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
-  `;
-  containerCinza.appendChild(blocoCondicao);
-}
+      const blocoCondicao = document.createElement('div');
+      blocoCondicao.className = 'obs-pedido';
+      blocoCondicao.innerHTML = `
+        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+      `;
+      containerCinza.appendChild(blocoCondicao);
+    }
 
     let totalComNota = 0;
     let totalSemNota = 0;
@@ -293,7 +294,7 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
-    containerCinza.innerHTML = `
+    containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
@@ -328,7 +329,7 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
-        // === MÁSCARA DE MOEDA aplicada ===
+        // Máscara de moeda no input
         inp.addEventListener('input', () => {
           let valor = inp.value.replace(/\D/g, '');
           valor = (parseInt(valor, 10) / 100).toFixed(2);
@@ -338,12 +339,7 @@ async function carregarPedidosFinanceiro() {
           });
         });
 
-        const etiquetaConfirmado = document.createElement('span');
-        etiquetaConfirmado.className = 'etiqueta-valor-item';
-        etiquetaConfirmado.textContent = 'CONFIRMADO';
-        etiquetaConfirmado.style.cursor = 'pointer';
-
-        inp.addEventListener('blur', () => {
+         inp.addEventListener('blur', () => {
           const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
           const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
 
@@ -359,6 +355,11 @@ async function carregarPedidosFinanceiro() {
 
           atualizarBotaoLiberar();
         });
+
+        const etiquetaConfirmado = document.createElement('span');
+        etiquetaConfirmado.className = 'etiqueta-valor-item';
+        etiquetaConfirmado.textContent = 'CONFIRMADO';
+        etiquetaConfirmado.style.cursor = 'pointer';
 
         function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
