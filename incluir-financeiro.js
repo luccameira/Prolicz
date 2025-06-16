@@ -319,6 +319,16 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
+        // === MÁSCARA DE MOEDA aplicada ===
+        inp.addEventListener('input', () => {
+          let valor = inp.value.replace(/\D/g, '');
+          valor = (parseInt(valor, 10) / 100).toFixed(2);
+          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        });
+
         const etiquetaConfirmado = document.createElement('span');
         etiquetaConfirmado.className = 'etiqueta-valor-item';
         etiquetaConfirmado.textContent = 'CONFIRMADO';
@@ -418,7 +428,6 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
-    // Corrigir clique do botão reset
     const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
     if (valorTotalTag) {
       valorTotalTag.style.cursor = 'pointer';
@@ -438,7 +447,7 @@ async function carregarPedidosFinanceiro() {
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
 
-      card.appendChild(form);
+    card.appendChild(form);
 
     header.addEventListener('click', () => {
       if (pedido.status !== 'Em Análise pelo Financeiro') return;
