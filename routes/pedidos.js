@@ -535,6 +535,7 @@ router.get('/financeiro', async (req, res) => {
   p.empresa,
   p.nota_fiscal,
   p.ticket_balanca, -- ✅ Adiciona isso aqui
+  pedido.condicao_pagamento_avista
   c.nome_fantasia AS cliente
 FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
