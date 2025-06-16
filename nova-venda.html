@@ -68,6 +68,8 @@
     .obs-item {
       margin-bottom: 8px;
       font-weight: 500;
+      border-top: 1px solid #ccc;
+      padding: 8px 0;
     }
     .btn-azul {
       background-color: #007bff;
@@ -181,6 +183,7 @@
 
     let windowPrazos = [], windowProdutos = [], windowCodigos = [];
     let observacoes = [];
+    let indiceEdicao = -1;
 
     // Carrega clientes
     $.get("/api/clientes", function(clientes){
@@ -231,48 +234,86 @@
       $("#condicao-a-vista").toggle(avista);
     });
 
-    // Mostrar bloco de observação
+    // Abrir bloco observação
     $("#btn-adicionar-observacao").click(function(){
       $("#observacao-bloco").slideDown();
       $(this).hide();
+      $("#btn-confirmar-observacao").text(indiceEdicao >= 0 ? "Editar Observação" : "Confirmar Observação");
     });
 
-    // Fechar bloco de observação com X
+    // Fechar bloco observação
     $("#btn-fechar-observacao").click(function(){
       $("#observacao-bloco").slideUp();
-      $("#btn-adicionar-observacao").show();
-      $("#setor-observacao").val("");
-      $("#texto-observacao").val("").prop("disabled", true);
+      $("#btn-adicionar-observacao").text("Adicionar Observação").show();
+      limparObservacao();
     });
 
-    // Habilita textarea após setor
+    // Habilita textarea
     $("#setor-observacao").change(function(){
       $("#texto-observacao").prop("disabled", !$(this).val());
     });
 
-    // Confirmar observação
+    // Confirmar ou editar observação
     $("#btn-confirmar-observacao").click(function(){
       const setor = $("#setor-observacao").val();
       const texto = $("#texto-observacao").val().trim();
+      if (!setor || !texto) return alert("Preencha o setor e a observação.");
 
-      if (!setor || !texto) {
-        alert("Selecione um setor e digite a observação.");
-        return;
+      if (indiceEdicao >= 0) {
+        observacoes[indiceEdicao] = { setor, texto };
+        indiceEdicao = -1;
+        $("#btn-confirmar-observacao").text("Confirmar Observação");
+      } else {
+        observacoes.push({ setor, texto });
       }
 
-      observacoes.push({ setor, texto });
-
-      const html = observacoes.map(obs =>
-        `<p class="obs-item">🔹 <strong>${obs.setor}:</strong> ${obs.texto}</p>`
-      ).join("");
-
-      $("#observacoes-confirmadas").html(html).show();
-
-      $("#setor-observacao").val("");
-      $("#texto-observacao").val("").prop("disabled", true);
+      renderizarObservacoes();
+      limparObservacao();
       $("#observacao-bloco").slideUp();
       $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
     });
+
+    // Renderizar observações com ações
+    function renderizarObservacoes() {
+      const html = observacoes.map((obs, i) => `
+        <div class="obs-item" style="border-top: 1px solid #ccc; padding: 8px 0;">
+          🔹 <strong>${obs.setor}:</strong> ${obs.texto}
+          <span style="float:right;">
+            <button type="button" class="btn-editar" data-i="${i}" title="Editar">✏️</button>
+            <button type="button" class="btn-remover" data-i="${i}" title="Excluir">🗑️</button>
+          </span>
+        </div>
+      `).join("");
+
+      $("#observacoes-confirmadas").html(html).show();
+    }
+
+    // Ações dos botões de edição/remover
+    $("#observacoes-confirmadas").on("click", ".btn-editar", function(){
+      const i = $(this).data("i");
+      const obs = observacoes[i];
+      $("#setor-observacao").val(obs.setor);
+      $("#texto-observacao").val(obs.texto).prop("disabled", false);
+      indiceEdicao = i;
+      $("#btn-confirmar-observacao").text("Editar Observação");
+      $("#btn-adicionar-observacao").hide();
+      $("#observacao-bloco").slideDown();
+    });
+
+    $("#observacoes-confirmadas").on("click", ".btn-remover", function(){
+      const i = $(this).data("i");
+      observacoes.splice(i, 1);
+      renderizarObservacoes();
+      if (!observacoes.length) $("#observacoes-confirmadas").hide();
+    });
+
+    function limparObservacao() {
+      $("#setor-observacao").val("");
+      $("#texto-observacao").val("").prop("disabled", true);
+      indiceEdicao = -1;
+    }
+
+    // (continua na parte 4)
     function formatarNumero(valor, inteiro = false) {
       const partes = inteiro
         ? [Math.floor(valor).toString()]
@@ -388,6 +429,7 @@
       updateRemoveButtons();
     }
 
+    // Gravar pedido
     $("#form-pedido").submit(function(e){
       e.preventDefault();
 
@@ -452,5 +494,3 @@
     });
   });
 </script>
-</body>
-</html>
