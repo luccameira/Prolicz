@@ -303,7 +303,7 @@ async function carregarPedidosFinanceiro() {
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
-   function renderizarVencimentos(valores) {
+  function renderizarVencimentos(valores) {
   vencContainer.innerHTML = '';
   inputs.length = 0;
 
@@ -374,8 +374,9 @@ async function carregarPedidosFinanceiro() {
         return;
       }
 
-      // Remove erro se tudo estiver certo
-      if (row.contains(rowErr)) row.removeChild(rowErr);
+      // Remove erro se já existir
+      const erroAnterior = row.querySelector('.row-error');
+      if (erroAnterior) row.removeChild(erroAnterior);
 
       const isConf = row.dataset.confirmado === 'true';
       if (!isConf) {
@@ -397,15 +398,6 @@ async function carregarPedidosFinanceiro() {
   }
 }
 
-  // Ativação do clique no valor total
-  const valorTotalTag = document.getElementById('reset-vencimentos');
-  if (valorTotalTag) {
-    valorTotalTag.style.cursor = 'pointer';
-    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-    valorTotalTag.onclick = resetarVencimentosPadrao;
-  }
-}
-
 function resetarVencimentosPadrao() {
   valoresPadrao = calcularValoresVencimentos();
   inputs.length = 0;
@@ -413,28 +405,7 @@ function resetarVencimentosPadrao() {
   atualizarBotaoLiberar();
 }
 
-function atualizarBotaoLiberar() {
-  const rows = containerCinza.querySelectorAll('.vencimento-row');
-  let soma = 0;
-  rows.forEach((r) => {
-    const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-    if (!isNaN(val)) soma += val;
-  });
-  const erroEl = containerCinza.querySelector('.venc-soma-error');
-  if (Math.abs(soma - totalVenda) > 0.005) {
-    erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-  } else {
-    erroEl.textContent = '';
-  }
-
-  const btnFin = form.querySelector('.btn-registrar');
-  if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
-}
-
-// Chamada inicial
-renderizarVencimentos(valoresPadrao);
-
-  setTimeout(() => {
+setTimeout(() => {
   const valorTotalTag = document.getElementById('reset-vencimentos');
   if (valorTotalTag) {
     valorTotalTag.style.cursor = 'pointer';
@@ -443,22 +414,24 @@ renderizarVencimentos(valoresPadrao);
   }
 }, 200);
 
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach((r, idx) => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-      } else {
-        erroEl.textContent = '';
-      }
-      const btnFin = form.querySelector('.btn-registrar');
-      if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
-    }
+function atualizarBotaoLiberar() {
+  const rows = containerCinza.querySelectorAll('.vencimento-row');
+  let soma = 0;
+  rows.forEach((r) => {
+    const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(val)) soma += val;
+  });
+
+  const erroEl = containerCinza.querySelector('.venc-soma-error');
+  if (Math.abs(soma - totalVenda) > 0.005) {
+    erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+  } else {
+    erroEl.textContent = '';
+  }
+
+  const btnFin = form.querySelector('.btn-registrar');
+  if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
+}
 
     atualizarBotaoLiberar();
 
