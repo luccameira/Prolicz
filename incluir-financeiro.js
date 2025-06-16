@@ -299,18 +299,36 @@ async function carregarPedidosFinanceiro() {
   ` : ''}
 `;
 
-    const vencContainer = containerCinza.querySelector('.vencimentos-container');
-    const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
+   const vencContainer = containerCinza.querySelector('.vencimentos-container');
+const inputs = [];
 
-  function renderizarVencimentos(valores) {
+function calcularValoresVencimentos() {
+  let parcelas = [];
+  let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
+  let totalParcial = 0;
+
+  for (let i = 0; i < numVencimentos; i++) {
+    if (i < numVencimentos - 1) {
+      parcelas.push(base);
+      totalParcial += base;
+    } else {
+      let ultima = (totalVenda - totalParcial);
+      parcelas.push(ultima);
+    }
+  }
+  return parcelas;
+}
+
+let valoresPadrao = calcularValoresVencimentos();
+
+function renderizarVencimentos(valores) {
   vencContainer.innerHTML = '';
   inputs.length = 0;
 
   for (let i = 0; i < numVencimentos; i++) {
     const dt = new Date(pedido.prazos_pagamento[i]);
     const ok = !isNaN(dt.getTime());
-    const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
 
     const row = document.createElement('div');
     row.className = 'vencimento-row';
@@ -374,9 +392,7 @@ async function carregarPedidosFinanceiro() {
         return;
       }
 
-      // Remove erro se já existir
-      const erroAnterior = row.querySelector('.row-error');
-      if (erroAnterior) row.removeChild(erroAnterior);
+      if (row.contains(rowErr)) row.removeChild(rowErr);
 
       const isConf = row.dataset.confirmado === 'true';
       if (!isConf) {
@@ -400,7 +416,6 @@ async function carregarPedidosFinanceiro() {
 
 function resetarVencimentosPadrao() {
   valoresPadrao = calcularValoresVencimentos();
-  inputs.length = 0;
   renderizarVencimentos(valoresPadrao);
   atualizarBotaoLiberar();
 }
@@ -412,7 +427,7 @@ setTimeout(() => {
     valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
     valorTotalTag.onclick = resetarVencimentosPadrao;
   }
-}, 200);
+}, 100);
 
 function atualizarBotaoLiberar() {
   const rows = containerCinza.querySelectorAll('.vencimento-row');
@@ -433,9 +448,10 @@ function atualizarBotaoLiberar() {
   if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
 }
 
-    atualizarBotaoLiberar();
+// Inicializa
+renderizarVencimentos(valoresPadrao);
 
-    const blocoFin = document.createElement('div');
+   const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
