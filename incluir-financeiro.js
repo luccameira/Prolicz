@@ -345,43 +345,40 @@ async function carregarPedidosFinanceiro() {
         inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
       }
 
-      const soma = inputs.reduce((acc, el) => acc + (parseFloat(el.value.replace(/\./g, '').replace(',', '.')) || 0), 0);
-
-      let rowErr = row.querySelector('.row-error');
-      if (soma > totalVenda + 0.01) {
-        if (!rowErr) {
-          rowErr = document.createElement('div');
-          rowErr.className = 'row-error';
-          rowErr.style.color = 'red';
-          rowErr.style.fontSize = '13px';
-          rowErr.textContent = 'A soma dos vencimentos excede o valor total da venda.';
-          row.appendChild(rowErr);
-        }
-      } else {
-        if (rowErr) row.remove();
-      }
-
       atualizarBotaoLiberar();
     });
 
     function toggleConfirmacao() {
+      const raw = inp.value.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(raw);
+
+      let rowErr = row.querySelector('.row-error');
+      if (!rowErr) {
+        rowErr = document.createElement('div');
+        rowErr.className = 'row-error';
+        rowErr.style.color = 'red';
+        rowErr.style.fontSize = '13px';
+      }
+
+      if (isNaN(num) || num <= 0) {
+        rowErr.textContent = 'Valor inválido.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      if (num > totalVenda) {
+        rowErr.textContent = 'Valor excede o total da venda.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      // Remove erro se tudo estiver certo
+      if (row.contains(rowErr)) row.removeChild(rowErr);
+
       const isConf = row.dataset.confirmado === 'true';
       if (!isConf) {
-        const raw = inp.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        if (isNaN(num) || num < 0) {
-          let rowErr = row.querySelector('.row-error');
-          if (!rowErr) {
-            rowErr = document.createElement('div');
-            rowErr.className = 'row-error';
-            rowErr.style.color = 'red';
-            rowErr.style.fontSize = '13px';
-            rowErr.textContent = 'Valor inválido.';
-            row.appendChild(rowErr);
-          }
-          inp.focus();
-          return;
-        }
         row.dataset.confirmado = 'true';
         inp.disabled = true;
         btn.replaceWith(etiquetaConfirmado);
@@ -390,6 +387,7 @@ async function carregarPedidosFinanceiro() {
         if (i !== 2) inp.disabled = false;
         etiquetaConfirmado.replaceWith(btn);
       }
+
       atualizarBotaoLiberar();
     }
 
@@ -397,6 +395,7 @@ async function carregarPedidosFinanceiro() {
     etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
     vencContainer.appendChild(row);
   }
+}
 
   // Ativação do clique no valor total
   const valorTotalTag = document.getElementById('reset-vencimentos');
