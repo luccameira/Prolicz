@@ -229,6 +229,15 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
+    if (pedido.condicao_pagamento_avista) {
+  const blocoCondicao = document.createElement('div');
+  blocoCondicao.className = 'obs-pedido';
+  blocoCondicao.innerHTML = `
+    <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+  `;
+  containerCinza.appendChild(blocoCondicao);
+}
+
     let totalComNota = 0;
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
