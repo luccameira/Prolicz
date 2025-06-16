@@ -303,8 +303,10 @@ async function carregarPedidosFinanceiro() {
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
-    function renderizarVencimentos(valores) {
+   function renderizarVencimentos(valores) {
   vencContainer.innerHTML = '';
+  inputs.length = 0;
+
   for (let i = 0; i < numVencimentos; i++) {
     const dt = new Date(pedido.prazos_pagamento[i]);
     const ok = !isNaN(dt.getTime());
@@ -395,24 +397,42 @@ async function carregarPedidosFinanceiro() {
     etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
     vencContainer.appendChild(row);
   }
-}
-    
-    function resetarVencimentosPadrao() {
-  valoresPadrao = calcularValoresVencimentos();
-  inputs.length = 0; // limpa o array de inputs antes de renderizar de novo
-  renderizarVencimentos(valoresPadrao);
-  atualizarBotaoLiberar();
-}
 
-setTimeout(() => {
+  // Ativação do clique no valor total
   const valorTotalTag = document.getElementById('reset-vencimentos');
   if (valorTotalTag) {
     valorTotalTag.style.cursor = 'pointer';
     valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
     valorTotalTag.onclick = resetarVencimentosPadrao;
   }
-}, 200);
+}
 
+function resetarVencimentosPadrao() {
+  valoresPadrao = calcularValoresVencimentos();
+  inputs.length = 0;
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
+
+function atualizarBotaoLiberar() {
+  const rows = containerCinza.querySelectorAll('.vencimento-row');
+  let soma = 0;
+  rows.forEach((r) => {
+    const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(val)) soma += val;
+  });
+  const erroEl = containerCinza.querySelector('.venc-soma-error');
+  if (Math.abs(soma - totalVenda) > 0.005) {
+    erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+  } else {
+    erroEl.textContent = '';
+  }
+
+  const btnFin = form.querySelector('.btn-registrar');
+  if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
+}
+
+// Chamada inicial
 renderizarVencimentos(valoresPadrao);
 
     function atualizarBotaoLiberar() {
