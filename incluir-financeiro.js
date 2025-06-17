@@ -143,12 +143,101 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    const separador = document.createElement('div');
+    if (pedido.ticket_balanca) {
+      const ticketId = `ticket-${id}`;
+      const blocoTicket = document.createElement('div');
+      blocoTicket.style.marginTop = '25px';
+      blocoTicket.innerHTML = `
+        <label style="font-weight: bold;">Ticket da Balança:</label><br>
+        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
+      `;
+      form.appendChild(blocoTicket);
+
+      setTimeout(() => {
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
+
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.maxWidth = '90vw';
+            modalImg.style.maxHeight = '90vh';
+            modalImg.style.objectFit = 'contain';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            modalImg.style.cursor = 'zoom-in';
+            modalImg.style.transition = 'transform 0.3s ease';
+
+            let zoomed = false;
+            modalImg.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const rect = modalImg.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const percentX = (offsetX / rect.width) * 100;
+              const percentY = (offsetY / rect.height) * 100;
+
+              if (!zoomed) {
+                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+                modalImg.style.transform = 'scale(2.5)';
+                modalImg.style.cursor = 'zoom-out';
+                zoomed = true;
+              } else {
+                modalImg.style.transform = 'scale(1)';
+                modalImg.style.cursor = 'zoom-in';
+                zoomed = false;
+              }
+            });
+
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = (e) => {
+              e.stopPropagation();
+              document.body.removeChild(overlay);
+            };
+
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
+      }, 200);
+    }
+
+      const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
+
+    // Exibir condição para pagamento à vista
+    if (pedido.condicao_pagamento_avista) {
+      const blocoCondicao = document.createElement('div');
+      blocoCondicao.className = 'obs-pedido';
+      blocoCondicao.innerHTML = `
+        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+      `;
+      containerCinza.appendChild(blocoCondicao);
+    }
 
     let totalComNota = 0;
     let totalSemNota = 0;
@@ -187,14 +276,12 @@ async function carregarPedidosFinanceiro() {
 
     const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
-
-      const numVencimentos = pedido.prazos_pagamento?.length || 1;
+    const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     function calcularValoresVencimentos() {
       let parcelas = [];
       let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
       let totalParcial = 0;
-
       for (let i = 0; i < numVencimentos; i++) {
         if (i < numVencimentos - 1) {
           parcelas.push(base);
@@ -207,150 +294,156 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
-   containerCinza.innerHTML = `
-  <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
-  <div class="vencimentos-container"></div>
-  <p class="venc-soma-error" style="color:red;"></p>
-  ${codigosFiscaisBarraAzul}
-  ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `
-    <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>
-  ` : ''}
-`;
+    containerCinza.innerHTML += `
+      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
+      <div class="vencimentos-container"></div>
+      <p class="venc-soma-error" style="color:red;"></p>
+      ${codigosFiscaisBarraAzul}
+      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+    `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
     function renderizarVencimentos(valores) {
-  vencContainer.innerHTML = '';
-  for (let i = 0; i < numVencimentos; i++) {
-    const dt = new Date(pedido.prazos_pagamento[i]);
-    const ok = !isNaN(dt.getTime());
-    const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      vencContainer.innerHTML = '';
+      inputs.length = 0;
 
-    const row = document.createElement('div');
-    row.className = 'vencimento-row';
-    row.dataset.confirmado = 'false';
-    row.innerHTML = `
-      <span class="venc-label">Vencimento ${i + 1}</span>
-      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-      <input type="text" value="${valorFmt}" ${i === 2 ? 'disabled' : ''} />
-      <button type="button">✓</button>
-    `;
+      for (let i = 0; i < numVencimentos; i++) {
+        const dt = new Date(pedido.prazos_pagamento[i]);
+        const ok = !isNaN(dt.getTime());
+        const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
 
-    const inp = row.querySelector('input');
-    const btn = row.querySelector('button');
-    inputs[i] = inp;
+        const row = document.createElement('div');
+        row.className = 'vencimento-row';
+        row.dataset.confirmado = 'false';
+        row.innerHTML = `
+          <span class="venc-label">Vencimento ${i + 1}</span>
+          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+          <input type="text" value="${valorFmt}" ${i === 2 ? 'disabled' : ''} />
+          <button type="button">✓</button>
+        `;
 
-    const etiquetaConfirmado = document.createElement('span');
-    etiquetaConfirmado.className = 'etiqueta-valor-item';
-    etiquetaConfirmado.textContent = 'CONFIRMADO';
-    etiquetaConfirmado.style.cursor = 'pointer';
+        const inp = row.querySelector('input');
+        const btn = row.querySelector('button');
+        inputs[i] = inp;
 
-    inp.addEventListener('blur', () => {
-      const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
-      const v2 = parseFloat(inputs[1].value.replace(/\./g, '').replace(',', '.')) || 0;
+        // Máscara de moeda no input
+        inp.addEventListener('input', () => {
+          let valor = inp.value.replace(/\D/g, '');
+          valor = (parseInt(valor, 10) / 100).toFixed(2);
+          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        });
 
-      if (i === 0) {
-        const restante = Math.max(0, totalVenda - v1);
-        const metade = restante / 2;
-        inputs[1].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        inputs[2].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-      } else if (i === 1) {
-        const restante = Math.max(0, totalVenda - v1 - v2);
-        inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-      }
+         inp.addEventListener('blur', () => {
+          const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
+          const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
 
-      const soma = inputs.reduce((acc, el) => acc + (parseFloat(el.value.replace(/\./g, '').replace(',', '.')) || 0), 0);
+          if (i === 0 && numVencimentos === 3) {
+            const restante = Math.max(0, totalVenda - v1);
+            const metade = restante / 2;
+            inputs[1].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            inputs[2].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          } else if (i === 1 && numVencimentos === 3) {
+            const restante = Math.max(0, totalVenda - v1 - v2);
+            inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          }
 
-      let rowErr = row.querySelector('.row-error');
-      if (soma > totalVenda + 0.01) {
-        if (!rowErr) {
-          rowErr = document.createElement('div');
-          rowErr.className = 'row-error';
-          rowErr.style.color = 'red';
-          rowErr.style.fontSize = '13px';
-          rowErr.textContent = 'A soma dos vencimentos excede o valor total da venda.';
-          row.appendChild(rowErr);
-        }
-      } else {
-        if (rowErr) row.remove();
-      }
+          atualizarBotaoLiberar();
+        });
 
-      atualizarBotaoLiberar();
-    });
+        const etiquetaConfirmado = document.createElement('span');
+        etiquetaConfirmado.className = 'etiqueta-valor-item';
+        etiquetaConfirmado.textContent = 'CONFIRMADO';
+        etiquetaConfirmado.style.cursor = 'pointer';
 
-    function toggleConfirmacao() {
-      const isConf = row.dataset.confirmado === 'true';
-      if (!isConf) {
-        const raw = inp.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        if (isNaN(num) || num < 0) {
+        function toggleConfirmacao() {
+          const raw = inp.value.replace(/\./g, '').replace(',', '.');
+          const num = parseFloat(raw);
+
           let rowErr = row.querySelector('.row-error');
           if (!rowErr) {
             rowErr = document.createElement('div');
             rowErr.className = 'row-error';
             rowErr.style.color = 'red';
             rowErr.style.fontSize = '13px';
-            rowErr.textContent = 'Valor inválido.';
-            row.appendChild(rowErr);
           }
-          inp.focus();
-          return;
+
+          if (isNaN(num) || num <= 0) {
+            rowErr.textContent = 'Valor inválido.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (num > totalVenda) {
+            rowErr.textContent = 'Valor excede o total da venda.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (row.contains(rowErr)) row.removeChild(rowErr);
+
+          const isConf = row.dataset.confirmado === 'true';
+          if (!isConf) {
+            row.dataset.confirmado = 'true';
+            inp.disabled = true;
+            btn.replaceWith(etiquetaConfirmado);
+          } else {
+            row.dataset.confirmado = 'false';
+            if (i !== 2) inp.disabled = false;
+            etiquetaConfirmado.replaceWith(btn);
+          }
+
+          atualizarBotaoLiberar();
         }
-        row.dataset.confirmado = 'true';
-        inp.disabled = true;
-        btn.replaceWith(etiquetaConfirmado);
-      } else {
-        row.dataset.confirmado = 'false';
-        if (i !== 2) inp.disabled = false;
-        etiquetaConfirmado.replaceWith(btn);
+
+        btn.addEventListener('click', toggleConfirmacao);
+        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+        vencContainer.appendChild(row);
       }
-      atualizarBotaoLiberar();
     }
 
-    btn.addEventListener('click', toggleConfirmacao);
-    etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-    vencContainer.appendChild(row);
-  }
-}
-    
     function resetarVencimentosPadrao() {
-  valoresPadrao = calcularValoresVencimentos();
-  inputs.length = 0; // limpa o array de inputs antes de renderizar de novo
-  renderizarVencimentos(valoresPadrao);
-  atualizarBotaoLiberar();
-}
-
-setTimeout(() => {
-  const valorTotalTag = document.getElementById('reset-vencimentos');
-  if (valorTotalTag) {
-    valorTotalTag.style.cursor = 'pointer';
-    valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-    valorTotalTag.onclick = resetarVencimentosPadrao;
-  }
-}, 200);
-
-renderizarVencimentos(valoresPadrao);
+      valoresPadrao = calcularValoresVencimentos();
+      renderizarVencimentos(valoresPadrao);
+      atualizarBotaoLiberar();
+    }
 
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
-      rows.forEach((r, idx) => {
+      rows.forEach((r) => {
         const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
         if (!isNaN(val)) soma += val;
       });
+
       const erroEl = containerCinza.querySelector('.venc-soma-error');
       if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
       } else {
         erroEl.textContent = '';
       }
+
       const btnFin = form.querySelector('.btn-registrar');
       if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
     }
 
-    atualizarBotaoLiberar();
+    renderizarVencimentos(valoresPadrao);
+
+    form.appendChild(containerCinza);
+
+    const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
+    if (valorTotalTag) {
+      valorTotalTag.style.cursor = 'pointer';
+      valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+      valorTotalTag.onclick = resetarVencimentosPadrao;
+    }
 
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
@@ -362,11 +455,11 @@ renderizarVencimentos(valoresPadrao);
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(containerCinza);
     form.appendChild(blocoFin);
 
     card.appendChild(form);
-     header.addEventListener('click', () => {
+
+    header.addEventListener('click', () => {
       if (pedido.status !== 'Em Análise pelo Financeiro') return;
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
@@ -382,6 +475,7 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ observacoes_financeiro: observacoes })
     });
+
     if (res.ok) {
       alert('Cliente liberado com sucesso!');
       carregarPedidosFinanceiro();
@@ -397,6 +491,9 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
+
+  const filtro = document.getElementById('filtro-cliente');
+  const ordenar = document.getElementById('ordenar');
+  if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
+  if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });

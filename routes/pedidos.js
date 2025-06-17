@@ -216,16 +216,16 @@ router.get('/clientes/:id/produtos', async (req, res) => {
 
 // POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens } = req.body;
+  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens, condicao_pagamento_a_vista } = req.body;
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
     // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta']
-    );
+  `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, condicao_pagamento_avista, status, data_criacao)
+   VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+  [cliente_id, empresa || null, tipo, dataISO, observacao, condicao_pagamento_a_vista || null, status || 'Aguardando Início da Coleta']
+);
 
     const pedido_id = pedidoResult.insertId;
 
@@ -517,49 +517,51 @@ router.get('/nf', async (req, res) => {
 // GET /api/pedidos/financeiro
 router.get('/financeiro', async (req, res) => {
   try {
-    const sql = `
-      SELECT 
-        p.id AS pedido_id,
-        p.data_criacao,
-        p.tipo,
-        p.status,
-        p.data_coleta,
-        p.data_coleta_iniciada,
-        p.data_carga_finalizada,
-        p.data_conferencia_peso,
-        p.data_financeiro,
-        p.data_emissao_nf,
-        p.data_finalizado,
-        p.codigo_interno,
-        p.observacao,
-        p.empresa,
-        p.nota_fiscal,
-        c.nome_fantasia AS cliente
-      FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status IN (
-          'Coleta Iniciada',
-          'Coleta Finalizada',
-          'Aguardando Conferência do Peso',
-          'Em Análise pelo Financeiro',
-          'Aguardando Emissão de NF',
-          'Cliente Liberado',
-          'Finalizado'
-        )
-      ORDER BY 
-        CASE 
-          WHEN p.status = 'Coleta Iniciada' THEN 1
-          WHEN p.status = 'Coleta Finalizada' THEN 2
-          WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
-          WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
-          WHEN p.status = 'Aguardando Emissão de NF' THEN 5
-          WHEN p.status = 'Cliente Liberado' THEN 6
-          WHEN p.status = 'Finalizado' THEN 7
-          ELSE 99
-        END,
-        p.data_coleta ASC
-    `;
+   const sql = `
+  SELECT 
+    p.id AS pedido_id,
+    p.data_criacao,
+    p.tipo,
+    p.status,
+    p.data_coleta,
+    p.data_coleta_iniciada,
+    p.data_carga_finalizada,
+    p.data_conferencia_peso,
+    p.data_financeiro,
+    p.data_emissao_nf,
+    p.data_finalizado,
+    p.codigo_interno,
+    p.observacao,
+    p.empresa,
+    p.nota_fiscal,
+    p.ticket_balanca,
+    p.condicao_pagamento_avista,
+    c.nome_fantasia AS cliente
+  FROM pedidos p
+  INNER JOIN clientes c ON p.cliente_id = c.id
+  WHERE DATE(p.data_coleta) = CURDATE()
+    AND p.status IN (
+      'Coleta Iniciada',
+      'Coleta Finalizada',
+      'Aguardando Conferência do Peso',
+      'Em Análise pelo Financeiro',
+      'Aguardando Emissão de NF',
+      'Cliente Liberado',
+      'Finalizado'
+    )
+  ORDER BY 
+    CASE 
+      WHEN p.status = 'Coleta Iniciada' THEN 1
+      WHEN p.status = 'Coleta Finalizada' THEN 2
+      WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+      WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+      WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+      WHEN p.status = 'Cliente Liberado' THEN 6
+      WHEN p.status = 'Finalizado' THEN 7
+      ELSE 99
+    END,
+    p.data_coleta ASC
+`;
 
     const [pedidos] = await db.query(sql);
 
