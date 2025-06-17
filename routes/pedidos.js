@@ -1,25 +1,138 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
-// GET /api/pedidos - lista de pedidos
+const pastaTickets = path.join(__dirname, '..', 'uploads', 'tickets');
+if (!fs.existsSync(pastaTickets)) {
+  fs.mkdirSync(pastaTickets, { recursive: true });
+}
+
+const storageTickets = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, pastaTickets),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nome = `ticket_${Date.now()}${ext}`;
+    cb(null, nome);
+  }
+});
+const uploadTicket = multer({ storage: storageTickets });
+
+function formatarDataBRparaISO(dataBR) {
+  const [dia, mes, ano] = dataBR.split('/');
+  return `${ano}-${mes}-${dia}`;
+}
+
+// Rota GET /api/pedidos/portaria
+router.get('/portaria', async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        p.id AS pedido_id,
+        p.data_criacao,
+        p.tipo,
+        p.status,
+        p.data_coleta,
+        p.data_coleta_iniciada,
+        p.data_carga_finalizada,
+        p.data_conferencia_peso,     -- ✅ Adicionado
+        p.codigo_interno,
+        p.observacao,
+        p.empresa,
+        p.prazo_pagamento,
+        p.ticket_balanca,
+        c.nome_fantasia AS cliente
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      WHERE DATE(p.data_coleta) = CURDATE()
+      ORDER BY 
+        CASE 
+          WHEN p.status = 'Aguardando Início da Coleta' THEN 1
+          WHEN p.status = 'Coleta Iniciada' THEN 2
+          WHEN p.status = 'Coleta Finalizada' THEN 3
+          WHEN p.status = 'Aguardando Conferência do Peso' THEN 4
+          WHEN p.status = 'Em Análise pelo Financeiro' THEN 5
+          WHEN p.status = 'Aguardando Emissão de NF' THEN 6
+          WHEN p.status = 'Finalizado' THEN 7
+          ELSE 99
+        END,
+        p.data_coleta ASC
+    `;
+
+    const [pedidos] = await db.query(sql);
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos da portaria:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
+  }
+});
+
+// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
+router.get('/carga', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id,
+      i.id AS item_id,
+      p.data_criacao,
+      c.nome_fantasia AS cliente,
+      i.nome_produto AS produto,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,       -- ✅ Adicionado
+      SUM(i.peso) AS peso_previsto,
+      p.status
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    INNER JOIN itens_pedido i ON p.id = i.pedido_id
+    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+    GROUP BY 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
+    ORDER BY p.data_coleta ASC
+  `;
+
+  try {
+    const [results] = await db.query(sql);
+    res.json(results);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos de carga:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
+  }
+});
+
+// GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos = `
     SELECT 
-      p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-      p.codigo_interno, p.observacao, p.empresa, p.nota_fiscal,
+      p.id AS pedido_id,
+      p.data_criacao,
+      p.tipo,
+      p.status,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,
+      p.data_financeiro,
+      p.data_emissao_nf,
+      p.data_finalizado,
+      p.codigo_interno,
+      p.observacao,
+      p.empresa,
+      p.nota_fiscal,
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     WHERE 1 = 1
   `;
-
   const params = [];
 
   if (cliente) {
-    sqlPedidos += ` AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)`;
+    sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
     params.push(`%${cliente}%`, `%${cliente}%`);
   }
 
@@ -38,7 +151,7 @@ router.get('/', async (req, res) => {
     params.push(de, ate);
   }
 
-  sqlPedidos += " ORDER BY p.data_coleta DESC";
+  sqlPedidos += " ORDER BY p.data_criacao DESC";
 
   try {
     const [pedidos] = await db.query(sqlPedidos, params);
@@ -68,7 +181,6 @@ router.get('/', async (req, res) => {
         `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
-
       pedido.prazos_pagamento = prazosPedido.map(prazo => {
         let dataVencimento = null;
         if (pedido.data_coleta) {
@@ -87,107 +199,38 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/pedidos/:id - busca pedido individual com itens e prazos
-router.get('/:id', async (req, res) => {
-  const pedidoId = req.params.id;
-
+// GET produtos autorizados por cliente
+router.get('/clientes/:id/produtos', async (req, res) => {
+  const clienteId = req.params.id;
   try {
-    const [pedidos] = await db.query(
-      `
-      SELECT 
-        p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
-        p.codigo_interno, p.observacao, p.empresa, p.nota_fiscal,
-        c.nome_fantasia AS cliente_nome,
-        p.codigo_fiscal, p.prazo_pagamento
-      FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE p.id = ?
-      LIMIT 1
-      `,
-      [pedidoId]
+    const [produtos] = await db.query(
+      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
+      [clienteId]
     );
-
-    if (pedidos.length === 0) {
-      return res.status(404).json({ erro: 'Pedido não encontrado' });
-    }
-
-    const pedido = pedidos[0];
-
-    // Buscar itens do pedido
-    const [itens] = await db.query(
-      `SELECT id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal
-       FROM itens_pedido
-       WHERE pedido_id = ?`,
-      [pedidoId]
-    );
-
-    // Buscar prazos de pagamento
-    const [prazosPedido] = await db.query(
-      `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
-      [pedidoId]
-    );
-
-    pedido.itens = itens;
-    pedido.prazos_pagamento = prazosPedido.map(prazo => {
-      let dataVencimento = null;
-      if (pedido.data_coleta) {
-        const dataColeta = new Date(pedido.data_coleta);
-        dataColeta.setDate(dataColeta.getDate() + prazo.dias);
-        dataVencimento = dataColeta.toISOString();
-      }
-      return dataVencimento;
-    });
-
-    res.json(pedido);
-
-  } catch (err) {
-    console.error('Erro ao buscar pedido:', err);
-    res.status(500).json({ erro: 'Erro ao buscar pedido' });
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos do cliente:', error);
+    res.status(500).json({ erro: 'Erro ao buscar produtos do cliente.' });
   }
 });
 
-// GET /api/pedidos/:id/historico - histórico operacional do pedido
-router.get('/:id/historico', async (req, res) => {
-  const pedidoId = req.params.id;
-
-  const sql = `
-    SELECT ho.id, ho.acao, ho.observacao, ho.data_hora,
-           u.nome AS usuario_nome
-    FROM historico_operacional ho
-    INNER JOIN usuarios u ON ho.usuario_id = u.id
-    WHERE ho.pedido_id = ?
-    ORDER BY ho.data_hora ASC
-  `;
-
-  try {
-    const [rows] = await db.query(sql, [pedidoId]);
-    res.json(rows);
-  } catch (err) {
-    console.error('Erro ao buscar histórico operacional:', err);
-    res.status(500).json({ erro: 'Erro ao buscar histórico operacional' });
-  }
-});
-
-// POST /api/pedidos - cria novo pedido
+// POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens, nota_fiscal } = req.body;
-
-  const formatarDataBRparaISO = (dataBR) => {
-    const [dia, mes, ano] = data_coleta.split('/');
-    return `${ano}-${mes}-${dia}`;
-  };
-
+  const { cliente_id, empresa, tipo, data_coleta, status, prazos, itens, condicao_pagamento_a_vista, observacoes } = req.body;
+const observacao = ''; // não usamos mais campo único, deixamos vazio
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
+    // Inserir pedido na tabela pedidos
     const [pedidoResult] = await db.query(
-      `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, status, data_criacao, nota_fiscal)
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)`,
-      [cliente_id, empresa || null, tipo, dataISO, observacao, status || 'Aguardando Início da Coleta', nota_fiscal || null]
-    );
+  `INSERT INTO pedidos (cliente_id, empresa, tipo, data_coleta, observacao, condicao_pagamento_avista, status, data_criacao)
+   VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+  [cliente_id, empresa || null, tipo, dataISO, observacao, condicao_pagamento_a_vista || null, status || 'Aguardando Início da Coleta']
+);
 
     const pedido_id = pedidoResult.insertId;
 
+    // Inserir itens do pedido
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
@@ -206,6 +249,7 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Inserir prazos do pedido na tabela prazos_pedido
     if (Array.isArray(prazos)) {
       for (const prazo of prazos) {
         let descricao = '';
@@ -231,6 +275,18 @@ router.post('/', async (req, res) => {
       }
     }
 
+// Inserir observações por setor na tabela observacoes_pedido (nova)
+if (Array.isArray(observacoes)) {
+  for (const obs of observacoes) {
+    const setor = obs.setor || '';
+    const texto = obs.texto || '';
+    await db.query(
+      `INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?)`,
+      [pedido_id, setor, texto]
+    );
+  }
+}
+
     res.status(201).json({ mensagem: 'Pedido criado com sucesso', pedido_id });
   } catch (error) {
     console.error('Erro ao criar pedido:', error);
@@ -238,8 +294,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // PUT /api/pedidos/:id/coleta
 router.put('/:id/coleta', async (req, res) => {
   const pedidoId = req.params.id;
@@ -326,7 +380,9 @@ router.put('/:id/conferencia', async (req, res) => {
 
   try {
     const [resultado] = await db.query(
-      'UPDATE pedidos SET status = ? WHERE id = ?',
+      `UPDATE pedidos 
+       SET status = ?, data_conferencia_peso = NOW() 
+       WHERE id = ?`,
       ['Em Análise pelo Financeiro', id]
     );
 
@@ -395,7 +451,7 @@ router.get('/conferencia', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
-      p.data_peso_confirmado AS data_conferencia_peso,
+      p.data_conferencia_peso,          -- ✅ AGORA USA O CAMPO REAL
       p.data_financeiro,
       p.data_emissao_nf,
       p.data_finalizado,
@@ -406,8 +462,15 @@ router.get('/conferencia', async (req, res) => {
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE p.status = 'Aguardando Conferência do Peso'
-    ORDER BY p.data_coleta ASC
+    WHERE p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso', 'Em Análise pelo Financeiro')
+    ORDER BY 
+      CASE 
+        WHEN p.status = 'Coleta Iniciada' THEN 1
+        WHEN p.status = 'Aguardando Conferência do Peso' THEN 2
+        WHEN p.status = 'Em Análise pelo Financeiro' THEN 3
+        ELSE 99
+      END,
+      p.data_coleta ASC
   `;
 
   try {
@@ -422,8 +485,6 @@ router.get('/conferencia', async (req, res) => {
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
       );
-
-      console.log(`Materiais do pedido ${pedido.pedido_id}:`, materiais);
 
       for (const item of materiais) {
         const [descontos] = await db.query(
@@ -465,3 +526,100 @@ router.get('/nf', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar pedidos para emissão de NF' });
   }
 });
+
+// GET /api/pedidos/financeiro
+router.get('/financeiro', async (req, res) => {
+  try {
+   const sql = `
+  SELECT 
+    p.id AS pedido_id,
+    p.data_criacao,
+    p.tipo,
+    p.status,
+    p.data_coleta,
+    p.data_coleta_iniciada,
+    p.data_carga_finalizada,
+    p.data_conferencia_peso,
+    p.data_financeiro,
+    p.data_emissao_nf,
+    p.data_finalizado,
+    p.codigo_interno,
+    p.observacao,
+    p.empresa,
+    p.nota_fiscal,
+    p.ticket_balanca,
+    p.condicao_pagamento_avista,
+    c.nome_fantasia AS cliente
+  FROM pedidos p
+  INNER JOIN clientes c ON p.cliente_id = c.id
+  WHERE DATE(p.data_coleta) = CURDATE()
+    AND p.status IN (
+      'Coleta Iniciada',
+      'Coleta Finalizada',
+      'Aguardando Conferência do Peso',
+      'Em Análise pelo Financeiro',
+      'Aguardando Emissão de NF',
+      'Cliente Liberado',
+      'Finalizado'
+    )
+  ORDER BY 
+    CASE 
+      WHEN p.status = 'Coleta Iniciada' THEN 1
+      WHEN p.status = 'Coleta Finalizada' THEN 2
+      WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+      WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+      WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+      WHEN p.status = 'Cliente Liberado' THEN 6
+      WHEN p.status = 'Finalizado' THEN 7
+      ELSE 99
+    END,
+    p.data_coleta ASC
+`;
+
+    const [pedidos] = await db.query(sql);
+
+    for (const pedido of pedidos) {
+      const [materiais] = await db.query(
+        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
+         FROM itens_pedido
+         WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      for (const item of materiais) {
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
+
+      pedido.materiais = materiais;
+      pedido.observacoes = pedido.observacao || '';
+
+      const [prazosPedido] = await db.query(
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+        [pedido.pedido_id]
+      );
+
+      pedido.prazos_pagamento = prazosPedido.map(prazo => {
+        let dataVencimento = null;
+        if (pedido.data_coleta) {
+          const dataColeta = new Date(pedido.data_coleta);
+          dataColeta.setDate(dataColeta.getDate() + prazo.dias);
+          dataVencimento = dataColeta.toISOString();
+        }
+        return dataVencimento;
+      });
+    }
+
+    res.json(pedidos);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos para o financeiro:', err);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos para o financeiro' });
+  }
+});
+
+module.exports = router;
