@@ -1,36 +1,189 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Tarefas - Emissão de NF</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="tarefas.css">
-  <script src="incluir-layout.js" defer></script>
-  <script src="incluir-notafiscal.js" defer></script>
+  <meta charset="UTF-8" />
+  <title>Emissão de Nota Fiscal</title>
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="tarefasNF.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script defer src="incluir-layout.js"></script>
 </head>
 <body>
   <div class="topbar"></div>
   <div class="sidebar"></div>
 
-  <div class="content">
-    <h1 style="font-size: 28px; margin-bottom: 25px; padding: 0 25px;">Tarefas - Emissão de Nota Fiscal</h1>
+  <div class="main-content">
+    <h1 class="titulo-pagina">Emissão de Nota Fiscal</h1>
 
-    <div class="filtros-tarefa">
-      <div>
-        <label for="filtro-cliente">Buscar por cliente</label>
-        <input type="text" id="filtro-cliente" placeholder="Digite o nome do cliente...">
+    <div class="filtros">
+      <div class="filtro-item">
+        <label for="filtroClienteNF">Buscar por cliente</label>
+        <div class="input-wrapper" style="position: relative;">
+          <i class="fa fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #888;"></i>
+          <input type="text" id="filtroClienteNF" placeholder="Digite o nome do cliente..." style="padding-left: 30px;" />
+        </div>
       </div>
-      <div>
-        <label for="ordenar">Ordenar por</label>
-        <select id="ordenar">
-          <option value="data">Data da coleta</option>
-          <option value="cliente">Nome do cliente</option>
+
+      <div class="filtro-item">
+        <label for="ordenarNF">Ordenar por</label>
+        <select id="ordenarNF">
+          <option value="data_desc">Data mais recente</option>
+          <option value="data_asc">Data mais antiga</option>
+          <option value="az">Nome (A-Z)</option>
+          <option value="za">Nome (Z-A)</option>
         </select>
       </div>
     </div>
 
-    <div id="lista-pedidos"></div>
+    <div id="lista-pedidos-nf">Nenhum pedido disponível para emissão de nota.</div>
   </div>
+
+  <script>
+    const pedidosNF = [
+      {
+        id: 1,
+        cliente: "Empresa Alfa",
+        dataColeta: "2024-05-10",
+        statusNF: "Aguardando NF",
+        materiaisColetados: [
+          { tipo: "Papel", quantidade: 500, unidade: "kg" },
+          { tipo: "Plástico", quantidade: 200, unidade: "kg" }
+        ],
+        numeroNF: "",
+        valorNF: "",
+        arquivoNF: ""
+      },
+      {
+        id: 2,
+        cliente: "Indústria Beta",
+        dataColeta: "2024-05-08",
+        statusNF: "NF Emitida",
+        materiaisColetados: [
+          { tipo: "Metal", quantidade: 150, unidade: "kg" }
+        ],
+        numeroNF: "NF123456",
+        valorNF: "R$ 800,00",
+        arquivoNF: "nf_industria_beta.pdf"
+      },
+      {
+        id: 3,
+        cliente: "Comércio Gama",
+        dataColeta: "2024-05-05",
+        statusNF: "Aguardando NF",
+        materiaisColetados: [
+          { tipo: "Vidro", quantidade: 1000, unidade: "kg" },
+          { tipo: "Papelão", quantidade: 500, unidade: "kg" }
+        ],
+        numeroNF: "",
+        valorNF: "",
+        arquivoNF: ""
+      }
+    ];
+
+    function gerarCardNF(pedido) {
+      const isNFEmitida = pedido.statusNF === 'NF Emitida';
+      return `
+        <div class="card ${isNFEmitida ? 'nf-registrada' : ''}" data-id="${pedido.id}">
+          <div class="card-header-nf">
+            <div>
+              <h3>${pedido.cliente}</h3>
+              <p>Data da Coleta: ${pedido.dataColeta}</p>
+            </div>
+            <span class="status-badge ${isNFEmitida ? 'badge-nf-emitida' : 'destaque'}">${pedido.statusNF}</span>
+          </div>
+          <div class="formulario-nf">
+            <label>Data da Coleta</label>
+            <input type="text" value="${pedido.dataColeta}" readonly>
+
+            <label>Cliente/Empresa</label>
+            <input type="text" value="${pedido.cliente}" readonly>
+
+            <label>Materiais Coletados:</label>
+            ${pedido.materiaisColetados.map(m => `<input type="text" value="${m.tipo} - ${m.quantidade} ${m.unidade}" readonly>`).join('')}
+
+            <label for="numeroNF-${pedido.id}">Número da Nota Fiscal</label>
+            <input type="text" id="numeroNF-${pedido.id}" value="${pedido.numeroNF}" ${isNFEmitida ? 'readonly' : ''}>
+
+            <label for="valorNF-${pedido.id}">Valor da Nota Fiscal</label>
+            <input type="text" id="valorNF-${pedido.id}" value="${pedido.valorNF}" ${isNFEmitida ? 'readonly' : ''}>
+
+            ${!isNFEmitida ? `
+              <label for="arquivoNF-${pedido.id}">Anexar Arquivo da Nota Fiscal (PDF)</label>
+              <input type="file" id="arquivoNF-${pedido.id}" accept=".pdf">
+            ` : `
+              <p><strong>Arquivo da NF:</strong> ${pedido.arquivoNF ? `<a href="#">${pedido.arquivoNF}</a>` : 'Nenhum arquivo anexado.'}</p>
+            `}
+
+            <button class="btn-registrar-nf" data-id="${pedido.id}" ${isNFEmitida ? 'disabled' : ''}>
+              Registrar Nota Fiscal
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function carregarPedidosNF() {
+      const lista = document.getElementById('lista-pedidos-nf');
+      const filtro = document.getElementById('filtroClienteNF')?.value.toLowerCase() || '';
+      const ordenarPor = document.getElementById('ordenarNF')?.value || 'data_desc';
+
+      let pedidosFiltrados = pedidosNF.filter(p =>
+        p.cliente.toLowerCase().includes(filtro)
+      );
+
+      pedidosFiltrados.sort((a, b) => {
+        if (ordenarPor === 'data_desc') return new Date(b.dataColeta) - new Date(a.dataColeta);
+        if (ordenarPor === 'data_asc') return new Date(a.dataColeta) - new Date(b.dataColeta);
+        if (ordenarPor === 'az') return a.cliente.localeCompare(b.cliente);
+        if (ordenarPor === 'za') return b.cliente.localeCompare(a.cliente);
+        return 0;
+      });
+
+      lista.innerHTML = pedidosFiltrados.map(gerarCardNF).join('');
+
+      document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', function(event) {
+          if (this.classList.contains('nf-registrada') || event.target.tagName === 'BUTTON') return;
+          const formulario = this.querySelector('.formulario-nf');
+          if (formulario) {
+            formulario.style.display = formulario.style.display === 'block' ? 'none' : 'block';
+          }
+        });
+      });
+
+      document.querySelectorAll('.btn-registrar-nf').forEach(button => {
+        button.addEventListener('click', function(event) {
+          event.stopPropagation();
+          const pedidoId = parseInt(this.dataset.id);
+          registrarNotaFiscal(pedidoId);
+        });
+      });
+    }
+
+    function registrarNotaFiscal(id) {
+      const pedido = pedidosNF.find(p => p.id === id);
+      const numeroInput = document.getElementById(`numeroNF-${id}`);
+      const valorInput = document.getElementById(`valorNF-${id}`);
+      const arquivoInput = document.getElementById(`arquivoNF-${id}`);
+
+      if (!numeroInput.value || !valorInput.value) {
+        alert("Por favor, preencha o número e o valor da Nota Fiscal.");
+        return;
+      }
+
+      pedido.numeroNF = numeroInput.value;
+      pedido.valorNF = valorInput.value;
+      pedido.statusNF = "NF Emitida";
+      pedido.arquivoNF = arquivoInput?.files[0]?.name || "Nenhum arquivo anexado.";
+
+      alert(`Nota Fiscal ${pedido.numeroNF} registrada com sucesso!`);
+      carregarPedidosNF();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarPedidosNF();
+      document.getElementById('filtroClienteNF').addEventListener('input', carregarPedidosNF);
+      document.getElementById('ordenarNF').addEventListener('change', carregarPedidosNF);
+    });
+  </script>
 </body>
 </html>

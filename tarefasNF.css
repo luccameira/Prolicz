@@ -1,0 +1,151 @@
+/* === ESTILOS PARA TELA DE EMISSÃO DE NF === */
+
+/* Card padrão */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Cabeçalho do card (cliente + status) */
+.card-header-nf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header-nf h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.card-header-nf p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Selo de status (badge) */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  display: inline-block;
+  text-align: center;
+}
+
+/* Amarelo - Aguardando NF */
+.status-badge.destaque {
+  background-color: #ffe066;
+  color: #6d4c00;
+}
+
+/* Azul - NF Emitida */
+.status-badge.badge-nf-emitida {
+  background-color: #cfe2ff;
+  color: #084298;
+}
+
+/* Card com NF emitida (não clicável) */
+.nf-registrada {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Área que se expande ao clicar */
+.formulario-nf {
+  display: none;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+/* Campos internos */
+.formulario-nf label {
+  display: block;
+  font-weight: 500;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #333;
+}
+
+.formulario-nf input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background-color: #fff;
+  color: #333;
+}
+
+.formulario-nf input[readonly] {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* Upload de arquivo */
+.formulario-nf input[type="file"] {
+  padding: 6px;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+/* Botão de registrar NF */
+.btn-registrar-nf {
+  margin-top: 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.btn-registrar-nf:hover {
+  background-color: #218838;
+}
+
+.btn-registrar-nf:disabled {
+  background-color: #bbb;
+  cursor: not-allowed;
+}
+
+/* Link de arquivo anexado */
+.formulario-nf a {
+  color: #0069d9;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .card {
+    padding: 15px;
+  }
+
+  .formulario-nf input,
+  .formulario-nf label,
+  .formulario-nf button {
+    font-size: 15px;
+  }
+
+  .btn-registrar-nf {
+    width: 100%;
+  }
+
+  .formulario-nf input[type="file"] {
+    width: 100%;
+  }
+}
