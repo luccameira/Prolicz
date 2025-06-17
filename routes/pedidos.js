@@ -216,7 +216,8 @@ router.get('/clientes/:id/produtos', async (req, res) => {
 
 // POST /api/pedidos - criar pedido (sem codigo_fiscal global!)
 router.post('/', async (req, res) => {
-  const { cliente_id, empresa, tipo, data_coleta, observacao, status, prazos, itens, condicao_pagamento_a_vista } = req.body;
+  const { cliente_id, empresa, tipo, data_coleta, status, prazos, itens, condicao_pagamento_a_vista, observacoes } = req.body;
+const observacao = ''; // não usamos mais campo único, deixamos vazio
   const dataISO = formatarDataBRparaISO(data_coleta);
 
   try {
@@ -273,6 +274,18 @@ router.post('/', async (req, res) => {
         );
       }
     }
+
+// Inserir observações por setor na tabela observacoes_pedido (nova)
+if (Array.isArray(observacoes)) {
+  for (const obs of observacoes) {
+    const setor = obs.setor || '';
+    const texto = obs.texto || '';
+    await db.query(
+      `INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?)`,
+      [pedido_id, setor, texto]
+    );
+  }
+}
 
     res.status(201).json({ mensagem: 'Pedido criado com sucesso', pedido_id });
   } catch (error) {
