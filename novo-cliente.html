@@ -76,6 +76,11 @@
             <option value="lucroReal">Lucro Real</option>
           </select>
         </div>
+
+        <!-- CAMPO ADICIONADO AQUI -->
+        <label for="inscricaoEstadual">Inscrição Estadual</label>
+        <input type="text" id="inscricaoEstadual" maxlength="30" />
+
         <label>Códigos Fiscais Permitidos</label>
         <div id="codigosFiscaisPermitidos"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarCodigoFiscal()">+ Adicionar Código Fiscal</button>  
@@ -107,21 +112,9 @@
         <h3>Contato</h3>
         <div id="contatos">
           <div class="contato-group">
-            <input
-  type="text"
-  class="nome-contato"
-  placeholder="Nome do contato"
-  required
-  maxlength="25"
-/>
+            <input type="text" class="nome-contato" placeholder="Nome do contato" required maxlength="25" />
             <input type="text" class="telefone-contato" placeholder="Telefone" required>
-            <input
-  type="email"
-  class="email-contato"
-  placeholder="E-mail"
-  required
-  maxlength="35"
-/>
+            <input type="email" class="email-contato" placeholder="E-mail" required maxlength="35" />
             <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
           </div>
         </div>
@@ -261,6 +254,7 @@
     `;
     container.appendChild(div);
   }
+
   document.getElementById("formCliente").addEventListener("submit", async (e) => {
     e.preventDefault();
     const cliente = {
@@ -268,6 +262,7 @@
       documento: document.getElementById("documento").value,
       nome_fantasia: document.getElementById("nomeFantasia").value,
       situacao_tributaria: document.getElementById("situacaoTributaria").value || null,
+      inscricao_estadual: document.getElementById("inscricaoEstadual").value || null,
       codigosFiscais: Array.from(document.querySelectorAll('.codigo-fiscal-select'))
         .map(sel => sel.value).filter(v => !!v),
       cep: document.getElementById("cep").value,
@@ -317,9 +312,11 @@
       console.error(err);
     }
   });
+
   document.addEventListener("DOMContentLoaded", async () => {
     atualizarCamposPessoa();
     $("#cep").mask("00000-000");
+    $("#inscricaoEstadual").mask("000.000.000.000");
     $(".telefone-contato").mask("(00) 00000-0000");
     $(".valor-unitario").mask("R$ 000.000.000,00", { reverse: true });
     await carregarProdutos();
@@ -330,4 +327,3 @@
   </script>
 </body>
 </html>
-
