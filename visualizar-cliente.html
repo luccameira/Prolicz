@@ -70,7 +70,7 @@
       <p><strong>Tipo Pessoa:</strong> <span id="tipo_pessoa"></span></p>
       <p><strong>Documento:</strong> <span id="documento"></span></p>
       <p><strong>Situação Tributária:</strong> <span id="situacao_tributaria"></span></p>
-      <p><strong>Código Fiscal:</strong> <span id="codigo_fiscal"></span></p>
+      <p><strong>Inscrição Estadual:</strong> <span id="inscricao_estadual"></span></p>
     </div>
 
     <div class="card">
@@ -118,7 +118,7 @@
         document.getElementById("tipo_pessoa").textContent = cliente.tipo_pessoa || '';
         document.getElementById("documento").textContent = cliente.documento || '';
         document.getElementById("situacao_tributaria").textContent = cliente.situacao_tributaria || '';
-        document.getElementById("codigo_fiscal").textContent = cliente.codigo_fiscal || '';
+        document.getElementById("inscricao_estadual").textContent = cliente.inscricao_estadual || '–';
 
         // Endereço
         document.getElementById("cep").textContent = cliente.cep || '';
