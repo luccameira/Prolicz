@@ -172,7 +172,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
 
 function atualizarDescontoItem(itemId, index, pedidoId) {
   const pedido = pedidos.find(p => p.id === pedidoId);
-  const materiais = pedido?.materiais || [];
+  const materiais = pedido?.produtos_autorizados || [];
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
@@ -190,31 +190,30 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
     `;
     containerExtra.innerHTML = htmlExtra;
     aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
- } else if (motivo === 'Devolução de Material') {
-  const materiais = pedido?.produtos_autorizados || [];
 
-  const selectId = `material-${itemId}-${index}`;
-  const opcoes = materiais.map(m => `<option value="${m.nome_produto}">${m.nome_produto}</option>`).join('');
+  } else if (motivo === 'Devolução de Material') {
+    const selectId = `material-${itemId}-${index}`;
+    const opcoes = materiais.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
 
-  htmlExtra = `
-    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label style="min-width: 150px;">Material devolvido:</label>
-      <select id="${selectId}" style="flex: 1; padding: 6px;">
-        <option value="">Selecione</option>
-        ${opcoes}
-      </select>
-    </div>
-    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
-      <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
-    </div>
-    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
-      <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
-    </div>
-  `;
-  containerExtra.innerHTML = htmlExtra;
-  aplicarMascaraMilhar(document.getElementById(`peso-${itemId}-${index}`));
+    htmlExtra = `
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label style="min-width: 150px;">Material devolvido:</label>
+        <select id="${selectId}" style="flex: 1; padding: 6px;">
+          <option value="">Selecione</option>
+          ${opcoes}
+        </select>
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
+      </div>
+    `;
+    containerExtra.innerHTML = htmlExtra;
+    aplicarMascaraMilhar(document.getElementById(`peso-${itemId}-${index}`));
   }
 
   const valorQtd = document.getElementById(`quantidade-${itemId}-${index}`);
