@@ -20,37 +20,7 @@ async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
 
-  const agrupados = {};
-
-  listaPedidos.forEach(p => {
-    if (!agrupados[p.id]) {
-      agrupados[p.id] = {
-        id: p.id,
-        cliente: p.cliente,
-        data_coleta: p.data_coleta,
-        status: p.status,
-        materiais: [],
-        data_criacao: p.data_criacao,
-        data_coleta_iniciada: p.data_coleta_iniciada,
-        data_carga_finalizada: p.data_carga_finalizada,
-        data_conferencia_peso: p.data_conferencia_peso,
-        data_financeiro: p.data_financeiro,
-        data_nf_emitida: p.data_nf_emitida,
-        data_finalizado: p.data_finalizado,
-        produtos_autorizados: p.produtos_autorizados || []  // produtos autorizados do cliente
-      };
-    }
-
-    agrupados[p.id].materiais.push({
-      item_id: p.item_id,
-      nome_produto: p.produto,
-      quantidade: parseFloat(p.peso_previsto),
-      unidade: 'Kg',
-      tipo_peso: p.tipo_peso
-    });
-  });
-
-  const listaFiltrada = Object.values(agrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
+  const listaFiltrada = listaPedidos.filter(p => p.status !== 'Aguardando Início da Coleta');
   pedidos = listaFiltrada;
   renderizarPedidos(listaFiltrada);
 }
@@ -60,28 +30,28 @@ function renderizarPedidos(lista) {
   const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
   const ordenar = document.getElementById('ordenar').value;
 
-  let filtrados = lista.filter(p => (p.cliente || '').toLowerCase().includes(filtro));
+  let pedidosFiltrados = lista.filter(p => (p.cliente || '').toLowerCase().includes(filtro));
 
   if (ordenar === 'cliente') {
-    filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
+    pedidosFiltrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
   } else {
-    filtrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
+    pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
   }
 
-  const pendentes = filtrados.filter(p =>
+  const pendentes = pedidosFiltrados.filter(p =>
     p.status === 'Coleta Iniciada' &&
     p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
   );
 
-  const concluidos = filtrados.filter(p =>
+  const concluidos = pedidosFiltrados.filter(p =>
     !(p.status === 'Coleta Iniciada' &&
     p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
   );
 
-  const ordenados = [...pendentes, ...concluidos];
+  const pedidosOrdenados = [...pendentes, ...concluidos];
   listaEl.innerHTML = '';
 
-  ordenados.forEach(p => {
+  pedidosOrdenados.forEach(p => {
     const card = document.createElement('div');
     card.className = 'card';
 
@@ -197,23 +167,21 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
     </div>
     <div id="${idCampoExtra}"></div>
   `;
-
   container.appendChild(div);
 }
 
 function atualizarDescontoItem(itemId, index, pedidoId) {
   const pedido = pedidos.find(p => p.id === pedidoId);
-  const materiaisAutorizados = pedido?.produtos_autorizados || [];
+  const materiais = pedido?.produtos_autorizados || [];
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
-
   const motivo = select.value;
   if (!motivo) return;
 
   let htmlExtra = '';
+
   if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
-    const pesoUnitario = motivo === 'Palete Pequeno' ? 6 : 14.37;
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
@@ -225,10 +193,13 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
 
   } else if (motivo === 'Devolução de Material') {
     const selectId = `material-${itemId}-${index}`;
-    const pesoId = `peso-devolvido-${itemId}-${index}`;
-    const uploadId = `upload-${itemId}-${index}`;
+    const selectAnterior = document.getElementById(selectId);
+    const valorSelecionado = selectAnterior?.value || '';
 
-    const opcoes = materiaisAutorizados.map(m => `<option value="${m}">${m}</option>`).join('');
+    const opcoes = materiais.map(m => {
+      const selecionado = m === valorSelecionado ? 'selected' : '';
+      return `<option value="${m}" ${selecionado}>${m}</option>`;
+    }).join('');
 
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
@@ -239,21 +210,22 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
         </select>
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-        <label for="${pesoId}" style="min-width: 150px;">Peso devolvido (Kg):</label>
-        <input type="text" id="${pesoId}" placeholder="Digite o peso devolvido" oninput="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" class="input-sem-seta" style="flex: 1; padding: 6px;">
+        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" oninput="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-        <label for="${uploadId}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
-        <input type="file" id="${uploadId}" accept="image/*" style="flex: 1;">
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
       </div>
     `;
     containerExtra.innerHTML = htmlExtra;
-    aplicarMascaraMilhar(document.getElementById(pesoId));
+    aplicarMascaraMilhar(document.getElementById(`peso-${itemId}-${index}`));
   }
 
   const valorQtd = document.getElementById(`quantidade-${itemId}-${index}`);
-  const valorPeso = document.getElementById(`peso-devolvido-${itemId}-${index}`);
+  const valorPeso = document.getElementById(`peso-${itemId}-${index}`);
   const selectMaterial = document.getElementById(`material-${itemId}-${index}`);
+  const uploadInput = document.getElementById(`upload-${itemId}-${index}`);
 
   let pesoCalculado = 0;
   let infoExtra = {};
@@ -267,8 +239,10 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   } else if (motivo === 'Devolução de Material') {
     const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0;
     const materialSelecionado = selectMaterial?.value || '';
+    const arquivo = uploadInput?.files[0] || null;
     pesoCalculado = peso;
     infoExtra.material = materialSelecionado;
+    infoExtra.ticket_devolucao = arquivo;
   }
 
   descontosPorItem[itemId][index] = {
@@ -297,6 +271,7 @@ async function registrarPeso(pedidoId) {
 
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
+  const arquivosExtras = [];
 
   blocos.forEach((bloco) => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
@@ -304,10 +279,18 @@ async function registrarPeso(pedidoId) {
     const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
 
     if (!isNaN(valor)) {
+      const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
+      descontos.forEach((desc, i) => {
+        if (desc.ticket_devolucao) {
+          arquivosExtras.push({ file: desc.ticket_devolucao, field: `ticket_devolucao_${itemId}_${i}` });
+          desc.ticket_devolucao = `ticket_devolucao_${itemId}_${i}`;
+        }
+      });
+
       itens.push({
         item_id: itemId,
         peso_carregado: valor,
-        descontos: (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0)
+        descontos
       });
     }
   });
@@ -321,6 +304,10 @@ async function registrarPeso(pedidoId) {
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
   formData.append('ticket_balanca', ticketFile);
+
+  arquivosExtras.forEach(({ field, file }) => {
+    formData.append(field, file);
+  });
 
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
