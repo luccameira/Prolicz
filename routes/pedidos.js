@@ -127,6 +127,7 @@ router.get('/', async (req, res) => {
       c.nome_fantasia AS cliente,
       c.documento AS cnpj,
       c.situacao_tributaria,
+      c.inscricao_estadual,
       CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
@@ -517,8 +518,9 @@ router.get('/nf', async (req, res) => {
   p.id AS pedido_id, p.data_criacao, p.tipo, p.status, p.data_coleta,
   p.codigo_interno, p.observacao, p.empresa,
   c.nome_fantasia AS cliente,
-  c.cnpj,
+  c.documento AS cnpj,
   c.situacao_tributaria,
+  c.inscricao_estadual,
   CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
 FROM pedidos p
 INNER JOIN clientes c ON p.cliente_id = c.id
@@ -557,8 +559,9 @@ router.get('/financeiro', async (req, res) => {
     p.ticket_balanca,
     p.condicao_pagamento_avista,
     c.nome_fantasia AS cliente,
-    c.cnpj,
+    c.documento AS cnpj,
     c.situacao_tributaria,
+    c.inscricao_estadual,
     CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
   FROM pedidos p
   INNER JOIN clientes c ON p.cliente_id = c.id
