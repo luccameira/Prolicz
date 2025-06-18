@@ -213,6 +213,10 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
         <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
         <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" oninput="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
+      </div>
     `;
     containerExtra.innerHTML = htmlExtra;
     aplicarMascaraMilhar(document.getElementById(`peso-${itemId}-${index}`));
@@ -221,6 +225,7 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   const valorQtd = document.getElementById(`quantidade-${itemId}-${index}`);
   const valorPeso = document.getElementById(`peso-${itemId}-${index}`);
   const selectMaterial = document.getElementById(`material-${itemId}-${index}`);
+  const uploadInput = document.getElementById(`upload-${itemId}-${index}`);
 
   let pesoCalculado = 0;
   let infoExtra = {};
@@ -234,8 +239,10 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   } else if (motivo === 'Devolução de Material') {
     const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0;
     const materialSelecionado = selectMaterial?.value || '';
+    const arquivo = uploadInput?.files[0] || null;
     pesoCalculado = peso;
     infoExtra.material = materialSelecionado;
+    infoExtra.ticket_devolucao = arquivo;
   }
 
   descontosPorItem[itemId][index] = {
@@ -264,6 +271,7 @@ async function registrarPeso(pedidoId) {
 
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
+  const arquivosExtras = [];
 
   blocos.forEach((bloco) => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
@@ -271,10 +279,18 @@ async function registrarPeso(pedidoId) {
     const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
 
     if (!isNaN(valor)) {
+      const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
+      descontos.forEach((desc, i) => {
+        if (desc.ticket_devolucao) {
+          arquivosExtras.push({ file: desc.ticket_devolucao, field: `ticket_devolucao_${itemId}_${i}` });
+          desc.ticket_devolucao = `ticket_devolucao_${itemId}_${i}`;
+        }
+      });
+
       itens.push({
         item_id: itemId,
         peso_carregado: valor,
-        descontos: (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0)
+        descontos
       });
     }
   });
@@ -288,6 +304,10 @@ async function registrarPeso(pedidoId) {
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
   formData.append('ticket_balanca', ticketFile);
+
+  arquivosExtras.forEach(({ field, file }) => {
+    formData.append(field, file);
+  });
 
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
