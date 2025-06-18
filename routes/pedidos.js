@@ -70,33 +70,72 @@ router.get('/portaria', async (req, res) => {
 });
 
 // ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
+// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
-  const sql = `
-    SELECT 
-      p.id,
-      i.id AS item_id,
-      p.data_criacao,
-      c.nome_fantasia AS cliente,
-      i.nome_produto AS produto,
-      p.data_coleta,
-      p.data_coleta_iniciada,
-      p.data_carga_finalizada,
-      p.data_conferencia_peso,       -- ✅ Adicionado
-      SUM(i.peso) AS peso_previsto,
-      p.status
-    FROM pedidos p
-    INNER JOIN clientes c ON p.cliente_id = c.id
-    INNER JOIN itens_pedido i ON p.id = i.pedido_id
-    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
-    GROUP BY 
-      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
-      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
-    ORDER BY p.data_coleta ASC
-  `;
-
   try {
+    const sql = `
+      SELECT 
+        p.id,
+        p.cliente_id,
+        i.id AS item_id,
+        p.data_criacao,
+        c.nome_fantasia AS cliente,
+        i.nome_produto AS produto,
+        p.data_coleta,
+        p.data_coleta_iniciada,
+        p.data_carga_finalizada,
+        p.data_conferencia_peso,
+        SUM(i.peso) AS peso_previsto,
+        p.status
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      INNER JOIN itens_pedido i ON p.id = i.pedido_id
+      WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+      GROUP BY 
+        p.id, p.cliente_id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+        p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
+      ORDER BY p.data_coleta ASC
+    `;
+
     const [results] = await db.query(sql);
-    res.json(results);
+
+    const pedidosAgrupados = {};
+
+    for (const row of results) {
+      if (!pedidosAgrupados[row.id]) {
+        pedidosAgrupados[row.id] = {
+          id: row.id,
+          cliente_id: row.cliente_id,
+          cliente: row.cliente,
+          data_criacao: row.data_criacao,
+          data_coleta: row.data_coleta,
+          data_coleta_iniciada: row.data_coleta_iniciada,
+          data_carga_finalizada: row.data_carga_finalizada,
+          data_conferencia_peso: row.data_conferencia_peso,
+          status: row.status,
+          materiais: []
+        };
+
+        // Buscar produtos autorizados para esse cliente
+        const [autorizados] = await db.query(`
+          SELECT nome_produto
+          FROM produtos_autorizados
+          WHERE cliente_id = ?
+        `, [row.cliente_id]);
+
+        pedidosAgrupados[row.id].produtos_autorizados = autorizados.map(p => p.nome_produto);
+      }
+
+      pedidosAgrupados[row.id].materiais.push({
+        item_id: row.item_id,
+        nome_produto: row.produto,
+        quantidade: parseFloat(row.peso_previsto),
+        unidade: 'Kg',
+        tipo_peso: 'Exato' // ou 'Aproximado' se precisar de regra real
+      });
+    }
+
+    res.json(Object.values(pedidosAgrupados));
   } catch (err) {
     console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
