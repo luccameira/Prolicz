@@ -510,25 +510,28 @@
         };
 
         $(".produto-bloco").each(function(){
-          const nome  = $(this).find(".select-produto").val();
-          const valor = parseMask($(this).find(".valor-por-quilo").val());
-          const peso  = parseMask($(this).find(".peso").val());
-          const tp    = $(this).find(".tipo-peso").val();
-          const cod   = $(this).find(".select-codigo-fiscal").val();
-          const vc    = parseMask($(this).find(".valor-com-nota").val());
-          const vs    = parseMask($(this).find(".valor-sem-nota").val());
-          if (nome && valor && peso) {
-            dados.itens.push({
-              nome_produto: nome,
-              valor_unitario: valor,
-              peso,
-              tipo_peso: tp,
-              codigo_fiscal: cod,
-              valor_com_nota: vc,
-              valor_sem_nota: vs
-            });
-          }
-        });
+  const nome  = $(this).find(".select-produto").val();
+  const valor = parseMask($(this).find(".valor-por-quilo").val());
+  const peso  = parseMask($(this).find(".peso").val());
+  const tp    = $(this).find(".tipo-peso").val();
+  const cod   = $(this).find(".select-codigo-fiscal").val();
+  const vc    = parseMask($(this).find(".valor-com-nota").val());
+  const vs    = parseMask($(this).find(".valor-sem-nota").val());
+  const unidade = "kg";
+
+  if (nome && valor && peso) {
+    dados.itens.push({
+      nome_produto: nome,
+      valor_unitario: valor,
+      peso,
+      tipo_peso: tp,
+      codigo_fiscal: cod,
+      valor_com_nota: vc,
+      valor_sem_nota: vs,
+      unidade: unidade
+    });
+  }
+});
 
         fetch("/api/pedidos", {
           method: "POST",
