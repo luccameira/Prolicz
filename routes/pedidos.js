@@ -69,13 +69,13 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA - Corrigida: inclui produtos autorizados por cliente
+// ROTA CARGA - Corrigida: inclui produtos autorizados com JOIN na tabela produtos
 router.get('/carga', async (req, res) => {
   try {
     const sql = `
       SELECT 
         p.id,
-        p.cliente_id,                        -- ✅ ESSENCIAL para buscar os produtos autorizados
+        p.cliente_id,
         i.id AS item_id,
         p.data_criacao,
         c.nome_fantasia AS cliente,
@@ -115,12 +115,15 @@ router.get('/carga', async (req, res) => {
           materiais: []
         };
 
-        // ✅ Buscar produtos autorizados do cliente
+        // ✅ Buscar produtos autorizados do cliente com JOIN
         const [autorizados] = await db.query(`
-          SELECT nome_produto FROM produtos_autorizados WHERE cliente_id = ?
+          SELECT pr.nome
+          FROM produtos_autorizados pa
+          INNER JOIN produtos pr ON pa.produto_id = pr.id
+          WHERE pa.cliente_id = ?
         `, [row.cliente_id]);
 
-        pedidosAgrupados[row.id].produtos_autorizados = autorizados.map(p => p.nome_produto);
+        pedidosAgrupados[row.id].produtos_autorizados = autorizados.map(p => p.nome);
       }
 
       pedidosAgrupados[row.id].materiais.push({
@@ -128,7 +131,7 @@ router.get('/carga', async (req, res) => {
         nome_produto: row.produto,
         quantidade: parseFloat(row.peso_previsto),
         unidade: 'Kg',
-        tipo_peso: 'Exato'
+        tipo_peso: 'Exato' // ou outro valor se você armazenar isso em banco
       });
     }
 
