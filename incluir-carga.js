@@ -167,7 +167,6 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
     </div>
     <div id="${idCampoExtra}"></div>
   `;
-
   container.appendChild(div);
 }
 
@@ -177,13 +176,12 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
-
   const motivo = select.value;
   if (!motivo) return;
 
   let htmlExtra = '';
+
   if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
-    const pesoUnitario = motivo === 'Palete Pequeno' ? 6 : 14.37;
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
@@ -194,11 +192,19 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
     aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
 
   } else if (motivo === 'Devolução de Material') {
-    const opcoes = materiais.map(m => `<option value="${m}">${m}</option>`).join('');
+    const selectId = `material-${itemId}-${index}`;
+    const selectAnterior = document.getElementById(selectId);
+    const valorSelecionado = selectAnterior?.value || '';
+
+    const opcoes = materiais.map(m => {
+      const selecionado = m === valorSelecionado ? 'selected' : '';
+      return `<option value="${m}" ${selecionado}>${m}</option>`;
+    }).join('');
+
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label style="min-width: 150px;">Material devolvido:</label>
-        <select id="material-${itemId}-${index}" onchange="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" style="flex: 1; padding: 6px;">
+        <select id="${selectId}" onchange="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" style="flex: 1; padding: 6px;">
           <option value="">Selecione</option>
           ${opcoes}
         </select>
@@ -307,4 +313,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
   document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
-
