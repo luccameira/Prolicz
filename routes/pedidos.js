@@ -96,7 +96,7 @@ router.get('/carga', async (req, res) => {
         WHERE pedido_id = ?
       `, [pedido.id]);
 
-      // Buscar produtos autorizados
+      // Buscar produtos autorizados com nome do produto
       const [autorizados] = await db.query(`
         SELECT pr.nome
         FROM produtos_autorizados pa
@@ -120,7 +120,7 @@ router.get('/carga', async (req, res) => {
           unidade: m.unidade,
           tipo_peso: m.tipo_peso
         })),
-        produtos_autorizados: autorizados.map(p => p.nome)
+        produtos_autorizados: autorizados.map(p => ({ nome: p.nome }))
       });
     }
 
