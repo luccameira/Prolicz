@@ -20,36 +20,7 @@ async function carregarPedidos() {
   const res = await fetch('/api/pedidos/carga');
   const listaPedidos = await res.json();
 
-  const pedidosAgrupados = {};
-
-  listaPedidos.forEach(p => {
-    if (!pedidosAgrupados[p.id]) {
-      pedidosAgrupados[p.id] = {
-        id: p.id,
-        cliente: p.cliente,
-        data_coleta: p.data_coleta,
-        status: p.status,
-        materiais: [],
-        data_criacao: p.data_criacao,
-        data_coleta_iniciada: p.data_coleta_iniciada,
-        data_carga_finalizada: p.data_carga_finalizada,
-        data_conferencia_peso: p.data_conferencia_peso,
-        data_financeiro: p.data_financeiro,
-        data_nf_emitida: p.data_nf_emitida,
-        data_finalizado: p.data_finalizado
-      };
-    }
-
-    pedidosAgrupados[p.id].materiais.push({
-      item_id: p.item_id,
-      nome_produto: p.produto,
-      quantidade: parseFloat(p.peso_previsto),
-      unidade: 'Kg',
-      tipo_peso: p.tipo_peso
-    });
-  });
-
-  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
+  const listaFiltrada = listaPedidos.filter(p => p.status !== 'Aguardando Início da Coleta');
   pedidos = listaFiltrada;
   renderizarPedidos(listaFiltrada);
 }
@@ -202,7 +173,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
 
 function atualizarDescontoItem(itemId, index, pedidoId) {
   const pedido = pedidos.find(p => p.id === pedidoId);
-  const materiais = pedido?.materiais || [];
+  const materiais = pedido?.produtos_autorizados || [];
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
@@ -223,7 +194,7 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
     aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
 
   } else if (motivo === 'Devolução de Material') {
-    const opcoes = materiais.map(m => `<option value="${m.nome_produto}">${m.nome_produto}</option>`).join('');
+    const opcoes = materiais.map(m => `<option value="${m}">${m}</option>`).join('');
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label style="min-width: 150px;">Material devolvido:</label>
