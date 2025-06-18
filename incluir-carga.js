@@ -97,7 +97,7 @@ function renderizarPedidos(lista) {
 
       form.innerHTML += `
         <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
-          <h4>${item.nome_produto}</h4>
+          <h4>${item.nome_produto || '—'}</h4>
           <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
           <div class="linha-peso">
             <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
@@ -172,7 +172,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
 
 function atualizarDescontoItem(itemId, index, pedidoId) {
   const pedido = pedidos.find(p => p.id === pedidoId);
-  const materiais = pedido?.produtos_autorizados || [];
+  const materiais = pedido?.materiais || [];
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
@@ -185,33 +185,26 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
-        <input type="text" id="quantidade-${itemId}-${index}" placeholder="Digite a quantidade" oninput="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" class="input-sem-seta" style="flex: 1; padding: 6px;">
+        <input type="text" id="quantidade-${itemId}-${index}" placeholder="Digite a quantidade" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
     `;
     containerExtra.innerHTML = htmlExtra;
     aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
-
   } else if (motivo === 'Devolução de Material') {
     const selectId = `material-${itemId}-${index}`;
-    const selectAnterior = document.getElementById(selectId);
-    const valorSelecionado = selectAnterior?.value || '';
-
-    const opcoes = materiais.map(m => {
-      const selecionado = m === valorSelecionado ? 'selected' : '';
-      return `<option value="${m}" ${selecionado}>${m}</option>`;
-    }).join('');
+    const opcoes = materiais.map(m => `<option value="${m.nome_produto}">${m.nome_produto}</option>`).join('');
 
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label style="min-width: 150px;">Material devolvido:</label>
-        <select id="${selectId}" onchange="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" style="flex: 1; padding: 6px;">
+        <select id="${selectId}" style="flex: 1; padding: 6px;">
           <option value="">Selecione</option>
           ${opcoes}
         </select>
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
-        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" oninput="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" class="input-sem-seta" style="flex: 1; padding: 6px;">
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
