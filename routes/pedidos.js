@@ -14,7 +14,7 @@ const storageTickets = multer.diskStorage({
   destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const nome = ticket_${Date.now()}${ext};
+    const nome = `ticket_${Date.now()}${ext}`;
     cb(null, nome);
   }
 });
