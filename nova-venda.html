@@ -383,16 +383,38 @@ $("#setor-observacao").on("change", function() {
       });
 
       function renderizarObservacoes() {
-        const html = observacoes.map((obs, i) => `
-          <div class="obs-item">
-            <div class="obs-texto">🔹 <strong>${obs.setor}:</strong> ${obs.texto}</div>
-            <div class="obs-acoes">
-              <button onclick="editarObservacao(${i}, event)">✏️</button>
-              <button onclick="excluirObservacao(${i})">🗑️</button>
-            </div>
-          </div>`).join("");
-        $("#observacoes-confirmadas").html(html).show();
-      }
+  const agrupadas = [];
+
+  observacoes.forEach((obs, index) => {
+    const existente = agrupadas.find(item => item.texto === obs.texto);
+    if (existente) {
+      existente.setores.push(obs.setor);
+      existente.indices.push(index);
+    } else {
+      agrupadas.push({
+        texto: obs.texto,
+        setores: [obs.setor],
+        indices: [index]
+      });
+    }
+  });
+
+  const html = agrupadas.map((item) => {
+    const setores = item.setores.join(", ");
+    const primeiroIndex = item.indices[0]; // referência principal
+
+    return `
+      <div class="obs-item">
+        <div class="obs-texto">🔹 <strong>${setores}:</strong> ${item.texto}</div>
+        <div class="obs-acoes">
+          <button onclick="editarObservacao(${primeiroIndex}, event)">✏️</button>
+          <button onclick="excluirObservacao(${primeiroIndex})">🗑️</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  $("#observacoes-confirmadas").html(html).show();
+}
 
       window.editarObservacao = function(i, event) {
   if (event) event.preventDefault(); // impede o envio do formulário
@@ -404,7 +426,6 @@ $("#setor-observacao").on("change", function() {
   $("#btn-confirmar-observacao").text("Editar Observação");
   editandoIndex = i;
 };
-
       window.excluirObservacao = function(i) {
   if (confirm("Você tem certeza que deseja excluir esta observação?")) {
     observacoes.splice(i, 1);
