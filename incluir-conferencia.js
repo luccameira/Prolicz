@@ -9,7 +9,17 @@ function formatarPeso(valor) {
 
 async function carregarPedidosConferencia() {
   const res = await fetch('/api/pedidos/conferencia');
-  const pedidos = await res.json();
+  const todosPedidos = await res.json();
+
+  const pedidos = todosPedidos.filter(pedido => {
+    const status = pedido.status;
+    return [
+      'Aguardando Conferência do Peso',
+      'Em Análise pelo Financeiro',
+      'Aguardando Emissão de NF',
+      'Nota Fiscal Emitida'
+    ].includes(status);
+  });
 
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
@@ -61,7 +71,7 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-      if (Array.isArray(pedido.materiais)) {
+    if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
         const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
@@ -75,8 +85,8 @@ async function carregarPedidosConferencia() {
             const qtd = formatarPeso(desc.quantidade);
             const peso = formatarPeso(desc.peso_calculado);
             totalDescontos += Number(desc.peso_calculado || 0);
-            const sufixo = desc.motivo.includes('Palete') ? 'unidades' : 'kg';
-            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} kg)</li>`;
+            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'Kg';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
           }).join('');
 
           descontosHTML = `
@@ -93,11 +103,11 @@ async function carregarPedidosConferencia() {
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} kg</p>
-            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
+            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
             ${descontosHTML}
             <div style="margin-top: 14px;">
-              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} kg</span>
+              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
             </div>
           </div>
         `;
@@ -184,6 +194,22 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
+    // Adiciona observações do setor, se houver
+    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+      const obsBloco = document.createElement('div');
+      obsBloco.style.background = '#fff3cd';
+      obsBloco.style.padding = '12px';
+      obsBloco.style.borderLeft = '5px solid #ffc107';
+      obsBloco.style.borderRadius = '4px';
+      obsBloco.style.marginTop = '20px';
+      obsBloco.innerHTML = `
+        <strong>Observações para Conferência de Peso:</strong><br>
+        ${pedido.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
+      `;
+      form.appendChild(obsBloco);
+    }
+
+    // Botão de confirmar peso
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -198,13 +224,24 @@ async function carregarPedidosConferencia() {
       form.appendChild(botaoConfirmar);
     }
 
-    card.addEventListener('click', (event) => {
+    const timeline = document.createElement('div');
+    timeline.className = 'area-clique-timeline';
+    timeline.style.width = '100%';
+    timeline.style.height = '110px';
+    timeline.style.position = 'absolute';
+    timeline.style.top = '0';
+    timeline.style.left = '0';
+    timeline.style.zIndex = '1';
+
+    timeline.addEventListener('click', (e) => {
       if (pedido.status !== 'Aguardando Conferência do Peso') return;
-      if (event.target.closest('button')) return;
+      e.stopPropagation();
       form.style.display = form.style.display === 'block' ? 'none' : 'block';
     });
 
+    card.style.position = 'relative';
     card.appendChild(form);
+    card.appendChild(timeline);
     lista.appendChild(card);
   });
 }
