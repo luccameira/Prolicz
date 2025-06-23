@@ -75,13 +75,24 @@
       color: #666;
     }
     #observacao-bloco {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f5f5f5;
-      border-radius: 8px;
-      display: none;
-      position: relative;
-    }
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: none;
+  position: relative;
+}
+
+.select2-container {
+  z-index: auto !important;
+}
+
+.select2-container--open + #texto-observacao {
+  margin-top: 150px !important; /* não funciona porque o campo não está logo após o select */
+}
+.select2-container {
+  z-index: 2 !important;
+}
 
     .btn-fechar {
       position: absolute;
@@ -212,14 +223,22 @@
 
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
-          <select id="setor-observacao">
-            <option value="">Selecione o setor</option>
-            <option value="Portaria">Portaria</option>
-            <option value="Carga e Descarga">Carga e Descarga</option>
-            <option value="Conferência de Peso">Conferência de Peso</option>
-            <option value="Financeiro">Financeiro</option>
-            <option value="Emissão de NF">Emissão de NF</option>
-          </select>
+          <select id="setor-observacao" multiple="multiple" style="width: 100%;">
+  <option value="Portaria">Portaria</option>
+  <option value="Carga e Descarga">Carga e Descarga</option>
+  <option value="Conferência de Peso">Conferência de Peso</option>
+  <option value="Financeiro">Financeiro</option>
+  <option value="Emissão de NF">Emissão de NF</option>
+</select>
+<script>
+  $(document).ready(function() {
+    $('#setor-observacao').select2({
+      placeholder: "Selecione os setores",
+      closeOnSelect: false,
+      width: 'resolve'
+    });
+  });
+</script>
         </div>
 
         <div class="form-group">
@@ -310,9 +329,18 @@
         editandoIndex = null;
       });
 
-      $("#setor-observacao").change(function(){
-        $("#texto-observacao").prop("disabled", !$(this).val());
-      });
+      $("#setor-observacao").on("select2:open", function () {
+  $("#texto-observacao").css("margin-top", "150px");
+});
+
+$("#setor-observacao").on("select2:close", function () {
+  $("#texto-observacao").css("margin-top", "0");
+});
+
+$("#setor-observacao").on("change", function() {
+  const valores = $(this).val();
+  $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
+});
 
       $("#btn-confirmar-observacao").click(function(){
         const setor = $("#setor-observacao").val();
@@ -324,10 +352,10 @@
         }
 
         if (editandoIndex !== null) {
-          observacoes[editandoIndex] = { setor, texto };
-        } else {
-          observacoes.push({ setor, texto });
-        }
+  observacoes[editandoIndex] = { setor, texto };
+} else {
+  setor.forEach(s => observacoes.push({ setor: s, texto }));
+}
 
         renderizarObservacoes();
         $("#setor-observacao").val("");
