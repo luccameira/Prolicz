@@ -66,7 +66,7 @@ router.get('/portaria', async (req, res) => {
 // 🔽 NOVO TRECHO: buscar observações por setor
 for (const pedido of pedidos) {
   const [obs] = await db.query(
-    SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Portaria'
+    `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Portaria'`,
     [pedido.pedido_id]
   );
   pedido.observacoes_setor = obs.map(o => o.texto);
@@ -110,7 +110,7 @@ router.get('/carga', async (req, res) => {
     // Corrigido: agora itera e busca as observações corretamente
     for (const pedido of results) {
       const [obs] = await db.query(
-        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Carga e Descarga',
+        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Carga e Descarga'`,
         [pedido.id]
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
@@ -158,7 +158,7 @@ router.get('/', async (req, res) => {
 
   if (cliente) {
     sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
-    params.push(%${cliente}%, %${cliente}%);
+    params.push(`%${cliente}%`, `%${cliente}%`);
   }
 
   if (status) {
@@ -201,13 +201,13 @@ router.get('/', async (req, res) => {
 
       pedido.materiais = materiais;
       const [obs] = await db.query(
-  SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF',
+  `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF'`,
   [pedido.pedido_id]
 );
 pedido.observacoes_setor = obs.map(o => o.texto);
 
       const [prazosPedido] = await db.query(
-        SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?,
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
 
@@ -234,7 +234,7 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
     const [produtos] = await db.query(
-      SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?,
+      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
       [clienteId]
     );
     res.json(produtos);
@@ -299,7 +299,7 @@ const observacao = ''; // não usamos mais campo único, deixamos vazio
         }
 
         await db.query(
-          INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?),
+          `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
           [pedido_id, descricao.trim(), dias]
         );
       }
@@ -312,7 +312,7 @@ if (Array.isArray(observacoes)) {
     const texto = obs.texto || '';
     for (const setor of setores) {
       await db.query(
-        INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?),
+        `INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?)`,
         [pedido_id, setor, texto]
       );
     }
@@ -383,7 +383,7 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
         );
 
         await db.query(
-          DELETE FROM descontos_item_pedido WHERE item_id = ?,
+          `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
           [item.item_id]
         );
 
@@ -436,7 +436,7 @@ router.put('/:id/financeiro', async (req, res) => {
 
   try {
     await db.query(
-      UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?,
+      `UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?`,
       ['Aguardando Emissão de NF', observacoes_financeiro, id]
     );
 
@@ -477,11 +477,11 @@ router.delete('/:id', async (req, res) => {
 // ENCONTRAR este trecho no seu arquivo pedidos.js:
 // -----------------------------------------------
 // router.get('/conferencia', async (req, res) => {
-//   const sql = ...
+//   const sql = `...`
 //   try {
 //     const [pedidos] = await db.query(sql);
 //     for (const pedido of pedidos) {
-//       const [materiais] = await db.query(..., [pedido.pedido_id]);
+//       const [materiais] = await db.query(`...`, [pedido.pedido_id]);
 //       pedido.materiais = materiais;
 //     }
 //     res.json(pedidos);
@@ -531,7 +531,7 @@ router.get('/conferencia', async (req, res) => {
     for (const pedido of pedidos) {
       // ✅ Adiciona observações do setor Conferência de Peso
       const [obs] = await db.query(
-        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Conferência de Peso',
+        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Conferência de Peso'`,
         [pedido.pedido_id]
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
@@ -587,7 +587,7 @@ ORDER BY p.data_coleta ASC
 
 for (const pedido of pedidos) {
   const [obs] = await db.query(
-  SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF' LIMIT 1,
+  `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF' LIMIT 1`,
   [pedido.pedido_id]
 );
 pedido.observacoes = obs.length ? obs[0].texto : '';
@@ -661,7 +661,7 @@ router.get('/financeiro', async (req, res) => {
     for (const pedido of pedidos) {
       // 🔽 Aqui buscamos a observação do setor Financeiro corretamente
       const [obs] = await db.query(
-        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro',
+        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro'`,
         [pedido.pedido_id]
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
@@ -687,7 +687,7 @@ router.get('/financeiro', async (req, res) => {
       pedido.observacoes = pedido.observacao || '';
 
       const [prazosPedido] = await db.query(
-        SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?,
+        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
 
