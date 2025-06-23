@@ -14,7 +14,7 @@ const storageTickets = multer.diskStorage({
   destination: (req, file, cb) => cb(null, pastaTickets),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const nome = `ticket_${Date.now()}${ext}`;
+    const nome = ticket_${Date.now()}${ext};
     cb(null, nome);
   }
 });
@@ -22,7 +22,7 @@ const uploadTicket = multer({ storage: storageTickets });
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
-  return `${ano}-${mes}-${dia}`;
+  return ${ano}-${mes}-${dia};
 }
 
 // Rota GET /api/pedidos/portaria
@@ -62,7 +62,17 @@ router.get('/portaria', async (req, res) => {
     `;
 
     const [pedidos] = await db.query(sql);
-    res.json(pedidos);
+
+// 🔽 NOVO TRECHO: buscar observações por setor
+for (const pedido of pedidos) {
+  const [obs] = await db.query(
+    SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Portaria',
+    [pedido.pedido_id]
+  );
+  pedido.observacoes_setor = obs.map(o => o.texto);
+}
+
+res.json(pedidos);
   } catch (err) {
     console.error('Erro ao buscar pedidos da portaria:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos da portaria' });
@@ -71,39 +81,48 @@ router.get('/portaria', async (req, res) => {
 
 // ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id,
+      i.id AS item_id,
+      p.data_criacao,
+      c.nome_fantasia AS cliente,
+      i.nome_produto AS produto,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,
+      SUM(i.peso) AS peso_previsto,
+      p.status
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    INNER JOIN itens_pedido i ON p.id = i.pedido_id
+    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+    GROUP BY 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
+    ORDER BY p.data_coleta ASC
+  `;
+
   try {
-    // Buscar pedidos do dia atual com coleta iniciada
-    const [pedidos] = await db.query(`
-      SELECT 
-        p.id, p.data_criacao, p.data_coleta, p.data_coleta_iniciada,
-        p.data_carga_finalizada, p.data_conferencia_peso, p.status,
-        c.nome_fantasia AS cliente
-      FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status != 'Aguardando Início da Coleta'
-      ORDER BY p.data_coleta ASC
-    `);
+    const [results] = await db.query(sql);
 
-    // Para cada pedido, buscar os materiais
-    for (const pedido of pedidos) {
-      const [materiais] = await db.query(`
-        SELECT 
-          i.id AS item_id, i.nome_produto, i.peso AS quantidade, 
-          i.tipo_peso, i.unidade, i.peso_carregado
-        FROM itens_pedido i
-        WHERE i.pedido_id = ?
-      `, [pedido.id]);
-
-      pedido.materiais = materiais;
+    // Corrigido: agora itera e busca as observações corretamente
+    for (const pedido of results) {
+      const [obs] = await db.query(
+        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Carga e Descarga',
+        [pedido.id]
+      );
+      pedido.observacoes_setor = obs.map(o => o.texto);
     }
 
-    res.json(pedidos);
+    res.json(results);
   } catch (err) {
     console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
   }
 });
+
 
 // GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
@@ -139,7 +158,7 @@ router.get('/', async (req, res) => {
 
   if (cliente) {
     sqlPedidos += " AND (c.nome_fantasia LIKE ? OR p.nota_fiscal LIKE ?)";
-    params.push(`%${cliente}%`, `%${cliente}%`);
+    params.push(%${cliente}%, %${cliente}%);
   }
 
   if (status) {
@@ -181,10 +200,14 @@ router.get('/', async (req, res) => {
       }
 
       pedido.materiais = materiais;
-      pedido.observacoes = pedido.observacao || '';
+      const [obs] = await db.query(
+  SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF',
+  [pedido.pedido_id]
+);
+pedido.observacoes_setor = obs.map(o => o.texto);
 
       const [prazosPedido] = await db.query(
-        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+        SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?,
         [pedido.pedido_id]
       );
 
@@ -211,7 +234,7 @@ router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
     const [produtos] = await db.query(
-      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
+      SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?,
       [clienteId]
     );
     res.json(produtos);
@@ -276,21 +299,23 @@ const observacao = ''; // não usamos mais campo único, deixamos vazio
         }
 
         await db.query(
-          `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
+          INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?),
           [pedido_id, descricao.trim(), dias]
         );
       }
     }
 
-// Inserir observações por setor na tabela observacoes_pedido (nova)
+// Inserir observações por setor (agora pode ter múltiplos setores para a mesma observação)
 if (Array.isArray(observacoes)) {
   for (const obs of observacoes) {
-    const setor = obs.setor || '';
+    const setores = Array.isArray(obs.setor) ? obs.setor : [obs.setor];
     const texto = obs.texto || '';
-    await db.query(
-      `INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?)`,
-      [pedido_id, setor, texto]
-    );
+    for (const setor of setores) {
+      await db.query(
+        INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?),
+        [pedido_id, setor, texto]
+      );
+    }
   }
 }
 
@@ -330,11 +355,10 @@ router.put('/:id/coleta', async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/carga
-router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
+router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
   const { id } = req.params;
   const { itens } = req.body;
-
-  const ticketBalança = req.files?.find(f => f.fieldname === 'ticket_balanca')?.filename || null;
+  const nomeArquivo = req.file?.filename || null;
 
   try {
     await db.query(
@@ -344,7 +368,7 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
          status = 'Aguardando Conferência do Peso',
          data_carga_finalizada = NOW()
        WHERE id = ?`,
-      [ticketBalança, id]
+      [nomeArquivo, id]
     );
 
     const listaItens = JSON.parse(itens || '[]');
@@ -359,28 +383,16 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
         );
 
         await db.query(
-          `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
+          DELETE FROM descontos_item_pedido WHERE item_id = ?,
           [item.item_id]
         );
 
         if (Array.isArray(item.descontos)) {
-          for (let i = 0; i < item.descontos.length; i++) {
-            const desc = item.descontos[i];
-            const campoUpload = `ticket_devolucao_${item.item_id}_${i}`;
-            const arquivoTicket = req.files?.find(f => f.fieldname === campoUpload)?.filename || null;
-
+          for (const desc of item.descontos) {
             await db.query(
-              `INSERT INTO descontos_item_pedido 
-               (item_id, motivo, quantidade, peso_calculado, material, ticket_devolucao)
-               VALUES (?, ?, ?, ?, ?, ?)`,
-              [
-                item.item_id,
-                desc.motivo,
-                desc.quantidade || null,
-                desc.peso_calculado || 0,
-                desc.material || null,
-                arquivoTicket
-              ]
+              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
+               VALUES (?, ?, ?, ?)`,
+              [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
             );
           }
         }
@@ -424,7 +436,7 @@ router.put('/:id/financeiro', async (req, res) => {
 
   try {
     await db.query(
-      `UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?`,
+      UPDATE pedidos SET status = ?, observacoes_financeiro = ? WHERE id = ?,
       ['Aguardando Emissão de NF', observacoes_financeiro, id]
     );
 
@@ -461,6 +473,26 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/pedidos/conferencia
+// GET /api/pedidos/conferencia
+// ENCONTRAR este trecho no seu arquivo pedidos.js:
+// -----------------------------------------------
+// router.get('/conferencia', async (req, res) => {
+//   const sql = ...
+//   try {
+//     const [pedidos] = await db.query(sql);
+//     for (const pedido of pedidos) {
+//       const [materiais] = await db.query(..., [pedido.pedido_id]);
+//       pedido.materiais = materiais;
+//     }
+//     res.json(pedidos);
+//   } catch (err) {
+//     console.error(...);
+//     res.status(500).json(...);
+//   }
+// });
+
+// SUBSTITUIR pelo código completo abaixo:
+
 router.get('/conferencia', async (req, res) => {
   const sql = `
     SELECT 
@@ -482,7 +514,7 @@ router.get('/conferencia', async (req, res) => {
       c.nome_fantasia AS cliente
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE p.status IN ('Coleta Iniciada', 'Aguardando Conferência do Peso', 'Em Análise pelo Financeiro')
+    WHERE DATE(p.data_coleta) = CURDATE()
     ORDER BY 
       CASE 
         WHEN p.status = 'Coleta Iniciada' THEN 1
@@ -497,14 +529,17 @@ router.get('/conferencia', async (req, res) => {
     const [pedidos] = await db.query(sql);
 
     for (const pedido of pedidos) {
+      // ✅ Adiciona observações do setor Conferência de Peso
+      const [obs] = await db.query(
+        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Conferência de Peso',
+        [pedido.pedido_id]
+      );
+      pedido.observacoes_setor = obs.map(o => o.texto);
+
       const [materiais] = await db.query(
         `SELECT 
-            i.id AS item_id,
-            i.nome_produto,
-            i.peso AS quantidade,
-            i.tipo_peso,
-            i.unidade,
-            i.peso_carregado
+            i.id, i.nome_produto, i.peso AS quantidade, i.tipo_peso, 
+            i.unidade, i.peso_carregado
          FROM itens_pedido i
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
@@ -515,7 +550,7 @@ router.get('/conferencia', async (req, res) => {
           `SELECT motivo, quantidade, peso_calculado
            FROM descontos_item_pedido
            WHERE item_id = ?`,
-          [item.item_id] // usa item_id corretamente agora
+          [item.id]
         );
         item.descontos = descontos || [];
       }
@@ -524,6 +559,7 @@ router.get('/conferencia', async (req, res) => {
     }
 
     res.json(pedidos);
+
   } catch (err) {
     console.error('Erro ao buscar pedidos para conferência:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos para conferência' });
@@ -548,7 +584,17 @@ ORDER BY p.data_coleta ASC
   `;
   try {
     const [pedidos] = await db.query(sql);
-    res.json(pedidos);
+
+for (const pedido of pedidos) {
+  const [obs] = await db.query(
+  SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Emissão de NF' LIMIT 1,
+  [pedido.pedido_id]
+);
+pedido.observacoes = obs.length ? obs[0].texto : '';
+}
+
+res.json(pedidos);
+
   } catch (err) {
     console.error('Erro ao buscar pedidos para emissão de NF:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos para emissão de NF' });
@@ -556,61 +602,70 @@ ORDER BY p.data_coleta ASC
 });
 
 // GET /api/pedidos/financeiro
+// GET /api/pedidos/financeiro
+// GET /api/pedidos/financeiro
 router.get('/financeiro', async (req, res) => {
   try {
-   const sql = `
-  SELECT 
-    p.id AS pedido_id,
-    p.data_criacao,
-    p.tipo,
-    p.status,
-    p.data_coleta,
-    p.data_coleta_iniciada,
-    p.data_carga_finalizada,
-    p.data_conferencia_peso,
-    p.data_financeiro,
-    p.data_emissao_nf,
-    p.data_finalizado,
-    p.codigo_interno,
-    p.observacao,
-    p.empresa,
-    p.nota_fiscal,
-    p.ticket_balanca,
-    p.condicao_pagamento_avista,
-    c.nome_fantasia AS cliente,
-    c.documento AS cnpj,
-    c.situacao_tributaria,
-    c.inscricao_estadual,
-    CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
-  FROM pedidos p
-  INNER JOIN clientes c ON p.cliente_id = c.id
-  WHERE DATE(p.data_coleta) = CURDATE()
-    AND p.status IN (
-      'Coleta Iniciada',
-      'Coleta Finalizada',
-      'Aguardando Conferência do Peso',
-      'Em Análise pelo Financeiro',
-      'Aguardando Emissão de NF',
-      'Cliente Liberado',
-      'Finalizado'
-    )
-  ORDER BY 
-    CASE 
-      WHEN p.status = 'Coleta Iniciada' THEN 1
-      WHEN p.status = 'Coleta Finalizada' THEN 2
-      WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
-      WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
-      WHEN p.status = 'Aguardando Emissão de NF' THEN 5
-      WHEN p.status = 'Cliente Liberado' THEN 6
-      WHEN p.status = 'Finalizado' THEN 7
-      ELSE 99
-    END,
-    p.data_coleta ASC
-`;
+    const sql = `
+      SELECT 
+        p.id AS pedido_id,
+        p.data_criacao,
+        p.tipo,
+        p.status,
+        p.data_coleta,
+        p.data_coleta_iniciada,
+        p.data_carga_finalizada,
+        p.data_conferencia_peso,
+        p.data_financeiro,
+        p.data_emissao_nf,
+        p.data_finalizado,
+        p.codigo_interno,
+        p.observacao,
+        p.empresa,
+        p.nota_fiscal,
+        p.ticket_balanca,
+        p.condicao_pagamento_avista,
+        c.nome_fantasia AS cliente,
+        c.documento AS cnpj,
+        c.situacao_tributaria,
+        c.inscricao_estadual,
+        CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      WHERE DATE(p.data_coleta) = CURDATE()
+        AND p.status IN (
+          'Coleta Iniciada',
+          'Coleta Finalizada',
+          'Aguardando Conferência do Peso',
+          'Em Análise pelo Financeiro',
+          'Aguardando Emissão de NF',
+          'Cliente Liberado',
+          'Finalizado'
+        )
+      ORDER BY 
+        CASE 
+          WHEN p.status = 'Coleta Iniciada' THEN 1
+          WHEN p.status = 'Coleta Finalizada' THEN 2
+          WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+          WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+          WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+          WHEN p.status = 'Cliente Liberado' THEN 6
+          WHEN p.status = 'Finalizado' THEN 7
+          ELSE 99
+        END,
+        p.data_coleta ASC
+    `;
 
     const [pedidos] = await db.query(sql);
 
     for (const pedido of pedidos) {
+      // 🔽 Aqui buscamos a observação do setor Financeiro corretamente
+      const [obs] = await db.query(
+        SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro',
+        [pedido.pedido_id]
+      );
+      pedido.observacoes_setor = obs.map(o => o.texto);
+
       const [materiais] = await db.query(
         `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
@@ -632,7 +687,7 @@ router.get('/financeiro', async (req, res) => {
       pedido.observacoes = pedido.observacao || '';
 
       const [prazosPedido] = await db.query(
-        `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+        SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?,
         [pedido.pedido_id]
       );
 
@@ -653,5 +708,7 @@ router.get('/financeiro', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar pedidos para o financeiro' });
   }
 });
+
+
 
 module.exports = router;
