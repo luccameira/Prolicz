@@ -224,6 +224,7 @@
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
           <select id="setor-observacao" multiple="multiple" style="width: 100%;">
+  <option value="Todos">Todos</option>
   <option value="Portaria">Portaria</option>
   <option value="Carga e Descarga">Carga e Descarga</option>
   <option value="Conferência de Peso">Conferência de Peso</option>
@@ -316,10 +317,13 @@
       });
 
       $("#btn-adicionar-observacao").click(function(){
-        $("#observacao-bloco").slideDown();
-        $(this).hide();
-        $("#btn-confirmar-observacao").text("Confirmar Observação");
-      });
+  $("#setor-observacao").val(null).trigger("change"); // limpa seleção de setor
+  $("#texto-observacao").val("").prop("disabled", true); // limpa e desativa o campo de texto
+  $("#observacao-bloco").slideDown();
+  $(this).hide();
+  $("#btn-confirmar-observacao").text("Confirmar Observação");
+  editandoIndex = null;
+});
 
       $("#btn-fechar-observacao").click(function(){
         $("#observacao-bloco").slideUp();
@@ -338,7 +342,20 @@ $("#setor-observacao").on("select2:close", function () {
 });
 
 $("#setor-observacao").on("change", function() {
-  const valores = $(this).val();
+  let valores = $(this).val();
+
+  if (valores && valores.includes("Todos")) {
+    const todosSetores = [
+      "Portaria",
+      "Carga e Descarga",
+      "Conferência de Peso",
+      "Financeiro",
+      "Emissão de NF"
+    ];
+    $("#setor-observacao").val(todosSetores).trigger("change");
+    valores = todosSetores;
+  }
+
   $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
 });
 
@@ -389,9 +406,11 @@ $("#setor-observacao").on("change", function() {
 };
 
       window.excluirObservacao = function(i) {
-        observacoes.splice(i, 1);
-        renderizarObservacoes();
-      };
+  if (confirm("Você tem certeza que deseja excluir esta observação?")) {
+    observacoes.splice(i, 1);
+    renderizarObservacoes();
+  }
+};
       function formatarNumero(valor, inteiro = false) {
         const partes = inteiro
           ? [Math.floor(valor).toString()]
