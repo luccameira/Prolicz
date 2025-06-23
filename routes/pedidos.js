@@ -71,32 +71,34 @@ router.get('/portaria', async (req, res) => {
 
 // ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
-  const sql = `
-    SELECT 
-      p.id,
-      i.id AS item_id,
-      p.data_criacao,
-      c.nome_fantasia AS cliente,
-      i.nome_produto AS produto,
-      p.data_coleta,
-      p.data_coleta_iniciada,
-      p.data_carga_finalizada,
-      p.data_conferencia_peso,       -- ✅ Adicionado
-      SUM(i.peso) AS peso_previsto,
-      p.status
-    FROM pedidos p
-    INNER JOIN clientes c ON p.cliente_id = c.id
-    INNER JOIN itens_pedido i ON p.id = i.pedido_id
-    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
-    GROUP BY 
-      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
-      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
-    ORDER BY p.data_coleta ASC
-  `;
-
   try {
-    const [results] = await db.query(sql);
-    res.json(results);
+    // Buscar pedidos do dia atual com coleta iniciada
+    const [pedidos] = await db.query(`
+      SELECT 
+        p.id, p.data_criacao, p.data_coleta, p.data_coleta_iniciada,
+        p.data_carga_finalizada, p.data_conferencia_peso, p.status,
+        c.nome_fantasia AS cliente
+      FROM pedidos p
+      INNER JOIN clientes c ON p.cliente_id = c.id
+      WHERE DATE(p.data_coleta) = CURDATE()
+        AND p.status != 'Aguardando Início da Coleta'
+      ORDER BY p.data_coleta ASC
+    `);
+
+    // Para cada pedido, buscar os materiais
+    for (const pedido of pedidos) {
+      const [materiais] = await db.query(`
+        SELECT 
+          i.id AS item_id, i.nome_produto, i.peso AS quantidade, 
+          i.tipo_peso, i.unidade, i.peso_carregado
+        FROM itens_pedido i
+        WHERE i.pedido_id = ?
+      `, [pedido.id]);
+
+      pedido.materiais = materiais;
+    }
+
+    res.json(pedidos);
   } catch (err) {
     console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
