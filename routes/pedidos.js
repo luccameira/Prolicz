@@ -22,7 +22,7 @@ const uploadTicket = multer({ storage: storageTickets });
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
-  return ${ano}-${mes}-${dia};
+  return `${ano}-${mes}-${dia}`;
 }
 
 // Rota GET /api/pedidos/portaria
