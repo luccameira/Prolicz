@@ -25,7 +25,6 @@ async function carregarPedidosConferencia() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Etiqueta de status
     let statusHtml = '';
     if (pedido.status === 'Em Análise pelo Financeiro') {
       statusHtml = `
@@ -62,7 +61,7 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    if (Array.isArray(pedido.materiais)) {
+      if (Array.isArray(pedido.materiais)) {
       pedido.materiais.forEach(item => {
         const pesoPrevisto = formatarPeso(item.quantidade);
         const pesoCarregado = formatarPeso(item.peso_carregado);
@@ -76,8 +75,8 @@ async function carregarPedidosConferencia() {
             const qtd = formatarPeso(desc.quantidade);
             const peso = formatarPeso(desc.peso_calculado);
             totalDescontos += Number(desc.peso_calculado || 0);
-            const sufixo = desc.motivo.includes('Palete') ? 'UNIDADES' : 'Kg';
-            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
+            const sufixo = desc.motivo.includes('Palete') ? 'unidades' : 'kg';
+            return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} kg)</li>`;
           }).join('');
 
           descontosHTML = `
@@ -94,11 +93,11 @@ async function carregarPedidosConferencia() {
         form.innerHTML += `
           <div class="material-bloco">
             <h4>${item.nome_produto}</h4>
-            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+            <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} kg</p>
+            <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} kg</p>
             ${descontosHTML}
             <div style="margin-top: 14px;">
-              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+              <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} kg</span>
             </div>
           </div>
         `;
@@ -185,7 +184,6 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-    // Botão Confirmar Peso
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -200,7 +198,6 @@ async function carregarPedidosConferencia() {
       form.appendChild(botaoConfirmar);
     }
 
-    // Card só abre se estiver na vez da conferência
     card.addEventListener('click', (event) => {
       if (pedido.status !== 'Aguardando Conferência do Peso') return;
       if (event.target.closest('button')) return;
@@ -248,4 +245,3 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
-
