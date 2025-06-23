@@ -93,27 +93,38 @@ router.get('/carga', async (req, res) => {
       p.data_carga_finalizada,
       p.data_conferencia_peso,
       SUM(i.peso) AS peso_previsto,
-      p.status
+      p.status,
+      c.id AS cliente_id
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
     WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
     GROUP BY 
       p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
-      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, 
+      p.data_conferencia_peso, p.status, c.id
     ORDER BY p.data_coleta ASC
   `;
 
   try {
     const [results] = await db.query(sql);
 
-    // Corrigido: agora itera e busca as observações corretamente
     for (const pedido of results) {
+      // Observações do setor
       const [obs] = await db.query(
         `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Carga e Descarga'`,
         [pedido.id]
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
+
+      // Produtos autorizados do cliente
+      const [produtos] = await db.query(
+        `SELECT p.nome AS nome FROM produtos p
+         INNER JOIN produtos_autorizados pa ON pa.produto_id = p.id
+         WHERE pa.cliente_id = ?`,
+        [pedido.cliente_id]
+      );
+      pedido.produtos_autorizados = produtos; // ex: [{ nome: 'Polpa' }, { nome: 'Fraldinha' }]
     }
 
     res.json(results);
@@ -122,7 +133,6 @@ router.get('/carga', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
   }
 });
-
 
 // GET /api/pedidos - listagem com filtros
 router.get('/', async (req, res) => {
