@@ -458,7 +458,7 @@ router.get('/conferencia', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
-      p.data_conferencia_peso,          -- ✅ AGORA USA O CAMPO REAL
+      p.data_conferencia_peso,
       p.data_financeiro,
       p.data_emissao_nf,
       p.data_finalizado,
@@ -486,8 +486,12 @@ router.get('/conferencia', async (req, res) => {
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
         `SELECT 
-            i.id, i.nome_produto, i.peso AS quantidade, i.tipo_peso, 
-            i.unidade, i.peso_carregado
+            i.id AS item_id,
+            i.nome_produto,
+            i.peso AS quantidade,
+            i.tipo_peso,
+            i.unidade,
+            i.peso_carregado
          FROM itens_pedido i
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
@@ -498,7 +502,7 @@ router.get('/conferencia', async (req, res) => {
           `SELECT motivo, quantidade, peso_calculado
            FROM descontos_item_pedido
            WHERE item_id = ?`,
-          [item.id]
+          [item.item_id] // usa item_id corretamente agora
         );
         item.descontos = descontos || [];
       }
