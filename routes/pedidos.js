@@ -364,13 +364,24 @@ router.put('/:id/coleta', async (req, res) => {
   }
 });
 
+const uploadMultiplosTickets = uploadTicket.any(); // permite múltiplos arquivos com qualquer nome
+
 // PUT /api/pedidos/:id/carga
-router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
+router.put('/:id/carga', uploadMultiplosTickets, async (req, res) => {
   const { id } = req.params;
   const { itens } = req.body;
-  const nomeArquivo = req.file?.filename || null;
+
+  // Captura os nomes dos arquivos enviados via multipart/form-data
+  const arquivos = {};
+  if (Array.isArray(req.files)) {
+    req.files.forEach(file => {
+      arquivos[file.fieldname] = file.filename;
+    });
+  }
 
   try {
+    const nomeArquivoPrincipal = arquivos['ticket_balanca'] || null;
+
     await db.query(
       `UPDATE pedidos
        SET 
@@ -378,7 +389,7 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
          status = 'Aguardando Conferência do Peso',
          data_carga_finalizada = NOW()
        WHERE id = ?`,
-      [nomeArquivo, id]
+      [nomeArquivoPrincipal, id]
     );
 
     const listaItens = JSON.parse(itens || '[]');
@@ -399,19 +410,22 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
 
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
+            const campoArquivo = desc.ticket_devolucao;
+            const nomeArquivoDevolucao = campoArquivo ? arquivos[campoArquivo] || null : null;
+
             await db.query(
               `INSERT INTO descontos_item_pedido 
                (item_id, motivo, quantidade, peso_calculado, material, ticket_devolucao)
                VALUES (?, ?, ?, ?, ?, ?)`,
               [
-               item.item_id,
-               desc.motivo,
-               desc.quantidade || null,
-               desc.peso_calculado || 0,
-               desc.material || null,
-               desc.ticket_devolucao || null
-             ]
-           );
+                item.item_id,
+                desc.motivo,
+                desc.quantidade || null,
+                desc.peso_calculado || 0,
+                desc.material || null,
+                nomeArquivoDevolucao
+              ]
+            );
           }
         }
       }
