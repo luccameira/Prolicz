@@ -40,12 +40,12 @@ function renderizarPedidos(lista) {
 
   const pendentes = pedidosFiltrados.filter(p =>
     p.status === 'Coleta Iniciada' &&
-    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
+    (p.materiais || []).every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
   );
 
   const concluidos = pedidosFiltrados.filter(p =>
     !(p.status === 'Coleta Iniciada' &&
-    p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
+    (p.materiais || []).every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
   );
 
   const pedidosOrdenados = [...pendentes, ...concluidos];
@@ -88,7 +88,7 @@ function renderizarPedidos(lista) {
     form.id = `form-${p.id}`;
     form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
-    p.materiais.forEach((item, index) => {
+    (p.materiais || []).forEach((item, index) => {
       const itemId = item.item_id;
       if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
