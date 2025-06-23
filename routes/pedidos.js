@@ -350,7 +350,6 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
 
     if (Array.isArray(listaItens)) {
       for (const item of listaItens) {
-        // Atualiza o peso carregado no item
         await db.query(
           `UPDATE itens_pedido 
            SET peso_carregado = ? 
@@ -358,24 +357,17 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
           [item.peso_carregado, item.item_id]
         );
 
-        // Remove descontos anteriores para o item
         await db.query(
           `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
           [item.item_id]
         );
 
-        // Insere novos descontos (se existirem)
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
             await db.query(
               `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
                VALUES (?, ?, ?, ?)`,
-              [
-                item.item_id,
-                desc.motivo,
-                desc.quantidade || null,
-                desc.peso_calculado || 0
-              ]
+              [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
             );
           }
         }
