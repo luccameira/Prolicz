@@ -66,7 +66,7 @@ router.get('/portaria', async (req, res) => {
 // 🔽 NOVO TRECHO: buscar observações por setor
 for (const pedido of pedidos) {
   const [obs] = await db.query(
-    SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Portaria',
+    SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Portaria'
     [pedido.pedido_id]
   );
   pedido.observacoes_setor = obs.map(o => o.texto);
