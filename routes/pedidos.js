@@ -330,10 +330,11 @@ router.put('/:id/coleta', async (req, res) => {
 });
 
 // PUT /api/pedidos/:id/carga
-router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res) => {
+router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
   const { id } = req.params;
   const { itens } = req.body;
-  const nomeArquivo = req.file?.filename || null;
+
+  const ticketBalança = req.files?.find(f => f.fieldname === 'ticket_balanca')?.filename || null;
 
   try {
     await db.query(
@@ -343,7 +344,7 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
          status = 'Aguardando Conferência do Peso',
          data_carga_finalizada = NOW()
        WHERE id = ?`,
-      [nomeArquivo, id]
+      [ticketBalança, id]
     );
 
     const listaItens = JSON.parse(itens || '[]');
@@ -363,11 +364,23 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
         );
 
         if (Array.isArray(item.descontos)) {
-          for (const desc of item.descontos) {
+          for (let i = 0; i < item.descontos.length; i++) {
+            const desc = item.descontos[i];
+            const campoUpload = `ticket_devolucao_${item.item_id}_${i}`;
+            const arquivoTicket = req.files?.find(f => f.fieldname === campoUpload)?.filename || null;
+
             await db.query(
-              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
-               VALUES (?, ?, ?, ?)`,
-              [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
+              `INSERT INTO descontos_item_pedido 
+               (item_id, motivo, quantidade, peso_calculado, material, ticket_devolucao)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                item.item_id,
+                desc.motivo,
+                desc.quantidade || null,
+                desc.peso_calculado || 0,
+                desc.material || null,
+                arquivoTicket
+              ]
             );
           }
         }
