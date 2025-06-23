@@ -279,11 +279,15 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   }
 
   descontosPorItem[itemId][index] = {
-    motivo,
-    ...infoExtra,
-    peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
-  };
-}
+  motivo,
+  quantidade: motivo.includes('Palete') 
+    ? parseFloat(valorQtd?.value.replace(/\./g, '')) || 0
+    : motivo === 'Devolução de Material'
+    ? parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0
+    : null,
+  ...infoExtra,
+  peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
+};
 
 function removerDescontoMaterial(itemId, index) {
   const div = document.getElementById(`grupo-desconto-${itemId}-${index}`);
