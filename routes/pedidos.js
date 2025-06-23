@@ -400,10 +400,18 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
             await db.query(
-              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
-               VALUES (?, ?, ?, ?)`,
-              [item.item_id, desc.motivo, desc.quantidade, desc.peso_calculado]
-            );
+              `INSERT INTO descontos_item_pedido 
+               (item_id, motivo, quantidade, peso_calculado, material, ticket_devolucao)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+               item.item_id,
+               desc.motivo,
+               desc.quantidade || null,
+               desc.peso_calculado || 0,
+               desc.material || null,
+               desc.ticket_devolucao || null
+             ]
+           );
           }
         }
       }
