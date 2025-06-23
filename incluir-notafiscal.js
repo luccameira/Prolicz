@@ -49,32 +49,58 @@ function montarCard(pedido) {
 
       <div class="card-body" style="display: none; padding: 20px 32px 32px;">
         <div style="margin-bottom: 16px;">
-          <p><strong>Nome Fantasia:</strong> ${pedido.cliente}</p>
-          <p><strong>CNPJ:</strong> ${pedido.cnpj || '–'}</p>
-          <p><strong>Situação Tributária:</strong> ${pedido.situacao_tributaria || '–'}</p>
-          <p><strong>Endereço:</strong> ${pedido.endereco || '–'}</p>
-        </div>
+  <p><strong>Nome Fantasia:</strong> ${pedido.cliente}</p>
+  <p><strong>CNPJ:</strong> ${pedido.cnpj || '–'}</p>
+  <p><strong>Situação Tributária:</strong> ${pedido.situacao_tributaria || '–'}</p>
+  <p><strong>Inscrição Estadual:</strong> ${pedido.inscricao_estadual || '–'}</p>
+  <p><strong>Endereço:</strong> ${pedido.endereco || '–'}</p>
+</div>
 
         <div style="margin-bottom: 16px;">
-          ${gerarMateriais(pedido)}
-        </div>
+  ${gerarMateriais(pedido)}
+</div>
 
-        <form class="formulario-nf" enctype="multipart/form-data">
-          <label for="numero_nf_${pedido.pedido_id}">Número da Nota Fiscal</label>
-          <input type="text" id="numero_nf_${pedido.pedido_id}" name="numero_nf" required>
+${['Aguardando Emissão de NF', 'Cliente Liberado'].includes(pedido.status) ? `
+  <form class="formulario-nf" enctype="multipart/form-data">
+    <label for="numero_nf_${pedido.pedido_id}">Número da Nota Fiscal</label>
+    <input type="text" id="numero_nf_${pedido.pedido_id}" name="numero_nf" maxlength="15" required>
 
-          <label for="arquivo_nf_${pedido.pedido_id}">Arquivo da NF (PDF)</label>
-          <input type="file" id="arquivo_nf_${pedido.pedido_id}" name="arquivo_nf" accept="application/pdf" required>
+    <label for="arquivo_nf_${pedido.pedido_id}">Arquivo da NF (PDF)</label>
+    <input type="file" id="arquivo_nf_${pedido.pedido_id}" name="arquivo_nf" accept="application/pdf" required>
 
-          <button class="btn btn-registrar-nf" onclick="emitirNota(${pedido.pedido_id}, this)">Registrar Nota Fiscal</button>
-        </form>
+    ${pedido.observacoes_setor?.length ? `
+  <div style="display: flex; align-items: stretch; margin: 20px 0; border-radius: 6px; overflow: hidden;">
+    <div style="width: 6px; background-color: #f4b400;"></div>
+    <div style="background: #fff3cd; padding: 16px 20px; flex: 1;">
+      <p style="font-weight: bold; margin: 0 0 8px;">Observações para Emissão de Nota Fiscal:</p>
+      <div style="font-size: 14px; line-height: 1.5; color: #000;">
+        ${pedido.observacoes_setor.map(obs => `<div>${obs}</div>`).join('')}
       </div>
     </div>
-  `;
-}
+  </div>
+` : ''}
+
+    <button class="btn btn-registrar-nf" onclick="emitirNota(${pedido.pedido_id}, this)">Registrar Nota Fiscal</button>
+  </form>
+  </div>
+  ` : `
+    <div style="margin-top: 16px;">
+      <p style="color: #888;">Este pedido ainda não está disponível para emissão de nota fiscal.</p>
+    </div>
+  `}
+  </div> <!-- card-body -->
+</div> <!-- card -->
+`;
+} // <-- ESTA CHAVE FECHA A FUNÇÃO montarCard CORRETAMENTE
 
 function alternarCard(headerElement) {
   const card = headerElement.closest('.card');
+  const status = card.querySelector('.status-badge')?.textContent?.trim();
+
+  // Permitir abrir o card somente se o status estiver entre os permitidos
+  const statusPermitidos = ['Aguardando Emissão de NF', 'Cliente Liberado'];
+  if (!statusPermitidos.includes(status)) return;
+
   const corpo = card.querySelector('.card-body');
   corpo.style.display = corpo.style.display === 'none' ? 'block' : 'none';
 }
@@ -86,9 +112,7 @@ async function carregarPedidosNotaFiscal() {
 
     if (!Array.isArray(pedidos)) throw new Error('Formato inválido');
 
-    const pedidosFiltrados = pedidos.filter(p =>
-      ['Aguardando Emissão de NF', 'Cliente Liberado'].includes(p.status)
-    );
+    const pedidosFiltrados = pedidos; // Exibe todos os pedidos, como nas outras telas
 
     const lista = document.getElementById('lista-pedidos');
     const filtro = document.getElementById('filtro-cliente')?.value.toLowerCase() || '';
