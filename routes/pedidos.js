@@ -69,62 +69,34 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA - Corrigida: inclui produtos autorizados com JOIN na tabela produtos
+// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id,
+      i.id AS item_id,
+      p.data_criacao,
+      c.nome_fantasia AS cliente,
+      i.nome_produto AS produto,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,       -- ✅ Adicionado
+      SUM(i.peso) AS peso_previsto,
+      p.status
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    INNER JOIN itens_pedido i ON p.id = i.pedido_id
+    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+    GROUP BY 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, p.data_conferencia_peso, p.status
+    ORDER BY p.data_coleta ASC
+  `;
+
   try {
-    // Buscar todos os pedidos válidos para hoje
-    const [pedidos] = await db.query(`
-      SELECT 
-        p.id, p.cliente_id, p.data_criacao, p.data_coleta, 
-        p.data_coleta_iniciada, p.data_carga_finalizada, 
-        p.data_conferencia_peso, p.status,
-        c.nome_fantasia AS cliente
-      FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status != 'Aguardando Início da Coleta'
-      ORDER BY p.data_coleta ASC
-    `);
-
-    const resultado = [];
-
-    for (const pedido of pedidos) {
-      // Buscar materiais do pedido
-      const [materiais] = await db.query(`
-        SELECT id AS item_id, nome_produto, peso AS quantidade, unidade, tipo_peso
-        FROM itens_pedido
-        WHERE pedido_id = ?
-      `, [pedido.id]);
-
-      // Buscar produtos autorizados com nome do produto
-      const [autorizados] = await db.query(`
-        SELECT pr.nome
-        FROM produtos_autorizados pa
-        INNER JOIN produtos pr ON pa.produto_id = pr.id
-        WHERE pa.cliente_id = ?
-      `, [pedido.cliente_id]);
-
-      resultado.push({
-        id: pedido.id,
-        cliente: pedido.cliente,
-        data_criacao: pedido.data_criacao,
-        data_coleta: pedido.data_coleta,
-        data_coleta_iniciada: pedido.data_coleta_iniciada,
-        data_carga_finalizada: pedido.data_carga_finalizada,
-        data_conferencia_peso: pedido.data_conferencia_peso,
-        status: pedido.status,
-        materiais: materiais.map(m => ({
-          item_id: m.item_id,
-          nome_produto: m.nome_produto,
-          quantidade: parseFloat(m.quantidade),
-          unidade: m.unidade,
-          tipo_peso: m.tipo_peso
-        })),
-        produtos_autorizados: autorizados.map(p => ({ nome: p.nome }))
-      });
-    }
-
-    res.json(resultado);
+    const [results] = await db.query(sql);
+    res.json(results);
   } catch (err) {
     console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
@@ -484,7 +456,7 @@ router.get('/conferencia', async (req, res) => {
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
-      p.data_conferencia_peso,
+      p.data_conferencia_peso,          -- ✅ AGORA USA O CAMPO REAL
       p.data_financeiro,
       p.data_emissao_nf,
       p.data_finalizado,
@@ -512,12 +484,8 @@ router.get('/conferencia', async (req, res) => {
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
         `SELECT 
-            i.id AS item_id,
-            i.nome_produto,
-            i.peso AS quantidade,
-            i.tipo_peso,
-            i.unidade,
-            i.peso_carregado
+            i.id, i.nome_produto, i.peso AS quantidade, i.tipo_peso, 
+            i.unidade, i.peso_carregado
          FROM itens_pedido i
          WHERE i.pedido_id = ?`,
         [pedido.pedido_id]
@@ -528,7 +496,7 @@ router.get('/conferencia', async (req, res) => {
           `SELECT motivo, quantidade, peso_calculado
            FROM descontos_item_pedido
            WHERE item_id = ?`,
-          [item.item_id] // usa item_id corretamente agora
+          [item.id]
         );
         item.descontos = descontos || [];
       }
