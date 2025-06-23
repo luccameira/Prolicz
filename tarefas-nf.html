@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Tarefas - Emissão de NF</title>
+
+  <!-- Ícones e estilos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="layout.css">
   <link rel="stylesheet" href="tarefas.css">
+  <link rel="stylesheet" href="tarefasNF.css">
+
+  <!-- Scripts -->
+  <script src="timeline-prolicz.js"></script>
   <script src="incluir-layout.js" defer></script>
   <script src="incluir-notafiscal.js" defer></script>
 </head>
@@ -16,6 +22,7 @@
   <div class="content">
     <h1 style="font-size: 28px; margin-bottom: 25px; padding: 0 25px;">Tarefas - Emissão de Nota Fiscal</h1>
 
+    <!-- Filtros -->
     <div class="filtros-tarefa">
       <div>
         <label for="filtro-cliente">Buscar por cliente</label>
@@ -30,7 +37,24 @@
       </div>
     </div>
 
+    <!-- Lista de pedidos -->
     <div id="lista-pedidos"></div>
   </div>
+
+  <!-- Template de formulário (não usado diretamente, mas mantido para referência futura) -->
+  <template id="formulario-nf-template">
+    <div class="formulario-nf">
+      <label for="numero_nf">Número da Nota Fiscal</label>
+      <input type="text" name="numero_nf" placeholder="Digite o número da NF">
+
+      <label for="valor_nf">Valor da Nota Fiscal (R$)</label>
+      <input type="text" name="valor_nf" placeholder="Digite o valor da NF">
+
+      <label for="arquivo_nf">Arquivo (PDF)</label>
+      <input type="file" name="arquivo_nf" accept="application/pdf">
+
+      <button class="btn btn-registrar-nf" onclick="emitirNotaFinal(this)">Registrar Nota Fiscal</button>
+    </div>
+  </template>
 </body>
 </html>
