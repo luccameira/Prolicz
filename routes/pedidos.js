@@ -69,14 +69,15 @@ router.get('/portaria', async (req, res) => {
   }
 });
 
-// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
+// ROTA CARGA - Corrigida: inclui produtos autorizados com JOIN na tabela produtos
 router.get('/carga', async (req, res) => {
   try {
-    // Buscar pedidos do dia atual com coleta iniciada
+    // Buscar todos os pedidos válidos para hoje
     const [pedidos] = await db.query(`
       SELECT 
-        p.id, p.data_criacao, p.data_coleta, p.data_coleta_iniciada,
-        p.data_carga_finalizada, p.data_conferencia_peso, p.status,
+        p.id, p.cliente_id, p.data_criacao, p.data_coleta, 
+        p.data_coleta_iniciada, p.data_carga_finalizada, 
+        p.data_conferencia_peso, p.status,
         c.nome_fantasia AS cliente
       FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
@@ -85,20 +86,45 @@ router.get('/carga', async (req, res) => {
       ORDER BY p.data_coleta ASC
     `);
 
-    // Para cada pedido, buscar os materiais
+    const resultado = [];
+
     for (const pedido of pedidos) {
+      // Buscar materiais do pedido
       const [materiais] = await db.query(`
-        SELECT 
-          i.id AS item_id, i.nome_produto, i.peso AS quantidade, 
-          i.tipo_peso, i.unidade, i.peso_carregado
-        FROM itens_pedido i
-        WHERE i.pedido_id = ?
+        SELECT id AS item_id, nome_produto, peso AS quantidade, unidade, tipo_peso
+        FROM itens_pedido
+        WHERE pedido_id = ?
       `, [pedido.id]);
 
-      pedido.materiais = materiais;
+      // Buscar produtos autorizados com nome do produto
+      const [autorizados] = await db.query(`
+        SELECT pr.nome
+        FROM produtos_autorizados pa
+        INNER JOIN produtos pr ON pa.produto_id = pr.id
+        WHERE pa.cliente_id = ?
+      `, [pedido.cliente_id]);
+
+      resultado.push({
+        id: pedido.id,
+        cliente: pedido.cliente,
+        data_criacao: pedido.data_criacao,
+        data_coleta: pedido.data_coleta,
+        data_coleta_iniciada: pedido.data_coleta_iniciada,
+        data_carga_finalizada: pedido.data_carga_finalizada,
+        data_conferencia_peso: pedido.data_conferencia_peso,
+        status: pedido.status,
+        materiais: materiais.map(m => ({
+          item_id: m.item_id,
+          nome_produto: m.nome_produto,
+          quantidade: parseFloat(m.quantidade),
+          unidade: m.unidade,
+          tipo_peso: m.tipo_peso
+        })),
+        produtos_autorizados: autorizados.map(p => ({ nome: p.nome }))
+      });
     }
 
-    res.json(pedidos);
+    res.json(resultado);
   } catch (err) {
     console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
