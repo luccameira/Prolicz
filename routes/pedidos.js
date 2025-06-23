@@ -336,7 +336,6 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
   const nomeArquivo = req.file?.filename || null;
 
   try {
-    // Atualiza pedido principal
     await db.query(
       `UPDATE pedidos
        SET 
@@ -351,7 +350,7 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
 
     if (Array.isArray(listaItens)) {
       for (const item of listaItens) {
-        // Atualiza peso carregado no item do pedido
+        // Atualiza o peso carregado no item
         await db.query(
           `UPDATE itens_pedido 
            SET peso_carregado = ? 
@@ -359,24 +358,24 @@ router.put('/:id/carga', uploadTicket.single('ticket_balanca'), async (req, res)
           [item.peso_carregado, item.item_id]
         );
 
-        // Limpa descontos antigos do item
+        // Remove descontos anteriores para o item
         await db.query(
           `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
           [item.item_id]
         );
 
-        // Insere novos descontos
+        // Insere novos descontos (se existirem)
         if (Array.isArray(item.descontos)) {
           for (const desc of item.descontos) {
-            const motivo = desc.motivo || null;
-            const quantidade = desc.quantidade || null;
-            const material = desc.material || null;
-            const pesoCalculado = desc.peso_calculado || 0;
-
             await db.query(
-              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado, material)
-               VALUES (?, ?, ?, ?, ?)`,
-              [item.item_id, motivo, quantidade, pesoCalculado, material]
+              `INSERT INTO descontos_item_pedido (item_id, motivo, quantidade, peso_calculado)
+               VALUES (?, ?, ?, ?)`,
+              [
+                item.item_id,
+                desc.motivo,
+                desc.quantidade || null,
+                desc.peso_calculado || 0
+              ]
             );
           }
         }
