@@ -25,20 +25,21 @@ async function carregarPedidos() {
   listaPedidos.forEach(p => {
     if (!pedidosAgrupados[p.id]) {
       pedidosAgrupados[p.id] = {
-  id: p.id,
-  cliente: p.cliente,
-  data_coleta: p.data_coleta,
-  status: p.status,
-  materiais: [],
-  data_criacao: p.data_criacao,
-  data_coleta_iniciada: p.data_coleta_iniciada,
-  data_carga_finalizada: p.data_carga_finalizada,
-  data_conferencia_peso: p.data_conferencia_peso,
-  data_financeiro: p.data_financeiro,
-  data_nf_emitida: p.data_nf_emitida,
-  data_finalizado: p.data_finalizado,
-  observacoes_setor: p.observacoes_setor || []
-};
+        id: p.id,
+        cliente: p.cliente,
+        data_coleta: p.data_coleta,
+        status: p.status,
+        materiais: [],
+        data_criacao: p.data_criacao,
+        data_coleta_iniciada: p.data_coleta_iniciada,
+        data_carga_finalizada: p.data_carga_finalizada,
+        data_conferencia_peso: p.data_conferencia_peso,
+        data_financeiro: p.data_financeiro,
+        data_nf_emitida: p.data_nf_emitida,
+        data_finalizado: p.data_finalizado,
+        observacoes_setor: p.observacoes_setor || [],
+        produtos_autorizados: p.produtos_autorizados || []
+      };
     }
 
     pedidosAgrupados[p.id].materiais.push({
@@ -118,43 +119,42 @@ function renderizarPedidos(lista) {
     form.id = `form-${p.id}`;
     form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
-      p.materiais.forEach((item, index) => {
-  const itemId = item.item_id;
-  if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
+    p.materiais.forEach((item, index) => {
+      const itemId = item.item_id;
+      if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
-  const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-  const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
+      const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
-  form.innerHTML += `
-    <div class="material-bloco" data-item-id="${itemId}">
-      <h4>${item.nome_produto}</h4>
-      <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
-      <div class="linha-peso">
-        <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-        <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
+      form.innerHTML += `
+        <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
+          <h4>${item.nome_produto || '—'}</h4>
+          <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
+          <div class="linha-peso">
+            <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
+            <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
+          </div>
+          <div id="grupo-descontos-${itemId}"></div>
+          <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId}, ${p.id})">Adicionar Desconto</button>
+        </div>
+      `;
+    });
+
+    const observacoesHTML = (p.observacoes_setor?.length)
+      ? `<div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
+           <strong>Observações para Carga e Descarga:</strong><br>
+           ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
+         </div>`
+      : '';
+
+    form.innerHTML += `
+      <div class="upload-ticket">
+        <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
+        <input type="file" id="ticket-${p.id}" accept="image/*">
       </div>
-      <div id="grupo-descontos-${itemId}"></div>
-      <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId})">Adicionar Desconto</button>
-    </div>
-  `;
-}); // <- ATENÇÃO: esse fecha o forEach dos materiais
-
-// ⬇️ Adiciona observações e botão uma única vez, fora do loop
-const observacoesHTML = (p.observacoes_setor?.length)
-  ? `<div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
-       <strong>Observações para Carga e Descarga:</strong><br>
-       ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
-     </div>`
-  : '';
-
-form.innerHTML += `
-  <div class="upload-ticket">
-    <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
-    <input type="file" id="ticket-${p.id}" accept="image/*">
-  </div>
-  ${observacoesHTML}
-  <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
-`;
+      ${observacoesHTML}
+      <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
+    `;
 
     card.appendChild(form);
     listaEl.appendChild(card);
@@ -179,15 +179,14 @@ function gerarBadgeStatus(status) {
   }
 }
 
-function adicionarDescontoMaterial(itemId) {
+function adicionarDescontoMaterial(itemId, pedidoId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
   const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
   if (blocosAtuais >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
   const index = blocosAtuais;
   const idMotivo = `motivo-${itemId}-${index}`;
-  const idQtd = `quantidade-${itemId}-${index}`;
-  const idLabel = `label-${itemId}-${index}`;
+  const idCampoExtra = `campo-extra-${itemId}-${index}`;
 
   const div = document.createElement('div');
   div.className = 'grupo-desconto';
@@ -198,20 +197,92 @@ function adicionarDescontoMaterial(itemId) {
     </div>
     <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; padding-right: 10px;">
       <label for="${idMotivo}" style="min-width: 150px;">Motivo do Desconto:</label>
-      <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index})" style="flex: 1; padding: 6px;">
+      <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" style="flex: 1; padding: 6px;">
         <option value="">Selecione</option>
         <option value="Palete Pequeno">Palete Pequeno</option>
         <option value="Palete Grande">Palete Grande</option>
         <option value="Devolução de Material">Devolução de Material</option>
       </select>
     </div>
-    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-      <label id="${idLabel}" for="${idQtd}" style="min-width: 150px;">Qtd. Paletes Grandes:</label>
-      <input type="text" id="${idQtd}" placeholder="Digite a quantidade de paletes" oninput="atualizarDescontoItem(${itemId}, ${index})" class="input-sem-seta" style="flex: 1; padding: 6px;">
-    </div>
+    <div id="${idCampoExtra}"></div>
   `;
   container.appendChild(div);
-  aplicarMascaraMilhar(div.querySelector('input[type="text"]'));
+}
+
+function atualizarDescontoItem(itemId, index, pedidoId) {
+  const pedido = pedidos.find(p => p.id === pedidoId);
+  const materiais = pedido?.produtos_autorizados || [];
+
+  const select = document.getElementById(`motivo-${itemId}-${index}`);
+  const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
+  const motivo = select.value;
+  if (!motivo) return;
+
+  let htmlExtra = '';
+
+  if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
+    htmlExtra = `
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
+        <input type="text" id="quantidade-${itemId}-${index}" placeholder="Digite a quantidade" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      </div>
+    `;
+    containerExtra.innerHTML = htmlExtra;
+    aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
+
+  } else if (motivo === 'Devolução de Material') {
+    const selectId = `material-${itemId}-${index}`;
+    const opcoes = materiais.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
+
+    htmlExtra = `
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label style="min-width: 150px;">Material devolvido:</label>
+        <select id="${selectId}" style="flex: 1; padding: 6px;">
+          <option value="">Selecione</option>
+          ${opcoes}
+        </select>
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
+      </div>
+    `;
+    containerExtra.innerHTML = htmlExtra;
+    aplicarMascaraMilhar(document.getElementById(`peso-${itemId}-${index}`));
+  }
+
+  const valorQtd = document.getElementById(`quantidade-${itemId}-${index}`);
+  const valorPeso = document.getElementById(`peso-${itemId}-${index}`);
+  const selectMaterial = document.getElementById(`material-${itemId}-${index}`);
+  const uploadInput = document.getElementById(`upload-${itemId}-${index}`);
+
+  let pesoCalculado = 0;
+  let infoExtra = {};
+
+  if (motivo === 'Palete Pequeno') {
+    const qtd = parseFloat(valorQtd?.value.replace(/\./g, '')) || 0;
+    pesoCalculado = qtd * 6;
+  } else if (motivo === 'Palete Grande') {
+    const qtd = parseFloat(valorQtd?.value.replace(/\./g, '')) || 0;
+    pesoCalculado = qtd * 14.37;
+  } else if (motivo === 'Devolução de Material') {
+    const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0;
+    const materialSelecionado = selectMaterial?.value || '';
+    const arquivo = uploadInput?.files[0] || null;
+    pesoCalculado = peso;
+    infoExtra.material = materialSelecionado;
+    infoExtra.ticket_devolucao = arquivo;
+  }
+
+  descontosPorItem[itemId][index] = {
+    motivo,
+    ...infoExtra,
+    peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
+  };
 }
 
 function removerDescontoMaterial(itemId, index) {
@@ -220,41 +291,6 @@ function removerDescontoMaterial(itemId, index) {
   if (descontosPorItem[itemId]) {
     descontosPorItem[itemId] = descontosPorItem[itemId].filter((_, i) => i !== index);
   }
-}
-
-function atualizarDescontoItem(itemId, index) {
-  const select = document.getElementById(`motivo-${itemId}-${index}`);
-  const input = document.getElementById(`quantidade-${itemId}-${index}`);
-  const label = document.getElementById(`label-${itemId}-${index}`);
-
-  const motivo = select.value;
-  if (!motivo) return;
-
-  let labelTexto = 'Peso devolvido (Kg)';
-  let pesoPorUnidade = 1;
-  let placeholder = 'Digite o peso devolvido em Kg';
-
-  if (motivo === 'Palete Pequeno') {
-    labelTexto = 'Qtd. Paletes Pequenos:';
-    pesoPorUnidade = 6;
-    placeholder = 'Digite a quantidade de paletes';
-  } else if (motivo === 'Palete Grande') {
-    labelTexto = 'Qtd. Paletes Grandes:';
-    pesoPorUnidade = 14.37;
-    placeholder = 'Digite a quantidade de paletes';
-  }
-
-  label.textContent = labelTexto;
-  input.placeholder = placeholder;
-
-  const valor = parseFloat(input.value.replace(/\./g, ''));
-  const pesoCalculado = motivo.includes('Palete') && !isNaN(valor) ? valor * pesoPorUnidade : valor;
-
-  descontosPorItem[itemId][index] = {
-    motivo,
-    quantidade: valor || 0,
-    peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
-  };
 }
 
 async function registrarPeso(pedidoId) {
@@ -268,6 +304,7 @@ async function registrarPeso(pedidoId) {
 
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
+  const arquivosExtras = [];
 
   blocos.forEach((bloco) => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
@@ -275,10 +312,18 @@ async function registrarPeso(pedidoId) {
     const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
 
     if (!isNaN(valor)) {
+      const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
+      descontos.forEach((desc, i) => {
+        if (desc.ticket_devolucao) {
+          arquivosExtras.push({ file: desc.ticket_devolucao, field: `ticket_devolucao_${itemId}_${i}` });
+          desc.ticket_devolucao = `ticket_devolucao_${itemId}_${i}`;
+        }
+      });
+
       itens.push({
         item_id: itemId,
         peso_carregado: valor,
-        descontos: (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0)
+        descontos
       });
     }
   });
@@ -292,6 +337,10 @@ async function registrarPeso(pedidoId) {
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
   formData.append('ticket_balanca', ticketFile);
+
+  arquivosExtras.forEach(({ field, file }) => {
+    formData.append(field, file);
+  });
 
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
