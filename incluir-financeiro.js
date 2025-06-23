@@ -438,6 +438,15 @@ async function carregarPedidosFinanceiro() {
 
     form.appendChild(containerCinza);
 
+if (pedido.observacoes_setor && pedido.observacoes_setor.length) {
+  const obsFinanceiro = document.createElement('div');
+  obsFinanceiro.className = 'obs-pedido';
+  obsFinanceiro.innerHTML = `
+    <strong>Observações:</strong> ${pedido.observacoes_setor.join('<br>')}
+  `;
+  containerCinza.insertBefore(obsFinanceiro, containerCinza.firstChild);
+}
+
     const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
     if (valorTotalTag) {
       valorTotalTag.style.cursor = 'pointer';
