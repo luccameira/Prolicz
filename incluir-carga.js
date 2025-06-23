@@ -88,7 +88,7 @@ function renderizarPedidos(lista) {
 
     const header = document.createElement('div');
     header.className = 'card-header';
-    header.innerHTML = `
+    header.innerHTML = 
       <div class="info">
         <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
         <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
@@ -96,7 +96,7 @@ function renderizarPedidos(lista) {
       <div class="status-box">
         ${gerarBadgeStatus(p.status)}
       </div>
-    `;
+    ;
     header.addEventListener('click', (e) => {
       e.stopPropagation();
       tarefasAbertas[p.id] = !tarefasAbertas[p.id];
@@ -116,7 +116,7 @@ function renderizarPedidos(lista) {
     const podeExecutar = p.status === 'Coleta Iniciada';
     const form = document.createElement('div');
     form.className = 'formulario';
-    form.id = `form-${p.id}`;
+    form.id = form-${p.id};
     form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
     p.materiais.forEach((item, index) => {
@@ -126,7 +126,7 @@ function renderizarPedidos(lista) {
       const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
       const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
-      form.innerHTML += `
+      form.innerHTML += 
         <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
           <h4>${item.nome_produto || '—'}</h4>
           <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
@@ -137,24 +137,24 @@ function renderizarPedidos(lista) {
           <div id="grupo-descontos-${itemId}"></div>
           <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId}, ${p.id})">Adicionar Desconto</button>
         </div>
-      `;
+      ;
     });
 
     const observacoesHTML = (p.observacoes_setor?.length)
-      ? `<div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
+      ? <div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
            <strong>Observações para Carga e Descarga:</strong><br>
-           ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
-         </div>`
+           ${p.observacoes_setor.map(o => <div>${o}</div>).join('')}
+         </div>
       : '';
 
-    form.innerHTML += `
+    form.innerHTML += 
       <div class="upload-ticket">
         <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
         <input type="file" id="ticket-${p.id}" accept="image/*">
       </div>
       ${observacoesHTML}
       <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
-    `;
+    ;
 
     card.appendChild(form);
     listaEl.appendChild(card);
@@ -163,151 +163,211 @@ function renderizarPedidos(lista) {
   });
 }
 
-async function registrarPeso(pedidoId) {
-  const pedido = pedidos.find(p => p.id === pedidoId);
-  const formEl = document.getElementById(`form-${pedidoId}`);
-  const materiaisEl = formEl.querySelectorAll('.material-bloco');
-  const ticketFile = formEl.querySelector(`#ticket-${pedidoId}`).files[0];
+function gerarBadgeStatus(status) {
+  const statusComPesoRegistrado = [
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF'
+  ];
 
-  const itens = [];
-  let erro = false;
-
-  materiaisEl.forEach((material, index) => {
-    const itemId = material.getAttribute('data-item-id');
-    const inputPeso = material.querySelector(`#peso-${pedidoId}-${index}`);
-    const pesoCarregado = parseFloat(inputPeso.value.replace(/\./g, '').replace(',', '.')) || 0;
-
-    if (pesoCarregado <= 0) {
-      alert(`Por favor, insira o peso carregado para o material ${material.querySelector('h4').innerText}`);
-      erro = true;
-      return;
-    }
-
-    const descontosDoItem = descontosPorItem[itemId] || [];
-
-    const descontosValidos = descontosDoItem.filter(d => {
-      const motivo = d.motivo;
-      const peso = d.peso_calculado;
-      const material = d.material;
-
-      if (!motivo) return false;
-
-      if (motivo === 'Devolução de Material') {
-        return material && material.trim() !== '';
-      }
-
-      return peso && peso > 0;
-    });
-
-    itens.push({
-      item_id: itemId,
-      peso_carregado: pesoCarregado,
-      descontos: descontosValidos
-    });
-  });
-
-  if (erro) return;
-
-  const formData = new FormData();
-  formData.append('itens', JSON.stringify(itens));
-
-  if (ticketFile) {
-    formData.append('ticket_balanca', ticketFile);
-  }
-
-  // Upload de tickets de devolução, se houver
-  itens.forEach((item, index) => {
-    if (!item.descontos) return;
-    item.descontos.forEach((desc, i) => {
-      if (desc.ticket_devolucao) {
-        formData.append(`ticket_devolucao_${item.item_id}_${i}`, desc.ticket_devolucao);
-      }
-    });
-  });
-
-  const confirmacao = confirm('Tem certeza que deseja registrar os pesos e descontos?');
-  if (!confirmacao) return;
-
-  try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
-      method: 'PUT',
-      body: formData
-    });
-
-    if (res.ok) {
-      alert('Peso registrado com sucesso!');
-      await carregarPedidos();
-    } else {
-      alert('Erro ao registrar peso.');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Erro na comunicação com o servidor.');
+  if (statusComPesoRegistrado.includes(status)) {
+    return <div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>;
+  } else if (status === 'Coleta Iniciada') {
+    return <div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>;
+  } else {
+    return <div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>;
   }
 }
 
 function adicionarDescontoMaterial(itemId, pedidoId) {
-  const grupoEl = document.getElementById(`grupo-descontos-${itemId}`);
-  const index = descontosPorItem[itemId].length;
+  const container = document.getElementById(grupo-descontos-${itemId});
+  const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
+  if (blocosAtuais >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
-  const desconto = { motivo: '', quantidade: 0, peso_calculado: 0, material: '', ticket_devolucao: null };
-  descontosPorItem[itemId].push(desconto);
+  const index = blocosAtuais;
+  const idMotivo = motivo-${itemId}-${index};
+  const idCampoExtra = campo-extra-${itemId}-${index};
 
-  const container = document.createElement('div');
-  container.className = 'bloco-desconto';
-
-  container.innerHTML = `
-    <label>Motivo do Desconto:</label>
-    <select onchange="atualizarMotivo(${itemId}, ${index}, this.value)">
-      <option value="">Selecione</option>
-      <option value="Palete Pequeno">Palete Pequeno</option>
-      <option value="Palete Grande">Palete Grande</option>
-      <option value="Devolução de Material">Devolução de Material</option>
-    </select>
-    <div id="bloco-material-${itemId}-${index}" style="display:none; margin-top: 5px;">
-      <label>Material Devolvido:</label>
-      <input type="text" oninput="atualizarMaterial(${itemId}, ${index}, this.value)" placeholder="Descreva o material">
-      <label>Peso Devolvido (Kg):</label>
-      <input type="text" oninput="atualizarPeso(${itemId}, ${index}, this.value)" class="input-milhar">
-      <label>Foto do Ticket:</label>
-      <input type="file" onchange="atualizarTicket(${itemId}, ${index}, this.files[0])" accept="image/*">
+  const div = document.createElement('div');
+  div.className = 'grupo-desconto';
+  div.id = grupo-desconto-${itemId}-${index};
+  div.innerHTML = 
+    <div style="text-align: right;">
+      <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" title="Remover desconto">&times;</button>
     </div>
-  `;
-
-  grupoEl.appendChild(container);
-
-  // aplicar máscara ao novo campo de peso devolvido
-  const inputPeso = container.querySelector('.input-milhar');
-  if (inputPeso) aplicarMascaraMilhar(inputPeso);
+    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; padding-right: 10px;">
+      <label for="${idMotivo}" style="min-width: 150px;">Motivo do Desconto:</label>
+      <select id="${idMotivo}" onchange="atualizarDescontoItem(${itemId}, ${index}, ${pedidoId})" style="flex: 1; padding: 6px;">
+        <option value="">Selecione</option>
+        <option value="Palete Pequeno">Palete Pequeno</option>
+        <option value="Palete Grande">Palete Grande</option>
+        <option value="Devolução de Material">Devolução de Material</option>
+      </select>
+    </div>
+    <div id="${idCampoExtra}"></div>
+  ;
+  container.appendChild(div);
 }
 
-function atualizarMotivo(itemId, index, valor) {
-  descontosPorItem[itemId][index].motivo = valor;
+function atualizarDescontoItem(itemId, index, pedidoId) {
+  const pedido = pedidos.find(p => p.id === pedidoId);
+  const materiais = pedido?.produtos_autorizados || [];
 
-  const blocoMaterial = document.getElementById(`bloco-material-${itemId}-${index}`);
-  if (valor === 'Devolução de Material') {
-    blocoMaterial.style.display = 'block';
-  } else {
-    blocoMaterial.style.display = 'none';
-    const peso = valor === 'Palete Pequeno' ? 6 : valor === 'Palete Grande' ? 14.37 : 0;
-    descontosPorItem[itemId][index].peso_calculado = peso;
+  const select = document.getElementById(motivo-${itemId}-${index});
+  const containerExtra = document.getElementById(campo-extra-${itemId}-${index});
+  const motivo = select.value;
+  if (!motivo) return;
+
+  let htmlExtra = '';
+
+  if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
+    htmlExtra = 
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
+        <input type="text" id="quantidade-${itemId}-${index}" placeholder="Digite a quantidade" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      </div>
+    ;
+    containerExtra.innerHTML = htmlExtra;
+    aplicarMascaraMilhar(document.getElementById(quantidade-${itemId}-${index}));
+
+  } else if (motivo === 'Devolução de Material') {
+    const selectId = material-${itemId}-${index};
+    const opcoes = materiais.map(m => <option value="${m.nome}">${m.nome}</option>).join('');
+
+    htmlExtra = 
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label style="min-width: 150px;">Material devolvido:</label>
+        <select id="${selectId}" style="flex: 1; padding: 6px;">
+          <option value="">Selecione</option>
+          ${opcoes}
+        </select>
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
+      </div>
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
+      </div>
+    ;
+    containerExtra.innerHTML = htmlExtra;
+    aplicarMascaraMilhar(document.getElementById(peso-${itemId}-${index}));
+  }
+
+  const valorQtd = document.getElementById(quantidade-${itemId}-${index});
+  const valorPeso = document.getElementById(peso-${itemId}-${index});
+  const selectMaterial = document.getElementById(material-${itemId}-${index});
+  const uploadInput = document.getElementById(upload-${itemId}-${index});
+
+  let pesoCalculado = 0;
+  let infoExtra = {};
+
+  if (motivo === 'Palete Pequeno') {
+    const qtd = parseFloat(valorQtd?.value.replace(/\./g, '')) || 0;
+    pesoCalculado = qtd * 6;
+  } else if (motivo === 'Palete Grande') {
+    const qtd = parseFloat(valorQtd?.value.replace(/\./g, '')) || 0;
+    pesoCalculado = qtd * 14.37;
+  } else if (motivo === 'Devolução de Material') {
+    const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0;
+    const materialSelecionado = selectMaterial?.value || '';
+    const arquivo = uploadInput?.files[0] || null;
+    pesoCalculado = peso;
+    infoExtra.material = materialSelecionado;
+    infoExtra.ticket_devolucao = arquivo;
+  }
+
+   descontosPorItem[itemId][index] = {
+   motivo,
+   quantidade: motivo.includes('Palete') 
+     ? parseFloat(valorQtd?.value.replace(/\./g, '')) || 0
+     : motivo === 'Devolução de Material'
+     ? parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0
+     : null,
+   ...infoExtra,
+   peso_calculado: isNaN(pesoCalculado) ? 0 : pesoCalculado
+ };
+}
+
+function removerDescontoMaterial(itemId, index) {
+  const div = document.getElementById(grupo-desconto-${itemId}-${index});
+  if (div) div.remove();
+  if (descontosPorItem[itemId]) {
+    descontosPorItem[itemId] = descontosPorItem[itemId].filter((_, i) => i !== index);
   }
 }
 
-function atualizarPeso(itemId, index, valor) {
-  const peso = parseFloat(valor.replace(/\./g, '').replace(',', '.')) || 0;
-  descontosPorItem[itemId][index].peso_calculado = peso;
+async function registrarPeso(pedidoId) {
+  if (!confirm("Tem certeza que deseja registrar o peso?")) return;
+
+  const pedido = pedidos.find(p => p.id === pedidoId);
+  if (!pedido) return alert("Pedido não encontrado.");
+
+  const form = document.getElementById(form-${pedidoId});
+  if (!form) return alert("Formulário não encontrado.");
+
+  const itens = [];
+  const blocos = form.querySelectorAll('.material-bloco');
+  const arquivosExtras = [];
+
+  blocos.forEach((bloco) => {
+    const itemId = parseInt(bloco.getAttribute('data-item-id'));
+    const input = bloco.querySelector('input[type="text"]');
+    const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
+
+    if (!isNaN(valor)) {
+      const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
+      descontos.forEach((desc, i) => {
+        if (desc.ticket_devolucao) {
+          arquivosExtras.push({ file: desc.ticket_devolucao, field: ticket_devolucao_${itemId}_${i} });
+          desc.ticket_devolucao = ticket_devolucao_${itemId}_${i};
+        }
+      });
+
+      itens.push({
+        item_id: itemId,
+        peso_carregado: valor,
+        descontos
+      });
+    }
+  });
+
+  if (!itens.length) return alert("Informe ao menos um peso carregado.");
+
+  const ticketInput = document.getElementById(ticket-${pedidoId});
+  const ticketFile = ticketInput?.files[0];
+  if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
+
+  const formData = new FormData();
+  formData.append('itens', JSON.stringify(itens));
+  formData.append('ticket_balanca', ticketFile);
+
+  arquivosExtras.forEach(({ field, file }) => {
+    formData.append(field, file);
+  });
+
+  try {
+    const res = await fetch(/api/pedidos/${pedidoId}/carga, {
+      method: 'PUT',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert('Peso registrado com sucesso!');
+      carregarPedidos();
+    } else {
+      alert(data.erro || 'Erro ao registrar peso.');
+    }
+  } catch (error) {
+    console.error('Erro ao registrar peso:', error);
+    alert('Erro de conexão ao registrar peso.');
+  }
 }
 
-function atualizarMaterial(itemId, index, valor) {
-  descontosPorItem[itemId][index].material = valor;
-}
-
-function atualizarTicket(itemId, index, file) {
-  descontosPorItem[itemId][index].ticket_devolucao = file;
-}
-
-document.getElementById('filtro-cliente').addEventListener('input', () => renderizarPedidos(pedidos));
-document.getElementById('ordenar').addEventListener('change', () => renderizarPedidos(pedidos));
-
-carregarPedidos();
+document.addEventListener('DOMContentLoaded', () => {
+  carregarPedidos();
+  document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
+  document.getElementById('ordenar').addEventListener('change', carregarPedidos);
+});
