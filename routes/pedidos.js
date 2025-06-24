@@ -79,7 +79,7 @@ res.json(pedidos);
   }
 });
 
-// ROTA CARGA - Corrigida: inclui produtos autorizados a vender e evita erro de undefined
+// ROTA CARGA - Corrigida: inclui produtos autorizados com JOIN na tabela produtos
 router.get('/carga', async (req, res) => {
   try {
     const [pedidos] = await db.query(`
@@ -105,38 +105,30 @@ router.get('/carga', async (req, res) => {
         WHERE pedido_id = ?
       `, [pedido.id]);
 
-      // Buscar produtos autorizados a VENDER (para uso no desconto de "Compra de Material")
-      let produtosVenda = [];
-      try {
-        const [autorizadosVenda] = await db.query(`
-           SELECT 
-            pa.id AS item_id,
-            p.nome AS nome_produto,
-            pa.valor_unitario,
-            p.unidade,
-            pa.tipo_peso
-          FROM produtos_autorizados pa
-          INNER JOIN produtos p ON pa.produto_id = p.id
-          WHERE pa.cliente_id = ? AND pa.autorizado_venda = 1
-        `, [pedido.cliente_id]);
-
-        produtosVenda = autorizadosVenda || [];
-      } catch (erroVenda) {
-        console.error('Erro ao buscar produtos autorizados a vender:', erroVenda);
-        produtosVenda = [];
-      }
+      // Buscar produtos autorizados a VENDER (compra do cliente)
+      const [produtosVenda] = await db.query(`
+        SELECT 
+          pa.id AS item_id,
+          p.nome AS nome_produto,
+          pa.valor_unitario,
+          p.unidade,
+          p.tipo_peso
+        FROM produtos_autorizados pa
+        INNER JOIN produtos p ON pa.produto_id = p.id
+        WHERE pa.cliente_id = ? AND pa.autorizado_venda = 1
+      `, [pedido.cliente_id]);
 
       resultado.push({
         ...pedido,
         materiais,
-        produtos_autorizados_venda: produtosVenda
+        produtosVenda
       });
     }
 
     res.json(resultado);
   } catch (erro) {
     console.error('Erro ao buscar pedidos de carga:', erro);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
+    res.status(500).send('Erro ao buscar pedidos de carga');
   }
 });
 
