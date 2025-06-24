@@ -84,9 +84,12 @@
         <label>Códigos Fiscais Permitidos</label>
         <div id="codigosFiscaisPermitidos"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarCodigoFiscal()">+ Adicionar Código Fiscal</button>  
-        <h3>Produtos Autorizados</h3>
+        <h3>Produtos Autorizado a Comprar</h3>
         <div id="produtosAutorizados"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarProdutoAutorizado()">+ Adicionar Produto</button>
+        <h3>Produtos Autorizado a Vender</h3>
+        <div id="produtosAutorizadosVenda"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarProdutoVenda()">+ Adicionar Produto</button>
         <h3>Prazos de Pagamento Permitidos</h3>
         <div id="prazosPagamento"></div>
         <button type="button" class="btn-adicionar" onclick="adicionarPrazoPagamento()">+ Adicionar Prazo</button>
@@ -187,18 +190,18 @@
       });
   }
   function adicionarContato() {
-    const container = document.getElementById("contatos");
-    const div = document.createElement("div");
-    div.className = "contato-group";
-    div.innerHTML = `
-      <input type="text" class="nome-contato" placeholder="Nome do contato" required>
-      <input type="text" class="telefone-contato" placeholder="Telefone" required>
-      <input type="email" class="email-contato" placeholder="E-mail" required>
-      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-    `;
-    container.appendChild(div);
-    $(div).find(".telefone-contato").mask("(00) 00000-0000");
-  }
+  const container = document.getElementById("contatos");
+  const div = document.createElement("div");
+  div.className = "contato-group";
+  div.innerHTML = `
+    <input type="text" class="nome-contato" placeholder="Nome do contato" required maxlength="25" />
+    <input type="text" class="telefone-contato" placeholder="Telefone" required />
+    <input type="email" class="email-contato" placeholder="E-mail" required maxlength="35" />
+    <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+  `;
+  container.appendChild(div);
+  $(div).find(".telefone-contato").mask("(00) 00000-0000");
+}
   let listaProdutos = [];
   async function carregarProdutos() {
     try {
@@ -210,48 +213,60 @@
     }
   }
   function adicionarProdutoAutorizado() {
-    if (!listaProdutos.length) return;
-    const container = document.getElementById("produtosAutorizados");
-    const div = document.createElement("div");
-    div.className = "produto-group";
-    const select = document.createElement("select");
-    select.className = "produto-select";
-    select.required = true;
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione um produto";
-    select.appendChild(defaultOption);
-    listaProdutos.forEach(p => {
+  if (!listaProdutos.length) return;
+
+  const container = document.getElementById("produtosAutorizados");
+  const produtosSelecionados = Array.from(container.querySelectorAll("select.produto-select")).map(s => s.value);
+
+  const div = document.createElement("div");
+  div.className = "produto-group";
+
+  const select = document.createElement("select");
+  select.className = "produto-select";
+  select.required = true;
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Selecione um produto";
+  select.appendChild(defaultOption);
+
+  listaProdutos.forEach(p => {
+    if (!produtosSelecionados.includes(p.id.toString())) {
       const option = document.createElement("option");
       option.value = p.id;
       option.textContent = `${p.nome} (${p.unidade})`;
       select.appendChild(option);
-    });
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "valor-unitario";
-    input.placeholder = "Valor unitário (ex: R$ 12,50)";
-    input.required = true;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "remover-btn";
-    button.innerHTML = "&times;";
-    button.onclick = () => div.remove();
-    div.appendChild(select);
-    div.appendChild(input);
-    div.appendChild(button);
-    container.appendChild(div);
-    $(input).mask("R$ 000.000.000,00", { reverse: true });
-  }
+    }
+  });
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "valor-unitario";
+  input.placeholder = "Valor unitário (ex: R$ 12,50)";
+  input.required = true;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "remover-btn";
+  button.innerHTML = "&times;";
+  button.onclick = () => div.remove();
+
+  div.appendChild(select);
+  div.appendChild(input);
+  div.appendChild(button);
+  container.appendChild(div);
+
+  $(input).mask("R$ 000.000.000,00", { reverse: true });
+}
   function adicionarPrazoPagamento() {
     const container = document.getElementById("prazosPagamento");
     const div = document.createElement("div");
     div.className = "prazo-group";
     div.innerHTML = `
-      <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required>
-      <input type="number" class="prazo-dias" placeholder="Dias após coleta" required>
-      <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
-    `;
+  <input type="text" class="prazo-descricao" placeholder="Descrição do prazo" required />
+  <input type="number" class="prazo-dias" placeholder="Dias após coleta" required />
+  <button type="button" class="remover-btn" onclick="this.parentElement.remove()">&times;</button>
+`;
     container.appendChild(div);
   }
 
@@ -281,11 +296,16 @@
       });
     });
     document.querySelectorAll(".produto-group").forEach(div => {
-      cliente.produtos.push({
-        id: div.querySelector(".produto-select").value,
-        valor: div.querySelector(".valor-unitario").value
-      });
+  const produtoSelect = div.querySelector(".produto-select") || div.querySelector(".produto-venda-select");
+  const valorInput = div.querySelector(".valor-unitario") || div.querySelector(".valor-venda");
+
+  if (produtoSelect && valorInput) {
+    cliente.produtos.push({
+      id: produtoSelect.value,
+      valor: valorInput.value
     });
+  }
+});
     document.querySelectorAll(".prazo-group").forEach(div => {
       if(div.querySelector(".prazo-descricao") && div.querySelector(".prazo-dias")) {
         cliente.prazos.push({
@@ -324,6 +344,52 @@
       adicionarCodigoFiscal();
     }
   });
+function adicionarProdutoVenda() {
+  if (!listaProdutos.length) return;
+
+  const container = document.getElementById("produtosAutorizadosVenda");
+  const produtosSelecionados = Array.from(container.querySelectorAll("select.produto-venda-select")).map(s => s.value);
+
+  const div = document.createElement("div");
+  div.className = "produto-group";
+
+  const select = document.createElement("select");
+  select.className = "produto-venda-select";
+  select.required = true;
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Selecione um produto";
+  select.appendChild(defaultOption);
+
+  listaProdutos.forEach(p => {
+    if (!produtosSelecionados.includes(p.id.toString())) {
+      const option = document.createElement("option");
+      option.value = p.id;
+      option.textContent = `${p.nome} (${p.unidade})`;
+      select.appendChild(option);
+    }
+  });
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "valor-venda";
+  input.placeholder = "Valor unitário (ex: R$ 12,50)";
+  input.required = true;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "remover-btn";
+  button.innerHTML = "&times;";
+  button.onclick = () => div.remove();
+
+  div.appendChild(select);
+  div.appendChild(input);
+  div.appendChild(button);
+  container.appendChild(div);
+
+  $(input).mask("R$ 000.000.000,00", { reverse: true });
+}
   </script>
 </body>
 </html>
