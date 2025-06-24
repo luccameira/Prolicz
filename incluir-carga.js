@@ -38,7 +38,8 @@ async function carregarPedidos() {
         data_nf_emitida: p.data_nf_emitida,
         data_finalizado: p.data_finalizado,
         observacoes_setor: p.observacoes_setor || [],
-        produtos_autorizados: p.produtos_autorizados || []
+        produtos_autorizados: p.produtos_autorizados || [],
+        produtos_venda: p.produtos_venda || [] // necessário para o select de compra
       };
     }
 
@@ -181,13 +182,11 @@ function gerarBadgeStatus(status) {
 
 function adicionarDescontoMaterial(itemId, pedidoId) {
   const container = document.getElementById(`grupo-descontos-${itemId}`);
-  const blocosAtuais = container.querySelectorAll('.grupo-desconto').length;
-  if (blocosAtuais >= 3) return alert("Limite de 3 tipos de desconto atingido.");
+  const index = container.querySelectorAll('.grupo-desconto').length;
+  if (index >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
-  const index = blocosAtuais;
   const idMotivo = `motivo-${itemId}-${index}`;
   const idCampoExtra = `campo-extra-${itemId}-${index}`;
-
   const div = document.createElement('div');
   div.className = 'grupo-desconto';
   div.id = `grupo-desconto-${itemId}-${index}`;
@@ -202,6 +201,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
         <option value="Palete Pequeno">Palete Pequeno</option>
         <option value="Palete Grande">Palete Grande</option>
         <option value="Devolução de Material">Devolução de Material</option>
+        <option value="Compra de Material">Compra de Material</option>
       </select>
     </div>
     <div id="${idCampoExtra}"></div>
@@ -212,6 +212,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
 function atualizarDescontoItem(itemId, index, pedidoId) {
   const pedido = pedidos.find(p => p.id === pedidoId);
   const materiais = pedido?.produtos_autorizados || [];
+  const materiaisCompra = pedido?.produtos_venda || [];
 
   const select = document.getElementById(`motivo-${itemId}-${index}`);
   const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
@@ -230,24 +231,25 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
     containerExtra.innerHTML = htmlExtra;
     aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
 
-  } else if (motivo === 'Devolução de Material') {
+  } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
     const selectId = `material-${itemId}-${index}`;
-    const opcoes = materiais.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
+    const opcoes = (motivo === 'Devolução de Material' ? materiais : materiaisCompra)
+      .map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
 
     htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-        <label style="min-width: 150px;">Material devolvido:</label>
+        <label style="min-width: 150px;">Material ${motivo === 'Compra de Material' ? 'comprado' : 'devolvido'}:</label>
         <select id="${selectId}" style="flex: 1; padding: 6px;">
           <option value="">Selecione</option>
           ${opcoes}
         </select>
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso devolvido (Kg):</label>
-        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso devolvido" class="input-sem-seta" style="flex: 1; padding: 6px;">
+        <label for="peso-${itemId}-${index}" style="min-width: 150px;">Peso ${motivo === 'Compra de Material' ? 'comprado' : 'devolvido'} (Kg):</label>
+        <input type="text" id="peso-${itemId}-${index}" placeholder="Digite o peso" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (Devolução):</label>
+        <label for="upload-${itemId}-${index}" style="min-width: 150px;">Foto do Ticket (${motivo === 'Compra de Material' ? 'Compra' : 'Devolução'}):</label>
         <input type="file" id="upload-${itemId}-${index}" accept="image/*" style="flex: 1;">
       </div>
     `;
@@ -269,20 +271,21 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   } else if (motivo === 'Palete Grande') {
     const qtd = parseFloat(valorQtd?.value.replace(/\./g, '')) || 0;
     pesoCalculado = qtd * 14.37;
-  } else if (motivo === 'Devolução de Material') {
+  } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
     const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0;
     const materialSelecionado = selectMaterial?.value || '';
     const arquivo = uploadInput?.files[0] || null;
     pesoCalculado = peso;
+    const tipoArquivo = motivo === 'Compra de Material' ? 'ticket_compra' : 'ticket_devolucao';
     infoExtra.material = materialSelecionado;
-    infoExtra.ticket_devolucao = arquivo;
+    infoExtra[tipoArquivo] = arquivo;
   }
 
   descontosPorItem[itemId][index] = {
     motivo,
     quantidade: motivo.includes('Palete')
       ? parseFloat(valorQtd?.value.replace(/\./g, '')) || 0
-      : motivo === 'Devolução de Material'
+      : motivo === 'Devolução de Material' || motivo === 'Compra de Material'
         ? parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.')) || 0
         : null,
     ...infoExtra,
@@ -302,16 +305,12 @@ async function registrarPeso(pedidoId) {
   if (!confirm("Tem certeza que deseja registrar o peso?")) return;
 
   const pedido = pedidos.find(p => p.id === pedidoId);
-  if (!pedido) return alert("Pedido não encontrado.");
-
   const form = document.getElementById(`form-${pedidoId}`);
-  if (!form) return alert("Formulário não encontrado.");
-
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
   const arquivosExtras = [];
 
-  blocos.forEach((bloco) => {
+  blocos.forEach(bloco => {
     const itemId = parseInt(bloco.getAttribute('data-item-id'));
     const input = bloco.querySelector('input[type="text"]');
     const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
@@ -319,21 +318,23 @@ async function registrarPeso(pedidoId) {
     if (!isNaN(valor)) {
       const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
       descontos.forEach((desc, i) => {
-        if (desc.ticket_devolucao) {
-          arquivosExtras.push({ file: desc.ticket_devolucao, field: `ticket_devolucao_${itemId}_${i}` });
-          desc.ticket_devolucao = `ticket_devolucao_${itemId}_${i}`;
+        const fieldName = desc.ticket_devolucao
+          ? `ticket_devolucao_${itemId}_${i}`
+          : desc.ticket_compra
+            ? `ticket_compra_${itemId}_${i}`
+            : null;
+
+        if (fieldName) {
+          const arquivo = desc.ticket_devolucao || desc.ticket_compra;
+          arquivosExtras.push({ file: arquivo, field: fieldName });
+          if (desc.ticket_devolucao) desc.ticket_devolucao = fieldName;
+          if (desc.ticket_compra) desc.ticket_compra = fieldName;
         }
       });
 
-      itens.push({
-        item_id: itemId,
-        peso_carregado: valor,
-        descontos
-      });
+      itens.push({ item_id: itemId, peso_carregado: valor, descontos });
     }
   });
-
-  if (!itens.length) return alert("Informe ao menos um peso carregado.");
 
   const ticketInput = document.getElementById(`ticket-${pedidoId}`);
   const ticketFile = ticketInput?.files[0];
