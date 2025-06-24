@@ -79,85 +79,64 @@ res.json(pedidos);
   }
 });
 
-// ROTA CARGA - Atualizada para incluir produtos autorizados a vender (compra de material)
+// ROTA CARGA - Corrigida: inclui produtos autorizados a vender e evita erro de undefined
 router.get('/carga', async (req, res) => {
   try {
     const [pedidos] = await db.query(`
       SELECT 
         p.id, p.cliente_id, p.data_criacao, p.data_coleta, 
         p.data_coleta_iniciada, p.data_carga_finalizada, 
-        p.data_conferencia_peso, p.data_financeiro, 
-        p.data_nf_emitida, p.data_finalizado,
-        p.status, p.observacoes_setor,
-        c.nome_fantasia AS cliente,
-        i.id AS item_id, pr.nome AS produto, i.peso AS peso_previsto, i.tipo_peso
+        p.data_conferencia_peso, p.status,
+        c.nome_fantasia AS cliente
       FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
-      INNER JOIN itens i ON i.pedido_id = p.id
-      INNER JOIN produtos pr ON pr.id = i.produto_id
       WHERE DATE(p.data_coleta) = CURDATE()
         AND p.status != 'Aguardando Início da Coleta'
       ORDER BY p.data_coleta ASC
     `);
 
-    // Organiza pedidos por ID
-    const pedidosAgrupados = {};
+    const resultado = [];
 
     for (const pedido of pedidos) {
-      const pedidoId = pedido.id;
-      if (!pedidosAgrupados[pedidoId]) {
-        pedidosAgrupados[pedidoId] = {
-          id: pedidoId,
-          cliente: pedido.cliente,
-          data_criacao: pedido.data_criacao,
-          data_coleta: pedido.data_coleta,
-          data_coleta_iniciada: pedido.data_coleta_iniciada,
-          data_carga_finalizada: pedido.data_carga_finalizada,
-          data_conferencia_peso: pedido.data_conferencia_peso,
-          data_financeiro: pedido.data_financeiro,
-          data_nf_emitida: pedido.data_nf_emitida,
-          data_finalizado: pedido.data_finalizado,
-          status: pedido.status,
-          observacoes_setor: pedido.observacoes_setor
-            ? JSON.parse(pedido.observacoes_setor)
-            : [],
-          materiais: [],
-          produtos_autorizados: []
-        };
+      // Buscar materiais do pedido
+      const [materiais] = await db.query(`
+        SELECT id AS item_id, nome_produto, peso AS quantidade, unidade, tipo_peso
+        FROM itens_pedido
+        WHERE pedido_id = ?
+      `, [pedido.id]);
+
+      // Buscar produtos autorizados a VENDER (para uso no desconto de "Compra de Material")
+      let produtosVenda = [];
+      try {
+        const [autorizadosVenda] = await db.query(`
+          SELECT 
+            pa.id AS item_id,
+            p.nome AS nome_produto,
+            pa.valor_unitario,
+            pa.unidade,
+            pa.tipo_peso
+          FROM produtos_autorizados pa
+          INNER JOIN produtos p ON pa.produto_id = p.id
+          WHERE pa.cliente_id = ? AND pa.autorizado_venda = 1
+        `, [pedido.cliente_id]);
+
+        produtosVenda = autorizadosVenda || [];
+      } catch (erroVenda) {
+        console.error('Erro ao buscar produtos autorizados a vender:', erroVenda);
+        produtosVenda = [];
       }
 
-      pedidosAgrupados[pedidoId].materiais.push({
-        item_id: pedido.item_id,
-        nome_produto: pedido.produto,
-        peso_previsto: pedido.peso_previsto,
-        tipo_peso: pedido.tipo_peso,
-        unidade: 'Kg'
+      resultado.push({
+        ...pedido,
+        materiais,
+        produtos_autorizados_venda: produtosVenda
       });
     }
 
-    // Agora buscamos os produtos que o cliente está autorizado a VENDER para a empresa
-    const idsClientes = [...new Set(pedidos.map(p => p.cliente_id))];
-    if (idsClientes.length) {
-      const [produtosVenda] = await db.query(`
-        SELECT pvc.cliente_id, pr.nome
-        FROM produtos_venda_cliente pvc
-        INNER JOIN produtos pr ON pr.id = pvc.produto_id
-        WHERE pvc.cliente_id IN (?)
-      `, [idsClientes]);
-
-      produtosVenda.forEach(pv => {
-        const pedidosDoCliente = Object.values(pedidosAgrupados).filter(p => p.cliente_id === pv.cliente_id);
-        pedidosDoCliente.forEach(p => {
-          p.produtos_autorizados.push({ nome: pv.nome });
-        });
-      });
-    }
-
-    const resultadoFinal = Object.values(pedidosAgrupados);
-    res.json(resultadoFinal);
+    res.json(resultado);
   } catch (erro) {
-    console.error('Erro na rota /api/pedidos/carga:', erro);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos para carga.' });
+    console.error('Erro ao buscar pedidos de carga:', erro);
+    res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
   }
 });
 
