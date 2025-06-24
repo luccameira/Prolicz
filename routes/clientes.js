@@ -5,20 +5,20 @@ let connection;
 // POST /api/clientes
 router.post('/', async (req, res) => {
   const {
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
+    tipo_pessoa, documento, nome_fantasia, situacao_tributaria, inscricao_estadual,
     cep, logradouro, numero, bairro, cidade, estado,
     meio_pagamento, codigosFiscais = [], contatos = [], produtos = [], prazos = []
   } = req.body;
 
   const sql = `
     INSERT INTO clientes (
-      tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
+      tipo_pessoa, documento, nome_fantasia, situacao_tributaria, inscricao_estadual,
       cep, logradouro, numero, bairro, cidade, estado,
       meio_pagamento, codigos_fiscais
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = [
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
+    tipo_pessoa, documento, nome_fantasia, situacao_tributaria, inscricao_estadual,
     cep, logradouro, numero, bairro, cidade, estado,
     meio_pagamento, JSON.stringify(codigosFiscais)
   ];
@@ -27,7 +27,6 @@ router.post('/', async (req, res) => {
     const [resultado] = await connection.query(sql, values);
     const clienteId = resultado.insertId;
 
-    // inserir contatos
     for (const c of contatos) {
       await connection.query(
         'INSERT INTO contatos_cliente (cliente_id, nome, telefone, email) VALUES (?, ?, ?, ?)',
@@ -35,7 +34,6 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // inserir produtos autorizados
     for (const p of produtos) {
       const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
@@ -49,7 +47,6 @@ router.post('/', async (req, res) => {
       );
     }
 
-    // inserir prazos de pagamento
     for (const p of prazos) {
       await connection.query(
         'INSERT INTO prazos_pagamento (cliente_id, descricao, dias) VALUES (?, ?, ?)',
@@ -60,7 +57,6 @@ router.post('/', async (req, res) => {
     res.status(201).json({ mensagem: 'Cliente cadastrado com sucesso!', id: clienteId });
   } catch (err) {
     console.error('Erro ao cadastrar cliente:', err);
-    // trata duplicidade de CPF/CNPJ
     if (err.code === 'ER_DUP_ENTRY') {
       const campo = tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ';
       return res
@@ -133,7 +129,7 @@ router.get('/:id', async (req, res) => {
     if (clienteRes.length === 0) return res.status(404).json({ erro: 'Cliente não encontrado.' });
 
     const cliente = clienteRes[0];
-    // parse dos códigos fiscais
+
     const rawCodigos = cliente.codigos_fiscais;
     let codigosArray = [];
     if (Array.isArray(rawCodigos)) {
@@ -149,18 +145,25 @@ router.get('/:id', async (req, res) => {
     cliente.codigosFiscais = codigosArray;
     delete cliente.codigos_fiscais;
 
-    // buscar contatos, produtos e prazos
     const [contatosRes] = await connection.query(
       'SELECT nome, telefone, email FROM contatos_cliente WHERE cliente_id = ?',
       [id]
     );
     const [produtosRes] = await connection.query(
-      `SELECT p.id, p.nome, COALESCE(pa.valor_unitario,0) AS valor_unitario
-       FROM produtos_autorizados pa
-       JOIN produtos p ON p.id = pa.produto_id
-       WHERE pa.cliente_id = ?`,
-      [id]
-    );
+  `SELECT p.id, p.nome, COALESCE(pa.valor_unitario,0) AS valor_unitario
+   FROM produtos_autorizados pa
+   JOIN produtos p ON p.id = pa.produto_id
+   WHERE pa.cliente_id = ?`,
+  [id]
+);
+
+const [produtosVendaRes] = await connection.query(
+  `SELECT p.id, p.nome, COALESCE(pv.valor_unitario,0) AS valor_unitario
+   FROM produtos_a_vender pv
+   JOIN produtos p ON p.id = pv.produto_id
+   WHERE pv.cliente_id = ?`,
+  [id]
+);
     const [prazosRes] = await connection.query(
       'SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?',
       [id]
@@ -168,6 +171,8 @@ router.get('/:id', async (req, res) => {
 
     cliente.contatos = contatosRes;
     cliente.produtos_autorizados = produtosRes;
+    cliente.produtos = produtosRes;
+    cliente.produtos_venda = produtosVendaRes;
     cliente.prazos_pagamento = prazosRes;
 
     res.json(cliente);
@@ -181,26 +186,24 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
   const {
-    tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
+    tipo_pessoa, documento, nome_fantasia, situacao_tributaria, inscricao_estadual,
     cep, logradouro, numero, bairro, cidade, estado,
     meio_pagamento, codigosFiscais = [], contatos = [], produtos = [], prazos = []
   } = req.body;
 
   try {
-    // atualiza dados principais
     await connection.query(`
       UPDATE clientes SET
-        tipo_pessoa = ?, documento = ?, nome_fantasia = ?, situacao_tributaria = ?,
+        tipo_pessoa = ?, documento = ?, nome_fantasia = ?, situacao_tributaria = ?, inscricao_estadual = ?,
         cep = ?, logradouro = ?, numero = ?, bairro = ?, cidade = ?, estado = ?,
         meio_pagamento = ?, codigos_fiscais = ?
       WHERE id = ?
     `, [
-      tipo_pessoa, documento, nome_fantasia, situacao_tributaria,
+      tipo_pessoa, documento, nome_fantasia, situacao_tributaria, inscricao_estadual,
       cep, logradouro, numero, bairro, cidade, estado,
       meio_pagamento, JSON.stringify(codigosFiscais), id
     ]);
 
-    // contatos: limpa e reinsere
     await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
     for (const c of contatos) {
       await connection.query(
@@ -209,7 +212,6 @@ router.put('/:id', async (req, res) => {
       );
     }
 
-    // produtos autorizados: limpa e reinsere
     if (produtos.length) {
       await connection.query('DELETE FROM produtos_autorizados WHERE cliente_id = ?', [id]);
       for (const p of produtos) {
@@ -226,7 +228,22 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    // prazos: limpa e reinsere
+if (req.body.produtos_venda && req.body.produtos_venda.length) {
+  await connection.query('DELETE FROM produtos_a_vender WHERE cliente_id = ?', [id]);
+  for (const p of req.body.produtos_venda) {
+    const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
+    const valor = parseFloat(
+      typeof raw === "string"
+        ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+        : raw
+    ) || 0;
+    await connection.query(
+      'INSERT INTO produtos_a_vender (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
+      [id, p.id, valor]
+    );
+  }
+}
+
     if (prazos.length) {
       await connection.query('DELETE FROM prazos_pagamento WHERE cliente_id = ?', [id]);
       for (const p of prazos) {
@@ -240,7 +257,6 @@ router.put('/:id', async (req, res) => {
     res.json({ mensagem: 'Cliente atualizado com sucesso!' });
   } catch (err) {
     console.error('Erro ao atualizar cliente:', err);
-    // trata duplicidade de CPF/CNPJ
     if (err.code === 'ER_DUP_ENTRY') {
       const campo = tipo_pessoa === 'fisica' ? 'CPF' : 'CNPJ';
       return res
@@ -251,7 +267,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// injeta conexão
 Object.defineProperty(router, 'connection', {
   set(conn) {
     connection = conn;
