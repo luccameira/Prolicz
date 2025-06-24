@@ -88,15 +88,15 @@ function renderizarPedidos(lista) {
 
     const header = document.createElement('div');
     header.className = 'card-header';
-    header.innerHTML = 
-      <div class="info">
-        <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
-        <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
-      </div>
-      <div class="status-box">
-        ${gerarBadgeStatus(p.status)}
-      </div>
-    ;
+    header.innerHTML = `
+  <div class="info">
+    <h3 style="font-size: 19px; margin-bottom: 2px;">${p.cliente}</h3>
+    <p style="font-size: 15px; color: #888;">Data Prevista: ${new Date(p.data_coleta).toLocaleDateString('pt-BR')}</p>
+  </div>
+  <div class="status-box">
+    ${gerarBadgeStatus(p.status)}
+  </div>
+`;
     header.addEventListener('click', (e) => {
       e.stopPropagation();
       tarefasAbertas[p.id] = !tarefasAbertas[p.id];
