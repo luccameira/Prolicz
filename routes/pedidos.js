@@ -79,63 +79,57 @@ res.json(pedidos);
   }
 });
 
-// ROTA CARGA - Corrigida: inclui produtos autorizados a vender e evita erro de undefined
+// ROTA CARGA - Corrigida: apenas pedidos com coleta iniciada ou posterior
 router.get('/carga', async (req, res) => {
+  const sql = `
+    SELECT 
+      p.id,
+      i.id AS item_id,
+      p.data_criacao,
+      c.nome_fantasia AS cliente,
+      i.nome_produto AS produto,
+      p.data_coleta,
+      p.data_coleta_iniciada,
+      p.data_carga_finalizada,
+      p.data_conferencia_peso,
+      SUM(i.peso) AS peso_previsto,
+      p.status,
+      c.id AS cliente_id
+    FROM pedidos p
+    INNER JOIN clientes c ON p.cliente_id = c.id
+    INNER JOIN itens_pedido i ON p.id = i.pedido_id
+    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+    GROUP BY 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, 
+      p.data_conferencia_peso, p.status, c.id
+    ORDER BY p.data_coleta ASC
+  `;
+
   try {
-    const [pedidos] = await db.query(`
-      SELECT 
-        p.id, p.cliente_id, p.data_criacao, p.data_coleta, 
-        p.data_coleta_iniciada, p.data_carga_finalizada, 
-        p.data_conferencia_peso, p.status,
-        c.nome_fantasia AS cliente
-      FROM pedidos p
-      INNER JOIN clientes c ON p.cliente_id = c.id
-      WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status != 'Aguardando Início da Coleta'
-      ORDER BY p.data_coleta ASC
-    `);
+    const [results] = await db.query(sql);
 
-    const resultado = [];
+    for (const pedido of results) {
+      // Observações do setor
+      const [obs] = await db.query(
+        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Carga e Descarga'`,
+        [pedido.id]
+      );
+      pedido.observacoes_setor = obs.map(o => o.texto);
 
-    for (const pedido of pedidos) {
-      // Buscar materiais do pedido
-      const [materiais] = await db.query(`
-        SELECT id AS item_id, nome_produto, peso AS quantidade, unidade, tipo_peso
-        FROM itens_pedido
-        WHERE pedido_id = ?
-      `, [pedido.id]);
-
-      // Buscar produtos autorizados a VENDER (para uso no desconto de "Compra de Material")
-      let produtosVenda = [];
-      try {
-        const [autorizadosVenda] = await db.query(`
-           SELECT 
-            pa.id AS item_id,
-            p.nome AS nome_produto,
-            pa.valor_unitario,
-            p.unidade,
-            pa.tipo_peso
-          FROM produtos_autorizados pa
-          INNER JOIN produtos p ON pa.produto_id = p.id
-          WHERE pa.cliente_id = ? AND pa.autorizado_venda = 1
-        `, [pedido.cliente_id]);
-
-        produtosVenda = autorizadosVenda || [];
-      } catch (erroVenda) {
-        console.error('Erro ao buscar produtos autorizados a vender:', erroVenda);
-        produtosVenda = [];
-      }
-
-      resultado.push({
-        ...pedido,
-        materiais,
-        produtos_autorizados_venda: produtosVenda
-      });
+      // Produtos autorizados do cliente
+      const [produtos] = await db.query(
+        `SELECT p.nome AS nome FROM produtos p
+         INNER JOIN produtos_autorizados pa ON pa.produto_id = p.id
+         WHERE pa.cliente_id = ?`,
+        [pedido.cliente_id]
+      );
+      pedido.produtos_autorizados = produtos; // ex: [{ nome: 'Polpa' }, { nome: 'Fraldinha' }]
     }
 
-    res.json(resultado);
-  } catch (erro) {
-    console.error('Erro ao buscar pedidos de carga:', erro);
+    res.json(results);
+  } catch (err) {
+    console.error('Erro ao buscar pedidos de carga:', err);
     res.status(500).json({ erro: 'Erro ao buscar pedidos de carga' });
   }
 });
