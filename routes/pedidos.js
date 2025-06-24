@@ -109,11 +109,11 @@ router.get('/carga', async (req, res) => {
       let produtosVenda = [];
       try {
         const [autorizadosVenda] = await db.query(`
-          SELECT 
+           SELECT 
             pa.id AS item_id,
             p.nome AS nome_produto,
             pa.valor_unitario,
-            pa.unidade,
+            p.unidade,
             pa.tipo_peso
           FROM produtos_autorizados pa
           INNER JOIN produtos p ON pa.produto_id = p.id
