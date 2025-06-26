@@ -259,3 +259,13 @@ input, select, textarea {
 #form-pedido * {
   overflow: visible !important;
 }
+
+/* Sidebar oculta manualmente */
+.sidebar.oculta {
+  display: none !important;
+}
+
+/* Conteúdo expandido quando sidebar está oculta */
+.main-content.expandida {
+  margin-left: 0 !important;
+}
