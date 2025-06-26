@@ -427,10 +427,14 @@ $("#setor-observacao").on("change", function() {
   editandoIndex = i;
 };
       window.excluirObservacao = function(i) {
-  if (confirm("Você tem certeza que deseja excluir esta observação?")) {
-    observacoes.splice(i, 1);
-    renderizarObservacoes();
-  }
+  if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
+
+  const textoReferencia = observacoes[i].texto;
+
+  // Remove todas as observações com o mesmo texto
+  observacoes = observacoes.filter(obs => obs.texto !== textoReferencia);
+
+  renderizarObservacoes();
 };
       function formatarNumero(valor, inteiro = false) {
         const partes = inteiro
