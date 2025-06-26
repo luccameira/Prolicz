@@ -125,6 +125,16 @@ router.get('/carga', async (req, res) => {
         [pedido.cliente_id]
       );
       pedido.produtos_autorizados = produtos; // ex: [{ nome: 'Polpa' }, { nome: 'Fraldinha' }]
+
+     // Produtos autorizados a vender (para Compra de Material)
+const [produtosVenda] = await db.query(
+  `SELECT p.nome AS nome
+   FROM produtos_a_vender pv
+   INNER JOIN produtos p ON pv.produto_id = p.id
+   WHERE pv.cliente_id = ?`,
+  [pedido.cliente_id]
+);
+pedido.produtos_venda = produtosVenda;
     }
 
     res.json(results);
@@ -366,75 +376,106 @@ router.put('/:id/coleta', async (req, res) => {
 
 const uploadMultiplosTickets = uploadTicket.any(); // permite múltiplos arquivos com qualquer nome
 
-// PUT /api/pedidos/:id/carga
-router.put('/:id/carga', uploadMultiplosTickets, async (req, res) => {
-  const { id } = req.params;
-  const { itens } = req.body;
-
-  // Captura os nomes dos arquivos enviados via multipart/form-data
-  const arquivos = {};
-  if (Array.isArray(req.files)) {
-    req.files.forEach(file => {
-      arquivos[file.fieldname] = file.filename;
-    });
-  }
+// Rota PUT /api/pedidos/:id/carga
+router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
+  const pedidoId = req.params.id;
+  const arquivos = req.files || [];
+  let materiais;
 
   try {
-    const nomeArquivoPrincipal = arquivos['ticket_balanca'] || null;
-
-    await db.query(
-      `UPDATE pedidos
-       SET 
-         ticket_balanca = ?, 
-         status = 'Aguardando Conferência do Peso',
-         data_carga_finalizada = NOW()
-       WHERE id = ?`,
-      [nomeArquivoPrincipal, id]
-    );
-
-    const listaItens = JSON.parse(itens || '[]');
-
-    if (Array.isArray(listaItens)) {
-      for (const item of listaItens) {
-        await db.query(
-          `UPDATE itens_pedido 
-           SET peso_carregado = ? 
-           WHERE id = ?`,
-          [item.peso_carregado, item.item_id]
-        );
-
-        await db.query(
-          `DELETE FROM descontos_item_pedido WHERE item_id = ?`,
-          [item.item_id]
-        );
-
-        if (Array.isArray(item.descontos)) {
-          for (const desc of item.descontos) {
-            const campoArquivo = desc.ticket_devolucao;
-            const nomeArquivoDevolucao = campoArquivo ? arquivos[campoArquivo] || null : null;
-
-            await db.query(
-              `INSERT INTO descontos_item_pedido 
-               (item_id, motivo, quantidade, peso_calculado, material, ticket_devolucao)
-               VALUES (?, ?, ?, ?, ?, ?)`,
-              [
-                item.item_id,
-                desc.motivo,
-                desc.quantidade || null,
-                desc.peso_calculado || 0,
-                desc.material || null,
-                nomeArquivoDevolucao
-              ]
-            );
-          }
-        }
-      }
+    try {
+      materiais = JSON.parse(req.body.itens); // já corrigido para 'itens'
+    } catch (err) {
+      return res.status(400).json({ erro: 'Materiais inválidos.' });
     }
 
-    res.status(200).json({ mensagem: 'Tarefa de carga finalizada com sucesso!' });
+    if (!Array.isArray(materiais) || materiais.length === 0) {
+      return res.status(400).json({ erro: 'Materiais inválidos.' });
+    }
+
+    // Limpa descontos anteriores por item_id
+    for (const mat of materiais) {
+      if (!mat.item_id) continue;
+      await db.query('DELETE FROM descontos_item_pedido WHERE item_id = ?', [mat.item_id]);
+    }
+
+    // Insere novos descontos
+    for (const mat of materiais) {
+      console.log('\n>>> Item recebido:', mat.item_id);
+      console.log('Descontos recebidos:', mat.descontos);
+      console.log('Arquivos recebidos:', arquivos.map(a => a.fieldname));
+
+      if (!mat.descontos || !Array.isArray(mat.descontos)) continue;
+
+      for (const desc of mat.descontos) {
+        console.log('--- Verificando desconto:', desc);
+
+        if (!desc.motivo || isNaN(desc.peso_calculado)) {
+          console.log('❌ Desconto ignorado: dados incompletos ou inválidos');
+          continue;
+        }
+
+        // Busca arquivos enviados com nomes dinâmicos
+        let arquivoCompra = null;
+let arquivoDevolucao = null;
+
+if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
+  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
+  if (arquivo) arquivoCompra = arquivo.filename;
+}
+
+if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
+  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
+  if (arquivo) arquivoDevolucao = arquivo.filename;
+}
+
+        console.log('✅ Inserindo desconto no banco:', {
+          item_id: mat.item_id,
+          motivo: desc.motivo,
+          material: desc.material,
+          quantidade: desc.quantidade,
+          unidade: desc.unidade,
+          peso_calculado: desc.peso_calculado,
+          ticket_compra: arquivoCompra,
+          ticket_devolucao: arquivoDevolucao
+        });
+
+        await db.query(`
+          INSERT INTO descontos_item_pedido
+          (item_id, motivo, material, quantidade, unidade, peso_calculado, ticket_compra, ticket_devolucao)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          mat.item_id,
+          desc.motivo || '',
+          desc.material || '',
+          desc.quantidade || 0,
+          desc.unidade || 'kg',
+          desc.peso_calculado || 0,
+          arquivoCompra,
+          arquivoDevolucao
+        ]);
+      }
+
+      // Atualiza peso carregado do item
+      await db.query(
+        'UPDATE itens_pedido SET peso_carregado = ? WHERE id = ?',
+        [mat.peso_carregado || 0, mat.item_id]
+      );
+    }
+
+    // Localiza ticket da balança principal
+    const ticketBalanca = arquivos.find(f => f.fieldname === 'ticket_balanca')?.filename || null;
+
+    // Atualiza status do pedido e insere ticket principal
+    await db.query(
+      'UPDATE pedidos SET status = ?, ticket_balanca = ? WHERE id = ?',
+      ['Aguardando Conferência do Peso', ticketBalanca, pedidoId]
+    );
+
+    res.json({ sucesso: true });
   } catch (error) {
-    console.error('Erro ao finalizar tarefa de carga:', error);
-    res.status(500).json({ erro: 'Erro ao finalizar tarefa de carga.' });
+    console.error('Erro ao registrar carga:', error);
+    res.status(500).json({ erro: 'Erro ao registrar carga.' });
   }
 });
 
@@ -504,97 +545,49 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// GET /api/pedidos/conferencia
-// GET /api/pedidos/conferencia
-// ENCONTRAR este trecho no seu arquivo pedidos.js:
-// -----------------------------------------------
-// router.get('/conferencia', async (req, res) => {
-//   const sql = `...`
-//   try {
-//     const [pedidos] = await db.query(sql);
-//     for (const pedido of pedidos) {
-//       const [materiais] = await db.query(`...`, [pedido.pedido_id]);
-//       pedido.materiais = materiais;
-//     }
-//     res.json(pedidos);
-//   } catch (err) {
-//     console.error(...);
-//     res.status(500).json(...);
-//   }
-// });
-
-// SUBSTITUIR pelo código completo abaixo:
-
 router.get('/conferencia', async (req, res) => {
-  const sql = `
-    SELECT 
-      p.id AS pedido_id,
-      p.data_criacao,
-      p.tipo,
-      p.status,
-      p.data_coleta,
-      p.data_coleta_iniciada,
-      p.data_carga_finalizada,
-      p.data_conferencia_peso,
-      p.data_financeiro,
-      p.data_emissao_nf,
-      p.data_finalizado,
-      p.codigo_interno,
-      p.observacao,
-      p.empresa,
-      p.ticket_balanca,
-      c.nome_fantasia AS cliente
-    FROM pedidos p
-    INNER JOIN clientes c ON p.cliente_id = c.id
-    WHERE DATE(p.data_coleta) = CURDATE()
-    ORDER BY 
-      CASE 
-        WHEN p.status = 'Coleta Iniciada' THEN 1
-        WHEN p.status = 'Aguardando Conferência do Peso' THEN 2
-        WHEN p.status = 'Em Análise pelo Financeiro' THEN 3
-        ELSE 99
-      END,
-      p.data_coleta ASC
-  `;
-
   try {
-    const [pedidos] = await db.query(sql);
+    const [pedidos] = await db.query(`
+      SELECT 
+        p.id AS pedido_id,
+        p.data_criacao,
+        p.tipo,
+        p.data_coleta,
+        p.status,
+        p.ticket_balanca,
+        c.nome_fantasia AS cliente,
+        p.data_coleta_iniciada,
+        p.data_conferencia_peso,
+        p.data_financeiro,
+        p.data_nota_fiscal,
+        p.data_finalizado
+      FROM pedidos p
+      JOIN clientes c ON p.cliente_id = c.id
+      WHERE p.data_coleta_iniciada IS NOT NULL
+      ORDER BY p.data_coleta ASC
+    `);
 
     for (const pedido of pedidos) {
-      // ✅ Adiciona observações do setor Conferência de Peso
-      const [obs] = await db.query(
-        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Conferência de Peso'`,
-        [pedido.pedido_id]
-      );
-      pedido.observacoes_setor = obs.map(o => o.texto);
-
       const [materiais] = await db.query(
-        `SELECT 
-            i.id, i.nome_produto, i.peso AS quantidade, i.tipo_peso, 
-            i.unidade, i.peso_carregado
-         FROM itens_pedido i
-         WHERE i.pedido_id = ?`,
+        'SELECT * FROM itens_pedido WHERE pedido_id = ?',
         [pedido.pedido_id]
       );
+      pedido.materiais = materiais || [];
 
+      // Buscar descontos vinculados aos itens do pedido
       for (const item of materiais) {
-        const [descontos] = await db.query(
-          `SELECT motivo, quantidade, peso_calculado
-           FROM descontos_item_pedido
-           WHERE item_id = ?`,
-          [item.id]
-        );
-        item.descontos = descontos || [];
-      }
-
-      pedido.materiais = materiais;
+  const [descontos] = await db.query(
+    'SELECT * FROM descontos_item_pedido WHERE item_id = ?',
+    [item.id]
+  );
+  item.descontos = descontos || [];
+}
     }
 
     res.json(pedidos);
-
-  } catch (err) {
-    console.error('Erro ao buscar pedidos para conferência:', err);
-    res.status(500).json({ erro: 'Erro ao buscar pedidos para conferência' });
+  } catch (error) {
+    console.error('Erro ao buscar pedidos para conferência:', error);
+    res.status(500).json({ error: 'Erro ao buscar pedidos para conferência' });
   }
 });
 
@@ -706,14 +699,14 @@ router.get('/financeiro', async (req, res) => {
       );
 
       for (const item of materiais) {
-        const [descontos] = await db.query(
-          `SELECT motivo, quantidade, peso_calculado
-           FROM descontos_item_pedido
-           WHERE item_id = ?`,
-          [item.id]
-        );
-        item.descontos = descontos || [];
-      }
+  const [descontos] = await db.query(
+    `SELECT motivo, quantidade, peso_calculado, ticket_compra, ticket_devolucao
+     FROM descontos_item_pedido
+     WHERE item_id = ?`,
+    [item.id]
+  );
+  item.descontos = descontos || [];
+}
 
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
