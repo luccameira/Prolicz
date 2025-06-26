@@ -2,7 +2,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
 
-  // Se estivermos na página login.html, não carregue o layout para topbar e sidebar
   if (window.location.pathname.endsWith("login.html")) {
     console.log("Página login.html detectada, não carregando topbar/layout.");
     return;
@@ -20,25 +19,58 @@ document.addEventListener("DOMContentLoaded", () => {
       const sidebar = tempDiv.querySelector(".sidebar");
 
       if (topbar) {
-        const topbarContainer = document.querySelector(".topbar");
-        if (topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
-      }
+  const topbarContainer = document.querySelector(".topbar");
+  if (topbarContainer) {
+    topbarContainer.innerHTML = topbar.innerHTML;
+
+    // 🔘 INSERE O BOTÃO ☰ NO CANTO ESQUERDO
+    const botaoToggle = document.createElement("button");
+    botaoToggle.textContent = "☰";
+    botaoToggle.style.background = "transparent";
+    botaoToggle.style.color = "white";
+    botaoToggle.style.border = "none";
+    botaoToggle.style.fontSize = "24px";
+    botaoToggle.style.cursor = "pointer";
+    botaoToggle.style.marginRight = "20px";
+    botaoToggle.style.outline = "none";
+
+    botaoToggle.addEventListener("click", () => {
+      document.querySelector(".sidebar")?.classList.toggle("oculta");
+      document.querySelector(".main-content")?.classList.toggle("expandida");
+    });
+
+    const logo = topbarContainer.querySelector(".logo");
+    if (logo) logo.prepend(botaoToggle);
+  }
+
+  const nomeUsuario = localStorage.getItem("nomeUsuario");
+  if (nomeUsuario) {
+    const spanNome = document.createElement("span");
+    spanNome.textContent = nomeUsuario;
+    spanNome.style.marginRight = "12px";
+    spanNome.style.fontWeight = "bold";
+
+    const containerUsuario = topbarContainer.querySelector("div:last-child");
+    if (containerUsuario) {
+      containerUsuario.insertBefore(spanNome, containerUsuario.querySelector("a"));
+    }
+  }
+}
 
       if (sidebar) {
         const sidebarContainer = document.querySelector(".sidebar");
         if (sidebarContainer) {
           sidebarContainer.innerHTML = sidebar.innerHTML;
 
-          // Corrigir link do menu "Usuários" se estiver errado (apontando para login.html)
+          // Corrigir link do menu "Usuários" se estiver errado
           const linkUsuarios = sidebarContainer.querySelector('a[href="login.html"]');
           if (linkUsuarios) {
             linkUsuarios.setAttribute('href', 'usuarios.html');
           }
 
-          // Ativar o link da sidebar correspondente à página atual
+          // Marcar como ativo o menu correspondente à página atual
           const path = window.location.pathname;
-          const links = sidebarContainer.querySelectorAll("a");
-          links.forEach(link => {
+          sidebarContainer.querySelectorAll("a").forEach(link => {
             if (path.includes(link.getAttribute("href"))) {
               link.classList.add("active");
             }
@@ -46,10 +78,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Disparar evento global indicando que o layout foi carregado
       document.dispatchEvent(new Event("layoutCarregado"));
     })
     .catch(err => {
       console.error("🔴 Erro ao carregar layout.html:", err);
     });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.addEventListener("click", function (e) {
+    if (e.target.textContent === "☰") {
+      setTimeout(() => {
+        document.querySelectorAll(".timeline-simples").forEach(container => {
+          animarLinhaProgresso(container);
+        });
+      }, 300); // tempo suficiente para o layout se ajustar
+    }
+  });
 });
