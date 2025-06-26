@@ -78,8 +78,10 @@
         </div>
 
         <!-- CAMPO ADICIONADO AQUI -->
-        <label for="inscricaoEstadual">Inscrição Estadual</label>
-        <input type="text" id="inscricaoEstadual" maxlength="30" />
+<div id="divInscricaoEstadual">
+  <label for="inscricaoEstadual">Inscrição Estadual</label>
+  <input type="text" id="inscricaoEstadual" maxlength="30" />
+</div>
 
         <label>Códigos Fiscais Permitidos</label>
         <div id="codigosFiscaisPermitidos"></div>
@@ -158,23 +160,27 @@
     container.appendChild(div);
   }
   function atualizarCamposPessoa() {
-    const tipo = document.getElementById("tipoPessoa").value;
-    const labelDoc = document.getElementById("labelDocumento");
-    const inputDoc = document.getElementById("documento");
-    const divSit = document.getElementById("divSituacaoTributaria");
-    const labelNome = document.getElementById("labelNomeFantasia");
-    if (tipo === "fisica") {
-      labelDoc.textContent = "CPF";
-      $(inputDoc).unmask().mask("000.000.000-00");
-      divSit.classList.add("hidden");
-      labelNome.textContent = "Nome";
-    } else {
-      labelDoc.textContent = "CNPJ";
-      $(inputDoc).unmask().mask("00.000.000/0000-00");
-      divSit.classList.remove("hidden");
-      labelNome.textContent = "Nome Fantasia";
-    }
+  const tipo = document.getElementById("tipoPessoa").value;
+  const labelDoc = document.getElementById("labelDocumento");
+  const inputDoc = document.getElementById("documento");
+  const divSit = document.getElementById("divSituacaoTributaria");
+  const divIE = document.getElementById("divInscricaoEstadual");
+  const labelNome = document.getElementById("labelNomeFantasia");
+
+  if (tipo === "fisica") {
+    labelDoc.textContent = "CPF";
+    $(inputDoc).unmask().mask("000.000.000-00");
+    divSit.classList.add("hidden");
+    divIE.classList.add("hidden");
+    labelNome.textContent = "Nome";
+  } else {
+    labelDoc.textContent = "CNPJ";
+    $(inputDoc).unmask().mask("00.000.000/0000-00");
+    divSit.classList.remove("hidden");
+    divIE.classList.remove("hidden");
+    labelNome.textContent = "Nome Fantasia";
   }
+}
   function buscarEndereco() {
     const cep = document.getElementById("cep").value.replace(/\D/g, "");
     if (cep.length !== 8) return;
@@ -272,6 +278,7 @@
 
   document.getElementById("formCliente").addEventListener("submit", async (e) => {
     e.preventDefault();
+if (!confirm("Você tem certeza que deseja criar este cliente?")) return;
     const cliente = {
       tipo_pessoa: document.getElementById("tipoPessoa").value,
       documento: document.getElementById("documento").value,
@@ -295,17 +302,29 @@
         email: div.querySelector(".email-contato").value
       });
     });
-    document.querySelectorAll(".produto-group").forEach(div => {
-  const produtoSelect = div.querySelector(".produto-select") || div.querySelector(".produto-venda-select");
-  const valorInput = div.querySelector(".valor-unitario") || div.querySelector(".valor-venda");
 
-  if (produtoSelect && valorInput) {
+    document.querySelectorAll(".produto-group").forEach(div => {
+  const selectCompra = div.querySelector(".produto-select");
+  const selectVenda = div.querySelector(".produto-venda-select");
+
+  if (selectCompra) {
+    const valor = div.querySelector(".valor-unitario").value;
     cliente.produtos.push({
-      id: produtoSelect.value,
-      valor: valorInput.value
+      id: selectCompra.value,
+      valor: valor
+    });
+  }
+
+  if (selectVenda) {
+    const valor = div.querySelector(".valor-venda").value;
+    if (!cliente.produtos_venda) cliente.produtos_venda = [];
+    cliente.produtos_venda.push({
+      id: selectVenda.value,
+      valor: valor
     });
   }
 });
+
     document.querySelectorAll(".prazo-group").forEach(div => {
       if(div.querySelector(".prazo-descricao") && div.querySelector(".prazo-dias")) {
         cliente.prazos.push({
