@@ -35,10 +35,11 @@ router.post('/', async (req, res) => {
     }
 
     for (const p of produtos) {
+      const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
-        typeof p.valor_unitario === 'string'
-          ? p.valor_unitario.replace(/[^\d,-]/g, '').replace(',', '.')
-          : p.valor_unitario || 0
+        typeof raw === 'string'
+          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+          : raw
       ) || 0;
       await connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
@@ -47,10 +48,11 @@ router.post('/', async (req, res) => {
     }
 
     for (const p of produtos_venda) {
+      const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
-        typeof p.valor_unitario === 'string'
-          ? p.valor_unitario.replace(/[^\d,-]/g, '').replace(',', '.')
-          : p.valor_unitario || 0
+        typeof raw === 'string'
+          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+          : raw
       ) || 0;
       await connection.query(
         'INSERT INTO produtos_a_vender (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
@@ -77,7 +79,6 @@ router.post('/', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao cadastrar cliente.', detalhes: err.message });
   }
 });
-
 
 // GET /api/clientes
 router.get('/', (req, res) => {
