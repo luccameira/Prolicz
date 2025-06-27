@@ -385,7 +385,7 @@ async function registrarPeso(pedidoId) {
   });
 
   try {
-    const res = await fetch(/api/pedidos/${pedidoId}/carga, {
+    const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
       method: 'PUT',
       body: formData
     });
