@@ -605,6 +605,11 @@ $("#setor-observacao").on("change", function() {
   }
 });
 
+                if (dados.itens.length === 0) {
+          alert("Você precisa adicionar pelo menos um produto ao pedido.");
+          return;
+        }
+
         fetch("/api/pedidos", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
