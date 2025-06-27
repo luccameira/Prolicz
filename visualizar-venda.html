@@ -269,21 +269,21 @@
     }
 
     .timeline-toggle {
-  cursor: pointer;
-  display: inline-block;
-  padding: 10px 12px;
-  border-radius: 6px;
-  user-select: none;
-  transition: background-color 0.2s ease;
-  font-weight: 700;       /* negrito */
-  font-size: 16px;        /* tamanho maior */
-  background: #fff;       /* fundo branco para combinar com o retângulo */
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
-  margin-bottom: 6px;     /* espaço entre título e conteúdo */
-}
-.timeline-toggle:hover {
-  background-color: #fff3cd;
-}
+      cursor: pointer;
+      display: inline-block;
+      padding: 10px 12px;
+      border-radius: 6px;
+      user-select: none;
+      transition: background-color 0.2s ease;
+      font-weight: 700;
+      font-size: 16px;
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+      margin-bottom: 6px;
+    }
+    .timeline-toggle:hover {
+      background-color: #fff3cd;
+    }
 
     .timeline-content {
       background: #fff;
@@ -368,7 +368,7 @@
       <ul class="lista-simples" id="lista-prazos"></ul>
     </section>
 
-    <section id="historico-pedido" class="tab-content" style="display:none;">
+    <section id="historico-pedido" class="tab-content">
       <div class="timeline-container">
 
         <div class="timeline-item">
@@ -476,6 +476,87 @@
             <p><strong>Produto:</strong> Produto Exemplo</p>
             <p><strong>Valor por Quilo:</strong> R$ 100,00</p>
             <p><strong>Prazo de Pagamento:</strong> 30 dias</p>
+          </div>
+        </div>
+
+        <!-- Financeiro -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div
+            class="timeline-toggle"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-controls="info5"
+            id="toggle5"
+          >
+            Financeiro
+            <div class="timeline-date">27/06/2023 09:30</div>
+          </div>
+          <div
+            class="timeline-content"
+            id="info5"
+            role="region"
+            aria-labelledby="toggle5"
+            hidden
+          >
+            <p><strong>Status Financeiro:</strong> Em Análise</p>
+            <p><strong>Responsável:</strong> Financeiro Mellicz</p>
+            <p><strong>Data da Análise:</strong> 27/06/2023</p>
+          </div>
+        </div>
+
+        <!-- Emissão de NF -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div
+            class="timeline-toggle"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-controls="info6"
+            id="toggle6"
+          >
+            Emissão de NF
+            <div class="timeline-date">27/06/2023 10:15</div>
+          </div>
+          <div
+            class="timeline-content"
+            id="info6"
+            role="region"
+            aria-labelledby="toggle6"
+            hidden
+          >
+            <p><strong>Status da NF:</strong> Emitida</p>
+            <p><strong>Número da NF:</strong> 123456</p>
+            <p><strong>Data de Emissão:</strong> 27/06/2023</p>
+          </div>
+        </div>
+
+        <!-- Liberação Final -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div
+            class="timeline-toggle"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-controls="info7"
+            id="toggle7"
+          >
+            Liberação Final
+            <div class="timeline-date">27/06/2023 11:00</div>
+          </div>
+          <div
+            class="timeline-content"
+            id="info7"
+            role="region"
+            aria-labelledby="toggle7"
+            hidden
+          >
+            <p><strong>Status:</strong> Pedido Liberado</p>
+            <p><strong>Responsável:</strong> Supervisor</p>
+            <p><strong>Data da Liberação:</strong> 27/06/2023</p>
           </div>
         </div>
 
