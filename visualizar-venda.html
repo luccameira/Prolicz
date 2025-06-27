@@ -327,7 +327,7 @@
     </div>
 
     <nav class="tabs-menu">
-      <a href="#" class="active" data-tab="info-pedido">Informações do Pedido</a>
+      <a href="#" class="active" data-tab="info-pedido">Informações Principais</a>
       <a href="#" data-tab="observacoes">Observações</a>
       <a href="#" data-tab="historico-pedido">Histórico do Pedido</a>
     </nav>
@@ -336,12 +336,12 @@
       <div class="info-bloco tab-section">
         <h3>Informações do Pedido</h3>
         <dl>
-          <dt>Empresa Fornecedora</dt><dd id="empresa">—</dd>
           <dt>Data Prevista da Coleta</dt><dd id="data-coleta">—</dd>
           <dt>Pedido Para</dt><dd id="pedido-para">—</dd>
           <dt>Prazo de Pagamento</dt><dd id="prazo-pagamento">—</dd>
           <dt>Condição para Pagamento à Vista</dt><dd id="condicao-pagamento">—</dd>
           <dt>Código</dt><dd id="codigo-fiscal">—</dd>
+          <dt>Desconto</dt><dd id="informações do desconto">—</dd>
         </dl>
       </div>
       <div class="info-bloco tab-section" style="margin-top: 30px;">
@@ -623,7 +623,7 @@
           document.getElementById('nome-cliente').textContent = pedido.cliente_nome || '—';
           document.getElementById('info-adicional').textContent = pedido.documento || '—';
 
-          // Aba informações do pedido
+          // Aba informações Principais
           document.getElementById('empresa').textContent = pedido.empresa || '—';
           document.getElementById('data-coleta').textContent = formatarData(pedido.data_coleta) || '—';
           document.getElementById('pedido-para').textContent = pedido.tipo || '—';
