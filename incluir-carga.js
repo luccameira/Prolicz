@@ -142,15 +142,15 @@ function renderizarPedidos(lista) {
     });
 
     const observacoesHTML = (p.observacoes_setor?.length)
-  ? `
-    <div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
-      <strong>Observações para Carga e Descarga:</strong><br>
-      ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
-    </div>
-  `
-  : '';
+      ? `
+        <div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
+          <strong>Observações para Carga e Descarga:</strong><br>
+          ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
+        </div>
+      `
+      : '';
 
-    form.innerHTML +=  `
+    form.innerHTML += `
   <div class="upload-ticket">
     <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
     <input type="file" id="ticket-${p.id}" accept="image/*">
@@ -183,16 +183,16 @@ function gerarBadgeStatus(status) {
 }
 
 function adicionarDescontoMaterial(itemId, pedidoId) {
-  const container = document.getElementById(grupo-descontos-${itemId});
+  const container = document.getElementById(`grupo-descontos-${itemId}`);
   const index = container.querySelectorAll('.grupo-desconto').length;
   if (index >= 3) return alert("Limite de 3 tipos de desconto atingido.");
 
-  const idMotivo = motivo-${itemId}-${index};
-  const idCampoExtra = campo-extra-${itemId}-${index};
+  const idMotivo = `motivo-${itemId}-${index}`;
+  const idCampoExtra = `campo-extra-${itemId}-${index}`;
   const div = document.createElement('div');
   div.className = 'grupo-desconto';
-  div.id = grupo-desconto-${itemId}-${index};
-  div.innerHTML = 
+  div.id = `grupo-desconto-${itemId}-${index}`;
+  div.innerHTML = `
     <div style="text-align: right;">
       <button class="fechar-desconto" onclick="removerDescontoMaterial(${itemId}, ${index})" title="Remover desconto">&times;</button>
     </div>
@@ -207,7 +207,7 @@ function adicionarDescontoMaterial(itemId, pedidoId) {
       </select>
     </div>
     <div id="${idCampoExtra}"></div>
-  ;
+  `;
   container.appendChild(div);
 }
 
@@ -216,34 +216,30 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   const materiais = pedido?.produtos_autorizados || [];
   const materiaisCompra = pedido?.produtos_venda || [];
 
-  const select = document.getElementById(motivo-${itemId}-${index});
-  const containerExtra = document.getElementById(campo-extra-${itemId}-${index});
-  const motivo = select.value;
+  const motivo = document.getElementById(`motivo-${itemId}-${index}`).value;
+  const containerExtra = document.getElementById(`campo-extra-${itemId}-${index}`);
   if (!motivo) return;
 
   let htmlExtra = '';
 
   if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
-    htmlExtra = 
+    htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="quantidade-${itemId}-${index}" style="min-width: 150px;">Qtd. ${motivo}s:</label>
         <input type="text" id="quantidade-${itemId}-${index}" placeholder="Digite a quantidade" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
-    ;
+    `;
     containerExtra.innerHTML = htmlExtra;
-    aplicarMascaraMilhar(document.getElementById(quantidade-${itemId}-${index}));
+    aplicarMascaraMilhar(document.getElementById(`quantidade-${itemId}-${index}`));
   } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
-    const selectId = material-${itemId}-${index};
-    const pesoId = peso-${itemId}-${index};
-    const uploadId = upload-${itemId}-${index};
-
-    const valorMaterialAnterior = document.getElementById(selectId)?.value || '';
-    const valorPesoAnterior = document.getElementById(pesoId)?.value || '';
+    const selectId = `material-${itemId}-${index}`;
+    const pesoId = `peso-${itemId}-${index}`;
+    const uploadId = `upload-${itemId}-${index}`;
 
     const opcoes = (motivo === 'Devolução de Material' ? materiais : materiaisCompra)
-      .map(m => <option value="${m.nome}">${m.nome}</option>).join('');
+      .map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
 
-    htmlExtra = 
+    htmlExtra = `
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label style="min-width: 150px;">Material ${motivo === 'Compra de Material' ? 'comprado' : 'devolvido'}:</label>
         <select id="${selectId}" style="flex: 1; padding: 6px;">
@@ -253,78 +249,56 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="${pesoId}" style="min-width: 150px;">Peso ${motivo === 'Compra de Material' ? 'comprado' : 'devolvido'} (Kg):</label>
-        <input type="text" id="${pesoId}" placeholder="Digite o peso" class="input-sem-seta" style="flex: 1; padding: 6px;" value="${valorPesoAnterior}">
+        <input type="text" id="${pesoId}" placeholder="Digite o peso" class="input-sem-seta" style="flex: 1; padding: 6px;">
       </div>
       <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
         <label for="${uploadId}" style="min-width: 150px;">Foto do Ticket (${motivo === 'Compra de Material' ? 'Compra' : 'Devolução'}):</label>
         <input type="file" id="${uploadId}" accept="image/*" style="flex: 1;">
       </div>
-    ;
+    `;
     containerExtra.innerHTML = htmlExtra;
-
-    const selectMaterial = document.getElementById(selectId);
-    if (selectMaterial && valorMaterialAnterior) {
-      selectMaterial.value = valorMaterialAnterior;
-    }
 
     aplicarMascaraMilhar(document.getElementById(pesoId));
   }
 
-  const camposAtualizaveis = [
-  document.getElementById(quantidade-${itemId}-${index}),
-  document.getElementById(peso-${itemId}-${index}),
-  document.getElementById(material-${itemId}-${index}),
-  document.getElementById(upload-${itemId}-${index})
-];
+  const campoQtd = document.getElementById(`quantidade-${itemId}-${index}`);
+  const campoPeso = document.getElementById(`peso-${itemId}-${index}`);
+  const campoMaterial = document.getElementById(`material-${itemId}-${index}`);
+  const campoUpload = document.getElementById(`upload-${itemId}-${index}`);
 
-// Atualiza o desconto apenas quando o campo perder o foco ou for alterado
-camposAtualizaveis.forEach(campo => {
-  if (campo && !campo.dataset.listenerAdicionado) {
-    const evento = campo.type === 'file' || campo.tagName === 'SELECT' ? 'change' : 'blur';
-    campo.addEventListener(evento, () => atualizarDescontoItem(itemId, index, pedidoId));
-    campo.dataset.listenerAdicionado = true;
+  let pesoCalculado = 0;
+  let infoExtra = {};
+
+  if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
+    const qtd = parseFloat(campoQtd?.value.replace(/\./g, ''));
+    if (!isNaN(qtd)) {
+      pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
+      infoExtra = { quantidade: qtd };
+    }
+  } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
+    const peso = parseFloat(campoPeso?.value.replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(peso)) {
+      pesoCalculado = peso;
+      infoExtra = {
+        material: campoMaterial?.value,
+        unidade: 'kg',
+        ticket_devolucao: motivo === 'Devolução de Material' ? (campoUpload?.files?.[0] || null) : null,
+        ticket_compra: motivo === 'Compra de Material' ? (campoUpload?.files?.[0] || null) : null
+      };
+    }
   }
-});
 
-// Atualização correta do objeto de desconto
-const valorQtd = document.getElementById(quantidade-${itemId}-${index});
-const valorPeso = document.getElementById(peso-${itemId}-${index});
-const selectMaterial = document.getElementById(material-${itemId}-${index});
-const uploadInput = document.getElementById(upload-${itemId}-${index});
+  const desconto = {
+    motivo,
+    peso_calculado: pesoCalculado,
+    ...infoExtra
+  };
 
-let pesoCalculado = 0;
-let infoExtra = {};
-
-if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
-  const qtd = parseFloat(valorQtd?.value.replace(/\./g, ''));
-  if (!isNaN(qtd)) {
-    pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
-    infoExtra = { quantidade: qtd };
-  }
-} else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
-  const peso = parseFloat(valorPeso?.value.replace(/\./g, '').replace(',', '.'));
-  if (!isNaN(peso)) {
-    pesoCalculado = peso;
-    infoExtra = {
-      material: selectMaterial?.value,
-      unidade: 'kg',
-      ticket_devolucao: motivo === 'Devolução de Material' ? (uploadInput?.files?.[0] || null) : null,
-      ticket_compra: motivo === 'Compra de Material' ? (uploadInput?.files?.[0] || null) : null
-    };
-  }
-}
-
-const desconto = {
-  motivo,
-  peso_calculado: pesoCalculado,
-  ...infoExtra
-};
-
-descontosPorItem[itemId][index] = desconto;
+  descontosPorItem[itemId][index] = desconto;
 }
 
 function removerDescontoMaterial(itemId, index) {
-  const div = document.getElementById(grupo-desconto-${itemId}-${index});
+  const div = document.getElementById(`grupo-desconto-${itemId}-${index}`);
   if (div) div.remove();
   if (descontosPorItem[itemId]) {
     descontosPorItem[itemId] = descontosPorItem[itemId].filter((_, i) => i !== index);
@@ -335,7 +309,7 @@ async function registrarPeso(pedidoId) {
   if (!confirm("Tem certeza que deseja registrar o peso?")) return;
 
   const pedido = pedidos.find(p => p.id === pedidoId);
-  const form = document.getElementById(form-${pedidoId});
+  const form = document.getElementById(`form-${pedidoId}`);
   const itens = [];
   const blocos = form.querySelectorAll('.material-bloco');
   const arquivosExtras = [];
@@ -349,30 +323,31 @@ async function registrarPeso(pedidoId) {
       const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
       descontos.forEach((desc, i) => {
         const motivo = desc.motivo;
-        const uploadId =
-          motivo === 'Compra de Material'
-            ? upload-${itemId}-${i}
-            : motivo === 'Devolução de Material'
-            ? upload-${itemId}-${i}
-            : null;
-
-        const campoUpload = uploadId ? document.getElementById(uploadId) : null;
+        const uploadId = `upload-${itemId}-${i}`;
+        const campoUpload = document.getElementById(uploadId);
         if (campoUpload && campoUpload.files.length > 0) {
           const file = campoUpload.files[0];
-          const field =
-            motivo === 'Compra de Material'
-              ? ticket_compra_${itemId}_${i}
-              : ticket_devolucao_${itemId}_${i};
+          const field = motivo === 'Compra de Material'
+            ? `ticket_compra_${itemId}_${i}`
+            : `ticket_devolucao_${itemId}_${i}`;
           arquivosExtras.push({ file, field });
-
           if (motivo === 'Compra de Material') {
             desc.ticket_compra = field;
           } else if (motivo === 'Devolução de Material') {
             desc.ticket_devolucao = field;
           }
-          });
+        }
+      });
 
-  const ticketInput = document.getElementById(ticket-${pedidoId});
+      itens.push({
+        item_id: itemId,
+        peso_carregado: valor,
+        descontos
+      });
+    }
+  });
+
+  const ticketInput = document.getElementById(`ticket-${pedidoId}`);
   const ticketFile = ticketInput?.files[0];
   if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
 
@@ -385,7 +360,7 @@ async function registrarPeso(pedidoId) {
   });
 
   try {
-    const res = await fetch(/api/pedidos/${pedidoId}/carga, {
+    const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
       method: 'PUT',
       body: formData
     });
