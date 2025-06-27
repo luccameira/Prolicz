@@ -384,7 +384,7 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
 
   try {
     try {
-      materiais = JSON.parse(req.body.itens); // já corrigido para 'itens'
+      materiais = JSON.parse(req.body.itens);
     } catch (err) {
       return res.status(400).json({ erro: 'Materiais inválidos.' });
     }
@@ -417,23 +417,23 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
 
         // Busca arquivos enviados com nomes dinâmicos
         let arquivoCompra = null;
-let arquivoDevolucao = null;
+        let arquivoDevolucao = null;
 
-if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
-  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
-  if (arquivo) arquivoCompra = arquivo.filename;
-}
+        if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
+          const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
+          if (arquivo) arquivoCompra = arquivo.filename;
+        }
 
-if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
-  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
-  if (arquivo) arquivoDevolucao = arquivo.filename;
-}
+        if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
+          const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
+          if (arquivo) arquivoDevolucao = arquivo.filename;
+        }
 
         console.log('✅ Inserindo desconto no banco:', {
           item_id: mat.item_id,
           motivo: desc.motivo,
           material: desc.material,
-          quantidade: desc.quantidade,
+          quantidade: desc.quantity,
           unidade: desc.unidade,
           peso_calculado: desc.peso_calculado,
           ticket_compra: arquivoCompra,
@@ -466,10 +466,15 @@ if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
     // Localiza ticket da balança principal
     const ticketBalanca = arquivos.find(f => f.fieldname === 'ticket_balanca')?.filename || null;
 
-    // Atualiza status do pedido e insere ticket principal
+    // ✅ Atualiza status, ticket e data da carga finalizada
     await db.query(
-      'UPDATE pedidos SET status = ?, ticket_balanca = ? WHERE id = ?',
-      ['Aguardando Conferência do Peso', ticketBalanca, pedidoId]
+      `UPDATE pedidos 
+       SET 
+         ticket_balanca = ?, 
+         status = 'Aguardando Conferência do Peso',
+         data_carga_finalizada = NOW()
+       WHERE id = ?`,
+      [ticketBalanca, pedidoId]
     );
 
     res.json({ sucesso: true });
