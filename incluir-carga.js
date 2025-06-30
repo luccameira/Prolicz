@@ -272,9 +272,9 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
   if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
     const qtd = parseFloat(campoQtd?.value.replace(/\./g, ''));
     if (!isNaN(qtd)) {
-      pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
-      infoExtra = { quantidade: qtd };
-    }
+  pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
+  infoExtra = { quantity: qtd };
+}
   } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
     const peso = parseFloat(campoPeso?.value.replace(/\./g, '').replace(',', '.'));
     if (!isNaN(peso)) {
