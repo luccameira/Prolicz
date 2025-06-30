@@ -3,8 +3,8 @@ function formatarData(data) {
 }
 
 function formatarPeso(valor) {
-  if (!valor) return '0';
-  return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+  if (!valor) return '0 Kg';
+  return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 }) + ' Kg';
 }
 
 async function carregarPedidosConferencia() {
@@ -71,11 +71,9 @@ async function carregarPedidosConferencia() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    const form = document.createElement('div');
+      const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
-
-        let ticketsHTMLGeral = '';
 
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
@@ -86,27 +84,11 @@ async function carregarPedidosConferencia() {
       let totalDescontos = 0;
 
       if (Array.isArray(item.descontos) && item.descontos.length > 0) {
-        const linhas = item.descontos.map((desc, idx) => {
-  const qtd = formatarPeso(desc.peso_calculado);
-  const material = item.nome_produto || '';
-  const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
-  totalDescontos += Number(desc.peso_calculado || 0);
-
-  return `<li>${desc.motivo} — ${material}: ${qtd} ${sufixo}</li>`;
-}).join('');
-
-        item.descontos.forEach((desc, idx) => {
-          if (desc.ticket_devolucao) {
-            const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
-            ticketsHTMLGeral += `
-              <div style="display:inline-block;margin-right:12px;">
-                <label style="font-weight:bold;">Ticket Devolução:</label><br>
-                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
-          }
-        });
+        const linhas = item.descontos.map((desc) => {
+          const peso = formatarPeso(desc.peso_calculado);
+          totalDescontos += Number(desc.peso_calculado || 0);
+          return `<li>${desc.motivo} — ${item.nome_produto}: ${peso}</li>`;
+        }).join('');
 
         descontosHTML = `
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
@@ -122,34 +104,44 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `
         <div class="material-bloco">
           <h4>${item.nome_produto}</h4>
-          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto}</p>
+          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado}</p>
           ${descontosHTML}
           <div style="margin-top: 14px;">
-            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal}</span>
           </div>
         </div>
       `;
     });
 
-    if (pedido.ticket_balanca) {
-      const ticketId = `ticket-balanca-${idPedido}`;
-      ticketsHTMLGeral += `
-        <div style="display:inline-block;margin-right:12px;">
-          <label style="font-weight:bold;">Ticket Balança:</label><br>
-          <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+    // Exibição dos dois tickets lado a lado
+    if (pedido.ticket_devolucao || pedido.ticket_balanca) {
+      const ticketDevId = `ticket-dev-${idPedido}`;
+      const ticketBalId = `ticket-bal-${idPedido}`;
+
+      form.innerHTML += `
+        <div style="display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap;">
+          ${pedido.ticket_devolucao ? `
+            <div>
+              <label style="font-weight: bold;">Ticket Devolução:</label><br>
+              <img id="${ticketDevId}" src="/uploads/tickets/${pedido.ticket_devolucao}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; cursor: pointer; object-fit: cover;">
+            </div>` : ''}
+          ${pedido.ticket_balanca ? `
+            <div>
+              <label style="font-weight: bold;">Ticket Balança:</label><br>
+              <img id="${ticketBalId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Balança" style="width: 120px; border-radius: 6px; cursor: pointer; object-fit: cover;">
+            </div>` : ''}
         </div>
       `;
-      setTimeout(() => adicionarZoomImagem(ticketId), 100);
+
+      setTimeout(() => {
+        if (pedido.ticket_devolucao) adicionarZoomImagem(ticketDevId);
+        if (pedido.ticket_balanca) adicionarZoomImagem(ticketBalId);
+      }, 100);
     }
 
-    if (ticketsHTMLGeral) {
-      form.innerHTML += `
-        <div style="margin-top: 16px;">${ticketsHTMLGeral}</div>
-      `;
-    }
-
-      if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+      // Observações do setor
+    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
       obsBloco.style.padding = '12px';
@@ -163,6 +155,7 @@ async function carregarPedidosConferencia() {
       form.appendChild(obsBloco);
     }
 
+    // Botão de confirmação
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -177,6 +170,7 @@ async function carregarPedidosConferencia() {
       form.appendChild(botaoConfirmar);
     }
 
+    // Área clicável para abrir/fechar formulário
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
     timeline.style.width = '100%';
