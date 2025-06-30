@@ -75,7 +75,7 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-        let ticketsHTMLGeral = '';
+    let ticketsHTMLGeral = '';
 
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
@@ -87,13 +87,13 @@ async function carregarPedidosConferencia() {
 
       if (Array.isArray(item.descontos) && item.descontos.length > 0) {
         const linhas = item.descontos.map((desc, idx) => {
-  const qtd = formatarPeso(desc.peso_calculado);
-  const material = item.nome_produto || '';
-  const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
-  totalDescontos += Number(desc.peso_calculado || 0);
+          const qtd = formatarPeso(desc.peso_calculado);
+          const material = item.nome_produto || '';
+          const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
+          totalDescontos += Number(desc.peso_calculado || 0);
 
-  return `<li>${desc.motivo} — ${material}: ${qtd} ${sufixo}</li>`;
-}).join('');
+          return `<li>${desc.motivo} — ${material}: ${qtd} ${sufixo}</li>`;
+        }).join('');
 
         item.descontos.forEach((desc, idx) => {
           if (desc.ticket_devolucao) {
@@ -132,7 +132,7 @@ async function carregarPedidosConferencia() {
       `;
     });
 
-    if (pedido.ticket_balanca) {
+      if (pedido.ticket_balanca) {
       const ticketId = `ticket-balanca-${idPedido}`;
       ticketsHTMLGeral += `
         <div style="display:inline-block;margin-right:12px;">
@@ -149,7 +149,7 @@ async function carregarPedidosConferencia() {
       `;
     }
 
-      if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
       obsBloco.style.padding = '12px';
