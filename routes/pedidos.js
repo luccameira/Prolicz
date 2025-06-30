@@ -550,20 +550,25 @@ router.get('/conferencia', async (req, res) => {
     `);
 
     for (const pedido of pedidos) {
+      // 👇 Aqui está a correção
       const [materiais] = await db.query(
-        'SELECT * FROM itens_pedido WHERE pedido_id = ?',
+        `SELECT 
+          id, nome_produto, peso AS quantidade, tipo_peso, unidade, 
+          peso_carregado, valor_unitario, codigo_fiscal
+         FROM itens_pedido
+         WHERE pedido_id = ?`,
         [pedido.pedido_id]
       );
       pedido.materiais = materiais || [];
 
       // Buscar descontos vinculados aos itens do pedido
       for (const item of materiais) {
-  const [descontos] = await db.query(
-    'SELECT * FROM descontos_item_pedido WHERE item_id = ?',
-    [item.id]
-  );
-  item.descontos = descontos || [];
-}
+        const [descontos] = await db.query(
+          'SELECT * FROM descontos_item_pedido WHERE item_id = ?',
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
     }
 
     res.json(pedidos);
