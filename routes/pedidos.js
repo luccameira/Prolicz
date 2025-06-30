@@ -441,19 +441,19 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
         });
 
         await db.query(`
-          INSERT INTO descontos_item_pedido
-          (item_id, motivo, material, quantidade, unidade, peso_calculado, ticket_compra, ticket_devolucao)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          mat.item_id,
-          desc.motivo || '',
-          desc.material || '',
-          desc.quantidade || 0,
-          desc.unidade || 'kg',
-          desc.peso_calculado || 0,
-          arquivoCompra,
-          arquivoDevolucao
-        ]);
+  INSERT INTO descontos_item_pedido
+  (item_id, motivo, material, quantidade, unidade, peso_calculado, ticket_compra, ticket_devolucao)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`, [
+  mat.item_id,
+  desc.motivo || '',
+  desc.material || '',
+  desc.quantity || desc.quantidade || 0, // ✅ Corrigido aqui!
+  desc.unidade || 'kg',
+  desc.peso_calculado || 0,
+  arquivoCompra,
+  arquivoDevolucao
+]);
       }
 
       // Atualiza peso carregado do item
