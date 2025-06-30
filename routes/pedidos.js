@@ -538,6 +538,7 @@ router.get('/conferencia', async (req, res) => {
         p.ticket_balanca,
         c.nome_fantasia AS cliente,
         p.data_coleta_iniciada,
+        p.data_carga_finalizada, -- ✅ ESTA LINHA FALTAVA
         p.data_conferencia_peso,
         p.data_financeiro,
         p.data_nota_fiscal,
