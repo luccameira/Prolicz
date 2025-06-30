@@ -75,6 +75,8 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
+        let ticketsHTMLGeral = '';
+
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
       const pesoCarregado = formatarPeso(item.peso_carregado);
@@ -93,25 +95,13 @@ async function carregarPedidosConferencia() {
           return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
         }).join('');
 
-        let ticketsHTML = '';
         item.descontos.forEach((desc, idx) => {
-          if (desc.ticket_compra) {
-            const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
-            ticketsHTML += `
-              <div style="margin-top: 8px; font-size: 13px;">
-                <strong>Ticket de Compra:</strong><br>
-                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" style="max-width:200px; border-radius:4px; margin-bottom:6px; cursor: pointer;" />
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
-          }
-
           if (desc.ticket_devolucao) {
             const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
-            ticketsHTML += `
-              <div style="margin-top: 8px; font-size: 13px;">
-                <strong>Ticket de Devolução:</strong><br>
-                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" style="max-width:200px; border-radius:4px; cursor: pointer;" />
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Devolução:</label><br>
+                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
               </div>
             `;
             setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
@@ -122,7 +112,6 @@ async function carregarPedidosConferencia() {
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
             <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
-            ${ticketsHTML}
           </div>
         `;
       }
@@ -143,20 +132,24 @@ async function carregarPedidosConferencia() {
       `;
     });
 
-     // Exibição do ticket da balança
     if (pedido.ticket_balanca) {
       const ticketId = `ticket-balanca-${idPedido}`;
-      form.innerHTML += `
-        <div style="margin-top: 20px;">
-          <label style="font-weight: bold;">Ticket da Balança:</label><br>
+      ticketsHTMLGeral += `
+        <div style="display:inline-block;margin-right:12px;">
+          <label style="font-weight:bold;">Ticket Balança:</label><br>
           <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
         </div>
       `;
       setTimeout(() => adicionarZoomImagem(ticketId), 100);
     }
 
-    // Observações do setor
-    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+    if (ticketsHTMLGeral) {
+      form.innerHTML += `
+        <div style="margin-top: 16px;">${ticketsHTMLGeral}</div>
+      `;
+    }
+
+      if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
       obsBloco.style.padding = '12px';
@@ -170,7 +163,6 @@ async function carregarPedidosConferencia() {
       form.appendChild(obsBloco);
     }
 
-    // Botão de confirmação
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -185,7 +177,6 @@ async function carregarPedidosConferencia() {
       form.appendChild(botaoConfirmar);
     }
 
-    // Área clicável para abrir/fechar formulário
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
     timeline.style.width = '100%';
