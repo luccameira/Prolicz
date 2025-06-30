@@ -71,11 +71,11 @@ async function carregarPedidosConferencia() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-      const form = document.createElement('div');
+    const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais.forEach((item, index) => {
+    pedido.materiais.forEach((item) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
       const pesoCarregado = formatarPeso(item.peso_carregado);
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
@@ -114,7 +114,7 @@ async function carregarPedidosConferencia() {
       `;
     });
 
-    // Exibição dos dois tickets lado a lado
+      // Exibição dos dois tickets lado a lado
     if (pedido.ticket_devolucao || pedido.ticket_balanca) {
       const ticketDevId = `ticket-dev-${idPedido}`;
       const ticketBalId = `ticket-bal-${idPedido}`;
@@ -140,7 +140,6 @@ async function carregarPedidosConferencia() {
       }, 100);
     }
 
-      // Observações do setor
     if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
@@ -155,7 +154,6 @@ async function carregarPedidosConferencia() {
       form.appendChild(obsBloco);
     }
 
-    // Botão de confirmação
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -170,7 +168,6 @@ async function carregarPedidosConferencia() {
       form.appendChild(botaoConfirmar);
     }
 
-    // Área clicável para abrir/fechar formulário
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
     timeline.style.width = '100%';
