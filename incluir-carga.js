@@ -351,13 +351,18 @@ async function registrarPeso(pedidoId) {
   const ticketFile = ticketInput?.files[0];
   if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
 
-  const formData = new FormData();
-  formData.append('itens', JSON.stringify(itens));
-  formData.append('ticket_balanca', ticketFile);
+  // Exibe no console todos os dados que serão enviados para o backend
+console.log(">>> Itens enviados:", itens);
 
-  arquivosExtras.forEach(({ field, file }) => {
-    formData.append(field, file);
-  });
+// Monta o formulário para envio
+const formData = new FormData();
+formData.append('itens', JSON.stringify(itens));
+formData.append('ticket_balanca', ticketFile);
+
+// Adiciona os arquivos extras (tickets de compra ou devolução)
+arquivosExtras.forEach(({ field, file }) => {
+  formData.append(field, file);
+});
 
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/carga`, {
