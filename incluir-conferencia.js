@@ -75,143 +75,87 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais.forEach(item => {
-  const pesoPrevisto = formatarPeso(item.quantidade);
-  const pesoCarregado = formatarPeso(item.peso_carregado);
-  const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
+    pedido.materiais.forEach((item, index) => {
+      const pesoPrevisto = formatarPeso(item.quantidade);
+      const pesoCarregado = formatarPeso(item.peso_carregado);
+      const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
 
-  let descontosHTML = '';
-  let totalDescontos = 0;
+      let descontosHTML = '';
+      let totalDescontos = 0;
 
-  if (Array.isArray(item.descontos) && item.descontos.length > 0) {
-    const linhas = item.descontos.map(desc => {
-      const qtd = formatarPeso(desc.quantidade);
-      const peso = formatarPeso(desc.peso_calculado);
-      totalDescontos += Number(desc.peso_calculado || 0);
-      const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
-      return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
-    }).join('');
+      if (Array.isArray(item.descontos) && item.descontos.length > 0) {
+        const linhas = item.descontos.map((desc, idx) => {
+          const qtd = formatarPeso(desc.quantidade);
+          const peso = formatarPeso(desc.peso_calculado);
+          totalDescontos += Number(desc.peso_calculado || 0);
+          const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
 
-let ticketsHTML = '';
-if (item.descontos) {
-  item.descontos.forEach((desc, idx) => {
-    if (desc.ticket_compra || desc.ticket_devolucao) {
-      ticketsHTML += `
-        <div style="margin-top: 8px; font-size: 13px;">
-          ${desc.ticket_compra ? `<div><strong>Ticket de Compra:</strong><br><img src="/uploads/tickets/${desc.ticket_compra}" style="max-width:200px; border-radius:4px; margin-bottom:6px;" /></div>` : ''}
-          ${desc.ticket_devolucao ? `<div><strong>Ticket de Devolução:</strong><br><img src="/uploads/tickets/${desc.ticket_devolucao}" style="max-width:200px; border-radius:4px;" /></div>` : ''}
+          return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
+        }).join('');
+
+        let ticketsHTML = '';
+        item.descontos.forEach((desc, idx) => {
+          if (desc.ticket_compra) {
+            const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
+            ticketsHTML += `
+              <div style="margin-top: 8px; font-size: 13px;">
+                <strong>Ticket de Compra:</strong><br>
+                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" style="max-width:200px; border-radius:4px; margin-bottom:6px; cursor: pointer;" />
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
+          }
+
+          if (desc.ticket_devolucao) {
+            const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
+            ticketsHTML += `
+              <div style="margin-top: 8px; font-size: 13px;">
+                <strong>Ticket de Devolução:</strong><br>
+                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" style="max-width:200px; border-radius:4px; cursor: pointer;" />
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
+          }
+        });
+
+        descontosHTML = `
+          <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
+            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+            <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
+            ${ticketsHTML}
+          </div>
+        `;
+      }
+
+      const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
+      const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
+
+      form.innerHTML += `
+        <div class="material-bloco">
+          <h4>${item.nome_produto}</h4>
+          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+          ${descontosHTML}
+          <div style="margin-top: 14px;">
+            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+          </div>
         </div>
       `;
-    }
-  });
-}
+    });
 
-    descontosHTML = `
-      <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
-        <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-        <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
-${ticketsHTML}
-      </div>
-    `;
-  }
-
-  const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
-  const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
-
-  form.innerHTML += `
-    <div class="material-bloco">
-      <h4>${item.nome_produto}</h4>
-      <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-      <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
-      ${descontosHTML}
-      <div style="margin-top: 14px;">
-        <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
-      </div>
-    </div>
-  `;
-});
-
+      // Exibição do ticket da balança
     if (pedido.ticket_balanca) {
-      const ticketId = `ticket-${idPedido}`;
+      const ticketId = `ticket-balanca-${idPedido}`;
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
           <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
         </div>
       `;
-
-      setTimeout(() => {
-        const img = document.getElementById(ticketId);
-        if (img) {
-          img.addEventListener('click', (event) => {
-            event.stopPropagation();
-
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.zIndex = '9999';
-
-            const modalImg = document.createElement('img');
-            modalImg.src = img.src;
-            modalImg.style.maxWidth = '90vw';
-            modalImg.style.maxHeight = '90vh';
-            modalImg.style.objectFit = 'contain';
-            modalImg.style.borderRadius = '8px';
-            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-            modalImg.style.cursor = 'zoom-in';
-            modalImg.style.transition = 'transform 0.3s ease';
-
-            let zoomed = false;
-
-            modalImg.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const rect = modalImg.getBoundingClientRect();
-              const offsetX = e.clientX - rect.left;
-              const offsetY = e.clientY - rect.top;
-              const percentX = (offsetX / rect.width) * 100;
-              const percentY = (offsetY / rect.height) * 100;
-
-              if (!zoomed) {
-                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
-                modalImg.style.transform = 'scale(2.5)';
-                modalImg.style.cursor = 'zoom-out';
-                zoomed = true;
-              } else {
-                modalImg.style.transform = 'scale(1)';
-                modalImg.style.cursor = 'zoom-in';
-                zoomed = false;
-              }
-            });
-
-            const closeBtn = document.createElement('div');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.style.position = 'absolute';
-            closeBtn.style.top = '20px';
-            closeBtn.style.right = '30px';
-            closeBtn.style.fontSize = '40px';
-            closeBtn.style.color = '#fff';
-            closeBtn.style.cursor = 'pointer';
-            closeBtn.onclick = (e) => {
-              e.stopPropagation();
-              document.body.removeChild(overlay);
-            };
-
-            overlay.appendChild(modalImg);
-            overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
-          });
-        }
-      }, 100);
+      setTimeout(() => adicionarZoomImagem(ticketId), 100);
     }
 
-    // Adiciona observações do setor, se houver
+    // Observações do setor
     if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
@@ -226,7 +170,7 @@ ${ticketsHTML}
       form.appendChild(obsBloco);
     }
 
-    // Botão de confirmar peso
+    // Botão de confirmação
     if (pedido.status === 'Aguardando Conferência do Peso') {
       const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
@@ -241,6 +185,7 @@ ${ticketsHTML}
       form.appendChild(botaoConfirmar);
     }
 
+    // Área clicável para abrir/fechar formulário
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
     timeline.style.width = '100%';
@@ -271,7 +216,7 @@ async function confirmarPeso(pedidoId, botao) {
   botao.innerText = 'Enviando...';
 
   try {
-    const res = await fetch(`/api/pedidos/${pedidoId}/conferencia`, {
+    const res = await fetch(/api/pedidos/${pedidoId}/conferencia, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -299,3 +244,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosConferencia);
   document.getElementById('ordenar')?.addEventListener('change', carregarPedidosConferencia);
 });
+
