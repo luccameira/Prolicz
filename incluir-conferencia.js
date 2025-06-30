@@ -87,13 +87,13 @@ async function carregarPedidosConferencia() {
 
       if (Array.isArray(item.descontos) && item.descontos.length > 0) {
         const linhas = item.descontos.map((desc, idx) => {
-          const qtd = formatarPeso(desc.quantidade);
-          const peso = formatarPeso(desc.peso_calculado);
-          totalDescontos += Number(desc.peso_calculado || 0);
-          const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
+  const qtd = formatarPeso(desc.peso_calculado);
+  const material = item.nome_produto || '';
+  const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
+  totalDescontos += Number(desc.peso_calculado || 0);
 
-          return `<li>${desc.motivo}: ${qtd} ${sufixo} (-${peso} Kg)</li>`;
-        }).join('');
+  return `<li>${desc.motivo} — ${material}: ${qtd} ${sufixo}</li>`;
+}).join('');
 
         item.descontos.forEach((desc, idx) => {
           if (desc.ticket_devolucao) {
