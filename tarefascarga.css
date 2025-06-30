@@ -349,3 +349,8 @@ input[type="file"]::file-selector-button:hover {
   color: #555;
   white-space: nowrap;
 }
+
+.main-content {
+  padding: 25px;
+  padding-top: 40px; /* Adicione essa linha para afastar o conteúdo do topo */
+}
