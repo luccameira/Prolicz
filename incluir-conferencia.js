@@ -149,7 +149,7 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `
         <div style="margin-top: 20px;">
           <label style="font-weight: bold;">Ticket da Balança:</label><br>
-          <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="max-width: 300px; border-radius: 6px; margin-top: 8px; cursor: pointer;">
+          <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
         </div>
       `;
       setTimeout(() => adicionarZoomImagem(ticketId), 100);
