@@ -63,6 +63,24 @@
     #form-nova-observacao button[type="submit"]:hover { box-shadow: 0 4px 12px rgba(255,193,7,0.8); transform: scale(1.05); }
     #form-nova-observacao button[type="button"] { background: #e0e0e0; color: #333; }
     #form-nova-observacao button[type="button"]:hover { background: #cfcfcf; }
+
+.info-bloco dl {
+  grid-template-columns: 150px auto !important; /* reduz a largura da coluna dos títulos */
+}
+
+.info-bloco dd {
+  text-align: left !important;  /* mantém os dados alinhados à direita */
+  padding-left: 100px;             /* espaço extra para evitar colisão visual */
+  max-width: calc(100% - 180px);  /* garante que o conteúdo não ultrapasse */
+  white-space: nowrap;            /* evita quebra de linha nos dados */
+  overflow: hidden;
+  text-overflow: ellipsis;        /* adiciona "..." caso ultrapasse o espaço */
+}
+
+.info-bloco dt {
+  white-space: nowrap;
+  padding-right: 5px;             /* espaço à direita do título para melhor separação */
+}
   </style>
 </head>
 <body>
@@ -390,10 +408,17 @@
     if (id === 'peso' && valor !== undefined && valor !== null && valor !== '—') {
       valor = Number(valor).toLocaleString('pt-BR');
     }
-    document.getElementById(id).textContent = valor ?? '—';
+    const el = document.getElementById(id);
+    el.textContent = valor ?? '—';
+    // Aproximar o texto para esquerda
+    el.style.textAlign = 'left';
   });
 } else {
-  camposProduto.forEach(id => document.getElementById(id).textContent = '—');
+  camposProduto.forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '—';
+    el.style.textAlign = 'left';
+  });
 }
 
         carregarObservacoes(pedido);
