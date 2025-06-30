@@ -393,80 +393,57 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
       return res.status(400).json({ erro: 'Materiais inválidos.' });
     }
 
-    // Limpa descontos anteriores por item_id
     for (const mat of materiais) {
       if (!mat.item_id) continue;
+
+      // Limpa descontos anteriores
       await db.query('DELETE FROM descontos_item_pedido WHERE item_id = ?', [mat.item_id]);
-    }
 
-    // Insere novos descontos
-    for (const mat of materiais) {
-      console.log('\n>>> Item recebido:', mat.item_id);
-      console.log('Descontos recebidos:', mat.descontos);
-      console.log('Arquivos recebidos:', arquivos.map(a => a.fieldname));
+      // Insere novos descontos (se houver)
+      if (Array.isArray(mat.descontos)) {
+        for (const desc of mat.descontos) {
+          if (!desc.motivo || isNaN(desc.peso_calculado)) continue;
 
-      if (!mat.descontos || !Array.isArray(mat.descontos)) continue;
+          let arquivoCompra = null;
+          let arquivoDevolucao = null;
 
-      for (const desc of mat.descontos) {
-        console.log('--- Verificando desconto:', desc);
+          if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
+            const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
+            if (arquivo) arquivoCompra = arquivo.filename;
+          }
 
-        if (!desc.motivo || isNaN(desc.peso_calculado)) {
-          console.log('❌ Desconto ignorado: dados incompletos ou inválidos');
-          continue;
+          if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
+            const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
+            if (arquivo) arquivoDevolucao = arquivo.filename;
+          }
+
+          await db.query(`
+            INSERT INTO descontos_item_pedido
+            (item_id, motivo, material, quantidade, unidade, peso_calculado, ticket_compra, ticket_devolucao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            mat.item_id,
+            desc.motivo || '',
+            desc.material || '',
+            desc.quantity || desc.quantidade || 0,
+            desc.unidade || 'kg',
+            desc.peso_calculado || 0,
+            arquivoCompra,
+            arquivoDevolucao
+          ]);
         }
-
-        // Busca arquivos enviados com nomes dinâmicos
-        let arquivoCompra = null;
-        let arquivoDevolucao = null;
-
-        if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
-          const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
-          if (arquivo) arquivoCompra = arquivo.filename;
-        }
-
-        if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
-          const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
-          if (arquivo) arquivoDevolucao = arquivo.filename;
-        }
-
-        console.log('✅ Inserindo desconto no banco:', {
-          item_id: mat.item_id,
-          motivo: desc.motivo,
-          material: desc.material,
-          quantidade: desc.quantity,
-          unidade: desc.unidade,
-          peso_calculado: desc.peso_calculado,
-          ticket_compra: arquivoCompra,
-          ticket_devolucao: arquivoDevolucao
-        });
-
-        await db.query(`
-  INSERT INTO descontos_item_pedido
-  (item_id, motivo, material, quantidade, unidade, peso_calculado, ticket_compra, ticket_devolucao)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`, [
-  mat.item_id,
-  desc.motivo || '',
-  desc.material || '',
-  desc.quantity || desc.quantidade || 0, // ✅ Corrigido aqui!
-  desc.unidade || 'kg',
-  desc.peso_calculado || 0,
-  arquivoCompra,
-  arquivoDevolucao
-]);
       }
 
-      // Atualiza peso carregado do item
+      // Atualiza o peso carregado
       await db.query(
         'UPDATE itens_pedido SET peso_carregado = ? WHERE id = ?',
         [mat.peso_carregado || 0, mat.item_id]
       );
     }
 
-    // Localiza ticket da balança principal
+    // Salvar o ticket principal da balança
     const ticketBalanca = arquivos.find(f => f.fieldname === 'ticket_balanca')?.filename || null;
 
-    // ✅ Atualiza status, ticket e data da carga finalizada
     await db.query(
       `UPDATE pedidos 
        SET 
