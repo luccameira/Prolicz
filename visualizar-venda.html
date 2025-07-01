@@ -48,39 +48,94 @@
     .timeline-dot { display: none; }
     .ticket-thumbnail { max-width: 200px; max-height: 150px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
     .ticket-thumbnail:hover { transform: scale(1.05); }
-    #observacoes { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.12); min-height: 180px; max-height: 600px; overflow-y: auto; }
+    #registros { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.12); min-height: 180px; max-height: 600px; overflow-y: auto; }
     .btn-adicionar { background-color: #FFC107; color: #222; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-bottom: 20px; }
     .btn-adicionar:hover { box-shadow: 0 4px 12px rgba(255,193,7,0.8); transform: scale(1.05); }
     #lista-observacoes { max-height: 450px; overflow-y: auto; }
     .observacao-item { background: #fafafa; border: 1.5px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .observacao-cabecalho { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: #555; }
-    .observacao-data { font-style: normal; }
-    .observacao-usuario { font-weight: 700; color: #111; }
-    #form-nova-observacao { margin-top: 20px; display: none; }
-    #input-nova-observacao { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-size: 1rem; }
-    #form-nova-observacao button { padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; border: none; margin-right: 10px; transition: all 0.3s ease; }
-    #form-nova-observacao button[type="submit"] { background: #FFC107; color: #222; }
-    #form-nova-observacao button[type="submit"]:hover { box-shadow: 0 4px 12px rgba(255,193,7,0.8); transform: scale(1.05); }
-    #form-nova-observacao button[type="button"] { background: #e0e0e0; color: #333; }
-    #form-nova-observacao button[type="button"]:hover { background: #cfcfcf; }
-
-.info-bloco dl {
-  grid-template-columns: 150px auto !important; /* reduz a largura da coluna dos títulos */
-}
-
-.info-bloco dd {
-  text-align: left !important;  /* mantém os dados alinhados à direita */
-  padding-left: 100px;             /* espaço extra para evitar colisão visual */
-  max-width: calc(100% - 180px);  /* garante que o conteúdo não ultrapasse */
-  white-space: nowrap;            /* evita quebra de linha nos dados */
-  overflow: hidden;
-  text-overflow: ellipsis;        /* adiciona "..." caso ultrapasse o espaço */
-}
-
-.info-bloco dt {
-  white-space: nowrap;
-  padding-right: 5px;             /* espaço à direita do título para melhor separação */
-}
+    .observacao-cabecalho {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 6px;
+      position: relative;
+      height: 24px; /* altura fixa para controle */
+    }
+    .observacao-data {
+      font-style: normal;
+      flex: 1;
+      text-align: left;
+    }
+    .observacao-usuario {
+      position: absolute;
+      left: 17%;
+      transform: translateX(-50%);
+      font-weight: 700;
+      color: #111;
+      background: #fafafa; /* mesma cor do fundo para dar destaque */
+      padding: 0 6px;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+    .observacao-texto {
+      font-size: 0.95rem;
+      color: #222;
+      line-height: 1.4;
+      white-space: pre-wrap; /* mantém quebras de linha */
+    }
+    .info-bloco dl {
+      grid-template-columns: 150px auto !important; /* reduz a largura da coluna dos títulos */
+    }
+    .info-bloco dd {
+      text-align: left !important;  /* mantém os dados alinhados à direita */
+      padding-left: 100px;             /* espaço extra para evitar colisão visual */
+      max-width: calc(100% - 180px);  /* garante que o conteúdo não ultrapasse */
+      white-space: nowrap;            /* evita quebra de linha nos dados */
+      overflow: hidden;
+      text-overflow: ellipsis;        /* adiciona "..." caso ultrapasse o espaço */
+    }
+    .info-bloco dt {
+      white-space: nowrap;
+      padding-right: 5px;             /* espaço à direita do título para melhor separação */
+    }
+    #data-coleta {
+      margin-left: -80px; /* Ajuste o valor conforme desejar */
+      display: inline-block;
+    }
+    #pedido-para {
+      margin-left: -160px; /* Ajuste o valor conforme desejar */
+      display: inline-block;
+    }
+    #prazo-pagamento {
+      margin-left: -100px; /* Ajuste o valor conforme desejar */
+      display: inline-block;
+    }
+    #codigo-fiscal {
+      margin-left: -200px; /* Ajuste conforme desejar */
+      display: inline-block;
+    }
+    #nome-produto {
+      margin-left: -120px; /* Ajuste o valor para aproximar ou afastar */
+      display: inline-block;
+    }
+    #valor-quilo {
+      margin-left: -140px; /* Ajuste o valor para aproximar ou afastar */
+      display: inline-block;
+    }
+    #peso {
+      margin-left: -180px; /* Ajuste conforme desejar */
+      display: inline-block;
+    }
+    #tipo-peso {
+      margin-left: -160px; /* Ajuste conforme desejar */
+      display: inline-block;
+    }
+    #subtotal {
+      margin-left: -190px; /* Ajuste conforme desejar */
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -97,7 +152,7 @@
     </div>
     <nav class="tabs-menu">
       <a href="#" class="active" data-tab="info-pedido">Informações Principais</a>
-      <a href="#" data-tab="observacoes">Observações</a>
+      <a href="#" data-tab="registros">Registros do Pedido</a>
       <a href="#" data-tab="historico-pedido">Histórico do Pedido</a>
     </nav>
     <section id="info-pedido" class="tab-content">
@@ -122,19 +177,17 @@
         </dl>
       </div>
     </section>
-
-    <section id="observacoes" class="tab-content" style="display:none;">
+    <section id="registros" class="tab-content" style="display:none;">
       <button id="btn-adicionar-observacao" class="btn-adicionar" type="button">Adicionar Observação</button>
       <div id="lista-observacoes"><p style="color: #666;">Nenhuma observação registrada.</p></div>
-      <form id="form-nova-observacao">
-        <textarea id="input-nova-observacao" rows="4" placeholder="Digite aqui a nova observação..."></textarea>
+      <form id="form-nova-observacao" style="margin-top: 20px; display: none;">
+        <textarea id="input-nova-observacao" rows="4" placeholder="Escreva uma nova observação..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-size: 1rem; box-sizing: border-box;"></textarea>
         <div style="margin-top: 10px;">
-          <button type="submit">Salvar</button>
-          <button type="button" id="btn-cancelar-observacao">Cancelar</button>
+          <button type="submit" style="background-color: #FFC107; color: #222; font-weight: 700; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-right: 10px;">Salvar</button>
+          <button type="button" id="btn-cancelar-observacao" style="background-color: #e0e0e0; color: #333; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">Cancelar</button>
         </div>
       </form>
     </section>
-
     <section id="historico-pedido" class="tab-content" style="display:none;">
       <div class="timeline-item">
         <div class="timeline-dot"></div>
@@ -315,23 +368,40 @@
         .forEach(obs => container.appendChild(criarElementoObservacao(obs)));
     }
 
+    // Remove controle de mostrar/ocultar formulário para que ele fique sempre visível
     function mostrarFormularioObservacao(show) {
-      document.getElementById('form-nova-observacao').style.display = show ? 'block' : 'none';
-      document.getElementById('btn-adicionar-observacao').style.display = show ? 'none' : 'inline-block';
+      const form = document.getElementById('form-nova-observacao');
+      form.style.display = 'block'; // Sempre visível
+      const input = document.getElementById('input-nova-observacao');
       if (show) {
-        const input = document.getElementById('input-nova-observacao');
         input.value = '';
         input.focus();
       }
     }
 
+    // No carregamento, não precisa mais esconder o formulário nem botão
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('btn-adicionar-observacao').addEventListener('click', () => mostrarFormularioObservacao(true));
-      document.getElementById('btn-cancelar-observacao').addEventListener('click', () => mostrarFormularioObservacao(false));
+      const btnAdicionar = document.getElementById('btn-adicionar-observacao');
+      const btnCancelar = document.getElementById('btn-cancelar-observacao');
+      const formObservacao = document.getElementById('form-nova-observacao');
+      const inputObservacao = document.getElementById('input-nova-observacao');
+      const containerObservacoes = document.getElementById('lista-observacoes');
 
-      document.getElementById('form-nova-observacao').addEventListener('submit', async (e) => {
+      btnAdicionar.addEventListener('click', () => {
+        formObservacao.style.display = 'block';
+        btnAdicionar.style.display = 'none';
+        inputObservacao.focus();
+      });
+
+      btnCancelar.addEventListener('click', () => {
+        inputObservacao.value = '';
+        formObservacao.style.display = 'none';
+        btnAdicionar.style.display = 'inline-block';
+      });
+
+      formObservacao.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const texto = document.getElementById('input-nova-observacao').value.trim();
+        const texto = inputObservacao.value.trim();
         if (!texto) return alert('Digite uma observação antes de salvar.');
         try {
           const res = await fetch(`/api/pedidos/${pedidoId}/observacoes`, {
@@ -341,10 +411,14 @@
           });
           if (!res.ok) throw new Error('Erro ao salvar observação');
           const novaObs = await res.json();
-          const container = document.getElementById('lista-observacoes');
-          if (container.querySelector('p')) container.innerHTML = '';
-          container.appendChild(criarElementoObservacao(novaObs));
-          mostrarFormularioObservacao(false);
+
+          if (containerObservacoes.querySelector('p')) containerObservacoes.innerHTML = '';
+          containerObservacoes.appendChild(criarElementoObservacao(novaObs));
+
+          // Após salvar, limpa e oculta o formulário
+          inputObservacao.value = '';
+          formObservacao.style.display = 'none';
+          btnAdicionar.style.display = 'inline-block';
         } catch(err) {
           alert('Erro ao salvar observação: ' + err.message);
         }
@@ -376,50 +450,50 @@
         // O campo desconto está removido como solicitado
 
         if (pedido.materiais?.length) {
-  const p = pedido.materiais[0];
-  camposProduto.forEach(id => {
-    let valor;
-    switch(id) {
-      case 'valor-quilo':
-        valor = p.valor_unitario;
-        break;
-      case 'nome-produto':
-        valor = p.nome_produto;
-        break;
-      case 'subtotal':
-        valor = p.valor_total;
-        break;
-      case 'peso':
-        valor = p.peso;
-        break;
-      case 'tipo-peso':
-        valor = p.tipo_peso;
-        break;
-      case 'codigo-fiscal':
-        valor = p.codigo_fiscal;
-        break;
-      default:
-        valor = p[id.replace('-', '_')] || '—';
-    }
+          const p = pedido.materiais[0];
+          camposProduto.forEach(id => {
+            let valor;
+            switch(id) {
+              case 'valor-quilo':
+                valor = p.valor_unitario;
+                break;
+              case 'nome-produto':
+                valor = p.nome_produto;
+                break;
+              case 'subtotal':
+                valor = p.valor_total;
+                break;
+              case 'peso':
+                valor = p.peso;
+                break;
+              case 'tipo-peso':
+                valor = p.tipo_peso;
+                break;
+              case 'codigo-fiscal':
+                valor = p.codigo_fiscal;
+                break;
+              default:
+                valor = p[id.replace('-', '_')] || '—';
+            }
 
-    if (['valor-quilo', 'subtotal'].includes(id) && valor !== undefined && valor !== null && valor !== '—') {
-      valor = `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
-    }
-    if (id === 'peso' && valor !== undefined && valor !== null && valor !== '—') {
-      valor = Number(valor).toLocaleString('pt-BR');
-    }
-    const el = document.getElementById(id);
-    el.textContent = valor ?? '—';
-    // Aproximar o texto para esquerda
-    el.style.textAlign = 'left';
-  });
-} else {
-  camposProduto.forEach(id => {
-    const el = document.getElementById(id);
-    el.textContent = '—';
-    el.style.textAlign = 'left';
-  });
-}
+            if (['valor-quilo', 'subtotal'].includes(id) && valor !== undefined && valor !== null && valor !== '—') {
+              valor = `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
+            }
+            if (id === 'peso' && valor !== undefined && valor !== null && valor !== '—') {
+              valor = Number(valor).toLocaleString('pt-BR');
+            }
+            const el = document.getElementById(id);
+            el.textContent = valor ?? '—';
+            // Aproximar o texto para esquerda
+            el.style.textAlign = 'left';
+          });
+        } else {
+          camposProduto.forEach(id => {
+            const el = document.getElementById(id);
+            el.textContent = '—';
+            el.style.textAlign = 'left';
+          });
+        }
 
         carregarObservacoes(pedido);
       } catch (error) {
