@@ -113,22 +113,18 @@ async function carregarPedidosConferencia() {
         }).join('');
 
         blocoDescontosExtra += `
-          <div style="
-            background-color: #fdecea;
-            padding: 14px 18px;
-            border-radius: 6px;
-            border-left: 6px solid #f5c6cb;
-            margin-top: 20px;
-            font-size: 15px;
-          ">
-            <p style="font-weight: bold; margin: 0 0 8px; color: #a94442;">
-              <i class="fa fa-circle-exclamation"></i> Descontos Aplicados:
-            </p>
-            <ul style="padding-left: 20px; margin: 0; list-style: disc;">
-              ${linhas}
-            </ul>
-          </div>
-        `;
+  <div class="alerta-desconto-material">
+    <p class="titulo-alerta"><i class="fa fa-circle-exclamation"></i> Descontos Aplicados:</p>
+    <ul>
+      ${descontosMaterial.map(desc => `
+        <li>
+          <strong>${desc.motivo}</strong><br>
+          ${desc.material || item.nome_produto} — ${formatarPeso(desc.peso_calculado)} Kg
+        </li>
+      `).join('')}
+    </ul>
+  </div>
+`;
 
         descontosMaterial.forEach((desc, idx) => {
           const ticketDev = desc.ticket_devolucao;
