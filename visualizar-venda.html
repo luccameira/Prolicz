@@ -237,6 +237,102 @@
       overflow-y: auto;
       overflow-x: visible !important; /* permite o triângulo sair da caixa */
     }
+
+#historico-pedido .timeline-content p {
+  margin-bottom: 50px;
+}
+
+.timeline-content p {
+  padding-bottom: 8px;           /* Espaço interno abaixo do texto para não ficar grudado */
+  margin-bottom: 8px;            /* Espaço entre as linhas */
+  border-bottom: 1px solid #ddd; /* Linha fina e sutil, cor cinza claro */
+}
+
+.timeline-content p:last-child {
+  border-bottom: none;           /* Remove a linha da última linha para ficar limpo */
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.timeline-content {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px 20px;
+  margin-top: 10px;
+  background-color: #fff;
+}
+
+/* Aplica linha inferior a todos os <p> dentro do bloco de timeline content */
+.timeline-content > div > div > p {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px; /* dá um espacinho entre o texto e a linha */
+  margin-bottom: 8px;  /* espaço entre linhas */
+}
+
+/* Exceção: remove a linha de p que estejam vazios (sem conteúdo forte) ou que queiram sem linha */
+/* Exemplo caso queira remover para campos específicos, mas por enquanto mantenha padrão */
+
+.timeline-content p strong {
+  display: inline-block;        /* faz o strong virar bloco inline para poder aplicar borda */
+  padding: 4px 8px;             /* espaço interno para "respirar" */
+  border: 1px solid #ddd;       /* borda sutil cinza clara */
+  border-radius: 4px;           /* cantos arredondados */
+  background-color: #fafafa;    /* fundo clarinho para destacar */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* sombra leve para dar relevo */
+}
+.grade-tabela-info {
+  width: 100% !important;
+  border-collapse: separate !important; /* para permitir espaçamento entre células */
+  border-spacing: 20px 12px; /* espaçamento horizontal e vertical entre células */
+  font-family: inherit !important;
+  font-weight: inherit !important;
+  font-size: inherit !important;
+  table-layout: fixed; /* distribui colunas proporcionalmente */
+}
+
+.grade-tabela-info tr {
+  /* Remove margem e padding específicos em linhas */
+  margin: 0;
+  padding: 0;
+}
+
+.grade-tabela-info td {
+  border: none !important;
+  padding: 8px 12px !important; /* padding uniforme em todas as células */
+  vertical-align: top !important;
+  text-align: left !important;
+  white-space: normal !important; /* permite quebra de linha */
+  font-weight: 700;
+  font-size: 14px;
+  word-wrap: break-word; /* evita overflow do texto */
+  width: calc(33.3333% - 16px); /* 3 colunas iguais com margem */
+}
+
+.grade-tabela-info tr:last-child td:first-child {
+  font-weight: 700;
+  width: 100% !important; /* última linha ocupa toda a largura */
+  padding-top: 15px !important;
+  white-space: pre-wrap !important; /* mantém quebras de linha na observação */
+}
+
+/* Remove qualquer espaçamento extra personalizado */
+.grade-tabela-info tr:nth-child(1) td,
+.grade-tabela-info tr:nth-child(2) td,
+.grade-tabela-info tr:nth-child(3) td {
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+#historico-pedido .grade-tabela-info {
+  border-spacing: 0 12px !important; /* Remove espaçamento horizontal, mantém o vertical */
+}
+
+#historico-pedido .grade-tabela-info tr td:first-child {
+  padding-left: 0 !important;  /* Sem espaçamento à esquerda */
+  padding-right: 6px !important; /* Espaço pequeno para separar da próxima coluna */
+  text-align: left !important;
+}
+
   </style>
 </head>
 <body>
@@ -296,135 +392,156 @@
   </form>
 </section>
     <section id="historico-pedido" class="tab-content" style="display:none;">
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info1" id="toggle1">
-          <span>Pedido Criado</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">26/06/2023 14:03</div>
-        </div>
-        <div class="timeline-content" id="info1" role="region" aria-labelledby="toggle1" hidden>
-          <p><strong>Usuário:</strong></p>
-          <p><strong>Empresa Fornecedora:</strong></p>
-          <p><strong>Produto:</strong></p>
-          <p><strong>Data Prevista da Coleta:</strong></p>
-          <p><strong>Pedido Para:</strong></p>
-          <p><strong>O Peso é:</strong></p>
-          <p><strong>Peso Previsto:</strong></p>
-          <p><strong>Prazo de Pagamento:</strong></p>
-          <p><strong>Código:</strong></p>
-          <p><strong>Observação:</strong></p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info2" id="toggle2">
-          <span>Entrada na Portaria</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">26/06/2023 15:45</div>
-        </div>
-        <div class="timeline-content" id="info2" role="region" aria-labelledby="toggle2" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>CPF Motorista:</strong> CPF do motorista aqui</p>
-          <p><strong>Placa do Veículo:</strong> Placa do veículo aqui</p>
-          <p><strong>Nome do Ajudante (caso tenha):</strong> Nome do ajudante aqui</p>
-          <p><strong>CPF do Ajudante (caso tenha):</strong> CPF do ajudante aqui</p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info3" id="toggle3">
-          <span>Coleta Iniciada</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">26/06/2023 15:20</div>
-        </div>
-        <div class="timeline-content" id="info3" role="region" aria-labelledby="toggle3" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>Coleta Finalizada:</strong> Data e hora da coleta finalizada aqui</p>
-          <p><strong>Ticket da Balança (Pedido):</strong> 
-            <a href="#" id="ticket-link" target="_blank" style="display:none;">
-              <img id="ticket-thumbnail" src="" alt="Ticket da Balança" class="ticket-thumbnail" />
-            </a>
-          </p>
-          <p><strong>Desconto (caso tenha):</strong> Valor do desconto aqui</p>
-          <p><strong>Ticket da Balança (Desconto - caso tenha):</strong> Link ou nome do ticket de desconto aqui</p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info4" id="toggle4">
-          <span>Peso Conferido</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">26/06/2023 17:10</div>
-        </div>
-        <div class="timeline-content" id="info4" role="region" aria-labelledby="toggle4" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>Ticket da Balança (Peso Conferido):</strong> 
-            <a href="#" id="ticket-link-peso" target="_blank" style="display:none;">
-              <img id="ticket-thumbnail-peso" src="" alt="Ticket da Balança Peso Conferido" class="ticket-thumbnail" />
-            </a>
-          </p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info5" id="toggle5">
-          <span>Cliente Liberado</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">27/06/2023 09:30</div>
-        </div>
-        <div class="timeline-content" id="info5" role="region" aria-labelledby="toggle5" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>Vencimentos:</strong> Informações dos vencimentos aqui</p>
-          <p><strong>Peso (Desconto - caso tenha):</strong> Valor do peso com desconto aqui</p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info6" id="toggle6">
-          <span>NF Emitida</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">27/06/2023 10:15</div>
-        </div>
-        <div class="timeline-content" id="info6" role="region" aria-labelledby="toggle6" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>Número da Nota Fiscal:</strong> 123456</p>
-          <p><strong>Nota Fiscal:</strong> 
-            <a href="#" id="nota-link" target="_blank" style="display:none;">
-              <img id="nota-thumbnail" src="" alt="Nota Fiscal" class="ticket-thumbnail" />
-            </a>
-          </p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot"></div>
-        <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info7" id="toggle7">
-          <span>Saída na Portaria</span>
-          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div class="timeline-date">27/06/2023 11:00</div>
-        </div>
-        <div class="timeline-content" id="info7" role="region" aria-labelledby="toggle7" hidden>
-          <p><strong>Usuário:</strong> Nome do usuário aqui</p>
-          <p><strong>Status:</strong> Pedido Liberado</p>
-          <p><strong>Responsável:</strong> Supervisor</p>
-          <p><strong>Data da Liberação:</strong> 27/06/2023</p>
-        </div>
-      </div>
-    </section>
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info1" id="toggle1">
+      <span>Pedido Criado</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">26/06/2023 14:03</div>
+    </div>
+    <div class="timeline-content" id="info1" role="region" aria-labelledby="toggle1" hidden>
+      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
+  <tr>
+  <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong></td>
+  <td><strong>Data Prevista da Coleta:</strong></td>
+  <td><strong>Peso Previsto:</strong></td>
+</tr>
+<tr>
+  <td style="padding-left: 0; padding-right: 10px;"><strong>Empresa Fornecedora:</strong></td>
+  <td><strong>Pedido Para:</strong></td>
+  <td><strong>Prazo de Pagamento:</strong></td>
+</tr>
+<tr>
+  <td style="padding-left: 0; padding-right: 10px;"><strong>Produto:</strong></td>
+  <td><strong>O Peso é:</strong></td>
+  <td><strong>Código:</strong></td>
+</tr>
+  <tr>
+    <td colspan="3" style="vertical-align: top; padding: 0px 0px; background: #fff;">
+      <strong style="font-weight:700; display: inline;">Observação:</strong>
+      <span style="white-space: pre-wrap; display: inline;">
+        Aqui vai o texto da observação com quebras de linha.
+      </span>
+    </td>
+  </tr>
+</table>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info2" id="toggle2">
+      <span>Entrada na Portaria</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">26/06/2023 15:45</div>
+    </div>
+    <div class="timeline-content" id="info2" role="region" aria-labelledby="toggle2" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>CPF Motorista:</strong> CPF do motorista aqui</p>
+      <p><strong>Placa do Veículo:</strong> Placa do veículo aqui</p>
+      <p><strong>Nome do Ajudante (caso tenha):</strong> Nome do ajudante aqui</p>
+      <p><strong>CPF do Ajudante (caso tenha):</strong> CPF do ajudante aqui</p>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info3" id="toggle3">
+      <span>Coleta Iniciada</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">26/06/2023 15:20</div>
+    </div>
+    <div class="timeline-content" id="info3" role="region" aria-labelledby="toggle3" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>Coleta Finalizada:</strong> Data e hora da coleta finalizada aqui</p>
+      <p><strong>Ticket da Balança (Pedido):</strong> 
+        <a href="#" id="ticket-link" target="_blank" style="display:none;">
+          <img id="ticket-thumbnail" src="" alt="Ticket da Balança" class="ticket-thumbnail" />
+        </a>
+      </p>
+      <p><strong>Desconto (caso tenha):</strong> Valor do desconto aqui</p>
+      <p><strong>Ticket da Balança (Desconto - caso tenha):</strong> Link ou nome do ticket de desconto aqui</p>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info4" id="toggle4">
+      <span>Peso Conferido</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">26/06/2023 17:10</div>
+    </div>
+    <div class="timeline-content" id="info4" role="region" aria-labelledby="toggle4" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>Ticket da Balança (Peso Conferido):</strong> 
+        <a href="#" id="ticket-link-peso" target="_blank" style="display:none;">
+          <img id="ticket-thumbnail-peso" src="" alt="Ticket da Balança Peso Conferido" class="ticket-thumbnail" />
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info5" id="toggle5">
+      <span>Cliente Liberado</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">27/06/2023 09:30</div>
+    </div>
+    <div class="timeline-content" id="info5" role="region" aria-labelledby="toggle5" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>Vencimentos:</strong> Informações dos vencimentos aqui</p>
+      <p><strong>Peso (Desconto - caso tenha):</strong> Valor do peso com desconto aqui</p>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info6" id="toggle6">
+      <span>NF Emitida</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">27/06/2023 10:15</div>
+    </div>
+    <div class="timeline-content" id="info6" role="region" aria-labelledby="toggle6" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>Número da Nota Fiscal:</strong> 123456</p>
+      <p><strong>Nota Fiscal:</strong> 
+        <a href="#" id="nota-link" target="_blank" style="display:none;">
+          <img id="nota-thumbnail" src="" alt="Nota Fiscal" class="ticket-thumbnail" />
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <div class="timeline-item">
+    <div class="timeline-dot"></div>
+    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info7" id="toggle7">
+      <span>Saída na Portaria</span>
+      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="timeline-date">27/06/2023 11:00</div>
+    </div>
+    <div class="timeline-content" id="info7" role="region" aria-labelledby="toggle7" hidden>
+      <p><strong>Usuário:</strong> Nome do usuário aqui</p>
+      <p><strong>Status:</strong> Pedido Liberado</p>
+      <p><strong>Responsável:</strong> Supervisor</p>
+      <p><strong>Data da Liberação:</strong> 27/06/2023</p>
+    </div>
+  </div>
+</section>
   </div>
   <script>
     const seletorTabs = '.tabs-menu a';
