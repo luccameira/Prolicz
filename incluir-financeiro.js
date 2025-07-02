@@ -108,7 +108,7 @@ async function carregarPedidosFinanceiro() {
 
     let descontosPedido = [];
 
-    pedido.materiais?.forEach((item, index) => {
+      pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -165,7 +165,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-      // Novo bloco vermelho com todos os dados detalhados de compra/devolução
+    // Bloco vermelho com descontos comerciais
     if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
@@ -189,6 +189,18 @@ async function carregarPedidosFinanceiro() {
           }).join('')}
         </ul>
       `;
+
+      // ✅ Adiciona produtos autorizados a vender
+      if (pedido.produtos_autorizados_venda && pedido.produtos_autorizados_venda.length) {
+        const listaProdutos = pedido.produtos_autorizados_venda.map(prod => {
+          return `<li>${prod.nome_produto} — ${formatarMoeda(prod.valor_unitario)} por Kg</li>`;
+        }).join('');
+        blocoDesc.innerHTML += `
+          <p style="margin-top:20px;"><strong>Produtos autorizados a vender:</strong></p>
+          <ul>${listaProdutos}</ul>
+        `;
+      }
+
       blocoDesc.style.marginTop = '20px';
       blocoDesc.style.padding = '12px 16px';
       blocoDesc.style.borderRadius = '8px';
@@ -197,7 +209,7 @@ async function carregarPedidosFinanceiro() {
 
       form.appendChild(blocoDesc);
 
-      // Tickets fora do bloco
+            // Tickets fora do bloco
       const blocoImagens = document.createElement('div');
       blocoImagens.className = 'bloco-tickets-comerciais';
       blocoImagens.style.margin = '12px 0 20px 0';
@@ -577,3 +589,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
+
