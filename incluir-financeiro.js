@@ -125,8 +125,15 @@ async function carregarPedidosFinanceiro() {
       ) || [];
 
       descontosComerciais.forEach(desc => {
-        desc.material = item.nome_produto;
-        desc.valor_unitario = item.valor_unitario;
+        // 🔄 Corrige nome e valor com base em produtos autorizados a vender
+        const produtoAutorizado = pedido.produtos_autorizados_venda.find(p => p.nome_produto === item.nome_produto);
+        if (produtoAutorizado) {
+          desc.material = produtoAutorizado.nome_produto;
+          desc.valor_unitario = produtoAutorizado.valor_unitario;
+        } else {
+          desc.material = item.nome_produto;
+          desc.valor_unitario = item.valor_unitario;
+        }
         descontosPedido.push(desc);
       });
 
@@ -165,7 +172,6 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // Bloco vermelho com descontos comerciais
     if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
@@ -189,18 +195,6 @@ async function carregarPedidosFinanceiro() {
           }).join('')}
         </ul>
       `;
-
-      // ✅ Adiciona produtos autorizados a vender
-      if (pedido.produtos_autorizados_venda && pedido.produtos_autorizados_venda.length) {
-        const listaProdutos = pedido.produtos_autorizados_venda.map(prod => {
-          return `<li>${prod.nome_produto} — ${formatarMoeda(prod.valor_unitario)} por Kg</li>`;
-        }).join('');
-        blocoDesc.innerHTML += `
-          <p style="margin-top:20px;"><strong>Produtos autorizados a vender:</strong></p>
-          <ul>${listaProdutos}</ul>
-        `;
-      }
-
       blocoDesc.style.marginTop = '20px';
       blocoDesc.style.padding = '12px 16px';
       blocoDesc.style.borderRadius = '8px';
@@ -209,7 +203,7 @@ async function carregarPedidosFinanceiro() {
 
       form.appendChild(blocoDesc);
 
-            // Tickets fora do bloco
+        // Tickets fora do bloco
       const blocoImagens = document.createElement('div');
       blocoImagens.className = 'bloco-tickets-comerciais';
       blocoImagens.style.margin = '12px 0 20px 0';
@@ -347,7 +341,7 @@ async function carregarPedidosFinanceiro() {
         row.innerHTML = `
           <span class="venc-label">Vencimento ${i + 1}</span>
           <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" ${i === 2 ? 'disabled' : ''} />
+          <input type="text" value="${valorFmt}" />
           <button type="button">✓</button>
         `;
 
@@ -365,19 +359,6 @@ async function carregarPedidosFinanceiro() {
         });
 
         inp.addEventListener('blur', () => {
-          const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
-          const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
-
-          if (i === 0 && numVencimentos === 3) {
-            const restante = Math.max(0, totalVenda - v1);
-            const metade = restante / 2;
-            inputs[1].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            inputs[2].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-          } else if (i === 1 && numVencimentos === 3) {
-            const restante = Math.max(0, totalVenda - v1 - v2);
-            inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-          }
-
           atualizarBotaoLiberar();
         });
 
@@ -420,7 +401,7 @@ async function carregarPedidosFinanceiro() {
             btn.replaceWith(etiquetaConfirmado);
           } else {
             row.dataset.confirmado = 'false';
-            if (i !== 2) inp.disabled = false;
+            inp.disabled = false;
             etiquetaConfirmado.replaceWith(btn);
           }
 
@@ -589,4 +570,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
