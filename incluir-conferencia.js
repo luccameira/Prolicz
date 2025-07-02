@@ -159,15 +159,15 @@ async function carregarPedidosConferencia() {
 
       if (descontosExtraHTML) {
         blocoDescontosExtra += `
-          <div style="background-color: #eef2f3; padding: 12px; border-radius: 6px; border: 1px solid #ccc; margin-top: 14px;">
-            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-box"></i> Materiais Comprados ou Devolvidos:</p>
+          <div class="bloco-desconto-vermelho">
+            <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Aplicados:</strong></p>
             <ul style="padding-left: 20px; margin: 0;">${descontosExtraHTML}</ul>
           </div>
         `;
       }
     });
 
-    if (blocoDescontosExtra) {
+      if (blocoDescontosExtra) {
       form.innerHTML += blocoDescontosExtra;
     }
 
