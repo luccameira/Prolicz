@@ -106,120 +106,110 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais?.forEach(item => {
+      let ticketsHTMLGeral = '';
+    
+    pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
       const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
-      let descontosKg = 0;
-      if (item.descontos?.length) {
-        descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-      }
-      const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
+
+      // Separar descontos por tipo
+      const descontosPalete = item.descontos?.filter(d =>
+        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+      ) || [];
+
+      const descontosMaterial = item.descontos?.filter(d =>
+        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+      ) || [];
+
+      // Peso final considera apenas desconto de palete
+      const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+      const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
       const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
+
+      // Bloco amarelo (palete)
+      let blocoAmareloHTML = '';
+      if (descontosPalete.length) {
+        const linhas = descontosPalete.map(desc => {
+          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UNIDADES (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
+        }).join('');
+
+        blocoAmareloHTML = `
+          <div class="descontos-aplicados">
+            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+            <ul>${linhas}</ul>
+          </div>
+        `;
+      }
+
+      // Bloco vermelho (material)
+      let blocoVermelhoHTML = '';
+      if (descontosMaterial.length) {
+        const linhas = descontosMaterial.map((desc, idx) => {
+          const tipo = desc.motivo;
+          const mat = desc.material || item.nome_produto;
+          const qtd = formatarPesoComMilhar(desc.peso_calculado);
+
+          // Exibição dos tickets (compra ou devolução)
+          if (desc.ticket_devolucao) {
+            const ticketIdDev = `ticket-devolucao-${id}-${index}-${idx}`;
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Devolução:</label><br>
+                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
+          }
+
+          if (desc.ticket_compra) {
+            const ticketIdCompra = `ticket-compra-${id}-${index}-${idx}`;
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Compra:</label><br>
+                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
+          }
+
+          return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+        }).join('');
+
+        blocoVermelhoHTML = `
+          <div class="bloco-desconto-vermelho">
+            <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Aplicados:</strong></p>
+            <ul>${linhas}</ul>
+          </div>
+        `;
+      }
+
+      const valorTotal = formatarMoeda(pesoFinalNum * (Number(item.valor_unitario) || 0));
 
       bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${item.descontos?.length ? `
-          <div class="descontos-aplicados" style="margin-top:16px;">
-            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul>
-              ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${formatarPesoComMilhar(d.quantidade)} UNIDADES (${formatarPesoComMilhar(d.peso_calculado)} Kg)</li>`
-              ).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        <p style="margin-top:16px;"><strong>${item.descontos?.length ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
+        ${blocoAmareloHTML}
+        <p style="margin-top:16px;"><strong>${totalDescontoPalete > 0 ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
-          <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
+          <span style="color: green;">${valorTotal}</span>
         </div>
+        ${blocoVermelhoHTML}
       `;
+
       form.appendChild(bloco);
     });
 
-    if (pedido.ticket_balanca) {
-      const ticketId = `ticket-${id}`;
-      const blocoTicket = document.createElement('div');
-      blocoTicket.style.marginTop = '25px';
-      blocoTicket.innerHTML = `
-        <label style="font-weight: bold;">Ticket da Balança:</label><br>
-        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
-      `;
-      form.appendChild(blocoTicket);
-
-      setTimeout(() => {
-        const img = document.getElementById(ticketId);
-        if (img) {
-          img.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.zIndex = '9999';
-
-            const modalImg = document.createElement('img');
-            modalImg.src = img.src;
-            modalImg.style.maxWidth = '90vw';
-            modalImg.style.maxHeight = '90vh';
-            modalImg.style.objectFit = 'contain';
-            modalImg.style.borderRadius = '8px';
-            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-            modalImg.style.cursor = 'zoom-in';
-            modalImg.style.transition = 'transform 0.3s ease';
-
-            let zoomed = false;
-            modalImg.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const rect = modalImg.getBoundingClientRect();
-              const offsetX = e.clientX - rect.left;
-              const offsetY = e.clientY - rect.top;
-              const percentX = (offsetX / rect.width) * 100;
-              const percentY = (offsetY / rect.height) * 100;
-
-              if (!zoomed) {
-                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
-                modalImg.style.transform = 'scale(2.5)';
-                modalImg.style.cursor = 'zoom-out';
-                zoomed = true;
-              } else {
-                modalImg.style.transform = 'scale(1)';
-                modalImg.style.cursor = 'zoom-in';
-                zoomed = false;
-              }
-            });
-
-            const closeBtn = document.createElement('div');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.style.position = 'absolute';
-            closeBtn.style.top = '20px';
-            closeBtn.style.right = '30px';
-            closeBtn.style.fontSize = '40px';
-            closeBtn.style.color = '#fff';
-            closeBtn.style.cursor = 'pointer';
-            closeBtn.onclick = (e) => {
-              e.stopPropagation();
-              document.body.removeChild(overlay);
-            };
-
-            overlay.appendChild(modalImg);
-            overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
-          });
-        }
-      }, 200);
+    if (ticketsHTMLGeral) {
+      const blocoTickets = document.createElement('div');
+      blocoTickets.style.marginTop = '16px';
+      blocoTickets.innerHTML = ticketsHTMLGeral;
+      form.appendChild(blocoTickets);
     }
 
       const separador = document.createElement('div');
@@ -242,6 +232,7 @@ async function carregarPedidosFinanceiro() {
     let totalComNota = 0;
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
+
     if (pedido.materiais && pedido.materiais.length) {
       codigosFiscaisBarraAzul = pedido.materiais.map(item => {
         const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
@@ -249,13 +240,17 @@ async function carregarPedidosFinanceiro() {
         if (!cod) cod = '(não informado)';
         if (cod === "PERSONALIZAR") cod = "Personalizado";
         const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        let descontosKg = 0;
-        if (item.descontos?.length) {
-          descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        }
-        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-        const totalCom = pesoFinalNum * valorComNota;
-        const totalSem = pesoFinalNum * valorSemNota;
+
+        // Apenas os descontos de palete afetam o valor
+        const descontosPalete = item.descontos?.filter(d =>
+          d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+        ) || [];
+
+        const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+        const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+        const totalCom = pesoFinal * valorComNota;
+        const totalSem = pesoFinal * valorSemNota;
         totalComNota += totalCom;
         totalSemNota += totalSem;
 
@@ -302,7 +297,7 @@ async function carregarPedidosFinanceiro() {
       ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
     `;
 
-    const vencContainer = containerCinza.querySelector('.vencimentos-container');
+       const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
@@ -329,7 +324,6 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
-        // Máscara de moeda no input
         inp.addEventListener('input', () => {
           let valor = inp.value.replace(/\D/g, '');
           valor = (parseInt(valor, 10) / 100).toFixed(2);
@@ -339,7 +333,7 @@ async function carregarPedidosFinanceiro() {
           });
         });
 
-         inp.addEventListener('blur', () => {
+        inp.addEventListener('blur', () => {
           const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
           const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
 
@@ -364,7 +358,6 @@ async function carregarPedidosFinanceiro() {
         function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
-
           let rowErr = row.querySelector('.row-error');
           if (!rowErr) {
             rowErr = document.createElement('div');
@@ -435,7 +428,6 @@ async function carregarPedidosFinanceiro() {
     }
 
     renderizarVencimentos(valoresPadrao);
-
     form.appendChild(containerCinza);
 
     const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
@@ -489,11 +481,81 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
   }
 }
 
+function adicionarZoomImagem(idImagem) {
+  const img = document.getElementById(idImagem);
+  if (!img) return;
+
+  img.addEventListener('click', (event) => {
+    event.stopPropagation();
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+
+    const modalImg = document.createElement('img');
+    modalImg.src = img.src;
+    modalImg.style.maxWidth = '90vw';
+    modalImg.style.maxHeight = '90vh';
+    modalImg.style.objectFit = 'contain';
+    modalImg.style.borderRadius = '8px';
+    modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    modalImg.style.cursor = 'zoom-in';
+    modalImg.style.transition = 'transform 0.3s ease';
+
+    let zoomed = false;
+
+    modalImg.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = modalImg.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      const percentX = (offsetX / rect.width) * 100;
+      const percentY = (offsetY / rect.height) * 100;
+
+      if (!zoomed) {
+        modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+        modalImg.style.transform = 'scale(2.5)';
+        modalImg.style.cursor = 'zoom-out';
+        zoomed = true;
+      } else {
+        modalImg.style.transform = 'scale(1)';
+        modalImg.style.cursor = 'zoom-in';
+        zoomed = false;
+      }
+    });
+
+    const closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '20px';
+    closeBtn.style.right = '30px';
+    closeBtn.style.fontSize = '40px';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      document.body.removeChild(overlay);
+    };
+
+    overlay.appendChild(modalImg);
+    overlay.appendChild(closeBtn);
+    document.body.appendChild(overlay);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
-
   const filtro = document.getElementById('filtro-cliente');
   const ordenar = document.getElementById('ordenar');
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
+ 
