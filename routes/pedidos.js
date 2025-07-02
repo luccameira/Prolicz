@@ -615,8 +615,6 @@ res.json(pedidos);
 });
 
 // GET /api/pedidos/financeiro
-// GET /api/pedidos/financeiro
-// GET /api/pedidos/financeiro
 router.get('/financeiro', async (req, res) => {
   try {
     const sql = `
@@ -642,6 +640,7 @@ router.get('/financeiro', async (req, res) => {
         c.documento AS cnpj,
         c.situacao_tributaria,
         c.inscricao_estadual,
+        c.id AS cliente_id,
         CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
       FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
@@ -672,7 +671,6 @@ router.get('/financeiro', async (req, res) => {
     const [pedidos] = await db.query(sql);
 
     for (const pedido of pedidos) {
-      // 🔽 Aqui buscamos a observação do setor Financeiro corretamente
       const [obs] = await db.query(
         `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro'`,
         [pedido.pedido_id]
@@ -687,14 +685,14 @@ router.get('/financeiro', async (req, res) => {
       );
 
       for (const item of materiais) {
-  const [descontos] = await db.query(
-    `SELECT motivo, quantidade, peso_calculado, ticket_compra, ticket_devolucao
-     FROM descontos_item_pedido
-     WHERE item_id = ?`,
-    [item.id]
-  );
-  item.descontos = descontos || [];
-}
+        const [descontos] = await db.query(
+          `SELECT motivo, quantidade, peso_calculado, ticket_compra, ticket_devolucao
+           FROM descontos_item_pedido
+           WHERE item_id = ?`,
+          [item.id]
+        );
+        item.descontos = descontos || [];
+      }
 
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
@@ -713,6 +711,19 @@ router.get('/financeiro', async (req, res) => {
         }
         return dataVencimento;
       });
+
+      // ✅ NOVO BLOCO — Buscar produtos autorizados a vender com nome e valor
+      const [autorizadosVenda] = await db.query(
+        `SELECT 
+          p.nome AS nome_produto,
+          pav.valor_unitario
+         FROM produtos_a_vender pav
+         INNER JOIN produtos p ON pav.produto_id = p.id
+         WHERE pav.cliente_id = ?`,
+        [pedido.cliente_id]
+      );
+
+      pedido.produtos_autorizados_venda = autorizadosVenda || [];
     }
 
     res.json(pedidos);
@@ -721,7 +732,6 @@ router.get('/financeiro', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar pedidos para o financeiro' });
   }
 });
-
 
 
 module.exports = router;
