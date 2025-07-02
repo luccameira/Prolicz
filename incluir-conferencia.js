@@ -3,8 +3,11 @@ function formatarData(data) {
 }
 
 function formatarPeso(valor) {
-  if (!valor) return '0';
-  return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+  if (!valor) return '0 kg';
+  const num = Number(valor);
+  return Number.isInteger(num)
+    ? `${num.toLocaleString('pt-BR')} kg`
+    : `${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
 }
 
 async function carregarPedidosConferencia() {
@@ -71,7 +74,7 @@ async function carregarPedidosConferencia() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-      const form = document.createElement('div');
+    const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
@@ -96,11 +99,11 @@ async function carregarPedidosConferencia() {
 
       if (descontosPalete.length > 0) {
         const linhas = descontosPalete.map((desc, idx) => {
-  const qtdUnidades = parseInt(desc.quantidade || 0);
-  const pesoTotal = formatarPeso(desc.peso_calculado);
-  totalDescontos += Number(desc.peso_calculado || 0);
-  return `<li>${desc.motivo}: ${qtdUnidades} unidades — ${pesoTotal} kg</li>`;
-}).join('');
+          const qtdUnidades = parseInt(desc.quantidade || 0);
+          const pesoTotal = formatarPeso(desc.peso_calculado);
+          totalDescontos += Number(desc.peso_calculado || 0);
+          return `<li>${desc.motivo}: ${qtdUnidades} unidades — ${pesoTotal}</li>`;
+        }).join('');
 
         descontosHTML = `
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
@@ -110,13 +113,13 @@ async function carregarPedidosConferencia() {
         `;
       }
 
-      if (descontosMaterial.length > 0) {
+        if (descontosMaterial.length > 0) {
         descontosMaterial.forEach((desc, idx) => {
           const qtd = formatarPeso(desc.peso_calculado);
           const tipo = desc.motivo;
           const mat = desc.material || item.nome_produto;
 
-          descontosExtraHTML += `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+          descontosExtraHTML += `<li>${tipo} — ${mat}: ${qtd}</li>`;
 
           if (desc.ticket_devolucao) {
             const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
@@ -148,11 +151,11 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `
         <div class="material-bloco">
           <h4>${item.nome_produto}</h4>
-          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto}</p>
+          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado}</p>
           ${descontosHTML}
           <div style="margin-top: 14px;">
-            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal}</span>
           </div>
         </div>
       `;
@@ -167,7 +170,7 @@ async function carregarPedidosConferencia() {
       }
     });
 
-      if (blocoDescontosExtra) {
+    if (blocoDescontosExtra) {
       form.innerHTML += blocoDescontosExtra;
     }
 
