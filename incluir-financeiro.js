@@ -125,15 +125,6 @@ async function carregarPedidosFinanceiro() {
       ) || [];
 
       descontosComerciais.forEach(desc => {
-        // 🔄 Corrige nome e valor com base em produtos autorizados a vender
-        const produtoAutorizado = pedido.produtos_autorizados_venda.find(p => p.nome_produto === item.nome_produto);
-        if (produtoAutorizado) {
-          desc.material = produtoAutorizado.nome_produto;
-          desc.valor_unitario = produtoAutorizado.valor_unitario;
-        } else {
-          desc.material = item.nome_produto;
-          desc.valor_unitario = item.valor_unitario;
-        }
         descontosPedido.push(desc);
       });
 
@@ -182,14 +173,18 @@ async function carregarPedidosFinanceiro() {
             const tipo = desc.motivo;
             const mat = desc.material || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
-            const valorKg = formatarMoeda(Number(desc.valor_unitario));
-            const totalCompra = formatarMoeda(Number(desc.peso_calculado) * Number(desc.valor_unitario));
+
+            // ✅ Usa o valor correto do produto autorizado a vender
+            const produtoReal = pedido.produtos_autorizados_venda.find(p => p.nome_produto === mat);
+            const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario);
+            const totalCompra = valorKg * Number(desc.peso_calculado);
+
             return `
               <li style="margin-bottom:8px;">
                 <strong>${tipo} — ${mat}</strong><br>
                 Quantidade: ${qtd} Kg<br>
-                Valor por Kg: ${valorKg}<br>
-                Valor total: ${totalCompra}
+                Valor por Kg: ${formatarMoeda(valorKg)}<br>
+                Valor total: ${formatarMoeda(totalCompra)}
               </li>
             `;
           }).join('')}
