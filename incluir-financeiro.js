@@ -171,7 +171,7 @@ async function carregarPedidosFinanceiro() {
         <ul style="margin-bottom:10px;">
           ${descontosPedido.map((desc) => {
             const tipo = desc.motivo;
-            const mat = desc.material || 'Produto não informado';
+            const mat = desc.material || item.nome_produto || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
 
             // ✅ Usa o valor correto do produto autorizado a vender
