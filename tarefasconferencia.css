@@ -150,3 +150,27 @@ body {
   box-shadow: none !important;
 }
 
+/* Bloco de descontos por devolução ou compra de material */
+.alerta-desconto-material {
+  background-color: #fdecea;
+  border-left: 6px solid #f5c6cb;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+.alerta-desconto-material p.titulo-alerta {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #a94442;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alerta-desconto-material ul {
+  padding-left: 20px;
+  margin: 0;
+  list-style: disc;
+}
