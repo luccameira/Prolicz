@@ -166,61 +166,6 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // Novo bloco vermelho para os descontos comerciais fora dos materiais
-    if (descontosPedido.length) {
-      const blocoDesc = document.createElement('div');
-      blocoDesc.className = 'bloco-desconto-vermelho';
-      blocoDesc.innerHTML = `
-        <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Comerciais no Pedido:</strong></p>
-        <ul style="margin-bottom:10px;">
-          ${descontosPedido.map((desc, idx) => {
-            const tipo = desc.motivo;
-            const mat = desc.material || 'Produto não informado';
-            const qtd = formatarPesoComMilhar(desc.peso_calculado);
-            return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
-          }).join('')}
-        </ul>
-      `;
-
-      descontosPedido.forEach((desc, idx) => {
-        if (desc.ticket_devolucao) {
-          const idImg = `ticket-dev-${id}-${idx}`;
-          blocoDesc.innerHTML += `
-            <div style="display:inline-block;margin-right:12px;">
-              <label style="font-weight:bold;">Ticket Devolução:</label><br>
-              <img id="${idImg}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
-            </div>
-          `;
-          setTimeout(() => adicionarZoomImagem(idImg), 100);
-        }
-
-        if (desc.ticket_compra) {
-          const idImg = `ticket-compra-${id}-${idx}`;
-          blocoDesc.innerHTML += `
-            <div style="display:inline-block;margin-right:12px;">
-              <label style="font-weight:bold;">Ticket Compra:</label><br>
-              <img id="${idImg}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
-            </div>
-          `;
-          setTimeout(() => adicionarZoomImagem(idImg), 100);
-        }
-      });
-
-      blocoDesc.style.marginTop = '20px';
-      blocoDesc.style.padding = '12px 16px';
-      blocoDesc.style.borderRadius = '8px';
-      blocoDesc.style.background = '#fde4e1';
-
-      form.appendChild(blocoDesc);
-    }
-
-      if (ticketsHTMLGeral) {
-      const blocoTickets = document.createElement('div');
-      blocoTickets.style.marginTop = '16px';
-      blocoTickets.innerHTML = ticketsHTMLGeral;
-      form.appendChild(blocoTickets);
-    }
-
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
