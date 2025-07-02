@@ -76,6 +76,7 @@ async function carregarPedidosConferencia() {
     form.style.display = 'none';
 
     let ticketsHTMLGeral = '';
+    let blocoDescontosExtra = '';
 
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
@@ -84,18 +85,39 @@ async function carregarPedidosConferencia() {
 
       let descontosHTML = '';
       let totalDescontos = 0;
+      let descontosExtraHTML = '';
 
-      if (Array.isArray(item.descontos) && item.descontos.length > 0) {
-        const linhas = item.descontos.map((desc, idx) => {
+      const descontosPalete = item.descontos.filter(d =>
+        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+      );
+      const descontosMaterial = item.descontos.filter(d =>
+        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+      );
+
+      if (descontosPalete.length > 0) {
+        const linhas = descontosPalete.map((desc, idx) => {
           const qtd = formatarPeso(desc.peso_calculado);
-          const material = item.nome_produto || '';
-          const sufixo = desc.motivo && desc.motivo.toLowerCase().includes('palete') ? 'UNIDADES' : 'Kg';
+          const sufixo = 'UNIDADES';
           totalDescontos += Number(desc.peso_calculado || 0);
-
-          return `<li>${desc.motivo} — ${material}: ${qtd} ${sufixo}</li>`;
+          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} ${sufixo}</li>`;
         }).join('');
 
-        item.descontos.forEach((desc, idx) => {
+        descontosHTML = `
+          <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
+            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+            <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
+          </div>
+        `;
+      }
+
+      if (descontosMaterial.length > 0) {
+        descontosMaterial.forEach((desc, idx) => {
+          const qtd = formatarPeso(desc.peso_calculado);
+          const tipo = desc.motivo;
+          const mat = desc.material || item.nome_produto;
+
+          descontosExtraHTML += `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+
           if (desc.ticket_devolucao) {
             const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
             ticketsHTMLGeral += `
@@ -106,14 +128,18 @@ async function carregarPedidosConferencia() {
             `;
             setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
           }
-        });
 
-        descontosHTML = `
-          <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
-            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
-          </div>
-        `;
+          if (desc.ticket_compra) {
+            const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Compra:</label><br>
+                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
+          }
+        });
       }
 
       const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
@@ -130,9 +156,22 @@ async function carregarPedidosConferencia() {
           </div>
         </div>
       `;
+
+      if (descontosExtraHTML) {
+        blocoDescontosExtra += `
+          <div style="background-color: #eef2f3; padding: 12px; border-radius: 6px; border: 1px solid #ccc; margin-top: 14px;">
+            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-box"></i> Materiais Comprados ou Devolvidos:</p>
+            <ul style="padding-left: 20px; margin: 0;">${descontosExtraHTML}</ul>
+          </div>
+        `;
+      }
     });
 
-      if (pedido.ticket_balanca) {
+    if (blocoDescontosExtra) {
+      form.innerHTML += blocoDescontosExtra;
+    }
+
+    if (pedido.ticket_balanca) {
       const ticketId = `ticket-balanca-${idPedido}`;
       ticketsHTMLGeral += `
         <div style="display:inline-block;margin-right:12px;">
@@ -144,9 +183,7 @@ async function carregarPedidosConferencia() {
     }
 
     if (ticketsHTMLGeral) {
-      form.innerHTML += `
-        <div style="margin-top: 16px;">${ticketsHTMLGeral}</div>
-      `;
+      form.innerHTML += `<div style="margin-top: 16px;">${ticketsHTMLGeral}</div>`;
     }
 
     if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
@@ -163,19 +200,17 @@ async function carregarPedidosConferencia() {
       form.appendChild(obsBloco);
     }
 
+    const botaoConfirmar = document.createElement('button');
     if (pedido.status === 'Aguardando Conferência do Peso') {
-      const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar';
       botaoConfirmar.innerText = 'Confirmar Peso';
       botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
-      form.appendChild(botaoConfirmar);
     } else {
-      const botaoConfirmar = document.createElement('button');
       botaoConfirmar.className = 'btn btn-registrar btn-disabled';
       botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
       botaoConfirmar.disabled = true;
-      form.appendChild(botaoConfirmar);
     }
+    form.appendChild(botaoConfirmar);
 
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
