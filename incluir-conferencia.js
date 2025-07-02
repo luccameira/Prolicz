@@ -95,12 +95,12 @@ async function carregarPedidosConferencia() {
       );
 
       if (descontosPalete.length > 0) {
-        const linhas = descontosPalete.map((desc, idx) => {
-          const qtdUnidades = desc.quantidade || 0;
-          const pesoTotal = formatarPeso(desc.peso_calculado);
-          totalDescontos += Number(desc.peso_calculado || 0);
-          return `<li>${desc.motivo}: ${qtdUnidades} unidades — ${pesoTotal} kg</li>`;
-        }).join('');
+       const linhas = descontosPalete.map((desc, idx) => {
+  const qtd = parseInt(desc.peso_calculado || 0);
+  const sufixo = 'unidades';
+  totalDescontos += Number(desc.peso_calculado || 0);
+  return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} ${sufixo}</li>`;
+}).join('');
 
         descontosHTML = `
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
