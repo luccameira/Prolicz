@@ -35,24 +35,8 @@ async function carregarPedidosConferencia() {
 
   pedidos.forEach(pedido => {
     const idPedido = pedido.pedido_id || pedido.id;
-
     const card = document.createElement('div');
     card.className = 'card';
-
-    let statusHtml = '';
-    if (pedido.status === 'Em Análise pelo Financeiro') {
-      statusHtml = `
-        <div class="status-badge status-verde">
-          <i class="fa fa-check-circle"></i> Peso Conferido
-        </div>
-      `;
-    } else {
-      statusHtml = `
-        <div class="status-badge status-amarelo">
-          <i class="fa fa-balance-scale"></i> ${pedido.status}
-        </div>
-      `;
-    }
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -61,7 +45,10 @@ async function carregarPedidosConferencia() {
         <h3>${pedido.cliente}</h3>
         <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
       </div>
-      ${statusHtml}
+      <div class="status-badge status-${pedido.status === 'Em Análise pelo Financeiro' ? 'verde' : 'amarelo'}">
+        <i class="fa ${pedido.status === 'Em Análise pelo Financeiro' ? 'fa-check-circle' : 'fa-balance-scale'}"></i>
+        ${pedido.status === 'Em Análise pelo Financeiro' ? 'Peso Conferido' : pedido.status}
+      </div>
     `;
     card.appendChild(header);
 
@@ -75,31 +62,24 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    let ticketsHTMLGeral = '';
     let blocoDescontosExtra = '';
+    let ticketsHTMLGeral = '';
 
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
       const pesoCarregado = formatarPeso(item.peso_carregado);
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
 
+      const descontosPalete = item.descontos.filter(d => d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande');
+      const descontosMaterial = item.descontos.filter(d => d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material');
+
+      let totalDescontos = descontosPalete.reduce((soma, desc) => soma + Number(desc.peso_calculado || 0), 0);
+
       let descontosHTML = '';
-      let totalDescontos = 0;
-      let descontosExtraHTML = '';
-
-      const descontosPalete = item.descontos.filter(d =>
-        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-      );
-      const descontosMaterial = item.descontos.filter(d =>
-        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
-      );
-
       if (descontosPalete.length > 0) {
-        const linhas = descontosPalete.map((desc, idx) => {
+        const linhas = descontosPalete.map(desc => {
           const qtd = formatarPeso(desc.peso_calculado);
-          const sufixo = 'UNIDADES';
-          totalDescontos += Number(desc.peso_calculado || 0);
-          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} ${sufixo}</li>`;
+          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} UNIDADES</li>`;
         }).join('');
 
         descontosHTML = `
@@ -108,38 +88,6 @@ async function carregarPedidosConferencia() {
             <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
           </div>
         `;
-      }
-
-      if (descontosMaterial.length > 0) {
-        descontosMaterial.forEach((desc, idx) => {
-          const qtd = formatarPeso(desc.peso_calculado);
-          const tipo = desc.motivo;
-          const mat = desc.material || item.nome_produto;
-
-          descontosExtraHTML += `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
-
-          if (desc.ticket_devolucao) {
-            const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
-            ticketsHTMLGeral += `
-              <div style="display:inline-block;margin-right:12px;">
-                <label style="font-weight:bold;">Ticket Devolução:</label><br>
-                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
-          }
-
-          if (desc.ticket_compra) {
-            const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
-            ticketsHTMLGeral += `
-              <div style="display:inline-block;margin-right:12px;">
-                <label style="font-weight:bold;">Ticket Compra:</label><br>
-                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
-          }
-        });
       }
 
       const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
@@ -157,13 +105,57 @@ async function carregarPedidosConferencia() {
         </div>
       `;
 
-      if (descontosExtraHTML) {
+        if (descontosMaterial.length > 0) {
+        const linhas = descontosMaterial.map(desc => {
+          const qtd = formatarPeso(desc.peso_calculado);
+          const nomeMat = desc.material || item.nome_produto;
+          return `<li><strong>${desc.motivo}</strong><br>${nomeMat} — ${qtd} Kg</li>`;
+        }).join('');
+
         blocoDescontosExtra += `
-          <div style="background-color: #eef2f3; padding: 12px; border-radius: 6px; border: 1px solid #ccc; margin-top: 14px;">
-            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-box"></i> Materiais Comprados ou Devolvidos:</p>
-            <ul style="padding-left: 20px; margin: 0;">${descontosExtraHTML}</ul>
+          <div style="
+            background-color: #fdecea;
+            padding: 14px 18px;
+            border-radius: 6px;
+            border-left: 6px solid #f5c6cb;
+            margin-top: 20px;
+            font-size: 15px;
+          ">
+            <p style="font-weight: bold; margin: 0 0 8px; color: #a94442;">
+              <i class="fa fa-circle-exclamation"></i> Descontos Aplicados:
+            </p>
+            <ul style="padding-left: 20px; margin: 0; list-style: disc;">
+              ${linhas}
+            </ul>
           </div>
         `;
+
+        descontosMaterial.forEach((desc, idx) => {
+          const ticketDev = desc.ticket_devolucao;
+          const ticketCompra = desc.ticket_compra;
+          const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
+          const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
+
+          if (ticketDev) {
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Devolução:</label><br>
+                <img id="${ticketIdDev}" src="/uploads/tickets/${ticketDev}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
+          }
+
+          if (ticketCompra) {
+            ticketsHTMLGeral += `
+              <div style="display:inline-block;margin-right:12px;">
+                <label style="font-weight:bold;">Ticket Compra:</label><br>
+                <img id="${ticketIdCompra}" src="/uploads/tickets/${ticketCompra}" alt="Ticket Compra" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+              </div>
+            `;
+            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
+          }
+        });
       }
     });
 
@@ -172,7 +164,7 @@ async function carregarPedidosConferencia() {
     }
 
     if (pedido.ticket_balanca) {
-      const ticketId = `ticket-balanca-${idPedido}`;
+      const ticketId = `ticket-balanca-${pedido.id}`;
       ticketsHTMLGeral += `
         <div style="display:inline-block;margin-right:12px;">
           <label style="font-weight:bold;">Ticket Balança:</label><br>
