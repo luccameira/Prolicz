@@ -75,7 +75,7 @@ async function carregarPedidosFinanceiro() {
     return;
   }
 
-   filtrados.forEach(pedido => {
+  filtrados.forEach(pedido => {
     const id = pedido.pedido_id || pedido.id;
     const card = document.createElement('div');
     card.className = 'card';
@@ -125,10 +125,13 @@ async function carregarPedidosFinanceiro() {
       ) || [];
 
       descontosComerciais.forEach(desc => {
-        descontosPedido.push(desc);
+        descontosPedido.push({
+          ...desc,
+          material: item.nome_produto // ✅ Correção aplicada aqui
+        });
       });
 
-      const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+        const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
       const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
 
@@ -163,7 +166,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-        if (descontosPedido.length) {
+    if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
       blocoDesc.innerHTML = `
@@ -174,11 +177,6 @@ async function carregarPedidosFinanceiro() {
             const mat = desc.material || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
 
-            // 🔍 Debug para investigação
-            console.log('🔎 Material do desconto:', mat);
-            console.log('📦 Produtos autorizados a vender:', pedido.produtos_autorizados_venda);
-
-            // Comparação flexível com fallback
             let produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
               p.nome_produto?.trim().toLowerCase() === mat.trim().toLowerCase()
             );
@@ -246,7 +244,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(blocoImagens);
     }
 
-       const separador = document.createElement('div');
+        const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
@@ -421,7 +419,7 @@ async function carregarPedidosFinanceiro() {
       }
     }
 
-    function resetarVencimentosPadrao() {
+      function resetarVencimentosPadrao() {
       valoresPadrao = calcularValoresVencimentos();
       renderizarVencimentos(valoresPadrao);
       atualizarBotaoLiberar();
@@ -577,6 +575,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
-
 
