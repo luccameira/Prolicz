@@ -131,8 +131,9 @@ function renderizarPedidos(lista) {
       const itemId = item.item_id;
       if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
-      const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-      const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
+      const tipoPeso = (item.tipo_peso || '').toLowerCase().includes('aproximado') ? 'Aproximado' : 'Exato';
+      const textoPeso = tipoPeso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      const icone = tipoPeso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
       form.innerHTML += `
         <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
@@ -286,7 +287,7 @@ async function registrarPeso(pedidoId) {
           const campoQtd = grupo.querySelector(`#quantidade-${itemId}-${i}`);
           const qtd = parseFloat(campoQtd?.value.replace(/\./g, '').replace(',', '.'));
           if (!isNaN(qtd)) {
-            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 6 : qtd * 14,37;
+            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 6 : qtd * 14.37;
             infoExtra = { quantidade: qtd };
           }
         } else {
