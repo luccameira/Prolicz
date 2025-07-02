@@ -40,15 +40,57 @@
     #info-pedido.tab-content { background: transparent; padding: 0; border-radius: 0; box-shadow: none; min-height: auto; }
     #historico-pedido.tab-content { background: transparent !important; padding: 0 !important; box-shadow: none !important; }
     .timeline-item { position: relative; margin-bottom: 30px; width: 100%; max-width: none; }
-    .timeline-toggle { cursor: pointer; display: block; width: 100%; padding: 16px 20px; border-radius: 6px 6px 0 0; user-select: none; transition: background-color 0.2s ease; font-weight: 700; font-size: 20px; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.12); margin-bottom: 0; border-left: 6px solid #FFC107; box-sizing: border-box; z-index: 1; }
-    .timeline-toggle:hover { background-color: #fff3cd; }
-    .timeline-content { background: #fff; padding: 20px 25px; border-radius: 0 0 8px 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.12); font-size: 15px; color: #222; line-height: 1.4; margin-bottom: 30px; width: 100%; max-width: none; box-sizing: border-box; border-left: 6px solid #FFC107; }
-    .timeline-content strong { font-weight: 700; font-size: 16px; display: block; margin-bottom: 6px; }
-    .timeline-date { font-size: 13px; color: #666; margin-top: 6px; }
+    .timeline-toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* alinha à esquerda */
+  gap: 8px; /* espaço entre título e seta */
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 6px 6px 0 0;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  font-weight: 700;
+  font-size: 20px;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.12);
+  margin-bottom: 0;
+  border-left: 6px solid #FFC107;
+  box-sizing: border-box;
+  z-index: 1;
+  position: relative; /* necessário para posicionar a data */
+}
+.timeline-toggle:hover {
+  background-color: #fff3cd;
+}
+.timeline-toggle svg {
+  width: 28px;       /* aumentado de 20px para 28px */
+  height: 28px;      /* aumentado de 20px para 28px */
+  stroke: #ffb300;   /* amarelo vibrante */
+  stroke-width: 3;   /* traço mais grosso */
+  filter: 
+    drop-shadow(0 0 1px black) 
+    drop-shadow(0 0 1px black) 
+    drop-shadow(0 0 2px rgba(255, 193, 7, 0.7)); /* contorno preto + sombra amarela suave */
+  transition: transform 0.3s ease;
+}
+.timeline-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.timeline-date {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;          /* aumentado de 13px para 15px */
+  font-weight: 700;         /* negrito */
+  color: #000;
+  margin-top: 0;            /* remove margem para alinhamento vertical */
+}
     .timeline-dot { display: none; }
     .ticket-thumbnail { max-width: 200px; max-height: 150px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
     .ticket-thumbnail:hover { transform: scale(1.05); }
-    #registros { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.12); min-height: 180px; max-height: 600px; overflow-y: auto; }
     .btn-adicionar { background-color: #FFC107; color: #222; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-bottom: 20px; }
     .btn-adicionar:hover { box-shadow: 0 4px 12px rgba(255,193,7,0.8); transform: scale(1.05); }
     #lista-observacoes { max-height: 450px; overflow-y: auto; }
@@ -137,25 +179,64 @@
       display: inline-block;
     }
 
-.observacao-item {
-  background: #fff; /* fundo branco */
-  border: 1.5px solid #ddd;
-  border-left: 6px solid #ffc107; /* tarja amarela na esquerda */
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  color: #222;
-}
+    .observacao-item {
+      position: relative; /* ADICIONE esta linha */
+      background: #fff; /* fundo branco */
+      border: 1.5px solid #ddd;
+      border-left: 6px solid #ffc107; /* tarja amarela na esquerda */
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      color: #222;
+    }
 
-.observacao-usuario {
-  background-color: #ffc107; /* fundo amarelo forte */
-  color: #111; /* texto escuro para contraste */
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 700;
-}
+    /* Triângulo amarelo da pontinha do balão */
+    .observacao-item::after {
+      content: "";
+      position: absolute;
+      bottom: 75px;
+      left: -18px;
+      width: 0;
+      height: 0;
+      border-top: 16px solid #ffc107; /* mesma cor da tarja amarela */
+      border-right: 16px solid transparent;
+      border-left: none;
+      border-bottom: none;
+      transform: translateX(-50px);
+      z-index: 1;
+      transform: rotate(90deg);
+      transform-origin: left bottom; /* ponto de rotação ajustado */
+    }
 
+    .observacao-usuario {
+      background-color: #ffc107; /* fundo amarelo forte */
+      color: #111; /* texto escuro para contraste */
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    #registros.tab-content {
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+    }
+    #lista-registros {
+      background: transparent !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+
+    #lista-registros {
+      background: transparent !important;
+      padding-left: 20px !important; /* espaço para o triângulo aparecer */
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+      max-height: 600px;
+      overflow-y: auto;
+      overflow-x: visible !important; /* permite o triângulo sair da caixa */
+    }
   </style>
 </head>
 <body>
@@ -198,21 +279,30 @@
       </div>
     </section>
     <section id="registros" class="tab-content" style="display:none;">
-      <button id="btn-adicionar-observacao" class="btn-adicionar" type="button">Adicionar Observação</button>
-      <div id="lista-observacoes"><p style="color: #666;">Nenhuma observação registrada.</p></div>
-      <form id="form-nova-observacao" style="margin-top: 20px; display: none;">
-        <textarea id="input-nova-observacao" rows="4" placeholder="Escreva uma nova observação..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-size: 1rem; box-sizing: border-box;"></textarea>
-        <div style="margin-top: 10px;">
-          <button type="submit" style="background-color: #FFC107; color: #222; font-weight: 700; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-right: 10px;">Salvar</button>
-          <button type="button" id="btn-cancelar-observacao" style="background-color: #e0e0e0; color: #333; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">Cancelar</button>
-        </div>
-      </form>
-    </section>
+  <!-- Botão fora do fundo branco -->
+  <button id="btn-adicionar-registro" class="btn-adicionar" type="button" style="margin-bottom: 10px;">Adicionar Registro</button>
+  
+  <!-- Apenas a lista com fundo branco -->
+  <div id="lista-registros">
+    <p style="color: #666;">Nenhum registro cadastrado.</p>
+  </div>
+
+  <form id="form-novo-registro" style="margin-top: 20px; display: none;">
+    <textarea id="input-novo-registro" rows="4" placeholder="Escreva um novo registro..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-size: 1rem;"></textarea>
+    <div style="margin-top: 10px;">
+      <button type="submit" style="background-color: #FFC107; color: #222; font-weight: 700; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-right: 10px;">Salvar</button>
+      <button type="button" id="btn-cancelar-registro" style="background-color: #e0e0e0; color: #333; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">Cancelar</button>
+    </div>
+  </form>
+</section>
     <section id="historico-pedido" class="tab-content" style="display:none;">
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info1" id="toggle1">
-          Pedido Criado
+          <span>Pedido Criado</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">26/06/2023 14:03</div>
         </div>
         <div class="timeline-content" id="info1" role="region" aria-labelledby="toggle1" hidden>
@@ -231,7 +321,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info2" id="toggle2">
-          Entrada na Portaria
+          <span>Entrada na Portaria</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">26/06/2023 15:45</div>
         </div>
         <div class="timeline-content" id="info2" role="region" aria-labelledby="toggle2" hidden>
@@ -245,7 +338,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info3" id="toggle3">
-          Coleta Iniciada
+          <span>Coleta Iniciada</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">26/06/2023 15:20</div>
         </div>
         <div class="timeline-content" id="info3" role="region" aria-labelledby="toggle3" hidden>
@@ -263,7 +359,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info4" id="toggle4">
-          Peso Conferido
+          <span>Peso Conferido</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">26/06/2023 17:10</div>
         </div>
         <div class="timeline-content" id="info4" role="region" aria-labelledby="toggle4" hidden>
@@ -278,7 +377,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info5" id="toggle5">
-          Cliente Liberado
+          <span>Cliente Liberado</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">27/06/2023 09:30</div>
         </div>
         <div class="timeline-content" id="info5" role="region" aria-labelledby="toggle5" hidden>
@@ -290,7 +392,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info6" id="toggle6">
-          NF Emitida
+          <span>NF Emitida</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">27/06/2023 10:15</div>
         </div>
         <div class="timeline-content" id="info6" role="region" aria-labelledby="toggle6" hidden>
@@ -306,7 +411,10 @@
       <div class="timeline-item">
         <div class="timeline-dot"></div>
         <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info7" id="toggle7">
-          Saída na Portaria
+          <span>Saída na Portaria</span>
+          <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
+            <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <div class="timeline-date">27/06/2023 11:00</div>
         </div>
         <div class="timeline-content" id="info7" role="region" aria-labelledby="toggle7" hidden>
@@ -388,59 +496,98 @@
         .forEach(obs => container.appendChild(criarElementoObservacao(obs)));
     }
 
-    // Remove controle de mostrar/ocultar formulário para que ele fique sempre visível
-    function mostrarFormularioObservacao(show) {
-      const form = document.getElementById('form-nova-observacao');
-      form.style.display = 'block'; // Sempre visível
-      const input = document.getElementById('input-nova-observacao');
+    // Novo: criar elemento para registro (separado da observação)
+    function criarElementoRegistro(registro) {
+      const div = document.createElement('div');
+      div.className = 'observacao-item';
+
+      const data = new Date(registro.data_criacao);
+      const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+      div.innerHTML = `
+        <div class="observacao-cabecalho">
+          <span class="observacao-data">${dataFormatada}</span>
+          <strong class="observacao-usuario">${registro.usuario_nome || 'Usuário'}</strong>
+        </div>
+        <div class="observacao-texto">${registro.texto_registro || registro.texto || '---'}</div>
+      `;
+      return div;
+    }
+
+    // Novo: carregar registros da rota separada
+    async function carregarRegistros() {
+      const container = document.getElementById('lista-registros');
+      container.innerHTML = '';
+
+      try {
+        const res = await fetch(`/api/pedidos/${pedidoId}/registros`);
+        if (!res.ok) throw new Error('Erro ao carregar registros');
+        const registros = await res.json();
+
+        if (!registros.length) {
+          container.innerHTML = '<p style="color:#666;">Nenhum registro cadastrado.</p>';
+          return;
+        }
+
+        registros
+          .sort((a,b) => new Date(a.data_criacao) - new Date(b.data_criacao))
+          .forEach(reg => container.appendChild(criarElementoRegistro(reg)));
+
+      } catch (err) {
+        container.innerHTML = `<p style="color:#c00;">Erro ao carregar registros: ${err.message}</p>`;
+      }
+    }
+
+    // Remover controle para formulário de observação, manter controle para formulário de registro
+    function mostrarFormularioRegistro(show) {
+      const form = document.getElementById('form-novo-registro');
+      form.style.display = show ? 'block' : 'none';
       if (show) {
+        const input = document.getElementById('input-novo-registro');
         input.value = '';
         input.focus();
       }
     }
 
-    // No carregamento, não precisa mais esconder o formulário nem botão
     document.addEventListener('DOMContentLoaded', () => {
-      const btnAdicionar = document.getElementById('btn-adicionar-observacao');
-      const btnCancelar = document.getElementById('btn-cancelar-observacao');
-      const formObservacao = document.getElementById('form-nova-observacao');
-      const inputObservacao = document.getElementById('input-nova-observacao');
-      const containerObservacoes = document.getElementById('lista-observacoes');
+      const btnAdicionarRegistro = document.getElementById('btn-adicionar-registro');
+      const btnCancelarRegistro = document.getElementById('btn-cancelar-registro');
+      const formRegistro = document.getElementById('form-novo-registro');
+      const inputRegistro = document.getElementById('input-novo-registro');
+      const containerRegistros = document.getElementById('lista-registros');
 
-      btnAdicionar.addEventListener('click', () => {
-        formObservacao.style.display = 'block';
-        btnAdicionar.style.display = 'none';
-        inputObservacao.focus();
+      btnAdicionarRegistro.addEventListener('click', () => {
+        mostrarFormularioRegistro(true);
+        btnAdicionarRegistro.style.display = 'none';
       });
 
-      btnCancelar.addEventListener('click', () => {
-        inputObservacao.value = '';
-        formObservacao.style.display = 'none';
-        btnAdicionar.style.display = 'inline-block';
+      btnCancelarRegistro.addEventListener('click', () => {
+        mostrarFormularioRegistro(false);
+        btnAdicionarRegistro.style.display = 'inline-block';
       });
 
-      formObservacao.addEventListener('submit', async (e) => {
+      formRegistro.addEventListener('submit', async e => {
         e.preventDefault();
-        const texto = inputObservacao.value.trim();
-        if (!texto) return alert('Digite uma observação antes de salvar.');
+        const texto = inputRegistro.value.trim();
+        if (!texto) return alert('Digite um registro antes de salvar.');
+
         try {
-          const res = await fetch(`/api/pedidos/${pedidoId}/observacoes`, {
+          const res = await fetch(`/api/pedidos/${pedidoId}/registros`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ texto_observacao: texto })
+            body: JSON.stringify({ texto_registro: texto })
           });
-          if (!res.ok) throw new Error('Erro ao salvar observação');
-          const novaObs = await res.json();
+          if (!res.ok) throw new Error('Erro ao salvar registro');
+          const novoRegistro = await res.json();
 
-          if (containerObservacoes.querySelector('p')) containerObservacoes.innerHTML = '';
-          containerObservacoes.appendChild(criarElementoObservacao(novaObs));
+          if (containerRegistros.querySelector('p')) containerRegistros.innerHTML = '';
+          containerRegistros.appendChild(criarElementoRegistro(novoRegistro));
 
-          // Após salvar, limpa e oculta o formulário
-          inputObservacao.value = '';
-          formObservacao.style.display = 'none';
-          btnAdicionar.style.display = 'inline-block';
-        } catch(err) {
-          alert('Erro ao salvar observação: ' + err.message);
+          mostrarFormularioRegistro(false);
+          btnAdicionarRegistro.style.display = 'inline-block';
+          inputRegistro.value = '';
+        } catch (err) {
+          alert('Erro ao salvar registro: ' + err.message);
         }
       });
 
@@ -516,6 +663,7 @@
         }
 
         carregarObservacoes(pedido);
+        carregarRegistros(); // CARREGA REGISTROS NOVO
       } catch (error) {
         alert('Erro ao carregar pedido: ' + error.message);
       }
