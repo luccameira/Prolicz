@@ -671,12 +671,14 @@ router.get('/financeiro', async (req, res) => {
     const [pedidos] = await db.query(sql);
 
     for (const pedido of pedidos) {
+      // Observações do setor Financeiro
       const [obs] = await db.query(
         `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro'`,
         [pedido.pedido_id]
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
 
+      // Materiais do pedido
       const [materiais] = await db.query(
         `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
          FROM itens_pedido
@@ -684,6 +686,7 @@ router.get('/financeiro', async (req, res) => {
         [pedido.pedido_id]
       );
 
+      // Descontos por item
       for (const item of materiais) {
         const [descontos] = await db.query(
           `SELECT motivo, quantidade, peso_calculado, ticket_compra, ticket_devolucao
@@ -697,6 +700,7 @@ router.get('/financeiro', async (req, res) => {
       pedido.materiais = materiais;
       pedido.observacoes = pedido.observacao || '';
 
+      // Prazos de pagamento
       const [prazosPedido] = await db.query(
         `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
         [pedido.pedido_id]
@@ -712,9 +716,10 @@ router.get('/financeiro', async (req, res) => {
         return dataVencimento;
       });
 
-      // ✅ NOVO BLOCO — Buscar produtos autorizados a vender com nome e valor
+      // ✅ Produtos autorizados a vender com id, nome e valor
       const [autorizadosVenda] = await db.query(
         `SELECT 
+          pav.produto_id AS id,
           p.nome AS nome_produto,
           pav.valor_unitario
          FROM produtos_a_vender pav
@@ -732,6 +737,5 @@ router.get('/financeiro', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao buscar pedidos para o financeiro' });
   }
 });
-
 
 module.exports = router;
