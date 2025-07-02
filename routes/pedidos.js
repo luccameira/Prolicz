@@ -88,6 +88,7 @@ router.get('/carga', async (req, res) => {
       p.data_criacao,
       c.nome_fantasia AS cliente,
       i.nome_produto AS produto,
+      i.tipo_peso,
       p.data_coleta,
       p.data_coleta_iniciada,
       p.data_carga_finalizada,
@@ -100,7 +101,7 @@ router.get('/carga', async (req, res) => {
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
     WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
     GROUP BY 
-      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, 
+      p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, i.tipo_peso,
       p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, 
       p.data_conferencia_peso, p.status, c.id
     ORDER BY p.data_coleta ASC
@@ -124,17 +125,17 @@ router.get('/carga', async (req, res) => {
          WHERE pa.cliente_id = ?`,
         [pedido.cliente_id]
       );
-      pedido.produtos_autorizados = produtos; // ex: [{ nome: 'Polpa' }, { nome: 'Fraldinha' }]
+      pedido.produtos_autorizados = produtos;
 
-     // Produtos autorizados a vender (para Compra de Material)
-const [produtosVenda] = await db.query(
-  `SELECT p.nome AS nome
-   FROM produtos_a_vender pv
-   INNER JOIN produtos p ON pv.produto_id = p.id
-   WHERE pv.cliente_id = ?`,
-  [pedido.cliente_id]
-);
-pedido.produtos_venda = produtosVenda;
+      // Produtos autorizados a vender
+      const [produtosVenda] = await db.query(
+        `SELECT p.nome AS nome
+         FROM produtos_a_vender pv
+         INNER JOIN produtos p ON pv.produto_id = p.id
+         WHERE pv.cliente_id = ?`,
+        [pedido.cliente_id]
+      );
+      pedido.produtos_venda = produtosVenda;
     }
 
     res.json(results);
