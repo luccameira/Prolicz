@@ -286,7 +286,7 @@ async function registrarPeso(pedidoId) {
           const campoQtd = grupo.querySelector(`#quantidade-${itemId}-${i}`);
           const qtd = parseFloat(campoQtd?.value.replace(/\./g, '').replace(',', '.'));
           if (!isNaN(qtd)) {
-            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
+            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 6 : qtd * 14,37;
             infoExtra = { quantidade: qtd };
           }
         } else {
