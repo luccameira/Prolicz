@@ -62,7 +62,6 @@ async function carregarPedidosConferencia() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    let blocoDescontosExtra = '';
     let ticketsHTMLGeral = '';
 
     pedido.materiais.forEach((item, index) => {
@@ -73,16 +72,16 @@ async function carregarPedidosConferencia() {
       const descontosPalete = item.descontos.filter(d => d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande');
       const descontosMaterial = item.descontos.filter(d => d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material');
 
-      let totalDescontos = descontosPalete.reduce((soma, desc) => soma + Number(desc.peso_calculado || 0), 0);
+      let totalDescontos = item.descontos.reduce((soma, desc) => soma + Number(desc.peso_calculado || 0), 0);
 
-      let descontosHTML = '';
+      let descontosPaleteHTML = '';
       if (descontosPalete.length > 0) {
         const linhas = descontosPalete.map(desc => {
           const qtd = formatarPeso(desc.peso_calculado);
           return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} UNIDADES</li>`;
         }).join('');
 
-        descontosHTML = `
+        descontosPaleteHTML = `
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
             <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
@@ -90,41 +89,20 @@ async function carregarPedidosConferencia() {
         `;
       }
 
-      const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
-      const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
-
-      form.innerHTML += `
-        <div class="material-bloco">
-          <h4>${item.nome_produto}</h4>
-          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
-          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
-          ${descontosHTML}
-          <div style="margin-top: 14px;">
-            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
-          </div>
-        </div>
-      `;
-
-        if (descontosMaterial.length > 0) {
+      let descontosMaterialHTML = '';
+      if (descontosMaterial.length > 0) {
         const linhas = descontosMaterial.map(desc => {
           const qtd = formatarPeso(desc.peso_calculado);
           const nomeMat = desc.material || item.nome_produto;
           return `<li><strong>${desc.motivo}</strong><br>${nomeMat} — ${qtd} Kg</li>`;
         }).join('');
 
-        blocoDescontosExtra += `
-  <div class="alerta-desconto-material">
-    <p class="titulo-alerta"><i class="fa fa-circle-exclamation"></i> Descontos Aplicados:</p>
-    <ul>
-      ${descontosMaterial.map(desc => `
-        <li>
-          <strong>${desc.motivo}</strong><br>
-          ${desc.material || item.nome_produto} — ${formatarPeso(desc.peso_calculado)} Kg
-        </li>
-      `).join('')}
-    </ul>
-  </div>
-`;
+        descontosMaterialHTML = `
+          <div style="background-color: #ffeaea; padding: 12px; border-radius: 6px; border: 1px solid #ff9999; margin-top: 14px;">
+            <p style="font-weight: 600; margin: 0 0 6px; color: #cc0000;"><i class="fa fa-circle-exclamation"></i> Descontos Aplicados:</p>
+            <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
+          </div>
+        `;
 
         descontosMaterial.forEach((desc, idx) => {
           const ticketDev = desc.ticket_devolucao;
@@ -153,11 +131,23 @@ async function carregarPedidosConferencia() {
           }
         });
       }
-    });
 
-    if (blocoDescontosExtra) {
-      form.innerHTML += blocoDescontosExtra;
-    }
+      const pesoFinal = formatarPeso((item.peso_carregado || 0) - totalDescontos);
+      const textoFinal = totalDescontos > 0 ? 'Peso Final com Desconto' : 'Peso Final';
+
+      form.innerHTML += `
+        <div class="material-bloco">
+          <h4>${item.nome_produto}</h4>
+          <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
+          <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
+          ${descontosPaleteHTML}
+          ${descontosMaterialHTML}
+          <div style="margin-top: 14px;">
+            <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
+          </div>
+        </div>
+      `;
+    });
 
     if (pedido.ticket_balanca) {
       const ticketId = `ticket-balanca-${pedido.id}`;
@@ -174,7 +164,7 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `<div style="margin-top: 16px;">${ticketsHTMLGeral}</div>`;
     }
 
-    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+    if (pedido.observacoes_setor?.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
       obsBloco.style.padding = '12px';
