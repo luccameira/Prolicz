@@ -71,7 +71,7 @@ async function carregarPedidosConferencia() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    const form = document.createElement('div');
+      const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
@@ -96,10 +96,10 @@ async function carregarPedidosConferencia() {
 
       if (descontosPalete.length > 0) {
         const linhas = descontosPalete.map((desc, idx) => {
-          const qtd = formatarPeso(desc.peso_calculado);
-          const sufixo = 'UNIDADES';
+          const qtdUnidades = desc.quantidade || 0;
+          const pesoTotal = formatarPeso(desc.peso_calculado);
           totalDescontos += Number(desc.peso_calculado || 0);
-          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} ${sufixo}</li>`;
+          return `<li>${desc.motivo}: ${qtdUnidades} unidades — ${pesoTotal} kg</li>`;
         }).join('');
 
         descontosHTML = `
