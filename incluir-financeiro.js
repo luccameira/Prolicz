@@ -75,7 +75,7 @@ async function carregarPedidosFinanceiro() {
     return;
   }
 
-  filtrados.forEach(pedido => {
+   filtrados.forEach(pedido => {
     const id = pedido.pedido_id || pedido.id;
     const card = document.createElement('div');
     card.className = 'card';
@@ -108,7 +108,7 @@ async function carregarPedidosFinanceiro() {
 
     let descontosPedido = [];
 
-      pedido.materiais?.forEach((item, index) => {
+    pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -163,24 +163,34 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    if (descontosPedido.length) {
+        if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
       blocoDesc.innerHTML = `
         <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Comerciais no Pedido:</strong></p>
         <ul style="margin-bottom:10px;">
-          ${descontosPedido.map((desc) => {
+          ${descontosPedido.map((desc, idx) => {
             const tipo = desc.motivo;
-            const mat = desc.material || item.nome_produto || 'Produto não informado';
+            const mat = desc.material || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
 
-            // ✅ Usa o valor correto do produto autorizado a vender
-const produtoReal = pedido.produtos_autorizados_venda.find(p => 
-  p.nome_produto?.trim().toLowerCase() === mat?.trim().toLowerCase()
-);
-const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario);
-const totalCompra = valorKg * Number(desc.peso_calculado);
+            // 🔍 Debug para investigação
+            console.log('🔎 Material do desconto:', mat);
+            console.log('📦 Produtos autorizados a vender:', pedido.produtos_autorizados_venda);
 
+            // Comparação flexível com fallback
+            let produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
+              p.nome_produto?.trim().toLowerCase() === mat.trim().toLowerCase()
+            );
+
+            if (!produtoReal) {
+              produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
+                mat.trim().toLowerCase().includes(p.nome_produto?.trim().toLowerCase())
+              );
+            }
+
+            const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario || 0);
+            const totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
             return `
               <li style="margin-bottom:8px;">
@@ -201,7 +211,6 @@ const totalCompra = valorKg * Number(desc.peso_calculado);
 
       form.appendChild(blocoDesc);
 
-        // Tickets fora do bloco
       const blocoImagens = document.createElement('div');
       blocoImagens.className = 'bloco-tickets-comerciais';
       blocoImagens.style.margin = '12px 0 20px 0';
@@ -237,7 +246,7 @@ const totalCompra = valorKg * Number(desc.peso_calculado);
       form.appendChild(blocoImagens);
     }
 
-    const separador = document.createElement('div');
+       const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
@@ -292,7 +301,7 @@ const totalCompra = valorKg * Number(desc.peso_calculado);
       }).join('');
     }
 
-      const totalVenda = totalComNota + totalSemNota;
+    const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
@@ -568,3 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
+
+
+
