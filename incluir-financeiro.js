@@ -108,7 +108,7 @@ async function carregarPedidosFinanceiro() {
 
     let descontosPedido = [];
 
-        pedido.materiais?.forEach((item, index) => {
+    pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -126,6 +126,7 @@ async function carregarPedidosFinanceiro() {
 
       descontosComerciais.forEach(desc => {
         desc.material = item.nome_produto;
+        desc.valor_unitario = item.valor_unitario;
         descontosPedido.push(desc);
       });
 
@@ -164,7 +165,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // Novo bloco vermelho com apenas os textos dos descontos
+      // Novo bloco vermelho com todos os dados detalhados de compra/devolução
     if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
@@ -175,7 +176,16 @@ async function carregarPedidosFinanceiro() {
             const tipo = desc.motivo;
             const mat = desc.material || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
-            return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+            const valorKg = formatarMoeda(Number(desc.valor_unitario));
+            const totalCompra = formatarMoeda(Number(desc.peso_calculado) * Number(desc.valor_unitario));
+            return `
+              <li style="margin-bottom:8px;">
+                <strong>${tipo} — ${mat}</strong><br>
+                Quantidade: ${qtd} Kg<br>
+                Valor por Kg: ${valorKg}<br>
+                Valor total: ${totalCompra}
+              </li>
+            `;
           }).join('')}
         </ul>
       `;
@@ -230,7 +240,7 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-      if (pedido.condicao_pagamento_avista) {
+    if (pedido.condicao_pagamento_avista) {
       const blocoCondicao = document.createElement('div');
       blocoCondicao.className = 'obs-pedido';
       blocoCondicao.innerHTML = `
@@ -278,7 +288,7 @@ async function carregarPedidosFinanceiro() {
       }).join('');
     }
 
-    const totalVenda = totalComNota + totalSemNota;
+      const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
@@ -314,7 +324,7 @@ async function carregarPedidosFinanceiro() {
       vencContainer.innerHTML = '';
       inputs.length = 0;
 
-       for (let i = 0; i < numVencimentos; i++) {
+      for (let i = 0; i < numVencimentos; i++) {
         const dt = new Date(pedido.prazos_pagamento[i]);
         const ok = !isNaN(dt.getTime());
         const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
