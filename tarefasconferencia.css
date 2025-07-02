@@ -312,3 +312,60 @@ body {
   height: 110px;
   z-index: 1;
 }
+
+.bloco-desconto-vermelho {
+  background-color: #ffeaea;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ff5c5c;
+  margin-top: 14px;
+  font-size: 15px;
+  color: #000;
+}
+
+.bloco-desconto-vermelho p {
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #d32f2f;
+}
+
+.bloco-desconto-vermelho ul {
+  padding-left: 20px;
+  margin: 0;
+  list-style-type: disc;
+}
+
+.etiqueta-peso-final {
+  display: inline-block;
+  background-color: #d9f4dc;
+  color: #2e7d32;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.material-bloco {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 18px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.material-bloco h4 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.material-bloco p {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.btn {
+  margin-top: 24px;
+}
