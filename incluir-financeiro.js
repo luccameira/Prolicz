@@ -175,9 +175,12 @@ async function carregarPedidosFinanceiro() {
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
 
             // ✅ Usa o valor correto do produto autorizado a vender
-            const produtoReal = pedido.produtos_autorizados_venda.find(p => p.nome_produto === mat);
-            const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario);
-            const totalCompra = valorKg * Number(desc.peso_calculado);
+const produtoReal = pedido.produtos_autorizados_venda.find(p => 
+  p.nome_produto?.trim().toLowerCase() === mat?.trim().toLowerCase()
+);
+const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario);
+const totalCompra = valorKg * Number(desc.peso_calculado);
+
 
             return `
               <li style="margin-bottom:8px;">
