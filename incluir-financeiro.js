@@ -106,9 +106,10 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-      let ticketsHTMLGeral = '';
-    
-    pedido.materiais?.forEach((item, index) => {
+    let ticketsHTMLGeral = '';
+    let descontosPedido = []; // Descontos fora dos materiais
+
+      pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -116,21 +117,24 @@ async function carregarPedidosFinanceiro() {
       const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
       const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
 
-      // Separar descontos por tipo
       const descontosPalete = item.descontos?.filter(d =>
         d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
       ) || [];
 
-      const descontosMaterial = item.descontos?.filter(d =>
+      const descontosComerciais = item.descontos?.filter(d =>
         d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
       ) || [];
 
-      // Peso final considera apenas desconto de palete
+      // Acumula descontos comerciais no array do pedido
+      descontosComerciais.forEach(desc => {
+        desc.material = item.nome_produto;
+        descontosPedido.push(desc);
+      });
+
       const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
       const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
 
-      // Bloco amarelo (palete)
       let blocoAmareloHTML = '';
       if (descontosPalete.length) {
         const linhas = descontosPalete.map(desc => {
@@ -140,48 +144,6 @@ async function carregarPedidosFinanceiro() {
         blocoAmareloHTML = `
           <div class="descontos-aplicados">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul>${linhas}</ul>
-          </div>
-        `;
-      }
-
-      // Bloco vermelho (material)
-      let blocoVermelhoHTML = '';
-      if (descontosMaterial.length) {
-        const linhas = descontosMaterial.map((desc, idx) => {
-          const tipo = desc.motivo;
-          const mat = desc.material || item.nome_produto;
-          const qtd = formatarPesoComMilhar(desc.peso_calculado);
-
-          // Exibição dos tickets (compra ou devolução)
-          if (desc.ticket_devolucao) {
-            const ticketIdDev = `ticket-devolucao-${id}-${index}-${idx}`;
-            ticketsHTMLGeral += `
-              <div style="display:inline-block;margin-right:12px;">
-                <label style="font-weight:bold;">Ticket Devolução:</label><br>
-                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
-          }
-
-          if (desc.ticket_compra) {
-            const ticketIdCompra = `ticket-compra-${id}-${index}-${idx}`;
-            ticketsHTMLGeral += `
-              <div style="display:inline-block;margin-right:12px;">
-                <label style="font-weight:bold;">Ticket Compra:</label><br>
-                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
-              </div>
-            `;
-            setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
-          }
-
-          return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
-        }).join('');
-
-        blocoVermelhoHTML = `
-          <div class="bloco-desconto-vermelho">
-            <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Aplicados:</strong></p>
             <ul>${linhas}</ul>
           </div>
         `;
@@ -199,27 +161,73 @@ async function carregarPedidosFinanceiro() {
           <strong>Valor Total do Item:</strong>
           <span style="color: green;">${valorTotal}</span>
         </div>
-        ${blocoVermelhoHTML}
       `;
 
       form.appendChild(bloco);
     });
 
-    if (ticketsHTMLGeral) {
+    // Novo bloco vermelho para os descontos comerciais fora dos materiais
+    if (descontosPedido.length) {
+      const blocoDesc = document.createElement('div');
+      blocoDesc.className = 'bloco-desconto-vermelho';
+      blocoDesc.innerHTML = `
+        <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Comerciais no Pedido:</strong></p>
+        <ul style="margin-bottom:10px;">
+          ${descontosPedido.map((desc, idx) => {
+            const tipo = desc.motivo;
+            const mat = desc.material || 'Produto não informado';
+            const qtd = formatarPesoComMilhar(desc.peso_calculado);
+            return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+          }).join('')}
+        </ul>
+      `;
+
+      descontosPedido.forEach((desc, idx) => {
+        if (desc.ticket_devolucao) {
+          const idImg = `ticket-dev-${id}-${idx}`;
+          blocoDesc.innerHTML += `
+            <div style="display:inline-block;margin-right:12px;">
+              <label style="font-weight:bold;">Ticket Devolução:</label><br>
+              <img id="${idImg}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
+            </div>
+          `;
+          setTimeout(() => adicionarZoomImagem(idImg), 100);
+        }
+
+        if (desc.ticket_compra) {
+          const idImg = `ticket-compra-${id}-${idx}`;
+          blocoDesc.innerHTML += `
+            <div style="display:inline-block;margin-right:12px;">
+              <label style="font-weight:bold;">Ticket Compra:</label><br>
+              <img id="${idImg}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
+            </div>
+          `;
+          setTimeout(() => adicionarZoomImagem(idImg), 100);
+        }
+      });
+
+      blocoDesc.style.marginTop = '20px';
+      blocoDesc.style.padding = '12px 16px';
+      blocoDesc.style.borderRadius = '8px';
+      blocoDesc.style.background = '#fde4e1';
+
+      form.appendChild(blocoDesc);
+    }
+
+      if (ticketsHTMLGeral) {
       const blocoTickets = document.createElement('div');
       blocoTickets.style.marginTop = '16px';
       blocoTickets.innerHTML = ticketsHTMLGeral;
       form.appendChild(blocoTickets);
     }
 
-      const separador = document.createElement('div');
+    const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // Exibir condição para pagamento à vista
     if (pedido.condicao_pagamento_avista) {
       const blocoCondicao = document.createElement('div');
       blocoCondicao.className = 'obs-pedido';
@@ -241,7 +249,6 @@ async function carregarPedidosFinanceiro() {
         if (cod === "PERSONALIZAR") cod = "Personalizado";
         const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
 
-        // Apenas os descontos de palete afetam o valor
         const descontosPalete = item.descontos?.filter(d =>
           d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
         ) || [];
@@ -297,7 +304,7 @@ async function carregarPedidosFinanceiro() {
       ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
     `;
 
-       const vencContainer = containerCinza.querySelector('.vencimentos-container');
+    const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
@@ -558,4 +565,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
- 
