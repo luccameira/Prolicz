@@ -106,10 +106,9 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    let ticketsHTMLGeral = '';
-    let descontosPedido = []; // Descontos fora dos materiais
+    let descontosPedido = [];
 
-      pedido.materiais?.forEach((item, index) => {
+        pedido.materiais?.forEach((item, index) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -125,7 +124,6 @@ async function carregarPedidosFinanceiro() {
         d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
       ) || [];
 
-      // Acumula descontos comerciais no array do pedido
       descontosComerciais.forEach(desc => {
         desc.material = item.nome_produto;
         descontosPedido.push(desc);
@@ -166,6 +164,65 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
+    // Novo bloco vermelho com apenas os textos dos descontos
+    if (descontosPedido.length) {
+      const blocoDesc = document.createElement('div');
+      blocoDesc.className = 'bloco-desconto-vermelho';
+      blocoDesc.innerHTML = `
+        <p><strong><i class="fa fa-exclamation-triangle"></i> Descontos Comerciais no Pedido:</strong></p>
+        <ul style="margin-bottom:10px;">
+          ${descontosPedido.map((desc) => {
+            const tipo = desc.motivo;
+            const mat = desc.material || 'Produto não informado';
+            const qtd = formatarPesoComMilhar(desc.peso_calculado);
+            return `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+          }).join('')}
+        </ul>
+      `;
+      blocoDesc.style.marginTop = '20px';
+      blocoDesc.style.padding = '12px 16px';
+      blocoDesc.style.borderRadius = '8px';
+      blocoDesc.style.background = '#fde4e1';
+      blocoDesc.style.border = '1px solid #e66';
+
+      form.appendChild(blocoDesc);
+
+      // Tickets fora do bloco
+      const blocoImagens = document.createElement('div');
+      blocoImagens.className = 'bloco-tickets-comerciais';
+      blocoImagens.style.margin = '12px 0 20px 0';
+
+      descontosPedido.forEach((desc, idx) => {
+        if (desc.ticket_devolucao) {
+          const idImg = `ticket-dev-${id}-${idx}`;
+          const imgDiv = document.createElement('div');
+          imgDiv.style.display = 'inline-block';
+          imgDiv.style.marginRight = '12px';
+          imgDiv.innerHTML = `
+            <label style="font-weight:bold;">Ticket Devolução:</label><br>
+            <img id="${idImg}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
+          `;
+          blocoImagens.appendChild(imgDiv);
+          setTimeout(() => adicionarZoomImagem(idImg), 100);
+        }
+
+        if (desc.ticket_compra) {
+          const idImg = `ticket-compra-${id}-${idx}`;
+          const imgDiv = document.createElement('div');
+          imgDiv.style.display = 'inline-block';
+          imgDiv.style.marginRight = '12px';
+          imgDiv.innerHTML = `
+            <label style="font-weight:bold;">Ticket Compra:</label><br>
+            <img id="${idImg}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
+          `;
+          blocoImagens.appendChild(imgDiv);
+          setTimeout(() => adicionarZoomImagem(idImg), 100);
+        }
+      });
+
+      form.appendChild(blocoImagens);
+    }
+
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
@@ -173,7 +230,7 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    if (pedido.condicao_pagamento_avista) {
+      if (pedido.condicao_pagamento_avista) {
       const blocoCondicao = document.createElement('div');
       blocoCondicao.className = 'obs-pedido';
       blocoCondicao.innerHTML = `
@@ -257,7 +314,7 @@ async function carregarPedidosFinanceiro() {
       vencContainer.innerHTML = '';
       inputs.length = 0;
 
-      for (let i = 0; i < numVencimentos; i++) {
+       for (let i = 0; i < numVencimentos; i++) {
         const dt = new Date(pedido.prazos_pagamento[i]);
         const ok = !isNaN(dt.getTime());
         const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
