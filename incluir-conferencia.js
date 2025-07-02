@@ -35,8 +35,24 @@ async function carregarPedidosConferencia() {
 
   pedidos.forEach(pedido => {
     const idPedido = pedido.pedido_id || pedido.id;
+
     const card = document.createElement('div');
     card.className = 'card';
+
+    let statusHtml = '';
+    if (pedido.status === 'Em Análise pelo Financeiro') {
+      statusHtml = `
+        <div class="status-badge status-verde">
+          <i class="fa fa-check-circle"></i> Peso Conferido
+        </div>
+      `;
+    } else {
+      statusHtml = `
+        <div class="status-badge status-amarelo">
+          <i class="fa fa-balance-scale"></i> ${pedido.status}
+        </div>
+      `;
+    }
 
     const header = document.createElement('div');
     header.className = 'card-header';
@@ -45,10 +61,7 @@ async function carregarPedidosConferencia() {
         <h3>${pedido.cliente}</h3>
         <p>Data Prevista: ${formatarData(pedido.data_coleta || new Date())}</p>
       </div>
-      <div class="status-badge status-${pedido.status === 'Em Análise pelo Financeiro' ? 'verde' : 'amarelo'}">
-        <i class="fa ${pedido.status === 'Em Análise pelo Financeiro' ? 'fa-check-circle' : 'fa-balance-scale'}"></i>
-        ${pedido.status === 'Em Análise pelo Financeiro' ? 'Peso Conferido' : pedido.status}
-      </div>
+      ${statusHtml}
     `;
     card.appendChild(header);
 
@@ -63,25 +76,33 @@ async function carregarPedidosConferencia() {
     form.style.display = 'none';
 
     let ticketsHTMLGeral = '';
+    let blocoDescontosExtra = '';
 
     pedido.materiais.forEach((item, index) => {
       const pesoPrevisto = formatarPeso(item.quantidade);
       const pesoCarregado = formatarPeso(item.peso_carregado);
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
 
-      const descontosPalete = item.descontos.filter(d => d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande');
-      const descontosMaterial = item.descontos.filter(d => d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material');
+      let descontosHTML = '';
+      let totalDescontos = 0;
+      let descontosExtraHTML = '';
 
-      let totalDescontos = item.descontos.reduce((soma, desc) => soma + Number(desc.peso_calculado || 0), 0);
+      const descontosPalete = item.descontos.filter(d =>
+        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+      );
+      const descontosMaterial = item.descontos.filter(d =>
+        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+      );
 
-      let descontosPaleteHTML = '';
       if (descontosPalete.length > 0) {
-        const linhas = descontosPalete.map(desc => {
+        const linhas = descontosPalete.map((desc, idx) => {
           const qtd = formatarPeso(desc.peso_calculado);
-          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} UNIDADES</li>`;
+          const sufixo = 'UNIDADES';
+          totalDescontos += Number(desc.peso_calculado || 0);
+          return `<li>${desc.motivo} — ${item.nome_produto}: ${qtd} ${sufixo}</li>`;
         }).join('');
 
-        descontosPaleteHTML = `
+        descontosHTML = `
           <div style="background-color: #fff9e6; padding: 12px; border-radius: 6px; border: 1px solid #ffe08a; margin-top: 14px;">
             <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
@@ -89,42 +110,31 @@ async function carregarPedidosConferencia() {
         `;
       }
 
-      let descontosMaterialHTML = '';
       if (descontosMaterial.length > 0) {
-        const linhas = descontosMaterial.map(desc => {
-          const qtd = formatarPeso(desc.peso_calculado);
-          const nomeMat = desc.material || item.nome_produto;
-          return `<li><strong>${desc.motivo}</strong><br>${nomeMat} — ${qtd} Kg</li>`;
-        }).join('');
-
-        descontosMaterialHTML = `
-          <div style="background-color: #ffeaea; padding: 12px; border-radius: 6px; border: 1px solid #ff9999; margin-top: 14px;">
-            <p style="font-weight: 600; margin: 0 0 6px; color: #cc0000;"><i class="fa fa-circle-exclamation"></i> Descontos Aplicados:</p>
-            <ul style="padding-left: 20px; margin: 0;">${linhas}</ul>
-          </div>
-        `;
-
         descontosMaterial.forEach((desc, idx) => {
-          const ticketDev = desc.ticket_devolucao;
-          const ticketCompra = desc.ticket_compra;
-          const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
-          const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
+          const qtd = formatarPeso(desc.peso_calculado);
+          const tipo = desc.motivo;
+          const mat = desc.material || item.nome_produto;
 
-          if (ticketDev) {
+          descontosExtraHTML += `<li>${tipo} — ${mat}: ${qtd} Kg</li>`;
+
+          if (desc.ticket_devolucao) {
+            const ticketIdDev = `ticket-devolucao-${idPedido}-${index}-${idx}`;
             ticketsHTMLGeral += `
               <div style="display:inline-block;margin-right:12px;">
                 <label style="font-weight:bold;">Ticket Devolução:</label><br>
-                <img id="${ticketIdDev}" src="/uploads/tickets/${ticketDev}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+                <img id="${ticketIdDev}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
               </div>
             `;
             setTimeout(() => adicionarZoomImagem(ticketIdDev), 100);
           }
 
-          if (ticketCompra) {
+          if (desc.ticket_compra) {
+            const ticketIdCompra = `ticket-compra-${idPedido}-${index}-${idx}`;
             ticketsHTMLGeral += `
               <div style="display:inline-block;margin-right:12px;">
                 <label style="font-weight:bold;">Ticket Compra:</label><br>
-                <img id="${ticketIdCompra}" src="/uploads/tickets/${ticketCompra}" alt="Ticket Compra" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
+                <img id="${ticketIdCompra}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" style="width: 120px; border-radius: 6px; margin-top: 8px; cursor: pointer; object-fit: cover;">
               </div>
             `;
             setTimeout(() => adicionarZoomImagem(ticketIdCompra), 100);
@@ -140,17 +150,29 @@ async function carregarPedidosConferencia() {
           <h4>${item.nome_produto}</h4>
           <p><strong>Peso Previsto para Carregamento (${tipoPeso}):</strong> ${pesoPrevisto} ${item.unidade || 'Kg'}</p>
           <p><strong>Peso Registrado na Carga:</strong> ${pesoCarregado} ${item.unidade || 'Kg'}</p>
-          ${descontosPaleteHTML}
-          ${descontosMaterialHTML}
+          ${descontosHTML}
           <div style="margin-top: 14px;">
             <span class="etiqueta-peso-final">${textoFinal}: ${pesoFinal} ${item.unidade || 'Kg'}</span>
           </div>
         </div>
       `;
+
+      if (descontosExtraHTML) {
+        blocoDescontosExtra += `
+          <div style="background-color: #eef2f3; padding: 12px; border-radius: 6px; border: 1px solid #ccc; margin-top: 14px;">
+            <p style="font-weight: 600; margin: 0 0 6px;"><i class="fa fa-box"></i> Materiais Comprados ou Devolvidos:</p>
+            <ul style="padding-left: 20px; margin: 0;">${descontosExtraHTML}</ul>
+          </div>
+        `;
+      }
     });
 
+    if (blocoDescontosExtra) {
+      form.innerHTML += blocoDescontosExtra;
+    }
+
     if (pedido.ticket_balanca) {
-      const ticketId = `ticket-balanca-${pedido.id}`;
+      const ticketId = `ticket-balanca-${idPedido}`;
       ticketsHTMLGeral += `
         <div style="display:inline-block;margin-right:12px;">
           <label style="font-weight:bold;">Ticket Balança:</label><br>
@@ -164,7 +186,7 @@ async function carregarPedidosConferencia() {
       form.innerHTML += `<div style="margin-top: 16px;">${ticketsHTMLGeral}</div>`;
     }
 
-    if (pedido.observacoes_setor?.length > 0) {
+    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
       const obsBloco = document.createElement('div');
       obsBloco.style.background = '#fff3cd';
       obsBloco.style.padding = '12px';
