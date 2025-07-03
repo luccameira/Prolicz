@@ -126,10 +126,10 @@ async function carregarPedidosFinanceiro() {
         let listaProdutos;
 
         if (desc.motivo === 'Compra de Material') {
-          listaProdutos = pedido.produtos_autorizados_venda || [];
-        } else if (desc.motivo === 'Devolução de Material') {
-          listaProdutos = pedido.produtos_autorizados || [];
-        }
+  listaProdutos = pedido.produtos_autorizados_venda || [];
+} else if (desc.motivo === 'Devolução de Material') {
+  listaProdutos = pedido.produtos_autorizados_devolucao || [];
+}
 
         const produtoReal = listaProdutos.find(p => {
           const nomeProd = normalizarTexto(p.nome_produto);
