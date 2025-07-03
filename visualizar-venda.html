@@ -99,6 +99,24 @@
   </td>
 </tr>
   </table>
+<!-- Tabela de Produtos do Pedido -->
+<div id="tabela-produtos-historico" style="margin-top: 20px;">
+  <table class="grade-tabela-info" style="width: 100%; margin-top: 10px;">
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Peso (kg)</th>
+        <th>Tipo</th>
+        <th>Valor Unitário</th>
+        <th>Subtotal</th>
+        <th>Código Fiscal</th>
+      </tr>
+    </thead>
+    <tbody id="corpo-tabela-produtos-historico">
+      <!-- linhas serão inseridas via JS -->
+    </tbody>
+  </table>
+</div>
 </div>
       </div>
 
@@ -581,17 +599,25 @@
         ? pedido.prazos_pagamento.map(p => p.descricao).join(', ')
         : '—';
 
-      if (pedido.materiais?.length) {
-        const p = pedido.materiais[0];
-        document.getElementById('historico-produto').textContent = p.nome_produto || '—';
-        document.getElementById('historico-peso').textContent = p.tipo_peso || '—';
-        document.getElementById('historico-codigo').textContent = p.codigo_fiscal || '—';
-document.getElementById('historico-peso-previsto').textContent = p.peso ? Number(p.peso).toLocaleString('pt-BR') : '—';
-      } else {
-        document.getElementById('historico-produto').textContent = '—';
-        document.getElementById('historico-peso').textContent = '—';
-        document.getElementById('historico-codigo').textContent = '—';
-      }
+      // Preencher a tabela de produtos na seção 'Pedido Criado'
+const corpoTabela = document.getElementById('corpo-tabela-produtos-historico');
+if (corpoTabela && Array.isArray(pedido.materiais)) {
+  corpoTabela.innerHTML = ''; // limpa
+  pedido.materiais.forEach(mat => {
+    const linha = document.createElement('tr');
+
+    linha.innerHTML = `
+      <td>${mat.nome_produto || '—'}</td>
+      <td>${mat.peso ? Number(mat.peso).toLocaleString('pt-BR') : '—'}</td>
+      <td>${mat.tipo_peso || '—'}</td>
+      <td>${mat.valor_unitario != null ? 'R$ ' + Number(mat.valor_unitario).toFixed(2).replace('.', ',') : '—'}</td>
+      <td>${mat.valor_total != null ? 'R$ ' + Number(mat.valor_total).toFixed(2).replace('.', ',') : '—'}</td>
+      <td>${mat.codigo_fiscal || '—'}</td>
+    `;
+
+    corpoTabela.appendChild(linha);
+  });
+}
       // Observações formatadas por setor (agrupando observações iguais)
 if (Array.isArray(pedido.observacoes) && pedido.observacoes.length > 0) {
   // Agrupar observações por texto
