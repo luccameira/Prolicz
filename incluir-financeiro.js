@@ -125,11 +125,19 @@ async function carregarPedidosFinanceiro() {
       ) || [];
 
       descontosComerciais.forEach(desc => {
-  const produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
-    p.nome_produto?.trim().toLowerCase() === (desc.material || '').trim().toLowerCase()
-  ) || (pedido.produtos_autorizados_venda || []).find(p =>
-    (desc.material || '').trim().toLowerCase().includes(p.nome_produto?.trim().toLowerCase())
-  );
+  function normalizarTexto(texto) {
+  return (texto || '')
+    .normalize('NFD') // remove acentos
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
+  const nomeProd = normalizarTexto(p.nome_produto);
+  const nomeMat = normalizarTexto(desc.material);
+  return nomeMat.includes(nomeProd) || nomeProd.includes(nomeMat);
+});
 
   descontosPedido.push({
     ...desc,
