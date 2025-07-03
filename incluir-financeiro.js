@@ -125,11 +125,18 @@ async function carregarPedidosFinanceiro() {
       ) || [];
 
       descontosComerciais.forEach(desc => {
-        descontosPedido.push({
-          ...desc,
-          material: item.nome_produto // ✅ Correção aplicada aqui
-        });
-      });
+  const produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
+    p.nome_produto?.trim().toLowerCase() === (desc.material || '').trim().toLowerCase()
+  ) || (pedido.produtos_autorizados_venda || []).find(p =>
+    (desc.material || '').trim().toLowerCase().includes(p.nome_produto?.trim().toLowerCase())
+  );
+
+  descontosPedido.push({
+    ...desc,
+    nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+    valor_unitario: produtoReal?.valor_unitario || 0
+  });
+});
 
         const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
