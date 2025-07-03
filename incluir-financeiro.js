@@ -140,10 +140,10 @@ const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
 });
 
   descontosPedido.push({
-  ...desc,
-  material: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-  nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-  valor_unitario: produtoReal?.valor_unitario || 0
+    ...desc,
+    nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+    valor_unitario: produtoReal?.valor_unitario || 0
+  });
 });
 
         const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
@@ -590,4 +590,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
