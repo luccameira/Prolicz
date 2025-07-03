@@ -123,7 +123,15 @@ async function carregarPedidosFinanceiro() {
 
       descontosComerciais.forEach(desc => {
         const nomeMat = normalizarTexto(desc.material);
-        const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
+        let listaProdutos;
+
+        if (desc.motivo === 'Compra de Material') {
+          listaProdutos = pedido.produtos_autorizados_venda || [];
+        } else if (desc.motivo === 'Devolução de Material') {
+          listaProdutos = pedido.produtos_autorizados || [];
+        }
+
+        const produtoReal = listaProdutos.find(p => {
           const nomeProd = normalizarTexto(p.nome_produto);
           return nomeMat.includes(nomeProd) || nomeProd.includes(nomeMat);
         });
@@ -184,7 +192,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    if (descontosPedido.length) {
+      if (descontosPedido.length) {
       const blocoDesc = document.createElement('div');
       blocoDesc.className = 'bloco-desconto-vermelho';
       blocoDesc.innerHTML = `
@@ -250,11 +258,11 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(blocoImagens);
     }
 
-        const separador = document.createElement('div');
+    const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    const containerCinza = document.createElement('div');
+       const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
     if (pedido.condicao_pagamento_avista) {
@@ -579,5 +587,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
-  
