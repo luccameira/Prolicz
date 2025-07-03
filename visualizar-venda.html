@@ -584,18 +584,28 @@
       if (pedido.materiais?.length) {
         const p = pedido.materiais[0];
         document.getElementById('historico-produto').textContent = p.nome_produto || '—';
-        document.getElementById('historico-peso').textContent = p.peso ? Number(p.peso).toLocaleString('pt-BR') : '—';
+        document.getElementById('historico-peso').textContent = p.tipo_peso || '—';
         document.getElementById('historico-codigo').textContent = p.codigo_fiscal || '—';
+document.getElementById('historico-peso-previsto').textContent = p.peso ? Number(p.peso).toLocaleString('pt-BR') : '—';
       } else {
         document.getElementById('historico-produto').textContent = '—';
         document.getElementById('historico-peso').textContent = '—';
         document.getElementById('historico-codigo').textContent = '—';
       }
-      // Observações formatadas por setor
+      // Observações formatadas por setor (agrupando observações iguais)
 if (Array.isArray(pedido.observacoes) && pedido.observacoes.length > 0) {
-  const linhas = pedido.observacoes.map(obs => {
-    const setores = obs.setores?.join(', ') || '—';
-    return `Observação (${setores}): ${obs.texto_observacao}`;
+  // Agrupar observações por texto
+  const mapaObs = {};
+
+  for (const obs of pedido.observacoes) {
+    const texto = obs.texto_observacao.trim();
+    if (!mapaObs[texto]) mapaObs[texto] = [];
+    if (obs.setor) mapaObs[texto].push(obs.setor);
+  }
+
+  const linhas = Object.entries(mapaObs).map(([texto, setores]) => {
+    const setoresFormatados = setores.join(', ');
+    return `<strong>Observação (${setoresFormatados}):</strong> ${texto}`;
   });
 
   document.getElementById('historico-observacao').innerHTML = `<br>` + linhas.join('<br>');
