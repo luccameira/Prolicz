@@ -45,6 +45,14 @@ function calcularValoresFiscais(item) {
   return { valorComNota, valorSemNota };
 }
 
+function normalizarTexto(texto) {
+  return (texto || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 async function carregarPedidosFinanceiro() {
   const res = await fetch('/api/pedidos/financeiro');
   let pedidos = [];
@@ -93,7 +101,7 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    const timelineHTML = gerarLinhaTempoCompleta(pedido);
+      const timelineHTML = gerarLinhaTempoCompleta(pedido);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = timelineHTML;
     const timelineElement = tempDiv.querySelector('.timeline-simples');
@@ -108,7 +116,28 @@ async function carregarPedidosFinanceiro() {
 
     let descontosPedido = [];
 
-    pedido.materiais?.forEach((item, index) => {
+    pedido.materiais?.forEach((item) => {
+      const descontosComerciais = item.descontos?.filter(d =>
+        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+      ) || [];
+
+      descontosComerciais.forEach(desc => {
+        const nomeMat = normalizarTexto(desc.material);
+        const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
+          const nomeProd = normalizarTexto(p.nome_produto);
+          return nomeMat.includes(nomeProd) || nomeProd.includes(nomeMat);
+        });
+
+        descontosPedido.push({
+          ...desc,
+          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+          valor_unitario: produtoReal?.valor_unitario || 0
+        });
+      });
+    });
+
+    // Exibe materiais
+    pedido.materiais?.forEach((item) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
@@ -120,40 +149,14 @@ async function carregarPedidosFinanceiro() {
         d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
       ) || [];
 
-      const descontosComerciais = item.descontos?.filter(d =>
-        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
-      ) || [];
-
-      descontosComerciais.forEach(desc => {
-  function normalizarTexto(texto) {
-  return (texto || '')
-    .normalize('NFD') // remove acentos
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
-  const nomeProd = normalizarTexto(p.nome_produto);
-  const nomeMat = normalizarTexto(desc.material);
-  return nomeMat.includes(nomeProd) || nomeProd.includes(nomeMat);
-});
-
-  descontosPedido.push({
-    ...desc,
-    nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-    valor_unitario: produtoReal?.valor_unitario || 0
-  });
-});
-
-        const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+      const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
       const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
 
       let blocoAmareloHTML = '';
       if (descontosPalete.length) {
         const linhas = descontosPalete.map(desc => {
-          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UNIDADES (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
+          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UN (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
         }).join('');
 
         blocoAmareloHTML = `
@@ -189,25 +192,14 @@ const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
         <ul style="margin-bottom:10px;">
           ${descontosPedido.map((desc, idx) => {
             const tipo = desc.motivo;
-            const mat = desc.material || 'Produto não informado';
+            const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
             const qtd = formatarPesoComMilhar(desc.peso_calculado);
-
-            let produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
-              p.nome_produto?.trim().toLowerCase() === mat.trim().toLowerCase()
-            );
-
-            if (!produtoReal) {
-              produtoReal = (pedido.produtos_autorizados_venda || []).find(p =>
-                mat.trim().toLowerCase().includes(p.nome_produto?.trim().toLowerCase())
-              );
-            }
-
-            const valorKg = produtoReal ? Number(produtoReal.valor_unitario) : Number(desc.valor_unitario || 0);
+            const valorKg = Number(desc.valor_unitario || 0);
             const totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
             return `
               <li style="margin-bottom:8px;">
-                <strong>${tipo} — ${mat}</strong><br>
+                <strong>${tipo} — ${nomeProduto}</strong><br>
                 Quantidade: ${qtd} Kg<br>
                 Valor por Kg: ${formatarMoeda(valorKg)}<br>
                 Valor total: ${formatarMoeda(totalCompra)}
@@ -221,7 +213,6 @@ const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
       blocoDesc.style.borderRadius = '8px';
       blocoDesc.style.background = '#fde4e1';
       blocoDesc.style.border = '1px solid #e66';
-
       form.appendChild(blocoDesc);
 
       const blocoImagens = document.createElement('div');
@@ -378,9 +369,7 @@ const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
           });
         });
 
-        inp.addEventListener('blur', () => {
-          atualizarBotaoLiberar();
-        });
+        inp.addEventListener('blur', atualizarBotaoLiberar);
 
         const etiquetaConfirmado = document.createElement('span');
         etiquetaConfirmado.className = 'etiqueta-valor-item';
@@ -434,7 +423,7 @@ const produtoReal = (pedido.produtos_autorizados_venda || []).find(p => {
       }
     }
 
-      function resetarVencimentosPadrao() {
+    function resetarVencimentosPadrao() {
       valoresPadrao = calcularValoresVencimentos();
       renderizarVencimentos(valoresPadrao);
       atualizarBotaoLiberar();
@@ -590,3 +579,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
+
+  
