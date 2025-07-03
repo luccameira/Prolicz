@@ -596,8 +596,21 @@
           <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> Nome do usuário aqui</td>
-              <td><strong>Vencimentos:</strong> Informações dos vencimentos aqui</td>
-              <td><strong>Peso (Desconto - caso tenha):</strong> Valor do peso com desconto aqui</td>
+            </tr>
+            <tr>
+              <td style="padding-left: 0; padding-right: 10px;"><strong>Valor Total da Venda:</strong> R$ 5.830,00</td>
+            </tr>
+            <tr>
+              <td style="padding-left: 0; padding-right: 10px;">
+                <strong>Vencimento 1:</strong> 06/07/2025
+                <input type="text" value="5.830,00" readonly style="width: 90px; text-align: right; margin-left: 10px; border: none; background: transparent;" />
+                <input type="checkbox" checked disabled style="margin-left: 10px;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-left: 0; padding-right: 10px;">
+                <strong>Código Fiscal:</strong> Personalizado | Com nota: R$ 5,00/kg | Sem nota: R$ 0,00/kg | Total com nota: R$ 5.830,00 | Total sem nota: R$ 0,00 (Produto teste)
+              </td>
             </tr>
           </table>
         </div>
@@ -617,10 +630,11 @@
             <tr>
               <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> Nome do usuário aqui</td>
               <td><strong>Número da Nota Fiscal:</strong> 123456</td>
-              <td><strong>Nota Fiscal:</strong> 
-                <a href="#" id="nota-link" target="_blank" style="display:none;">
-                  <img id="nota-thumbnail" src="" alt="Nota Fiscal" class="ticket-thumbnail" />
-                </a>
+            </tr>
+            <tr>
+              <td colspan="3" style="padding-bottom: 10px;">
+                <strong>Arquivo da NF:</strong><br/>
+                <img src="URL_DA_IMAGEM_DA_NF" alt="Arquivo da NF" class="ticket-thumbnail" />
               </td>
             </tr>
           </table>
