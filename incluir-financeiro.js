@@ -133,7 +133,7 @@ async function carregarPedidosFinanceiro() {
 
         const produtoReal = listaProdutos.find(p => {
           const nomeProd = normalizarTexto(p.nome_produto);
-          return nomeMat.includes(nomeProd) || nomeProd.includes(nomeMat);
+          return nomeProd === nomeMat;
         });
 
         descontosPedido.push({
