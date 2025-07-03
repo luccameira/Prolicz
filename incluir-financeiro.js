@@ -262,7 +262,7 @@ async function carregarPedidosFinanceiro() {
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-       const containerCinza = document.createElement('div');
+    const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
     if (pedido.condicao_pagamento_avista) {
@@ -278,7 +278,7 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-    if (pedido.materiais && pedido.materiais.length) {
+      if (pedido.materiais && pedido.materiais.length) {
       codigosFiscaisBarraAzul = pedido.materiais.map(item => {
         const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
         let cod = (item.codigo_fiscal || '').toUpperCase();
