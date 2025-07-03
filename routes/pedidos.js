@@ -689,7 +689,7 @@ router.get('/financeiro', async (req, res) => {
       // Descontos por item
       for (const item of materiais) {
         const [descontos] = await db.query(
-          `SELECT motivo, quantidade, peso_calculado, ticket_compra, ticket_devolucao
+          `SELECT motivo, quantidade, peso_calculado, material, ticket_compra, ticket_devolucao
            FROM descontos_item_pedido
            WHERE item_id = ?`,
           [item.id]
@@ -716,7 +716,7 @@ router.get('/financeiro', async (req, res) => {
         return dataVencimento;
       });
 
-      // ✅ Produtos autorizados a vender com id, nome e valor
+      // Produtos autorizados a vender
       const [autorizadosVenda] = await db.query(
         `SELECT 
           pav.produto_id AS id,
@@ -727,8 +727,20 @@ router.get('/financeiro', async (req, res) => {
          WHERE pav.cliente_id = ?`,
         [pedido.cliente_id]
       );
-
       pedido.produtos_autorizados_venda = autorizadosVenda || [];
+
+      // ✅ Produtos autorizados a devolver
+      const [autorizadosDevolucao] = await db.query(
+        `SELECT 
+          pa.produto_id AS id,
+          p.nome AS nome_produto,
+          pa.valor_unitario
+         FROM produtos_autorizados pa
+         INNER JOIN produtos p ON pa.produto_id = p.id
+         WHERE pa.cliente_id = ?`,
+        [pedido.cliente_id]
+      );
+      pedido.produtos_autorizados_devolucao = autorizadosDevolucao || [];
     }
 
     res.json(pedidos);
