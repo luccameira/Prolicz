@@ -475,22 +475,31 @@
       <div class="timeline-date">26/06/2023 15:20</div>
     </div>
     <div class="timeline-content" id="info3" role="region" aria-labelledby="toggle3" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> Nome do usuário aqui</td>
-          <td><strong>Coleta Finalizada:</strong> Data e hora da coleta finalizada aqui</td>
-          <td><strong>Ticket da Balança (Pedido):</strong> 
-            <a href="#" id="ticket-link" target="_blank" style="display:none;">
-              <img id="ticket-thumbnail" src="" alt="Ticket da Balança" class="ticket-thumbnail" />
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td><strong>Desconto (caso tenha):</strong> Valor do desconto aqui</td>
-          <td colspan="2"><strong>Ticket da Balança (Desconto - caso tenha):</strong> Link ou nome do ticket de desconto aqui</td>
-        </tr>
-      </table>
+  <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> Nome do usuário aqui</td>
+      <td><strong>Coleta Finalizada:</strong> Data e hora da coleta finalizada aqui</td>
+      <td><strong>Desconto (caso tenha):</strong> Valor do desconto aqui</td>
+    </tr>
+  </table>
+
+  <!-- Novo bloco para os tickets, separado da tabela -->
+  <div style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div style="margin-bottom: 12px;">
+      <strong>Ticket da Balança (Pedido):</strong>
+      <a href="#" id="ticket-link" target="_blank" style="display: inline-block; margin-left: 10px;">
+        <img id="ticket-thumbnail" src="" alt="Ticket da Balança" class="ticket-thumbnail" />
+      </a>
     </div>
+    <!-- Bloco separado para Desconto -->
+    <div style="margin-top: 15px;">
+      <strong>Ticket da Balança (Desconto - caso tenha):</strong>
+      <a href="#" id="ticket-link-desconto" target="_blank" style="display: inline-block; margin-left: 10px;">
+        <img id="ticket-thumbnail-desconto" src="" alt="Ticket da Balança Desconto" class="ticket-thumbnail" />
+      </a>
+    </div>
+  </div>
+</div>
   </div>
 
   <div class="timeline-item">
