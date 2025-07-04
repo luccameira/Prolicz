@@ -79,24 +79,16 @@
   <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
     <tr>
   <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario">—</span></td>
-  <td><strong>Data Prevista da Coleta:</strong> <span id="historico-data-coleta">—</span></td>
-  <td><strong>O Peso é:</strong> <span id="historico-peso">—</span></td> <!-- movido pra cima -->
-</tr>
+  <td colspan="3"><strong>Data Prevista da Coleta:</strong> <span id="historico-data-coleta">—</span></td>
+ </tr>
 <tr>
   <td style="padding-left: 0; padding-right: 10px;"><strong>Empresa Fornecedora:</strong> <span id="historico-empresa">—</span></td>
   <td><strong>Pedido Para:</strong> <span id="historico-pedido-para">—</span></td>
   <td><strong>Prazo de Pagamento:</strong> <span id="historico-prazo-pagamento">—</span></td>
 </tr>
 <tr>
-  <td style="padding-left: 0; padding-right: 10px;"><strong>Produto:</strong> <span id="historico-produto">—</span></td>
-  <td><strong>Peso Previsto:</strong> <span id="historico-peso-previsto">—</span></td> <!-- movido pra baixo -->
-  <td><strong>Código:</strong> <span id="historico-codigo">—</span></td>
-</tr>
-    <tr>
-  <td colspan="3" style="vertical-align: top; padding: 10px 0; background: #fff;">
-    <strong style="font-weight:700; display: inline;">OBSERVAÇÕES:</strong>
-    <span id="historico-observacao" style="white-space: pre-wrap; display: inline;">—</span>
-  </td>
+  <td style="display: none;"><strong>Peso Previsto:</strong> <span id="historico-peso-previsto">—</span></td>
+  <td style="display: none;" colspan="3"><strong>Código:</strong> <span id="historico-codigo">—</span></td>
 </tr>
   </table>
 <!-- Tabela de Produtos do Pedido -->
@@ -105,19 +97,24 @@
     <thead>
       <tr>
         <th>Produto</th>
-        <th>Peso (kg)</th>
-        <th>Tipo</th>
+        <th>Peso Previsto</th>
+        <th>O Peso é</th>
         <th>Valor Unitário</th>
         <th>Subtotal</th>
-        <th>Código Fiscal</th>
+        <th>Código</th>
       </tr>
     </thead>
     <tbody id="corpo-tabela-produtos-historico">
-      <!-- linhas serão inseridas via JS -->
+</tr>
     </tbody>
   </table>
+<td colspan="3" style="vertical-align: top; padding: 10px 0; background: #fff;">
+    <strong style="font-weight:700; display: inline;">OBSERVAÇÕES:</strong>
+    <span id="historico-observacao" style="white-space: pre-wrap; display: inline;">—</span>
+  </td>
 </div>
 </div>
+<tr>
       </div>
 
       <div class="timeline-item">
@@ -366,36 +363,38 @@
     }
 
     async function carregarObservacoes(pedido) {
-      const container = document.getElementById('lista-observacoes');
-      container.innerHTML = '';
+  const container = document.getElementById('lista-observacoes');
+  if (!container) return; // ← impede erro se o elemento não existir
 
-      if (!pedido.observacoes || pedido.observacoes.length === 0) {
-        container.innerHTML = '<p style="color:#666;">Nenhuma observação registrada.</p>';
-        return;
-      }
+  container.innerHTML = '';
 
-      pedido.observacoes
-        .sort((a,b) => new Date(a.data_criacao) - new Date(b.data_criacao))
-        .forEach(obs => container.appendChild(criarElementoObservacao(obs)));
-    }
+  if (!pedido.observacoes || pedido.observacoes.length === 0) {
+    container.innerHTML = '<p style="color:#666;">Nenhuma observação registrada.</p>';
+    return;
+  }
 
-    // Novo: criar elemento para registro (separado da observação)
-    function criarElementoRegistro(registro) {
-      const div = document.createElement('div');
-      div.className = 'observacao-item';
+  pedido.observacoes
+    .sort((a,b) => new Date(a.data_criacao) - new Date(b.data_criacao))
+    .forEach(obs => container.appendChild(criarElementoObservacao(obs)));
+}
 
-      const data = new Date(registro.data_criacao);
-      const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+// Novo: criar elemento para registro (separado da observação)
+function criarElementoRegistro(registro) {
+  const div = document.createElement('div');
+  div.className = 'observacao-item';
 
-      div.innerHTML = `
-        <div class="observacao-cabecalho">
-          <span class="observacao-data">${dataFormatada}</span>
-          <strong class="observacao-usuario">${registro.usuario_nome || 'Usuário'}</strong>
-        </div>
-        <div class="observacao-texto">${registro.texto_registro || registro.texto || '---'}</div>
-      `;
-      return div;
-    }
+  const data = new Date(registro.data_criacao);
+  const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+  div.innerHTML = `
+    <div class="observacao-cabecalho">
+      <span class="observacao-data">${dataFormatada}</span>
+      <strong class="observacao-usuario">${registro.usuario_nome || 'Usuário'}</strong>
+    </div>
+    <div class="observacao-texto">${registro.texto_registro || registro.texto || '---'}</div>
+  `;
+  return div;
+}
 
     // Novo: carregar registros da rota separada
     async function carregarRegistros() {
@@ -634,7 +633,11 @@ if (Array.isArray(pedido.observacoes) && pedido.observacoes.length > 0) {
     return `<strong>Observação (${setoresFormatados}):</strong> ${texto}`;
   });
 
-  document.getElementById('historico-observacao').innerHTML = `<br>` + linhas.join('<br>');
+  const elObs = document.getElementById('historico-observacao');
+if (elObs) {
+  elObs.innerHTML = `<br>` + linhas.join('<br>');
+}
+
 } else {
   document.getElementById('historico-observacao').textContent = '—';
 }
