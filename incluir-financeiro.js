@@ -246,51 +246,63 @@ if (descontosPedido.length) {
       }
 
       function toggleConfirmacao(forcarDesmarcar = false) {
-        const raw = input.value.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(raw);
-        let rowErr = row.querySelector('.row-error');
-        if (!rowErr) {
-          rowErr = document.createElement('div');
-          rowErr.className = 'row-error';
-          rowErr.style.color = 'red';
-          rowErr.style.fontSize = '13px';
-        }
+  console.log('→ [DEVOLUÇÃO] Clique detectado no botão de confirmação');
 
-        if (isNaN(num) || num <= 0) {
-          rowErr.textContent = 'Valor inválido.';
-          if (!row.contains(rowErr)) row.appendChild(rowErr);
-          input.focus();
-          return;
-        }
+  const raw = input.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  console.log('→ [DEVOLUÇÃO] Valor lido do input:', num);
 
-        if (row.contains(rowErr)) row.removeChild(rowErr);
-
-        const isConf = row.dataset.confirmado === 'true';
-if (!isConf && !forcarDesmarcar) {
-  row.dataset.confirmado = 'true';
-  input.disabled = true;
-  const etiqueta = criarEtiquetaConfirmado();
-  if (btn && btn.parentNode === row) {
-    row.replaceChild(etiqueta, btn);
+  let rowErr = row.querySelector('.row-error');
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
   }
-  desc.valor_unitario = num;
-  desc.confirmado_valor_kg = true;
-} else {
-  row.dataset.confirmado = 'false';
-  input.disabled = false;
-  const newBtn = document.createElement('button');
-  newBtn.id = confirmarBtnId;
-  newBtn.textContent = '✓';
-  newBtn.addEventListener('click', () => toggleConfirmacao());
-  const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
-  if (etiquetaExistente) {
-    row.replaceChild(newBtn, etiquetaExistente);
+
+  if (isNaN(num) || num <= 0) {
+    console.log('→ [DEVOLUÇÃO] Valor inválido detectado');
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    input.focus();
+    return;
   }
-  desc.confirmado_valor_kg = false;
+
+  if (row.contains(rowErr)) row.removeChild(rowErr);
+
+  const isConf = row.dataset.confirmado === 'true';
+  console.log('→ [DEVOLUÇÃO] Status anterior (confirmado?):', isConf);
+
+  if (!isConf && !forcarDesmarcar) {
+    row.dataset.confirmado = 'true';
+    input.disabled = true;
+    const etiqueta = criarEtiquetaConfirmado();
+    if (btn && btn.parentNode === row) {
+      row.replaceChild(etiqueta, btn);
+      console.log('→ [DEVOLUÇÃO] Botão substituído pela etiqueta CONFIRMADO');
+    }
+    desc.valor_unitario = num;
+    desc.confirmado_valor_kg = true;
+    console.log('→ [DEVOLUÇÃO] desc.confirmado_valor_kg definido como true');
+  } else {
+    row.dataset.confirmado = 'false';
+    input.disabled = false;
+    const newBtn = document.createElement('button');
+    newBtn.id = confirmarBtnId;
+    newBtn.textContent = '✓';
+    newBtn.addEventListener('click', () => toggleConfirmacao());
+    const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
+    if (etiquetaExistente) {
+      row.replaceChild(newBtn, etiquetaExistente);
+      console.log('→ [DEVOLUÇÃO] Etiqueta revertida para botão ✓');
+    }
+    desc.confirmado_valor_kg = false;
+    console.log('→ [DEVOLUÇÃO] desc.confirmado_valor_kg revertido para false');
+  }
+
+  console.log('→ [DEVOLUÇÃO] Chamando atualizarBotaoLiberar...');
+  atualizarBotaoLiberar();
 }
-
-        atualizarBotaoLiberar();
-      }
 
       btn.addEventListener('click', () => toggleConfirmacao());
       blocoDesc.appendChild(row);
