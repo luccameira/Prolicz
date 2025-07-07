@@ -137,10 +137,12 @@ async function carregarPedidosFinanceiro() {
         });
 
         descontosPedido.push({
-          ...desc,
-          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-          valor_unitario: produtoReal?.valor_unitario || 0
-        });
+         ...desc,
+         nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+         valor_unitario: produtoReal?.valor_unitario || 0,
+         ticket_devolucao: desc.ticket_devolucao || null,
+         ticket_compra: desc.ticket_compra || null
+         });
       });
     });
 
