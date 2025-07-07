@@ -270,7 +270,9 @@ if (!isConf && !forcarDesmarcar) {
   row.dataset.confirmado = 'true';
   input.disabled = true;
   const etiqueta = criarEtiquetaConfirmado();
-  row.replaceChild(etiqueta, btn); // corrigido aqui
+  if (btn && btn.parentNode === row) {
+    row.replaceChild(etiqueta, btn);
+  }
   desc.valor_unitario = num;
   desc.confirmado_valor_kg = true;
 } else {
@@ -282,7 +284,7 @@ if (!isConf && !forcarDesmarcar) {
   newBtn.addEventListener('click', () => toggleConfirmacao());
   const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
   if (etiquetaExistente) {
-    row.replaceChild(newBtn, etiquetaExistente); // corrigido aqui
+    row.replaceChild(newBtn, etiquetaExistente);
   }
   desc.confirmado_valor_kg = false;
 }
