@@ -292,7 +292,6 @@ if (descontosPedido.length) {
 
   form.appendChild(blocoDesc);
 });
-}
 
     if (desc.ticket_devolucao || desc.ticket_compra) {
       const idImg = `ticket-desc-${id}-${idx}`;
