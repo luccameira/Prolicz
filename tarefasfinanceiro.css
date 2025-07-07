@@ -321,38 +321,6 @@ img.ticket-balanca {
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
-/* Bloco de desconto por devolução ou compra */
-.bloco-desconto-vermelho {
-  background-color: #fde7e7;
-  border: 1px solid #f19999;
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 14px;
-  font-size: 14px;
-  color: #333;
-}
-
-.bloco-desconto-vermelho p {
-  font-weight: 600;
-  margin: 0 0 6px;
-  color: #cc0000;
-}
-
-.bloco-desconto-vermelho i {
-  margin-right: 6px;
-  color: #cc0000;
-}
-
-.bloco-desconto-vermelho ul {
-  padding-left: 20px;
-  margin: 0;
-  list-style-type: disc;
-}
-
-.bloco-desconto-vermelho li {
-  margin-bottom: 4px;
-}
-
 /* Novo modelo de bloco de desconto comercial */
 .bloco-desconto-item {
   background-color: #fff;
