@@ -197,16 +197,7 @@ async function carregarPedidosFinanceiro() {
     // NOVO BLOCO — Descontos Comerciais reorganizados
 if (descontosPedido.length) {
   descontosPedido.forEach((desc, idx) => {
-    const blocoDesc = document.createElement('div');
-    blocoDesc.className = 'bloco-desconto-vermelho';
-    const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
-    const qtd = formatarPesoComMilhar(desc.peso_calculado);
-    const valorKg = Number(desc.valor_unitario || 0);
-    const totalCompra = valorKg * Number(desc.peso_calculado || 0);
-
-    const valorKgFormatado = formatarMoeda(valorKg);
-
-const blocoDesc = document.createElement('div');
+  const blocoDesc = document.createElement('div');
 blocoDesc.className = 'bloco-desconto-vermelho';
 blocoDesc.style.marginTop = '20px';
 blocoDesc.style.padding = '12px 16px';
