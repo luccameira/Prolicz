@@ -218,14 +218,23 @@ if (descontosPedido.length) {
       const row = document.createElement('div');
       row.className = 'vencimento-row';
       row.dataset.confirmado = 'false';
-      row.innerHTML = `
-        <span class="venc-label">Valor por Kg:</span>
-        <input type="text" id="${valorInputId}" value="${valorKg.toFixed(2).replace('.', ',')}" />
-        <button type="button" id="${confirmarBtnId}">✓</button>
-      `;
+      const label = document.createElement('span');
+label.className = 'venc-label';
+label.textContent = 'Valor por Kg:';
 
-      const input = row.querySelector('input');
-      const btn = row.querySelector('button');
+const input = document.createElement('input');
+input.type = 'text';
+input.id = valorInputId;
+input.value = valorKg.toFixed(2).replace('.', ',');
+
+const btn = document.createElement('button');
+btn.type = 'button';
+btn.id = confirmarBtnId;
+btn.textContent = '✓';
+
+row.appendChild(label);
+row.appendChild(input);
+row.appendChild(btn);
 
       input.addEventListener('input', () => {
         let valor = input.value.replace(/\D/g, '');
