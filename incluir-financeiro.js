@@ -593,3 +593,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
+
