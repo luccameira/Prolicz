@@ -204,11 +204,24 @@ if (descontosPedido.length) {
     const valorKg = Number(desc.valor_unitario || 0);
     const totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
-    blocoDesc.innerHTML = `
-      <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
-      <p><strong>Produto:</strong> ${nomeProduto}</p>
-      <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-      const valorKgFormatado = formatarMoeda(valorKg);
+    const valorKgFormatado = formatarMoeda(valorKg);
+
+const blocoDesc = document.createElement('div');
+blocoDesc.className = 'bloco-desconto-vermelho';
+blocoDesc.style.marginTop = '20px';
+blocoDesc.style.padding = '12px 16px';
+blocoDesc.style.borderRadius = '8px';
+blocoDesc.style.background = '#fde4e1';
+blocoDesc.style.border = '1px solid #e66';
+
+// Cabeçalho e informações fixas
+blocoDesc.innerHTML = `
+  <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
+  <p><strong>Produto:</strong> ${nomeProduto}</p>
+  <p><strong>Quantidade:</strong> ${qtd} Kg</p>
+`;
+
+// Campo dinâmico de Valor por Kg
 const linhaValorKg = document.createElement('div');
 linhaValorKg.style.marginTop = '4px';
 
@@ -264,8 +277,13 @@ if (desc.motivo === 'Devolução de Material') {
 
 blocoDesc.appendChild(linhaValorKg);
 
-      <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
-    `;
+// Valor total (fixo)
+const linhaTotal = document.createElement('p');
+linhaTotal.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
+blocoDesc.appendChild(linhaTotal);
+
+// Adiciona ao formulário
+form.appendChild(blocoDesc);
 
     blocoDesc.style.marginTop = '20px';
     blocoDesc.style.padding = '12px 16px';
