@@ -352,3 +352,34 @@ img.ticket-balanca {
 .bloco-desconto-vermelho li {
   margin-bottom: 4px;
 }
+
+/* Novo modelo de bloco de desconto comercial */
+.bloco-desconto-item {
+  background-color: #fff;
+  border: 1px dashed #f19999;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.bloco-desconto-item .titulo-operacao {
+  font-size: 16px;
+  color: #cc0000;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.info-linha {
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.total-destaque {
+  margin-top: 8px;
+  font-weight: bold;
+}
+
+.valor-vermelho {
+  color: #b50000;
+  font-weight: bold;
+}
