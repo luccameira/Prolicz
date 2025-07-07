@@ -216,71 +216,81 @@ async function carregarPedidosFinanceiro() {
 
         // Se for devolução de material, insere campo editável
         if (desc.motivo === 'Devolução de Material') {
-          const row = document.createElement('div');
-          row.className = 'vencimento-row';
-          row.dataset.confirmado = 'false';
-          row.innerHTML = `
-            <span class="venc-label">Valor por Kg:</span>
-            <input type="text" id="${valorInputId}" value="${valorKg.toFixed(2).replace('.', ',')}" />
-            <button type="button" id="${confirmarBtnId}">✓</button>
-          `;
+  const row = document.createElement('div');
+  row.className = 'vencimento-row';
+  row.dataset.confirmado = 'false';
+  row.innerHTML = `
+    <span class="venc-label">Valor por Kg:</span>
+    <input type="text" id="${valorInputId}" value="${valorKg.toFixed(2).replace('.', ',')}" />
+    <button type="button" id="${confirmarBtnId}">✓</button>
+  `;
 
-          const input = row.querySelector('input');
-          const btn = row.querySelector('button');
+  const input = row.querySelector('input');
+  const btn = row.querySelector('button');
 
-          input.addEventListener('input', () => {
-            let valor = input.value.replace(/\D/g, '');
-            valor = (parseInt(valor, 10) / 100).toFixed(2);
-            input.value = parseFloat(valor).toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-          });
+  input.addEventListener('input', () => {
+    let valor = input.value.replace(/\D/g, '');
+    valor = (parseInt(valor, 10) / 100).toFixed(2);
+    input.value = parseFloat(valor).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  });
 
-          const etiquetaConfirmado = document.createElement('span');
-          etiquetaConfirmado.className = 'etiqueta-valor-item';
-          etiquetaConfirmado.textContent = 'CONFIRMADO';
-          etiquetaConfirmado.style.cursor = 'pointer';
-
-          function toggleConfirmacaoValorKg() {
-  const raw = input.value.replace(/\./g, '').replace(',', '.');
-  const num = parseFloat(raw);
-  let rowErr = row.querySelector('.row-error');
-  if (!rowErr) {
-    rowErr = document.createElement('div');
-    rowErr.className = 'row-error';
-    rowErr.style.color = 'red';
-    rowErr.style.fontSize = '13px';
+  function criarEtiquetaConfirmado() {
+    const etiqueta = document.createElement('span');
+    etiqueta.className = 'etiqueta-valor-item';
+    etiqueta.textContent = 'CONFIRMADO';
+    etiqueta.style.cursor = 'pointer';
+    etiqueta.addEventListener('click', () => toggleConfirmacao(true));
+    return etiqueta;
   }
 
-  if (isNaN(num) || num <= 0) {
-    rowErr.textContent = 'Valor inválido.';
-    if (!row.contains(rowErr)) row.appendChild(rowErr);
-    input.focus();
-    return;
+  function toggleConfirmacao(forcarDesmarcar = false) {
+    const raw = input.value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(raw);
+    let rowErr = row.querySelector('.row-error');
+    if (!rowErr) {
+      rowErr = document.createElement('div');
+      rowErr.className = 'row-error';
+      rowErr.style.color = 'red';
+      rowErr.style.fontSize = '13px';
+    }
+
+    if (isNaN(num) || num <= 0) {
+      rowErr.textContent = 'Valor inválido.';
+      if (!row.contains(rowErr)) row.appendChild(rowErr);
+      input.focus();
+      return;
+    }
+
+    if (row.contains(rowErr)) row.removeChild(rowErr);
+
+    const isConf = row.dataset.confirmado === 'true';
+    if (!isConf && !forcarDesmarcar) {
+      row.dataset.confirmado = 'true';
+      input.disabled = true;
+      const etiqueta = criarEtiquetaConfirmado();
+      btn.replaceWith(etiqueta);
+      desc.valor_unitario = num;
+      desc.confirmado_valor_kg = true;
+    } else {
+      row.dataset.confirmado = 'false';
+      input.disabled = false;
+      const newBtn = document.createElement('button');
+      newBtn.id = confirmarBtnId;
+      newBtn.textContent = '✓';
+      newBtn.addEventListener('click', () => toggleConfirmacao());
+      row.replaceChild(newBtn, row.querySelector('.etiqueta-valor-item'));
+      desc.confirmado_valor_kg = false;
+    }
+
+    atualizarBotaoLiberar();
   }
 
-  if (row.contains(rowErr)) row.removeChild(rowErr);
-
-  const isConf = row.dataset.confirmado === 'true';
-  if (!isConf) {
-    row.dataset.confirmado = 'true';
-    input.disabled = true;
-    btn.replaceWith(etiquetaConfirmado);
-    desc.valor_unitario = num;
-    desc.confirmado_valor_kg = true;
-  } else {
-    row.dataset.confirmado = 'false';
-    input.disabled = false;
-    etiquetaConfirmado.replaceWith(btn);
-    desc.confirmado_valor_kg = false;
-  }
-
-  atualizarBotaoLiberar();
+  btn.addEventListener('click', () => toggleConfirmacao());
+  blocoDesc.appendChild(row);
 }
-
-          btn.addEventListener('click', toggleConfirmacaoValorKg);
-          etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
 
           blocoDesc.appendChild(row);
         } else {
