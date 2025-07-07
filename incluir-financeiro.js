@@ -208,7 +208,62 @@ if (descontosPedido.length) {
       <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
       <p><strong>Produto:</strong> ${nomeProduto}</p>
       <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-      <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
+      const valorKgFormatado = formatarMoeda(valorKg);
+const linhaValorKg = document.createElement('div');
+linhaValorKg.style.marginTop = '4px';
+
+if (desc.motivo === 'Devolução de Material') {
+  const inputValorKg = document.createElement('input');
+  inputValorKg.type = 'text';
+  inputValorKg.value = valorKg.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  inputValorKg.style.width = '100px';
+  inputValorKg.style.marginRight = '8px';
+
+  const botaoConfirmar = document.createElement('button');
+  botaoConfirmar.textContent = '✓';
+  botaoConfirmar.className = 'btn-confirmar-valor';
+  botaoConfirmar.style.marginRight = '8px';
+
+  const etiquetaConfirmado = document.createElement('span');
+  etiquetaConfirmado.className = 'etiqueta-valor-item';
+  etiquetaConfirmado.textContent = 'CONFIRMADO';
+  etiquetaConfirmado.style.cursor = 'pointer';
+
+  let confirmado = false;
+
+  function toggleConfirmacaoValorKg() {
+    if (!confirmado) {
+      inputValorKg.disabled = true;
+      botaoConfirmar.replaceWith(etiquetaConfirmado);
+      confirmado = true;
+    } else {
+      inputValorKg.disabled = false;
+      etiquetaConfirmado.replaceWith(botaoConfirmar);
+      confirmado = false;
+    }
+  }
+
+  inputValorKg.addEventListener('input', () => {
+    let valor = inputValorKg.value.replace(/\D/g, '');
+    valor = (parseInt(valor, 10) / 100).toFixed(2);
+    inputValorKg.value = parseFloat(valor).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  });
+
+  botaoConfirmar.addEventListener('click', toggleConfirmacaoValorKg);
+  etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
+
+  linhaValorKg.appendChild(document.createTextNode('Valor por Kg: '));
+  linhaValorKg.appendChild(inputValorKg);
+  linhaValorKg.appendChild(botaoConfirmar);
+} else {
+  linhaValorKg.innerHTML = `<p><strong>Valor por Kg:</strong> ${valorKgFormatado}</p>`;
+}
+
+blocoDesc.appendChild(linhaValorKg);
+
       <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
     `;
 
