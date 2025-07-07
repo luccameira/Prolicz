@@ -310,27 +310,23 @@ async function carregarPedidosFinanceiro() {
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-    // Exibe o ticket da balança principal (registrado na tarefa de carga)
+   // Bloco de exibição do ticket principal da balança (lado a lado com os demais)
 if (pedido.ticket_balanca) {
-  const blocoTicket = document.createElement('div');
-  blocoTicket.className = 'bloco-ticket-balanca';
-  blocoTicket.style.marginTop = '20px';
+  const blocoImagens = document.createElement('div');
+  blocoImagens.className = 'bloco-tickets-comerciais';
+  blocoImagens.style.margin = '12px 0 20px 0';
 
-  const label = document.createElement('strong');
-  label.innerText = 'Ticket da Balança (principal):';
-  blocoTicket.appendChild(label);
+  const imgDiv = document.createElement('div');
+  imgDiv.style.display = 'inline-block';
+  imgDiv.style.marginRight = '12px';
+  imgDiv.innerHTML = `
+    <label style="font-weight:bold;">Ticket da Balança (principal):</label><br>
+    <img id="ticket-balanca-${id}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
+  `;
 
-  const imagem = document.createElement('img');
-  imagem.src = `/uploads/tickets/${pedido.ticket_balanca}`;
-  imagem.alt = 'Ticket da Balança';
-  imagem.className = 'ticket-balanca';
-  imagem.style.display = 'block';
-  imagem.style.marginTop = '10px';
-  imagem.style.maxWidth = '200px';
-  blocoTicket.appendChild(imagem);
-
-  form.appendChild(blocoTicket);
-  setTimeout(() => adicionarZoomImagem(imagem.id), 100);
+  blocoImagens.appendChild(imgDiv);
+  form.appendChild(blocoImagens);
+  setTimeout(() => adicionarZoomImagem(`ticket-balanca-${id}`), 100);
 }
 
     function calcularValoresVencimentos() {
