@@ -284,20 +284,6 @@ if (descontosPedido.length) {
   });
 }
 
-    blocoDesc.style.marginTop = '20px';
-    blocoDesc.style.padding = '12px 16px';
-    blocoDesc.style.borderRadius = '8px';
-    blocoDesc.style.background = '#fde4e1';
-    blocoDesc.style.border = '1px solid #e66';
-    form.appendChild(blocoDesc);
-
-    const blocoImagens = document.createElement('div');
-    blocoImagens.className = 'bloco-tickets-comerciais';
-    blocoImagens.style.margin = '12px 0 20px 0';
-    blocoImagens.style.display = 'flex';
-    blocoImagens.style.flexWrap = 'wrap';
-    blocoImagens.style.gap = '20px';
-
     if (desc.ticket_devolucao || desc.ticket_compra) {
       const idImg = `ticket-desc-${id}-${idx}`;
       const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
