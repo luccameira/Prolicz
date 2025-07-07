@@ -321,33 +321,34 @@ img.ticket-balanca {
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
-/* Novo modelo de bloco de desconto comercial */
-.bloco-desconto-item {
-  background-color: #fff;
-  border: 1px dashed #f19999;
-  border-radius: 6px;
+.bloco-desconto-vermelho {
+  background-color: #fde7e7;
+  border: 1px solid #f19999;
   padding: 12px 16px;
-  margin-bottom: 14px;
-}
-
-.bloco-desconto-item .titulo-operacao {
-  font-size: 16px;
-  color: #cc0000;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.info-linha {
+  border-radius: 6px;
+  margin-top: 14px;
   font-size: 14px;
-  margin: 4px 0;
+  color: #333;
 }
 
-.total-destaque {
+.bloco-desconto-vermelho .titulo-desconto {
+  color: #cc0000;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.bloco-desconto-vermelho .linha-info {
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.bloco-desconto-vermelho .linha-info strong {
+  color: #333;
+}
+
+.bloco-desconto-vermelho .valor-final {
   margin-top: 8px;
   font-weight: bold;
-}
-
-.valor-vermelho {
   color: #b50000;
-  font-weight: bold;
 }
