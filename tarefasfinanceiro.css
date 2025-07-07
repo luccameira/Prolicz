@@ -328,11 +328,10 @@ img.ticket-balanca {
   border-radius: 6px;
   margin-top: 14px;
   font-size: 14px;
-  color: #333;
 }
 
 .bloco-desconto-vermelho .titulo-desconto {
-  color: #cc0000;
+  color: #cc0000; /* Título em vermelho */
   font-weight: bold;
   margin-bottom: 10px;
   font-size: 15px;
@@ -340,15 +339,16 @@ img.ticket-balanca {
 
 .bloco-desconto-vermelho .linha-info {
   margin-bottom: 4px;
-  color: #333;
+  color: #333; /* Texto normal em cinza escuro */
 }
 
 .bloco-desconto-vermelho .linha-info strong {
-  color: #333;
+  color: #333; /* Label em cinza escuro */
 }
 
 .bloco-desconto-vermelho .valor-final {
   margin-top: 8px;
   font-weight: bold;
-  color: #b50000;
+  color: #b50000; /* Valor final em vermelho */
 }
+
