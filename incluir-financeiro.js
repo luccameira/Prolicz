@@ -234,18 +234,36 @@ async function carregarPedidosFinanceiro() {
           setTimeout(() => adicionarZoomImagem(idImg), 100);
         }
 
-        if (desc.ticket_compra) {
-          const idImg = `ticket-compra-${id}-${idx}`;
-          const imgDiv = document.createElement('div');
-          imgDiv.style.display = 'inline-block';
-          imgDiv.style.marginRight = '12px';
-          imgDiv.innerHTML = `
-            <label style="font-weight:bold;">Ticket Compra:</label><br>
-            <img id="${idImg}" src="/uploads/tickets/${desc.ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
-          `;
-          blocoImagens.appendChild(imgDiv);
-          setTimeout(() => adicionarZoomImagem(idImg), 100);
-        }
+       const blocoImagens = document.createElement('div');
+blocoImagens.className = 'bloco-tickets-comerciais';
+blocoImagens.style.margin = '12px 0 20px 0';
+blocoImagens.style.display = 'flex';
+blocoImagens.style.flexWrap = 'wrap';
+blocoImagens.style.gap = '20px';
+
+if (desc.ticket_devolucao || desc.ticket_compra) {
+  const idImg = `ticket-desc-${id}-${idx}`;
+  const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
+  const ticket = desc.ticket_devolucao || desc.ticket_compra;
+  const imgDiv = document.createElement('div');
+  imgDiv.innerHTML = `
+    <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
+    <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
+  `;
+  blocoImagens.appendChild(imgDiv);
+  setTimeout(() => adicionarZoomImagem(idImg), 100);
+}
+
+if (pedido.ticket_balanca) {
+  const idImgPedido = `ticket-pedido-${id}-${idx}`;
+  const imgDivPedido = document.createElement('div');
+  imgDivPedido.innerHTML = `
+    <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
+    <img id="${idImgPedido}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Pedido" class="ticket-balanca">
+  `;
+  blocoImagens.appendChild(imgDivPedido);
+  setTimeout(() => adicionarZoomImagem(idImgPedido), 100);
+}
 
         form.appendChild(blocoImagens);
       });
