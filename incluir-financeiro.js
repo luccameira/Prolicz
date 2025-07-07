@@ -197,84 +197,92 @@ async function carregarPedidosFinanceiro() {
     // NOVO BLOCO — Descontos Comerciais reorganizados
 if (descontosPedido.length) {
   descontosPedido.forEach((desc, idx) => {
-  const blocoDesc = document.createElement('div');
-blocoDesc.className = 'bloco-desconto-vermelho';
-blocoDesc.style.marginTop = '20px';
-blocoDesc.style.padding = '12px 16px';
-blocoDesc.style.borderRadius = '8px';
-blocoDesc.style.background = '#fde4e1';
-blocoDesc.style.border = '1px solid #e66';
+    const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
+    const qtd = formatarPesoComMilhar(desc.peso_calculado);
+    const valorKg = Number(desc.valor_unitario || 0);
+    const totalCompra = valorKg * Number(desc.peso_calculado || 0);
+    const valorKgFormatado = formatarMoeda(valorKg);
 
-// Cabeçalho e informações fixas
-blocoDesc.innerHTML = `
-  <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
-  <p><strong>Produto:</strong> ${nomeProduto}</p>
-  <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-`;
+    const blocoDesc = document.createElement('div');
+    blocoDesc.className = 'bloco-desconto-vermelho';
+    blocoDesc.style.marginTop = '20px';
+    blocoDesc.style.padding = '12px 16px';
+    blocoDesc.style.borderRadius = '8px';
+    blocoDesc.style.background = '#fde4e1';
+    blocoDesc.style.border = '1px solid #e66';
 
-// Campo dinâmico de Valor por Kg
-const linhaValorKg = document.createElement('div');
-linhaValorKg.style.marginTop = '4px';
+    // Cabeçalho e informações fixas
+    blocoDesc.innerHTML = `
+      <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
+      <p><strong>Produto:</strong> ${nomeProduto}</p>
+      <p><strong>Quantidade:</strong> ${qtd} Kg</p>
+    `;
 
-if (desc.motivo === 'Devolução de Material') {
-  const inputValorKg = document.createElement('input');
-  inputValorKg.type = 'text';
-  inputValorKg.value = valorKg.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-  inputValorKg.style.width = '100px';
-  inputValorKg.style.marginRight = '8px';
+    // Campo dinâmico de Valor por Kg
+    const linhaValorKg = document.createElement('div');
+    linhaValorKg.style.marginTop = '4px';
 
-  const botaoConfirmar = document.createElement('button');
-  botaoConfirmar.textContent = '✓';
-  botaoConfirmar.className = 'btn-confirmar-valor';
-  botaoConfirmar.style.marginRight = '8px';
+    if (desc.motivo === 'Devolução de Material') {
+      const inputValorKg = document.createElement('input');
+      inputValorKg.type = 'text';
+      inputValorKg.value = valorKg.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      inputValorKg.style.width = '100px';
+      inputValorKg.style.marginRight = '8px';
 
-  const etiquetaConfirmado = document.createElement('span');
-  etiquetaConfirmado.className = 'etiqueta-valor-item';
-  etiquetaConfirmado.textContent = 'CONFIRMADO';
-  etiquetaConfirmado.style.cursor = 'pointer';
+      const botaoConfirmar = document.createElement('button');
+      botaoConfirmar.textContent = '✓';
+      botaoConfirmar.className = 'btn-confirmar-valor';
+      botaoConfirmar.style.marginRight = '8px';
 
-  let confirmado = false;
+      const etiquetaConfirmado = document.createElement('span');
+      etiquetaConfirmado.className = 'etiqueta-valor-item';
+      etiquetaConfirmado.textContent = 'CONFIRMADO';
+      etiquetaConfirmado.style.cursor = 'pointer';
 
-  function toggleConfirmacaoValorKg() {
-    if (!confirmado) {
-      inputValorKg.disabled = true;
-      botaoConfirmar.replaceWith(etiquetaConfirmado);
-      confirmado = true;
+      let confirmado = false;
+
+      function toggleConfirmacaoValorKg() {
+        if (!confirmado) {
+          inputValorKg.disabled = true;
+          botaoConfirmar.replaceWith(etiquetaConfirmado);
+          confirmado = true;
+        } else {
+          inputValorKg.disabled = false;
+          etiquetaConfirmado.replaceWith(botaoConfirmar);
+          confirmado = false;
+        }
+      }
+
+      inputValorKg.addEventListener('input', () => {
+        let valor = inputValorKg.value.replace(/\D/g, '');
+        valor = (parseInt(valor, 10) / 100).toFixed(2);
+        inputValorKg.value = parseFloat(valor).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      });
+
+      botaoConfirmar.addEventListener('click', toggleConfirmacaoValorKg);
+      etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
+
+      linhaValorKg.appendChild(document.createTextNode('Valor por Kg: '));
+      linhaValorKg.appendChild(inputValorKg);
+      linhaValorKg.appendChild(botaoConfirmar);
     } else {
-      inputValorKg.disabled = false;
-      etiquetaConfirmado.replaceWith(botaoConfirmar);
-      confirmado = false;
+      linhaValorKg.innerHTML = `<p><strong>Valor por Kg:</strong> ${valorKgFormatado}</p>`;
     }
-  }
 
-  inputValorKg.addEventListener('input', () => {
-    let valor = inputValorKg.value.replace(/\D/g, '');
-    valor = (parseInt(valor, 10) / 100).toFixed(2);
-    inputValorKg.value = parseFloat(valor).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    blocoDesc.appendChild(linhaValorKg);
+
+    // Valor total
+    const linhaTotal = document.createElement('p');
+    linhaTotal.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
+    blocoDesc.appendChild(linhaTotal);
+
+    // Adiciona ao formulário
+    form.appendChild(blocoDesc);
   });
-
-  botaoConfirmar.addEventListener('click', toggleConfirmacaoValorKg);
-  etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
-
-  linhaValorKg.appendChild(document.createTextNode('Valor por Kg: '));
-  linhaValorKg.appendChild(inputValorKg);
-  linhaValorKg.appendChild(botaoConfirmar);
-} else {
-  linhaValorKg.innerHTML = `<p><strong>Valor por Kg:</strong> ${valorKgFormatado}</p>`;
 }
-
-blocoDesc.appendChild(linhaValorKg);
-
-// Valor total (fixo)
-const linhaTotal = document.createElement('p');
-linhaTotal.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
-blocoDesc.appendChild(linhaTotal);
-
-// Adiciona ao formulário
-form.appendChild(blocoDesc);
 
     blocoDesc.style.marginTop = '20px';
     blocoDesc.style.padding = '12px 16px';
