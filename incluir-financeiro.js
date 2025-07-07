@@ -193,65 +193,63 @@ async function carregarPedidosFinanceiro() {
     });
 
     // NOVO BLOCO — Descontos Comerciais reorganizados
-    if (descontosPedido.length) {
-      descontosPedido.forEach((desc, idx) => {
-        const blocoDesc = document.createElement('div');
-        blocoDesc.className = 'bloco-desconto-vermelho';
-        const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
-        const qtd = formatarPesoComMilhar(desc.peso_calculado);
-        const valorKg = Number(desc.valor_unitario || 0);
-        const totalCompra = valorKg * Number(desc.peso_calculado || 0);
+if (descontosPedido.length) {
+  descontosPedido.forEach((desc, idx) => {
+    const blocoDesc = document.createElement('div');
+    blocoDesc.className = 'bloco-desconto-vermelho';
+    const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
+    const qtd = formatarPesoComMilhar(desc.peso_calculado);
+    const valorKg = Number(desc.valor_unitario || 0);
+    const totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
-        blocoDesc.innerHTML = `
-          <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
-          <p><strong>Produto:</strong> ${nomeProduto}</p>
-          <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-          <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
-          <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
-        `;
+    blocoDesc.innerHTML = `
+      <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
+      <p><strong>Produto:</strong> ${nomeProduto}</p>
+      <p><strong>Quantidade:</strong> ${qtd} Kg</p>
+      <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
+      <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
+    `;
 
-            blocoDesc.style.marginTop = '20px';
-        blocoDesc.style.padding = '12px 16px';
-        blocoDesc.style.borderRadius = '8px';
-        blocoDesc.style.background = '#fde4e1';
-        blocoDesc.style.border = '1px solid #e66';
-        form.appendChild(blocoDesc);
+    blocoDesc.style.marginTop = '20px';
+    blocoDesc.style.padding = '12px 16px';
+    blocoDesc.style.borderRadius = '8px';
+    blocoDesc.style.background = '#fde4e1';
+    blocoDesc.style.border = '1px solid #e66';
+    form.appendChild(blocoDesc);
 
-        const blocoImagens = document.createElement('div');
-        blocoImagens.className = 'bloco-tickets-comerciais';
-        blocoImagens.style.margin = '12px 0 20px 0';
+    const blocoImagens = document.createElement('div');
+    blocoImagens.className = 'bloco-tickets-comerciais';
+    blocoImagens.style.margin = '12px 0 20px 0';
+    blocoImagens.style.display = 'flex';
+    blocoImagens.style.flexWrap = 'wrap';
+    blocoImagens.style.gap = '20px';
 
-        if (desc.ticket_devolucao) {
-          const idImg = `ticket-dev-${id}-${idx}`;
-          const imgDiv = document.createElement('div');
-          imgDiv.style.display = 'inline-block';
-          imgDiv.style.marginRight = '12px';
-          imgDiv.innerHTML = `
-            <label style="font-weight:bold;">Ticket Devolução:</label><br>
-            <img id="${idImg}" src="/uploads/tickets/${desc.ticket_devolucao}" alt="Ticket Devolução" class="ticket-balanca">
-          `;
-          blocoImagens.appendChild(imgDiv);
-          setTimeout(() => adicionarZoomImagem(idImg), 100);
-        }
+    if (desc.ticket_devolucao || desc.ticket_compra) {
+      const idImg = `ticket-desc-${id}-${idx}`;
+      const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
+      const ticket = desc.ticket_devolucao || desc.ticket_compra;
+      const imgDiv = document.createElement('div');
+      imgDiv.innerHTML = `
+        <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
+        <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
+      `;
+      blocoImagens.appendChild(imgDiv);
+      setTimeout(() => adicionarZoomImagem(idImg), 100);
+    }
 
-       const blocoImagens = document.createElement('div');
-blocoImagens.className = 'bloco-tickets-comerciais';
-blocoImagens.style.margin = '12px 0 20px 0';
-blocoImagens.style.display = 'flex';
-blocoImagens.style.flexWrap = 'wrap';
-blocoImagens.style.gap = '20px';
+    if (pedido.ticket_balanca) {
+      const idImgPedido = `ticket-pedido-${id}-${idx}`;
+      const imgDivPedido = document.createElement('div');
+      imgDivPedido.innerHTML = `
+        <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
+        <img id="${idImgPedido}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Pedido" class="ticket-balanca">
+      `;
+      blocoImagens.appendChild(imgDivPedido);
+      setTimeout(() => adicionarZoomImagem(idImgPedido), 100);
+    }
 
-if (desc.ticket_devolucao || desc.ticket_compra) {
-  const idImg = `ticket-desc-${id}-${idx}`;
-  const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
-  const ticket = desc.ticket_devolucao || desc.ticket_compra;
-  const imgDiv = document.createElement('div');
-  imgDiv.innerHTML = `
-    <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
-    <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
-  `;
-  blocoImagens.appendChild(imgDiv);
-  setTimeout(() => adicionarZoomImagem(idImg), 100);
+    form.appendChild(blocoImagens);
+  });
 }
 
 if (pedido.ticket_balanca) {
