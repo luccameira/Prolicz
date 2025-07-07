@@ -243,41 +243,41 @@ async function carregarPedidosFinanceiro() {
           etiquetaConfirmado.style.cursor = 'pointer';
 
           function toggleConfirmacaoValorKg() {
-            const raw = input.value.replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(raw);
-            let rowErr = row.querySelector('.row-error');
-            if (!rowErr) {
-              rowErr = document.createElement('div');
-              rowErr.className = 'row-error';
-              rowErr.style.color = 'red';
-              rowErr.style.fontSize = '13px';
-            }
+  const raw = input.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  let rowErr = row.querySelector('.row-error');
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
+  }
 
-            if (isNaN(num) || num <= 0) {
-              rowErr.textContent = 'Valor inválido.';
-              if (!row.contains(rowErr)) row.appendChild(rowErr);
-              input.focus();
-              return;
-            }
+  if (isNaN(num) || num <= 0) {
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    input.focus();
+    return;
+  }
 
-            if (row.contains(rowErr)) row.removeChild(rowErr);
+  if (row.contains(rowErr)) row.removeChild(rowErr);
 
-            const isConf = row.dataset.confirmado === 'true';
-            if (!isConf) {
-              row.dataset.confirmado = 'true';
-              input.disabled = true;
-              btn.replaceWith(etiquetaConfirmado);
-              desc.valor_unitario = num;
-              desc.confirmado_valor_kg = true;
-            } else {
-              row.dataset.confirmado = 'false';
-              input.disabled = false;
-              etiquetaConfirmado.replaceWith(btn);
-              desc.confirmado_valor_kg = false;
-            }
+  const isConf = row.dataset.confirmado === 'true';
+  if (!isConf) {
+    row.dataset.confirmado = 'true';
+    input.disabled = true;
+    btn.replaceWith(etiquetaConfirmado);
+    desc.valor_unitario = num;
+    desc.confirmado_valor_kg = true;
+  } else {
+    row.dataset.confirmado = 'false';
+    input.disabled = false;
+    etiquetaConfirmado.replaceWith(btn);
+    desc.confirmado_valor_kg = false;
+  }
 
-            atualizarBotaoLiberar();
-          }
+  atualizarBotaoLiberar();
+}
 
           btn.addEventListener('click', toggleConfirmacaoValorKg);
           etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
