@@ -252,60 +252,45 @@ if (descontosPedido.length) {
   });
 }
 
-if (pedido.ticket_balanca) {
-  const idImgPedido = `ticket-pedido-${id}-${idx}`;
-  const imgDivPedido = document.createElement('div');
-  imgDivPedido.innerHTML = `
-    <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
-    <img id="${idImgPedido}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Pedido" class="ticket-balanca">
+const separador = document.createElement('div');
+separador.className = 'divider-financeiro';
+form.appendChild(separador);
+
+const containerCinza = document.createElement('div');
+containerCinza.className = 'resumo-financeiro';
+
+if (pedido.condicao_pagamento_avista) {
+  const blocoCondicao = document.createElement('div');
+  blocoCondicao.className = 'obs-pedido';
+  blocoCondicao.innerHTML = `
+    <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
   `;
-  blocoImagens.appendChild(imgDivPedido);
-  setTimeout(() => adicionarZoomImagem(idImgPedido), 100);
+  containerCinza.appendChild(blocoCondicao);
 }
 
-        form.appendChild(blocoImagens);
-      });
-    }
+let totalComNota = 0;
+let totalSemNota = 0;
+let codigosFiscaisBarraAzul = '';
 
-    const separador = document.createElement('div');
-    separador.className = 'divider-financeiro';
-    form.appendChild(separador);
+if (pedido.materiais && pedido.materiais.length) {
+  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+    let cod = (item.codigo_fiscal || '').toUpperCase();
+    if (!cod) cod = '(não informado)';
+    if (cod === "PERSONALIZAR") cod = "Personalizado";
+    const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
 
-    const containerCinza = document.createElement('div');
-    containerCinza.className = 'resumo-financeiro';
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
 
-    if (pedido.condicao_pagamento_avista) {
-      const blocoCondicao = document.createElement('div');
-      blocoCondicao.className = 'obs-pedido';
-      blocoCondicao.innerHTML = `
-        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
-      `;
-      containerCinza.appendChild(blocoCondicao);
-    }
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
-
-    if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (!cod) cod = '(não informado)';
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-
-        const descontosPalete = item.descontos?.filter(d =>
-          d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-        ) || [];
-
-        const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
-
-        const totalCom = pesoFinal * valorComNota;
-        const totalSem = pesoFinal * valorSemNota;
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
+    const totalCom = pesoFinal * valorComNota;
+    const totalSem = pesoFinal * valorSemNota;
+    totalComNota += totalCom;
+    totalSemNota += totalSem;
 
         return `
           <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
