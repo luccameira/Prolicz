@@ -114,7 +114,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    let descontosPedido = [];
+      let descontosPedido = [];
 
     pedido.materiais?.forEach((item) => {
       const descontosComerciais = item.descontos?.filter(d =>
@@ -137,12 +137,12 @@ async function carregarPedidosFinanceiro() {
         });
 
         descontosPedido.push({
-          ...desc,
-          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-          valor_unitario: produtoReal?.valor_unitario || 0,
-          ticket_devolucao: desc.ticket_devolucao || null,
-          ticket_compra: desc.ticket_compra || null
-        });
+         ...desc,
+         nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+         valor_unitario: produtoReal?.valor_unitario || 0,
+         ticket_devolucao: desc.ticket_devolucao || null,
+         ticket_compra: desc.ticket_compra || null
+         });
       });
     });
 
@@ -194,120 +194,53 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // Declaração corrigida para evitar erro de referência
+    // NOVO BLOCO — Descontos Comerciais reorganizados
+if (descontosPedido.length) {
+  descontosPedido.forEach((desc, idx) => {
+    const blocoDesc = document.createElement('div');
+    blocoDesc.className = 'bloco-desconto-vermelho';
+    const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
+    const qtd = formatarPesoComMilhar(desc.peso_calculado);
+    const valorKg = Number(desc.valor_unitario || 0);
+    const totalCompra = valorKg * Number(desc.peso_calculado || 0);
+
+    blocoDesc.innerHTML = `
+      <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
+      <p><strong>Produto:</strong> ${nomeProduto}</p>
+      <p><strong>Quantidade:</strong> ${qtd} Kg</p>
+      <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
+      <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
+    `;
+
+    blocoDesc.style.marginTop = '20px';
+    blocoDesc.style.padding = '12px 16px';
+    blocoDesc.style.borderRadius = '8px';
+    blocoDesc.style.background = '#fde4e1';
+    blocoDesc.style.border = '1px solid #e66';
+    form.appendChild(blocoDesc);
+
     const blocoImagens = document.createElement('div');
-    blocoImagens.className = 'bloco-imagens';
+    blocoImagens.className = 'bloco-tickets-comerciais';
+    blocoImagens.style.margin = '12px 0 20px 0';
+    blocoImagens.style.display = 'flex';
+    blocoImagens.style.flexWrap = 'wrap';
+    blocoImagens.style.gap = '20px';
 
-    if (descontosPedido.length) {
-      descontosPedido.forEach((desc, idx) => {
-        const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
-        const qtd = formatarPesoComMilhar(desc.peso_calculado);
-        const valorKg = Number(desc.valor_unitario || 0);
-        const totalCompra = valorKg * Number(desc.peso_calculado || 0);
-        const valorKgFormatado = formatarMoeda(valorKg);
-
-        const blocoDesc = document.createElement('div');
-        blocoDesc.className = 'bloco-desconto-vermelho';
-        blocoDesc.style.marginTop = '20px';
-        blocoDesc.style.padding = '12px 16px';
-        blocoDesc.style.borderRadius = '8px';
-        blocoDesc.style.background = '#fde4e1';
-        blocoDesc.style.border = '1px solid #e66';
-
-        const titulo = document.createElement('p');
-        titulo.className = 'titulo-desconto';
-        titulo.innerHTML = `<i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:`;
-        blocoDesc.appendChild(titulo);
-
-        const linhaProduto = document.createElement('p');
-        linhaProduto.innerHTML = `<strong>Produto:</strong> ${nomeProduto}`;
-        blocoDesc.appendChild(linhaProduto);
-
-        const linhaQtd = document.createElement('p');
-        linhaQtd.innerHTML = `<strong>Quantidade:</strong> ${qtd} Kg`;
-        blocoDesc.appendChild(linhaQtd);
-
-        const linhaValorKg = document.createElement('div');
-        linhaValorKg.style.marginTop = '4px';
-
-        if (desc.motivo === 'Devolução de Material') {
-          const inputValorKg = document.createElement('input');
-          inputValorKg.type = 'text';
-          inputValorKg.value = valorKg.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-          inputValorKg.style.width = '100px';
-          inputValorKg.style.marginRight = '8px';
-
-          const botaoConfirmar = document.createElement('button');
-          botaoConfirmar.textContent = '✓';
-          botaoConfirmar.className = 'btn-confirmar-valor';
-          botaoConfirmar.style.marginRight = '8px';
-
-          const etiquetaConfirmado = document.createElement('span');
-          etiquetaConfirmado.className = 'etiqueta-valor-item';
-          etiquetaConfirmado.textContent = 'CONFIRMADO';
-          etiquetaConfirmado.style.cursor = 'pointer';
-
-          let confirmado = false;
-
-          function toggleConfirmacaoValorKg() {
-            if (!confirmado) {
-              inputValorKg.disabled = true;
-              botaoConfirmar.replaceWith(etiquetaConfirmado);
-              confirmado = true;
-            } else {
-              inputValorKg.disabled = false;
-              etiquetaConfirmado.replaceWith(botaoConfirmar);
-              confirmado = false;
-            }
-          }
-
-          inputValorKg.addEventListener('input', () => {
-            let valor = inputValorKg.value.replace(/\D/g, '');
-            valor = (parseInt(valor, 10) / 100).toFixed(2);
-            inputValorKg.value = parseFloat(valor).toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-          });
-
-          botaoConfirmar.addEventListener('click', toggleConfirmacaoValorKg);
-          etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
-
-          linhaValorKg.appendChild(document.createTextNode('Valor por Kg: '));
-          linhaValorKg.appendChild(inputValorKg);
-          linhaValorKg.appendChild(botaoConfirmar);
-        } else {
-          const valorFixo = document.createElement('p');
-          valorFixo.innerHTML = `<strong>Valor por Kg:</strong> ${valorKgFormatado}`;
-          linhaValorKg.appendChild(valorFixo);
-        }
-
-        blocoDesc.appendChild(linhaValorKg);
-
-        const linhaTotal = document.createElement('p');
-        linhaTotal.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
-        blocoDesc.appendChild(linhaTotal);
-
-        form.appendChild(blocoDesc);
-
-        // Exibição do ticket do desconto
-        if (desc.ticket_devolucao || desc.ticket_compra) {
-          const idImg = `ticket-desc-${id}-${idx}`;
-          const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
-          const ticket = desc.ticket_devolucao || desc.ticket_compra;
-          const imgDiv = document.createElement('div');
-          imgDiv.innerHTML = `
-            <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
-            <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
-          `;
-          blocoImagens.appendChild(imgDiv);
-          setTimeout(() => adicionarZoomImagem(idImg), 100);
-        }
-      });
+    if (desc.ticket_devolucao || desc.ticket_compra) {
+      const idImg = `ticket-desc-${id}-${idx}`;
+      const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
+      const ticket = desc.ticket_devolucao || desc.ticket_compra;
+      const imgDiv = document.createElement('div');
+      imgDiv.innerHTML = `
+        <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
+        <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
+      `;
+      blocoImagens.appendChild(imgDiv);
+      setTimeout(() => adicionarZoomImagem(idImg), 100);
     }
 
-      if (pedido.ticket_balanca) {
-      const idImgPedido = `ticket-pedido-${id}`;
+    if (pedido.ticket_balanca) {
+      const idImgPedido = `ticket-pedido-${id}-${idx}`;
       const imgDivPedido = document.createElement('div');
       imgDivPedido.innerHTML = `
         <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
@@ -318,55 +251,48 @@ async function carregarPedidosFinanceiro() {
     }
 
     form.appendChild(blocoImagens);
+  });
+}
 
-    const separador = document.createElement('div');
-    separador.className = 'divider-financeiro';
-    form.appendChild(separador);
+const separador = document.createElement('div');
+separador.className = 'divider-financeiro';
+form.appendChild(separador);
 
-    const containerCinza = document.createElement('div');
-    containerCinza.className = 'resumo-financeiro';
+const containerCinza = document.createElement('div');
+containerCinza.className = 'resumo-financeiro';
 
-    if (
-      pedido.condicao_pagamento_avista &&
-      pedido.prazos_pagamento?.length &&
-      pedido.prazos_pagamento.some((dataVencimento, index) => {
-        const prazoOriginal = pedido.prazos_pagamento[index];
-        const dataColeta = new Date(pedido.data_coleta).toDateString();
-        const dataVenc = new Date(prazoOriginal).toDateString();
-        return dataVenc === dataColeta;
-      })
-    ) {
-      const blocoCondicao = document.createElement('div');
-      blocoCondicao.className = 'obs-pedido';
-      blocoCondicao.innerHTML = `
-        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
-      `;
-      containerCinza.appendChild(blocoCondicao);
-    }
+if (pedido.condicao_pagamento_avista) {
+  const blocoCondicao = document.createElement('div');
+  blocoCondicao.className = 'obs-pedido';
+  blocoCondicao.innerHTML = `
+    <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+  `;
+  containerCinza.appendChild(blocoCondicao);
+}
 
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
+let totalComNota = 0;
+let totalSemNota = 0;
+let codigosFiscaisBarraAzul = '';
 
-    if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (!cod) cod = '(não informado)';
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
+if (pedido.materiais && pedido.materiais.length) {
+  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+    let cod = (item.codigo_fiscal || '').toUpperCase();
+    if (!cod) cod = '(não informado)';
+    if (cod === "PERSONALIZAR") cod = "Personalizado";
+    const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
 
-        const descontosPalete = item.descontos?.filter(d =>
-          d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-        ) || [];
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
 
-        const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-        const totalCom = pesoFinal * valorComNota;
-        const totalSem = pesoFinal * valorSemNota;
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
+    const totalCom = pesoFinal * valorComNota;
+    const totalSem = pesoFinal * valorSemNota;
+    totalComNota += totalCom;
+    totalSemNota += totalSem;
 
         return `
           <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
@@ -383,7 +309,7 @@ async function carregarPedidosFinanceiro() {
       }).join('');
     }
 
-    const totalVenda = totalComNota + totalSemNota;
+      const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
