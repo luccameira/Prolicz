@@ -114,7 +114,7 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-      let descontosPedido = [];
+    let descontosPedido = [];
 
     pedido.materiais?.forEach((item) => {
       const descontosComerciais = item.descontos?.filter(d =>
@@ -141,74 +141,110 @@ async function carregarPedidosFinanceiro() {
          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
          valor_unitario: produtoReal?.valor_unitario || 0,
          ticket_devolucao: desc.ticket_devolucao || null,
-         ticket_compra: desc.ticket_compra || null
-         });
+         ticket_compra: desc.ticket_compra || null,
+         confirmado_valor_kg: false
+        });
       });
     });
 
-    // Exibe materiais
-    pedido.materiais?.forEach((item) => {
-      const bloco = document.createElement('div');
-      bloco.className = 'material-bloco';
-
-      const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
-      const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
-      const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
-
-      const descontosPalete = item.descontos?.filter(d =>
-        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-      ) || [];
-
-      const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-      const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
-      const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
-
-      let blocoAmareloHTML = '';
-      if (descontosPalete.length) {
-        const linhas = descontosPalete.map(desc => {
-          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UN (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
-        }).join('');
-
-        blocoAmareloHTML = `
-          <div class="descontos-aplicados">
-            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul>${linhas}</ul>
-          </div>
-        `;
-      }
-
-      const valorTotal = formatarMoeda(pesoFinalNum * (Number(item.valor_unitario) || 0));
-
-      bloco.innerHTML = `
-        <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
-        <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
-        <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${blocoAmareloHTML}
-        <p style="margin-top:16px;"><strong>${totalDescontoPalete > 0 ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
-        <div style="margin-top:12px; margin-bottom:4px;">
-          <strong>Valor Total do Item:</strong>
-          <span style="color: green;">${valorTotal}</span>
-        </div>
-      `;
-
-      form.appendChild(bloco);
-    });
-
-    // NOVO BLOCO — Descontos Comerciais reorganizados
+   // NOVO BLOCO — Descontos Comerciais reorganizados
 if (descontosPedido.length) {
   descontosPedido.forEach((desc, idx) => {
     const blocoDesc = document.createElement('div');
     blocoDesc.className = 'bloco-desconto-vermelho';
     const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
     const qtd = formatarPesoComMilhar(desc.peso_calculado);
-    const valorKg = Number(desc.valor_unitario || 0);
-    const totalCompra = valorKg * Number(desc.peso_calculado || 0);
+    let valorKg = Number(desc.valor_unitario || 0);
+    let totalCompra = valorKg * Number(desc.peso_calculado || 0);
+
+    const valorInputId = `valor-kg-${id}-${idx}`;
+    const confirmarBtnId = `confirmar-kg-${id}-${idx}`;
 
     blocoDesc.innerHTML = `
       <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
       <p><strong>Produto:</strong> ${nomeProduto}</p>
       <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-      <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
+    `;
+
+    // Se for devolução de material, insere campo editável
+    if (desc.motivo === 'Devolução de Material') {
+      const row = document.createElement('div');
+      row.className = 'vencimento-row';
+      row.dataset.confirmado = 'false';
+      row.innerHTML = `
+        <span class="venc-label">Valor por Kg:</span>
+        <input type="text" id="${valorInputId}" value="${valorKg.toFixed(2).replace('.', ',')}" />
+        <button type="button" id="${confirmarBtnId}">✓</button>
+      `;
+
+      const input = row.querySelector('input');
+      const btn = row.querySelector('button');
+
+      input.addEventListener('input', () => {
+        let valor = input.value.replace(/\D/g, '');
+        valor = (parseInt(valor, 10) / 100).toFixed(2);
+        input.value = parseFloat(valor).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      });
+
+      const etiquetaConfirmado = document.createElement('span');
+      etiquetaConfirmado.className = 'etiqueta-valor-item';
+      etiquetaConfirmado.textContent = 'CONFIRMADO';
+      etiquetaConfirmado.style.cursor = 'pointer';
+
+      function toggleConfirmacaoValorKg() {
+        const raw = input.value.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(raw);
+        let rowErr = row.querySelector('.row-error');
+        if (!rowErr) {
+          rowErr = document.createElement('div');
+          rowErr.className = 'row-error';
+          rowErr.style.color = 'red';
+          rowErr.style.fontSize = '13px';
+        }
+
+        if (isNaN(num) || num <= 0) {
+          rowErr.textContent = 'Valor inválido.';
+          if (!row.contains(rowErr)) row.appendChild(rowErr);
+          input.focus();
+          return;
+        }
+
+        if (row.contains(rowErr)) row.removeChild(rowErr);
+
+        const isConf = row.dataset.confirmado === 'true';
+        if (!isConf) {
+          row.dataset.confirmado = 'true';
+          input.disabled = true;
+          btn.replaceWith(etiquetaConfirmado);
+          desc.valor_unitario = num;
+          desc.confirmado_valor_kg = true;
+        } else {
+          row.dataset.confirmado = 'false';
+          input.disabled = false;
+          etiquetaConfirmado.replaceWith(btn);
+          desc.confirmado_valor_kg = false;
+        }
+
+        atualizarBotaoLiberar();
+      }
+
+      btn.addEventListener('click', toggleConfirmacaoValorKg);
+      etiquetaConfirmado.addEventListener('click', toggleConfirmacaoValorKg);
+
+      blocoDesc.appendChild(row);
+    } else {
+      // Caso não seja devolução, apenas exibe o valor fixo
+      blocoDesc.innerHTML += `
+        <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
+      `;
+    }
+
+    totalCompra = valorKg * Number(desc.peso_calculado || 0);
+
+    blocoDesc.innerHTML += `
       <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
     `;
 
@@ -266,7 +302,6 @@ if (
   pedido.prazos_pagamento?.length &&
   pedido.prazos_pagamento.some((dataVencimento, index) => {
     const prazoOriginal = pedido.prazos_pagamento[index];
-    // Considera como "à vista" se a data do vencimento for igual à data da coleta
     const dataColeta = new Date(pedido.data_coleta).toDateString();
     const dataVenc = new Date(prazoOriginal).toDateString();
     return dataVenc === dataColeta;
@@ -304,195 +339,205 @@ if (pedido.materiais && pedido.materiais.length) {
     totalComNota += totalCom;
     totalSemNota += totalSem;
 
-        return `
-          <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
-            <span class="etiqueta-codigo-fiscal">
-              <strong>Código Fiscal: ${cod}</strong> |
-              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
-              <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
-              <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
-              <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-            </span>
-          </div>
-        `;
-      }).join('');
+    return `
+      <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
+        <span class="etiqueta-codigo-fiscal">
+          <strong>Código Fiscal: ${cod}</strong> |
+          <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
+          <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
+          <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
+          <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
+          <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
+        </span>
+      </div>
+    `;
+  }).join('');
+}
+
+const totalVenda = totalComNota + totalSemNota;
+const totalVendaFmt = formatarMoeda(totalVenda);
+const numVencimentos = pedido.prazos_pagamento?.length || 1;
+
+function calcularValoresVencimentos() {
+  let parcelas = [];
+  let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
+  let totalParcial = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    if (i < numVencimentos - 1) {
+      parcelas.push(base);
+      totalParcial += base;
+    } else {
+      let ultima = (totalVenda - totalParcial);
+      parcelas.push(ultima);
     }
+  }
+  return parcelas;
+}
 
-      const totalVenda = totalComNota + totalSemNota;
-    const totalVendaFmt = formatarMoeda(totalVenda);
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
+containerCinza.innerHTML += `
+  <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
+  <div class="vencimentos-container"></div>
+  <p class="venc-soma-error" style="color:red;"></p>
+  ${codigosFiscaisBarraAzul}
+  ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+`;
 
-    function calcularValoresVencimentos() {
-      let parcelas = [];
-      let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
-      let totalParcial = 0;
-      for (let i = 0; i < numVencimentos; i++) {
-        if (i < numVencimentos - 1) {
-          parcelas.push(base);
-          totalParcial += base;
-        } else {
-          let ultima = (totalVenda - totalParcial);
-          parcelas.push(ultima);
-        }
-      }
-      return parcelas;
-    }
+const vencContainer = containerCinza.querySelector('.vencimentos-container');
+const inputs = [];
+let valoresPadrao = calcularValoresVencimentos();
 
-    containerCinza.innerHTML += `
-      <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
-      <div class="vencimentos-container"></div>
-      <p class="venc-soma-error" style="color:red;"></p>
-      ${codigosFiscaisBarraAzul}
-      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+function renderizarVencimentos(valores) {
+  vencContainer.innerHTML = '';
+  inputs.length = 0;
+
+  for (let i = 0; i < numVencimentos; i++) {
+    const dt = new Date(pedido.prazos_pagamento[i]);
+    const ok = !isNaN(dt.getTime());
+    const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
+
+    const row = document.createElement('div');
+    row.className = 'vencimento-row';
+    row.dataset.confirmado = 'false';
+    row.innerHTML = `
+      <span class="venc-label">Vencimento ${i + 1}</span>
+      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+      <input type="text" value="${valorFmt}" />
+      <button type="button">✓</button>
     `;
 
-    const vencContainer = containerCinza.querySelector('.vencimentos-container');
-    const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
+    const inp = row.querySelector('input');
+    const btn = row.querySelector('button');
+    inputs[i] = inp;
 
-    function renderizarVencimentos(valores) {
-      vencContainer.innerHTML = '';
-      inputs.length = 0;
+    inp.addEventListener('input', () => {
+      let valor = inp.value.replace(/\D/g, '');
+      valor = (parseInt(valor, 10) / 100).toFixed(2);
+      inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    });
 
-      for (let i = 0; i < numVencimentos; i++) {
-        const dt = new Date(pedido.prazos_pagamento[i]);
-        const ok = !isNaN(dt.getTime());
-        const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
+    inp.addEventListener('blur', atualizarBotaoLiberar);
 
-        const row = document.createElement('div');
-        row.className = 'vencimento-row';
-        row.dataset.confirmado = 'false';
-        row.innerHTML = `
-          <span class="venc-label">Vencimento ${i + 1}</span>
-          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" />
-          <button type="button">✓</button>
-        `;
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
 
-        const inp = row.querySelector('input');
-        const btn = row.querySelector('button');
-        inputs[i] = inp;
-
-        inp.addEventListener('input', () => {
-          let valor = inp.value.replace(/\D/g, '');
-          valor = (parseInt(valor, 10) / 100).toFixed(2);
-          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-        });
-
-        inp.addEventListener('blur', atualizarBotaoLiberar);
-
-        const etiquetaConfirmado = document.createElement('span');
-        etiquetaConfirmado.className = 'etiqueta-valor-item';
-        etiquetaConfirmado.textContent = 'CONFIRMADO';
-        etiquetaConfirmado.style.cursor = 'pointer';
-
-        function toggleConfirmacao() {
-          const raw = inp.value.replace(/\./g, '').replace(',', '.');
-          const num = parseFloat(raw);
-          let rowErr = row.querySelector('.row-error');
-          if (!rowErr) {
-            rowErr = document.createElement('div');
-            rowErr.className = 'row-error';
-            rowErr.style.color = 'red';
-            rowErr.style.fontSize = '13px';
-          }
-
-          if (isNaN(num) || num <= 0) {
-            rowErr.textContent = 'Valor inválido.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
-
-          if (num > totalVenda) {
-            rowErr.textContent = 'Valor excede o total da venda.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
-
-          if (row.contains(rowErr)) row.removeChild(rowErr);
-
-          const isConf = row.dataset.confirmado === 'true';
-          if (!isConf) {
-            row.dataset.confirmado = 'true';
-            inp.disabled = true;
-            btn.replaceWith(etiquetaConfirmado);
-          } else {
-            row.dataset.confirmado = 'false';
-            inp.disabled = false;
-            etiquetaConfirmado.replaceWith(btn);
-          }
-
-          atualizarBotaoLiberar();
-        }
-
-        btn.addEventListener('click', toggleConfirmacao);
-        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-        vencContainer.appendChild(row);
+    function toggleConfirmacao() {
+      const raw = inp.value.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(raw);
+      let rowErr = row.querySelector('.row-error');
+      if (!rowErr) {
+        rowErr = document.createElement('div');
+        rowErr.className = 'row-error';
+        rowErr.style.color = 'red';
+        rowErr.style.fontSize = '13px';
       }
-    }
 
-    function resetarVencimentosPadrao() {
-      valoresPadrao = calcularValoresVencimentos();
-      renderizarVencimentos(valoresPadrao);
+      if (isNaN(num) || num <= 0) {
+        rowErr.textContent = 'Valor inválido.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      if (num > totalVenda) {
+        rowErr.textContent = 'Valor excede o total da venda.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      if (row.contains(rowErr)) row.removeChild(rowErr);
+
+      const isConf = row.dataset.confirmado === 'true';
+      if (!isConf) {
+        row.dataset.confirmado = 'true';
+        inp.disabled = true;
+        btn.replaceWith(etiquetaConfirmado);
+      } else {
+        row.dataset.confirmado = 'false';
+        inp.disabled = false;
+        etiquetaConfirmado.replaceWith(btn);
+      }
+
       atualizarBotaoLiberar();
     }
 
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach((r) => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
+    btn.addEventListener('click', toggleConfirmacao);
+    etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+    vencContainer.appendChild(row);
+  }
+}
 
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-      } else {
-        erroEl.textContent = '';
-      }
+function resetarVencimentosPadrao() {
+  valoresPadrao = calcularValoresVencimentos();
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
 
-      const btnFin = form.querySelector('.btn-registrar');
-      if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
-    }
-
-    renderizarVencimentos(valoresPadrao);
-    form.appendChild(containerCinza);
-
-    const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
-    if (valorTotalTag) {
-      valorTotalTag.style.cursor = 'pointer';
-      valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-      valorTotalTag.onclick = resetarVencimentosPadrao;
-    }
-
-    const blocoFin = document.createElement('div');
-    blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = `
-      <label>Observações do Financeiro:</label>
-      <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    `;
-    const taFin = blocoFin.querySelector('textarea');
-    const btnFin = blocoFin.querySelector('button');
-    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(blocoFin);
-
-    card.appendChild(form);
-
-    header.addEventListener('click', () => {
-      if (pedido.status !== 'Em Análise pelo Financeiro') return;
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
-
-    lista.appendChild(card);
+function atualizarBotaoLiberar() {
+  const rows = containerCinza.querySelectorAll('.vencimento-row');
+  let soma = 0;
+  rows.forEach((r) => {
+    const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(val)) soma += val;
   });
+
+  const erroEl = containerCinza.querySelector('.venc-soma-error');
+  if (Math.abs(soma - totalVenda) > 0.005) {
+    erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+  } else {
+    erroEl.textContent = '';
+  }
+
+  const todosConfirmados = Array.from(document.querySelectorAll('.vencimento-row'))
+    .every(r => r.dataset.confirmado === 'true');
+
+  const devolucoesValidas = descontosPedido.every(d => {
+    if (d.motivo === 'Devolução de Material') {
+      return d.confirmado_valor_kg === true;
+    }
+    return true;
+  });
+
+  const btnFin = form.querySelector('.btn-registrar');
+  if (btnFin) btnFin.disabled = !(todosConfirmados && devolucoesValidas && erroEl.textContent === '');
+}
+
+renderizarVencimentos(valoresPadrao);
+form.appendChild(containerCinza);
+
+const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
+if (valorTotalTag) {
+  valorTotalTag.style.cursor = 'pointer';
+  valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+  valorTotalTag.onclick = resetarVencimentosPadrao;
+}
+
+const blocoFin = document.createElement('div');
+blocoFin.className = 'bloco-fin';
+blocoFin.innerHTML = `
+  <label>Observações do Financeiro:</label>
+  <textarea placeholder="Digite suas observações aqui..."></textarea>
+  <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
+`;
+const taFin = blocoFin.querySelector('textarea');
+const btnFin = blocoFin.querySelector('button');
+btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
+form.appendChild(blocoFin);
+
+card.appendChild(form);
+
+header.addEventListener('click', () => {
+  if (pedido.status !== 'Em Análise pelo Financeiro') return;
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
+
+lista.appendChild(card);
+});
 }
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
@@ -593,4 +638,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
