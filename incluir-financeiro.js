@@ -310,23 +310,37 @@ async function carregarPedidosFinanceiro() {
     const totalVendaFmt = formatarMoeda(totalVenda);
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-   // Bloco de exibição do ticket principal da balança (lado a lado com os demais)
-if (pedido.ticket_balanca) {
-  const blocoImagens = document.createElement('div');
-  blocoImagens.className = 'bloco-tickets-comerciais';
-  blocoImagens.style.margin = '12px 0 20px 0';
+ // Bloco de exibição dos tickets (compra + balança principal)
+const blocoImagens = document.createElement('div');
+blocoImagens.className = 'bloco-tickets-comerciais';
+blocoImagens.style.margin = '12px 0 20px 0';
 
-  const imgDiv = document.createElement('div');
-  imgDiv.style.display = 'inline-block';
-  imgDiv.style.marginRight = '12px';
-  imgDiv.innerHTML = `
+if (descontosPedido.length && descontosPedido[0].ticket_compra) {
+  const imgCompra = document.createElement('div');
+  imgCompra.style.display = 'inline-block';
+  imgCompra.style.marginRight = '12px';
+  imgCompra.innerHTML = `
+    <label style="font-weight:bold;">Ticket Compra:</label><br>
+    <img id="ticket-compra-${id}" src="/uploads/tickets/${descontosPedido[0].ticket_compra}" alt="Ticket Compra" class="ticket-balanca">
+  `;
+  blocoImagens.appendChild(imgCompra);
+  setTimeout(() => adicionarZoomImagem(`ticket-compra-${id}`), 100);
+}
+
+if (pedido.ticket_balanca) {
+  const imgBalanca = document.createElement('div');
+  imgBalanca.style.display = 'inline-block';
+  imgBalanca.style.marginRight = '12px';
+  imgBalanca.innerHTML = `
     <label style="font-weight:bold;">Ticket da Balança (principal):</label><br>
     <img id="ticket-balanca-${id}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
   `;
-
-  blocoImagens.appendChild(imgDiv);
-  form.appendChild(blocoImagens);
+  blocoImagens.appendChild(imgBalanca);
   setTimeout(() => adicionarZoomImagem(`ticket-balanca-${id}`), 100);
+}
+
+if (blocoImagens.children.length) {
+  form.appendChild(blocoImagens);
 }
 
     function calcularValoresVencimentos() {
