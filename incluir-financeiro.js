@@ -261,7 +261,17 @@ form.appendChild(separador);
 const containerCinza = document.createElement('div');
 containerCinza.className = 'resumo-financeiro';
 
-if (pedido.condicao_pagamento_avista) {
+if (
+  pedido.condicao_pagamento_avista &&
+  pedido.prazos_pagamento?.length &&
+  pedido.prazos_pagamento.some((dataVencimento, index) => {
+    const prazoOriginal = pedido.prazos_pagamento[index];
+    // Considera como "à vista" se a data do vencimento for igual à data da coleta
+    const dataColeta = new Date(pedido.data_coleta).toDateString();
+    const dataVenc = new Date(prazoOriginal).toDateString();
+    return dataVenc === dataColeta;
+  })
+) {
   const blocoCondicao = document.createElement('div');
   blocoCondicao.className = 'obs-pedido';
   blocoCondicao.innerHTML = `
