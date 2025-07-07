@@ -203,7 +203,7 @@ async function carregarPedidosFinanceiro() {
         const totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
         blocoDesc.innerHTML = `
-          <p><strong><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</strong></p>
+          <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
           <p><strong>Produto:</strong> ${nomeProduto}</p>
           <p><strong>Quantidade:</strong> ${qtd} Kg</p>
           <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
