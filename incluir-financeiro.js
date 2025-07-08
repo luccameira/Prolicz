@@ -282,6 +282,7 @@ if (descontosPedido.length) {
       desc.valor_unitario = num;
       desc.confirmado_valor_kg = true;
       calcularValorTotal(num); // Atualiza valor total com novo valor por kg
+      recalcularValorVendaComDescontos();
     } else {
       row.dataset.confirmado = 'false';
       input.disabled = false;
