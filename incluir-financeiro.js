@@ -303,6 +303,11 @@ if (descontosPedido.length) {
         row.appendChild(btnConfirmar);
 
         blocoDesc.appendChild(row);
+           
+           // valor total do desconto (peso x valor por kg)
+const valorTotalDesc = document.createElement('p');
+valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
+blocoDesc.appendChild(valorTotalDesc);
       }
 
     blocoDesc.style.marginTop = '20px';
