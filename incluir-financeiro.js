@@ -278,15 +278,14 @@ async function carregarPedidosFinanceiro() {
     desc.confirmado_valor_kg = true;
   } else {
     row.dataset.confirmado = 'false';
-    input.disabled = false;
+input.disabled = false;
 
-    const newBtn = document.createElement('button');
+const newBtn = document.createElement('button');
 newBtn.id = confirmarBtnId;
 newBtn.textContent = '✓';
 newBtn.type = 'button';
-newBtn.classList.add('btn-confirmar'); // ESSENCIAL!
+newBtn.classList.add('btn-confirmar');
 
-// Estilo visual
 newBtn.style.backgroundColor = '#ffc107';
 newBtn.style.border = 'none';
 newBtn.style.borderRadius = '4px';
@@ -294,23 +293,26 @@ newBtn.style.padding = '5px 10px';
 newBtn.style.cursor = 'pointer';
 newBtn.style.fontWeight = 'bold';
 
-// Conecta o evento
-newBtn.addEventListener('click', () => toggleConfirmacao());
+// 👇 Aqui está o pulo do gato: a função precisa ser RECRIADA com o novo escopo
+newBtn.addEventListener('click', () => {
+  const raw = input.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  if (isNaN(num) || num <= 0) return;
+  row.dataset.confirmado = 'true';
+  input.disabled = true;
+
+  const etiqueta = criarEtiquetaConfirmado();
+  newBtn.replaceWith(etiqueta);
+  desc.valor_unitario = num;
+  desc.confirmado_valor_kg = true;
+
+  atualizarBotaoLiberar();
+});
 
 const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
 if (etiquetaExistente) {
   etiquetaExistente.replaceWith(newBtn);
 }
-
-    desc.confirmado_valor_kg = false;
-  }
-
-  atualizarBotaoLiberar();
-}
-
-// Correto: evento vinculado ao botão original
-btn.addEventListener('click', () => toggleConfirmacao());
-blocoDesc.appendChild(row);
 
         } else {
           blocoDesc.innerHTML += `
