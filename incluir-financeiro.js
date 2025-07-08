@@ -247,6 +247,7 @@ if (descontosPedido.length) {
       }
 
       function toggleConfirmacao(forcarDesmarcar = false) {
+        console.log('Executando toggleConfirmacao...');
         const raw = input.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
         let rowErr = row.querySelector('.row-error');
