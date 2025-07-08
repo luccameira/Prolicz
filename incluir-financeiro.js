@@ -301,8 +301,6 @@ if (descontosPedido.length) {
   row.appendChild(input);
   row.appendChild(btn);
   blocoDesc.appendChild(row);
-}
-
 } else {
   blocoDesc.innerHTML += `
     <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
