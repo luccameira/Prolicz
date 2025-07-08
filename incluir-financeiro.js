@@ -247,7 +247,6 @@ if (descontosPedido.length) {
       }
 
       function toggleConfirmacao(forcarDesmarcar = false) {
-        console.log('Executando toggleConfirmacao...');
         const raw = input.value.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(raw);
         let rowErr = row.querySelector('.row-error');
@@ -272,12 +271,9 @@ if (!isConf && !forcarDesmarcar) {
   row.dataset.confirmado = 'true';
   input.disabled = true;
   const etiqueta = criarEtiquetaConfirmado();
-  if (btn && row.contains(btn)) {
-  row.replaceChild(etiqueta, btn);
-} else {
-  console.warn('Botão de confirmação não encontrado ou não está no row.');
-}
-
+  if (btn && btn.parentNode === row) {
+    row.replaceChild(etiqueta, btn);
+  }
   desc.valor_unitario = num;
   desc.confirmado_valor_kg = true;
 } else {
@@ -297,14 +293,7 @@ if (!isConf && !forcarDesmarcar) {
         atualizarBotaoLiberar();
       }
 
-      btn.addEventListener('click', () => {
-  try {
-    toggleConfirmacao();
-  } catch (err) {
-    console.error('Erro ao confirmar valor por Kg:', err);
-  }
-});
-
+      btn.addEventListener('click', () => toggleConfirmacao());
       blocoDesc.appendChild(row);
     } else {
       blocoDesc.innerHTML += `
