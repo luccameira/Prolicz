@@ -226,8 +226,7 @@ if (descontosPedido.length) {
 
   const input = document.createElement('input');
   input.type = 'text';
-  input.id = valorInputId;
-  input.value = valorKg.toFixed(2).replace('.', ',');
+  input.value = Number(desc.valor_unitario || 0).toFixed(2).replace('.', ',');
 
   input.addEventListener('input', () => {
     let valor = input.value.replace(/\D/g, '');
@@ -237,6 +236,10 @@ if (descontosPedido.length) {
       maximumFractionDigits: 2
     });
   });
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = '✓';
 
   function criarEtiquetaConfirmado() {
     const etiqueta = document.createElement('span');
@@ -251,6 +254,7 @@ if (descontosPedido.length) {
     const raw = input.value.replace(/\./g, '').replace(',', '.');
     const num = parseFloat(raw);
     let rowErr = row.querySelector('.row-error');
+
     if (!rowErr) {
       rowErr = document.createElement('div');
       rowErr.className = 'row-error';
@@ -272,16 +276,13 @@ if (descontosPedido.length) {
       row.dataset.confirmado = 'true';
       input.disabled = true;
       const etiqueta = criarEtiquetaConfirmado();
-      if (btn && btn.parentNode === row) {
-        row.replaceChild(etiqueta, btn);
-      }
+      row.replaceChild(etiqueta, btn);
       desc.valor_unitario = num;
       desc.confirmado_valor_kg = true;
     } else {
       row.dataset.confirmado = 'false';
       input.disabled = false;
       const newBtn = document.createElement('button');
-      newBtn.id = confirmarBtnId;
       newBtn.textContent = '✓';
       newBtn.addEventListener('click', () => toggleConfirmacao());
       const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
@@ -294,17 +295,14 @@ if (descontosPedido.length) {
     atualizarBotaoLiberar();
   }
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.id = confirmarBtnId;
-  btn.textContent = '✓';
   btn.addEventListener('click', () => toggleConfirmacao());
 
   row.appendChild(label);
   row.appendChild(input);
   row.appendChild(btn);
-
   blocoDesc.appendChild(row);
+}
+
 } else {
   blocoDesc.innerHTML += `
     <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
