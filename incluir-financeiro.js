@@ -247,52 +247,66 @@ async function carregarPedidosFinanceiro() {
           }
 
           function toggleConfirmacao(forcarDesmarcar = false) {
-            const raw = input.value.replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(raw);
-            let rowErr = row.querySelector('.row-error');
-            if (!rowErr) {
-              rowErr = document.createElement('div');
-              rowErr.className = 'row-error';
-              rowErr.style.color = 'red';
-              rowErr.style.fontSize = '13px';
-            }
+  const raw = input.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  let rowErr = row.querySelector('.row-error');
 
-            if (isNaN(num) || num <= 0) {
-              rowErr.textContent = 'Valor inválido.';
-              if (!row.contains(rowErr)) row.appendChild(rowErr);
-              input.focus();
-              return;
-            }
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
+  }
 
-            if (row.contains(rowErr)) row.removeChild(rowErr);
+  if (isNaN(num) || num <= 0) {
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    input.focus();
+    return;
+  }
 
-            const isConf = row.dataset.confirmado === 'true';
-            if (!isConf && !forcarDesmarcar) {
-              row.dataset.confirmado = 'true';
-              input.disabled = true;
-              const etiqueta = criarEtiquetaConfirmado();
-              btn.replaceWith(etiqueta);
-              desc.valor_unitario = num;
-              desc.confirmado_valor_kg = true;
-            } else {
-              row.dataset.confirmado = 'false';
-              input.disabled = false;
-              const newBtn = document.createElement('button');
-              newBtn.id = confirmarBtnId;
-              newBtn.textContent = '✓';
-              newBtn.addEventListener('click', () => toggleConfirmacao());
-              const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
-              if (etiquetaExistente) {
-                etiquetaExistente.replaceWith(newBtn);
-              }
-              desc.confirmado_valor_kg = false;
-            }
+  if (row.contains(rowErr)) row.removeChild(rowErr);
 
-            atualizarBotaoLiberar();
-          }
+  const isConf = row.dataset.confirmado === 'true';
+  if (!isConf && !forcarDesmarcar) {
+    row.dataset.confirmado = 'true';
+    input.disabled = true;
 
-          btn.addEventListener('click', () => toggleConfirmacao());
-          blocoDesc.appendChild(row);
+    const etiqueta = criarEtiquetaConfirmado();
+    btn.replaceWith(etiqueta);
+    desc.valor_unitario = num;
+    desc.confirmado_valor_kg = true;
+  } else {
+    row.dataset.confirmado = 'false';
+    input.disabled = false;
+
+    const newBtn = document.createElement('button');
+    newBtn.id = confirmarBtnId;
+    newBtn.textContent = '✓';
+    newBtn.type = 'button';
+    newBtn.style.backgroundColor = '#ffc107';
+    newBtn.style.border = 'none';
+    newBtn.style.borderRadius = '4px';
+    newBtn.style.padding = '5px 10px';
+    newBtn.style.cursor = 'pointer';
+    newBtn.style.fontWeight = 'bold';
+    newBtn.addEventListener('click', () => toggleConfirmacao());
+
+    const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
+    if (etiquetaExistente) {
+      etiquetaExistente.replaceWith(newBtn);
+    }
+
+    desc.confirmado_valor_kg = false;
+  }
+
+  atualizarBotaoLiberar();
+}
+
+// Correto: evento vinculado ao botão original
+btn.addEventListener('click', () => toggleConfirmacao());
+blocoDesc.appendChild(row);
+
         } else {
           blocoDesc.innerHTML += `
             <p><strong>Valor por Kg:</strong> ${formatarMoeda(valorKg)}</p>
