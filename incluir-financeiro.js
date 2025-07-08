@@ -215,100 +215,107 @@ if (descontosPedido.length) {
       <p><strong>Quantidade:</strong> ${qtd} Kg</p>
     `;
 
-         if (desc.motivo === 'Devolução de Material') {
-        const row = document.createElement('div');
-        row.className = 'vencimento-row';
-        row.dataset.confirmado = 'false';
+        if (desc.motivo === 'Devolução de Material') {
+  const row = document.createElement('div');
+  row.className = 'vencimento-row';
+  row.dataset.confirmado = 'false';
 
-        const valorInput = document.createElement('input');
-        valorInput.type = 'text';
-        valorInput.id = valorInputId;
-        valorInput.value = valorKg.toFixed(2).replace('.', ',');
+  const valorInput = document.createElement('input');
+  valorInput.type = 'text';
+  valorInput.id = valorInputId;
+  valorInput.value = valorKg.toFixed(2).replace('.', ',');
 
-        valorInput.addEventListener('input', () => {
-          let valor = valorInput.value.replace(/\D/g, '');
-          valor = (parseInt(valor, 10) / 100).toFixed(2);
-          valorInput.value = parseFloat(valor).toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-        });
+  valorInput.addEventListener('input', () => {
+    let valor = valorInput.value.replace(/\D/g, '');
+    valor = (parseInt(valor, 10) / 100).toFixed(2);
+    valorInput.value = parseFloat(valor).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  });
 
-        const btnConfirmar = document.createElement('button');
-        btnConfirmar.type = 'button';
-        btnConfirmar.id = confirmarBtnId;
-        btnConfirmar.textContent = '✓';
+  const btnConfirmar = document.createElement('button');
+  btnConfirmar.type = 'button';
+  btnConfirmar.id = confirmarBtnId;
+  btnConfirmar.textContent = '✓';
 
-        function toggleConfirmacaoDevolucao(row, input, btn, desc) {
-          const raw = input.value.replace(/\./g, '').replace(',', '.');
-          const num = parseFloat(raw);
-          let rowErr = row.querySelector('.row-error');
-          if (!rowErr) {
-            rowErr = document.createElement('div');
-            rowErr.className = 'row-error';
-            rowErr.style.color = 'red';
-            rowErr.style.fontSize = '13px';
-          }
+  // Elemento do valor total
+  const valorTotalDesc = document.createElement('p');
+  const calcularValorTotal = (valorKgAtual) => {
+    const novoTotal = Number(desc.peso_calculado || 0) * valorKgAtual;
+    valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>`;
+  };
 
-          if (isNaN(num) || num <= 0) {
-            rowErr.textContent = 'Valor inválido.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            input.focus();
-            return;
-          }
+  function toggleConfirmacaoDevolucao(row, input, btn, desc) {
+    const raw = input.value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(raw);
+    let rowErr = row.querySelector('.row-error');
+    if (!rowErr) {
+      rowErr = document.createElement('div');
+      rowErr.className = 'row-error';
+      rowErr.style.color = 'red';
+      rowErr.style.fontSize = '13px';
+    }
 
-          if (row.contains(rowErr)) row.removeChild(rowErr);
+    if (isNaN(num) || num <= 0) {
+      rowErr.textContent = 'Valor inválido.';
+      if (!row.contains(rowErr)) row.appendChild(rowErr);
+      input.focus();
+      return;
+    }
 
-          const isConfirmado = row.dataset.confirmado === 'true';
+    if (row.contains(rowErr)) row.removeChild(rowErr);
 
-          if (!isConfirmado) {
-            row.dataset.confirmado = 'true';
-            input.disabled = true;
-            const etiqueta = document.createElement('span');
-            etiqueta.className = 'etiqueta-valor-item';
-            etiqueta.textContent = 'CONFIRMADO';
-            etiqueta.style.cursor = 'pointer';
-            etiqueta.addEventListener('click', () => {
-              toggleConfirmacaoDevolucao(row, input, btn, desc);
-            });
-            row.replaceChild(etiqueta, btn);
-            desc.valor_unitario = num;
-            desc.confirmado_valor_kg = true;
-          } else {
-            row.dataset.confirmado = 'false';
-            input.disabled = false;
-            const novoBtn = document.createElement('button');
-            novoBtn.id = confirmarBtnId;
-            novoBtn.textContent = '✓';
-            novoBtn.type = 'button';
-            novoBtn.addEventListener('click', () => {
-              toggleConfirmacaoDevolucao(row, input, novoBtn, desc);
-            });
-            const etiquetaAtual = row.querySelector('.etiqueta-valor-item');
-            if (etiquetaAtual) {
-              row.replaceChild(novoBtn, etiquetaAtual);
-            }
-            desc.confirmado_valor_kg = false;
-          }
+    const isConfirmado = row.dataset.confirmado === 'true';
 
-          atualizarBotaoLiberar();
-        }
-
-        btnConfirmar.addEventListener('click', () => {
-          toggleConfirmacaoDevolucao(row, valorInput, btnConfirmar, desc);
-        });
-
-        row.innerHTML = `<span class="venc-label">Valor por Kg:</span>`;
-        row.appendChild(valorInput);
-        row.appendChild(btnConfirmar);
-
-        blocoDesc.appendChild(row);
-           
-           // valor total do desconto (peso x valor por kg)
-const valorTotalDesc = document.createElement('p');
-valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span>`;
-blocoDesc.appendChild(valorTotalDesc);
+    if (!isConfirmado) {
+      row.dataset.confirmado = 'true';
+      input.disabled = true;
+      const etiqueta = document.createElement('span');
+      etiqueta.className = 'etiqueta-valor-item';
+      etiqueta.textContent = 'CONFIRMADO';
+      etiqueta.style.cursor = 'pointer';
+      etiqueta.addEventListener('click', () => {
+        toggleConfirmacaoDevolucao(row, input, btn, desc);
+      });
+      row.replaceChild(etiqueta, btn);
+      desc.valor_unitario = num;
+      desc.confirmado_valor_kg = true;
+      calcularValorTotal(num); // Atualiza valor total com novo valor por kg
+    } else {
+      row.dataset.confirmado = 'false';
+      input.disabled = false;
+      const novoBtn = document.createElement('button');
+      novoBtn.id = confirmarBtnId;
+      novoBtn.textContent = '✓';
+      novoBtn.type = 'button';
+      novoBtn.addEventListener('click', () => {
+        toggleConfirmacaoDevolucao(row, input, novoBtn, desc);
+      });
+      const etiquetaAtual = row.querySelector('.etiqueta-valor-item');
+      if (etiquetaAtual) {
+        row.replaceChild(novoBtn, etiquetaAtual);
       }
+      desc.confirmado_valor_kg = false;
+    }
+
+    atualizarBotaoLiberar();
+  }
+
+  btnConfirmar.addEventListener('click', () => {
+    toggleConfirmacaoDevolucao(row, valorInput, btnConfirmar, desc);
+  });
+
+  row.innerHTML = `<span class="venc-label">Valor por Kg:</span>`;
+  row.appendChild(valorInput);
+  row.appendChild(btnConfirmar);
+
+  blocoDesc.appendChild(row);
+
+  // Valor total inicial (antes da confirmação)
+  calcularValorTotal(valorKg);
+  blocoDesc.appendChild(valorTotalDesc);
+}
 
     blocoDesc.style.marginTop = '20px';
     blocoDesc.style.padding = '12px 16px';
