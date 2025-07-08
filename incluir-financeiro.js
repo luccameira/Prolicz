@@ -140,7 +140,7 @@ async function carregarPedidosFinanceiro() {
         descontosPedido.push({
          ...desc,
          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-         valor_unitario: produtoReal?.valor_unitario || 0,
+         valor_unitario: Number(produtoReal?.valor_unitario) || Number(desc.valor_unitario) || 0,
          ticket_devolucao: desc.ticket_devolucao || null,
          ticket_compra: desc.ticket_compra || null,
          confirmado_valor_kg: false
