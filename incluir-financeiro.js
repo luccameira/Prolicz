@@ -281,21 +281,26 @@ async function carregarPedidosFinanceiro() {
     input.disabled = false;
 
     const newBtn = document.createElement('button');
-    newBtn.id = confirmarBtnId;
-    newBtn.textContent = '✓';
-    newBtn.type = 'button';
-    newBtn.style.backgroundColor = '#ffc107';
-    newBtn.style.border = 'none';
-    newBtn.style.borderRadius = '4px';
-    newBtn.style.padding = '5px 10px';
-    newBtn.style.cursor = 'pointer';
-    newBtn.style.fontWeight = 'bold';
-    newBtn.addEventListener('click', () => toggleConfirmacao());
+newBtn.id = confirmarBtnId;
+newBtn.textContent = '✓';
+newBtn.type = 'button';
+newBtn.classList.add('btn-confirmar'); // ESSENCIAL!
 
-    const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
-    if (etiquetaExistente) {
-      etiquetaExistente.replaceWith(newBtn);
-    }
+// Estilo visual
+newBtn.style.backgroundColor = '#ffc107';
+newBtn.style.border = 'none';
+newBtn.style.borderRadius = '4px';
+newBtn.style.padding = '5px 10px';
+newBtn.style.cursor = 'pointer';
+newBtn.style.fontWeight = 'bold';
+
+// Conecta o evento
+newBtn.addEventListener('click', () => toggleConfirmacao());
+
+const etiquetaExistente = row.querySelector('.etiqueta-valor-item');
+if (etiquetaExistente) {
+  etiquetaExistente.replaceWith(newBtn);
+}
 
     desc.confirmado_valor_kg = false;
   }
