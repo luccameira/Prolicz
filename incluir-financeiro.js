@@ -423,7 +423,16 @@ if (pedido.materiais && pedido.materiais.length) {
   }).join('');
 }
 
-const totalVenda = totalComNota + totalSemNota;
+let totalDescontosComerciais = 0;
+descontosPedido.forEach(d => {
+  if ((d.motivo === 'Devolução de Material' || d.motivo === 'Compra de Material') && d.confirmado_valor_kg) {
+    const val = Number(d.valor_unitario || 0);
+    const peso = Number(d.peso_calculado || 0);
+    totalDescontosComerciais += val * peso;
+  }
+});
+
+const totalVenda = (totalComNota + totalSemNota) - totalDescontosComerciais;
 const totalVendaFmt = formatarMoeda(totalVenda);
 const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
