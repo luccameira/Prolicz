@@ -305,10 +305,6 @@ if (descontosPedido.length) {
         blocoDesc.appendChild(row);
       }
 
-    blocoDesc.innerHTML += `
-  <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(totalCompra)}</span></p>
-`;
-    
     blocoDesc.style.marginTop = '20px';
     blocoDesc.style.padding = '12px 16px';
     blocoDesc.style.borderRadius = '8px';
