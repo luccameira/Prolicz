@@ -1,4 +1,5 @@
 
+
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
@@ -282,7 +283,6 @@ if (descontosPedido.length) {
       desc.valor_unitario = num;
       desc.confirmado_valor_kg = true;
       calcularValorTotal(num); // Atualiza valor total com novo valor por kg
-      recalcularValorVendaComDescontos();
     } else {
       row.dataset.confirmado = 'false';
       input.disabled = false;
@@ -424,30 +424,20 @@ if (pedido.materiais && pedido.materiais.length) {
   }).join('');
 }
 
-let totalDescontosComerciais = 0;
-descontosPedido.forEach(d => {
-  if ((d.motivo === 'Devolução de Material' || d.motivo === 'Compra de Material') && d.confirmado_valor_kg) {
-    const val = Number(d.valor_unitario || 0);
-    const peso = Number(d.peso_calculado || 0);
-    totalDescontosComerciais += val * peso;
-  }
-});
-
-const totalVenda = (totalComNota + totalSemNota) - totalDescontosComerciais;
+const totalVenda = totalComNota + totalSemNota;
 const totalVendaFmt = formatarMoeda(totalVenda);
 const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-function calcularValoresVencimentos(totalVendaLocal) {
-  const baseValor = totalVendaLocal ?? totalVenda;
+function calcularValoresVencimentos() {
   let parcelas = [];
-  let base = Math.floor((baseValor * 100) / numVencimentos) / 100;
+  let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
   let totalParcial = 0;
   for (let i = 0; i < numVencimentos; i++) {
     if (i < numVencimentos - 1) {
       parcelas.push(base);
       totalParcial += base;
     } else {
-      let ultima = (baseValor - totalParcial);
+      let ultima = (totalVenda - totalParcial);
       parcelas.push(ultima);
     }
   }
@@ -709,28 +699,6 @@ function adicionarZoomImagem(idImagem) {
     overlay.appendChild(closeBtn);
     document.body.appendChild(overlay);
   });
-}
-
-function recalcularValorVendaComDescontos() {
-  let totalDescontosComerciais = 0;
-  descontosPedido.forEach(d => {
-    if ((d.motivo === 'Devolução de Material' || d.motivo === 'Compra de Material') && d.confirmado_valor_kg) {
-      const val = Number(d.valor_unitario || 0);
-      const peso = Number(d.peso_calculado || 0);
-      totalDescontosComerciais += val * peso;
-    }
-  });
-
-  const totalVendaAtual = (totalComNota + totalSemNota) - totalDescontosComerciais;
-  const novoFmt = formatarMoeda(totalVendaAtual);
-  const elTotal = document.querySelector('.resumo-financeiro .etiqueta-valor-item');
-  if (elTotal) {
-    elTotal.textContent = novoFmt;
-  }
-
-  // Atualiza valores dos inputs de vencimentos
-  const parcelas = calcularValoresVencimentos(totalVendaAtual);
-  renderizarVencimentos(parcelas);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
