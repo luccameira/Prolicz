@@ -220,7 +220,8 @@ if (descontosPedido.length) {
   const row = document.createElement('div');
   row.className = 'vencimento-row';
   row.dataset.confirmado = 'false';
-
+}
+          
 else if (desc.motivo === 'Compra de Material') {
   const valorTotalCompra = valorKg * Number(desc.peso_calculado || 0);
 
