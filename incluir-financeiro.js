@@ -216,50 +216,35 @@ if (descontosPedido.length) {
       <p><strong>Quantidade:</strong> ${qtd} Kg</p>
     `;
 
-        if (desc.motivo === 'Devolução de Material') {
-  const row = document.createElement('div');
-  row.className = 'vencimento-row';
-  row.dataset.confirmado = 'false';
-}
-          
-else if (desc.motivo === 'Compra de Material') {
-  const valorTotalCompra = valorKg * Number(desc.peso_calculado || 0);
+    if (desc.motivo === 'Devolução de Material') {
+      const row = document.createElement('div');
+      row.className = 'vencimento-row';
+      row.dataset.confirmado = 'false';
 
-  const blocoInfo = document.createElement('div');
-  blocoInfo.style.marginTop = '8px';
-  blocoInfo.innerHTML = `
-    <p><strong>Valor por Kg:</strong> ${valorKg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-    <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight:bold;">${formatarMoeda(valorTotalCompra)}</span></p>
-  `;
+      const valorInput = document.createElement('input');
+      valorInput.type = 'text';
+      valorInput.id = valorInputId;
+      valorInput.value = valorKg.toFixed(2).replace('.', ',');
 
-  blocoDesc.appendChild(blocoInfo);
-}
+      valorInput.addEventListener('input', () => {
+        let valor = valorInput.value.replace(/\D/g, '');
+        valor = (parseInt(valor, 10) / 100).toFixed(2);
+        valorInput.value = parseFloat(valor).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      });
 
-  const valorInput = document.createElement('input');
-  valorInput.type = 'text';
-  valorInput.id = valorInputId;
-  valorInput.value = valorKg.toFixed(2).replace('.', ',');
+      const btnConfirmar = document.createElement('button');
+      btnConfirmar.type = 'button';
+      btnConfirmar.id = confirmarBtnId;
+      btnConfirmar.textContent = '✓';
 
-  valorInput.addEventListener('input', () => {
-    let valor = valorInput.value.replace(/\D/g, '');
-    valor = (parseInt(valor, 10) / 100).toFixed(2);
-    valorInput.value = parseFloat(valor).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  });
-
-  const btnConfirmar = document.createElement('button');
-  btnConfirmar.type = 'button';
-  btnConfirmar.id = confirmarBtnId;
-  btnConfirmar.textContent = '✓';
-
-  // Elemento do valor total
-  const valorTotalDesc = document.createElement('p');
-  const calcularValorTotal = (valorKgAtual) => {
-    const novoTotal = Number(desc.peso_calculado || 0) * valorKgAtual;
-    valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>`;
-  };
+      const valorTotalDesc = document.createElement('p');
+      const calcularValorTotal = (valorKgAtual) => {
+        const novoTotal = Number(desc.peso_calculado || 0) * valorKgAtual;
+        valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>`;
+      };
 
   function toggleConfirmacaoDevolucao(row, input, btn, desc) {
     const raw = input.value.replace(/\./g, '').replace(',', '.');
