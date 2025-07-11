@@ -221,6 +221,19 @@ if (descontosPedido.length) {
   row.className = 'vencimento-row';
   row.dataset.confirmado = 'false';
 
+else if (desc.motivo === 'Compra de Material') {
+  const valorTotalCompra = valorKg * Number(desc.peso_calculado || 0);
+
+  const blocoInfo = document.createElement('div');
+  blocoInfo.style.marginTop = '8px';
+  blocoInfo.innerHTML = `
+    <p><strong>Valor por Kg:</strong> ${valorKg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+    <p><strong>Valor total:</strong> <span style="color:#b12e2e; font-weight:bold;">${formatarMoeda(valorTotalCompra)}</span></p>
+  `;
+
+  blocoDesc.appendChild(blocoInfo);
+}
+
   const valorInput = document.createElement('input');
   valorInput.type = 'text';
   valorInput.id = valorInputId;
