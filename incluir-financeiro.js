@@ -525,82 +525,108 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 }
 
     function renderizarVencimentos(valores) {
-  vencContainer.innerHTML = '';
-  inputs.length = 0;
+  const container = document.getElementById('vencimentos-container');
+  container.innerHTML = '';
 
-  // 🔍 Obter valor total da venda atualizado
-  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
-  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
+  const vencimentos = [];
+  const totalVenda = Number(document.getElementById('reset-vencimentos')?.textContent.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
 
-  let valoresConfirmados = [];
-  let indicesLivres = [];
-
-  for (let i = 0; i < numVencimentos; i++) {
-    const valorOriginal = Number(valores[i] || 0);
-    valoresConfirmados.push({
-      valor: valorOriginal,
+  valores.forEach((valor, index) => {
+    vencimentos.push({
+      data: pedido.prazos_pagamento[index]?.data || '',
+      valor: valor,
       confirmado: false
+    });
+  });
+
+  // Verifica se já existem vencimentos confirmados e salva os valores
+  container.querySelectorAll('.vencimento-item').forEach((el, idx) => {
+    const input = el.querySelector('input');
+    const btn = el.querySelector('button');
+    if (btn?.dataset.confirmado === 'true') {
+      vencimentos[idx].valor = Number(input.value.replace(/[^\d,-]/g, '').replace(',', '.'));
+      vencimentos[idx].confirmado = true;
+    }
+  });
+
+  // Soma dos valores já confirmados
+  const totalConfirmado = vencimentos.reduce((soma, v) => v.confirmado ? soma + v.valor : soma, 0);
+
+  // Valor restante a ser distribuído
+  const restante = totalVenda - totalConfirmado;
+
+  // Quantos vencimentos ainda faltam distribuir
+  const pendentes = vencimentos.filter(v => !v.confirmado).length;
+
+  if (pendentes > 0) {
+    const valorPadrao = Math.floor((restante * 100) / pendentes) / 100;
+    let acumulado = 0;
+
+    vencimentos.forEach((v, i, arr) => {
+      if (!v.confirmado) {
+        if (pendentes > 1) {
+          v.valor = valorPadrao;
+          acumulado += valorPadrao;
+        } else {
+          v.valor = Math.max(0, restante - acumulado);
+        }
+      }
     });
   }
 
-  for (let i = 0; i < numVencimentos; i++) {
-    const dt = new Date(pedido.prazos_pagamento[i]);
-    const ok = !isNaN(dt.getTime());
+  vencimentos.forEach((venc, i) => {
+    const vencimentoEl = document.createElement('div');
+    vencimentoEl.className = 'vencimento-item';
 
-    const row = document.createElement('div');
-    row.className = 'vencimento-row';
-    row.dataset.confirmado = 'false';
+    const label = document.createElement('label');
+    label.textContent = `Vencimento ${i + 1}`;
+    vencimentoEl.appendChild(label);
 
-    const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const dataInput = document.createElement('input');
+    dataInput.type = 'text';
+    dataInput.value = pedido.prazos_pagamento[i]?.data || '';
+    dataInput.readOnly = true;
+    dataInput.className = 'input-data';
+    vencimentoEl.appendChild(dataInput);
 
-    row.innerHTML = `
-      <span class="venc-label">Vencimento ${i + 1}</span>
-      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-      <input type="text" value="${valorFmt}" />
-      <button type="button">✓</button>
-    `;
+    const valorInput = document.createElement('input');
+    valorInput.type = 'text';
+    valorInput.value = formatarMoeda(venc.valor);
+    valorInput.className = 'input-valor';
+    valorInput.dataset.index = i;
+    valorInput.readOnly = venc.confirmado;
+    vencimentoEl.appendChild(valorInput);
 
-    const inp = row.querySelector('input');
-    const btn = row.querySelector('button');
-    const etiquetaConfirmado = document.createElement('span');
-    etiquetaConfirmado.className = 'etiqueta-valor-item';
-    etiquetaConfirmado.textContent = 'CONFIRMADO';
-    etiquetaConfirmado.style.cursor = 'pointer';
+    const btnConfirmar = document.createElement('button');
+    btnConfirmar.innerHTML = venc.confirmado ? 'CONFIRMADO' : '✓';
+    btnConfirmar.className = venc.confirmado ? 'btn-confirmado' : 'btn-pendente';
+    btnConfirmar.dataset.index = i;
+    btnConfirmar.dataset.confirmado = venc.confirmado.toString();
 
-    inputs[i] = inp;
+    btnConfirmar.onclick = () => {
+      if (venc.confirmado) return;
 
-    function redistribuirRestantes() {
-      let somaConfirmados = 0;
-      let livres = [];
+      const novoValor = Number(valorInput.value.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+      const somaConfirmadoAtual = vencimentos.reduce((s, v, idx) =>
+        idx !== i && v.confirmado ? s + v.valor : s, 0);
 
-      for (let j = 0; j < numVencimentos; j++) {
-        const linha = vencContainer.children[j];
-        const inputVal = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
-
-        if (linha.dataset.confirmado === 'true') {
-          somaConfirmados += inputVal;
-        } else {
-          livres.push(j);
-        }
+      if (novoValor < 0 || novoValor + somaConfirmadoAtual > totalVenda) {
+        alert('Valor inválido ou excede o total da venda.');
+        return;
       }
 
-      const restante = totalVendaNum - somaConfirmados;
-      const partes = livres.length;
-      if (partes <= 0) return;
+      venc.valor = novoValor;
+      venc.confirmado = true;
 
-      let base = Math.floor((restante * 100) / partes) / 100;
-      let acumulado = 0;
+      renderizarVencimentos(vencimentos.map(v => v.valor));
+    };
 
-      for (let k = 0; k < partes; k++) {
-        const idx = livres[k];
-        const val = (k < partes - 1) ? base : (restante - acumulado);
-        acumulado += val;
-        inputs[idx].value = val.toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-    }
+    vencimentoEl.appendChild(btnConfirmar);
+    container.appendChild(vencimentoEl);
+  });
+
+  atualizarBotaoLiberar();
+}
 
     function toggleConfirmacao() {
       const raw = inp.value.replace(/\./g, '').replace(',', '.');
