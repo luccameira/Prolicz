@@ -432,9 +432,17 @@ async function carregarPedidosFinanceiro() {
       }).join('');
     }
 
-    const totalVenda = totalComNota + totalSemNota;
-    const totalVendaFmt = formatarMoeda(totalVenda);
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
+    // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
+const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
+  const peso = Number(d.peso_calculado || 0);
+  const valorKg = Number(d.valor_unitario || 0);
+  return soma + (peso * valorKg);
+}, 0);
+
+// 🔧 Valor total da venda com desconto aplicado
+const totalVenda = totalComNota + totalSemNota - totalDescontosComerciais;
+const totalVendaFmt = formatarMoeda(totalVenda);
+const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     function calcularValoresVencimentos() {
       let parcelas = [];
