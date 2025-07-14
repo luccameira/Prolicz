@@ -599,7 +599,6 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   }
 
   atualizarBotaoLiberar();
-});
 
         btn.addEventListener('click', toggleConfirmacao);
         etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
