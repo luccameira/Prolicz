@@ -570,9 +570,43 @@ function toggleConfirmacao() {
     return;
   }
 
+  const isConf = row.dataset.confirmado === 'true';
+
+  // Pega o total da venda exibido na tela
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  const totalVendaAtual = tagTotalVenda
+    ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
+    : 0;
+
+  // Calcula total já confirmado + esse que o usuário está tentando confirmar
+  const valoresConfirmados = [];
+  const indicesNaoConfirmados = [];
+  let totalConfirmado = 0;
+
+  for (let j = 0; j < inputs.length; j++) {
+    const rowAtual = inputs[j].closest('.vencimento-row');
+    const confirmado = rowAtual.dataset.confirmado === 'true';
+    const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
+
+    if (row === rowAtual && !isConf) {
+      // Estamos tentando confirmar este agora
+      totalConfirmado += num;
+    } else if (confirmado) {
+      totalConfirmado += valor;
+    } else {
+      indicesNaoConfirmados.push(j);
+    }
+  }
+
+  if (!isConf && totalConfirmado > totalVendaAtual + 0.01) {
+    rowErr.textContent = 'A soma dos vencimentos excede o valor total da venda.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
+
   if (row.contains(rowErr)) row.removeChild(rowErr);
 
-  const isConf = row.dataset.confirmado === 'true';
   if (!isConf) {
     row.dataset.confirmado = 'true';
     inp.disabled = true;
@@ -583,29 +617,7 @@ function toggleConfirmacao() {
     etiquetaConfirmado.replaceWith(btn);
   }
 
-  // 🔧 NOVA REGRA: recalcular apenas vencimentos não confirmados
-  const valoresConfirmados = [];
-  const indicesNaoConfirmados = [];
-  let totalConfirmado = 0;
-
-  for (let j = 0; j < inputs.length; j++) {
-    const rowAtual = inputs[j].closest('.vencimento-row');
-    const confirmado = rowAtual.dataset.confirmado === 'true';
-    const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
-
-    if (confirmado) {
-      valoresConfirmados[j] = valor;
-      totalConfirmado += valor;
-    } else {
-      valoresConfirmados[j] = null;
-      indicesNaoConfirmados.push(j);
-    }
-  }
-
-  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
-  const totalVendaAtual = tagTotalVenda
-    ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
-    : 0;
+  // Recalcular vencimentos restantes
   const valorRestante = totalVendaAtual - totalConfirmado;
   const qtdNaoConfirmados = indicesNaoConfirmados.length;
 
