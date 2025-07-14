@@ -500,7 +500,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
   const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
 
-  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+    const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
   if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
 
   valoresPadrao = (() => {
@@ -519,9 +519,15 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     return parcelas;
   })();
 
-  renderizarVencimentos(valoresPadrao);
+  // 🔁 Só redistribui vencimentos se ainda não estão todos confirmados
+  const todosConfirmados = Array.from(containerCinza.querySelectorAll('.vencimento-row'))
+    .every(r => r.dataset.confirmado === 'true');
+
+  if (!todosConfirmados) {
+    renderizarVencimentos(valoresPadrao);
+  }
+
   atualizarBotaoLiberar();
-}
 
     function renderizarVencimentos(valores) {
       vencContainer.innerHTML = '';
