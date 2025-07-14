@@ -559,12 +559,6 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     inp.addEventListener('blur', atualizarBotaoLiberar);
 
-    btn.addEventListener('click', () => {
-      row.dataset.confirmado = 'true';
-      btn.replaceWith(etiquetaConfirmado.cloneNode(true));
-      atualizarBotaoLiberar();
-    });
-
     const etiquetaConfirmado = document.createElement('span');
     etiquetaConfirmado.className = 'etiqueta-valor-item';
     etiquetaConfirmado.textContent = 'CONFIRMADO';
