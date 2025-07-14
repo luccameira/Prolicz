@@ -619,11 +619,9 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       }
     }
 
-    function resetarVencimentosPadrao() {
-      valoresPadrao = calcularValoresVencimentos();
-      renderizarVencimentos(valoresPadrao);
-      atualizarBotaoLiberar();
-    }
+   function resetarVencimentosPadrao() {
+  atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
+}
 
    function atualizarBotaoLiberar() {
   let soma = 0;
