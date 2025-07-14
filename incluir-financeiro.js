@@ -280,6 +280,7 @@ async function carregarPedidosFinanceiro() {
               desc.valor_unitario = num;
               desc.confirmado_valor_kg = true;
               calcularValorTotal(num);
+              atualizarResumoFinanceiro();
             } else {
               row.dataset.confirmado = 'false';
               input.disabled = false;
@@ -715,6 +716,30 @@ function adicionarZoomImagem(idImagem) {
     overlay.appendChild(closeBtn);
     document.body.appendChild(overlay);
   });
+}
+
+function atualizarResumoFinanceiro() {
+  // 🔁 Recalcular total de descontos
+  const totalDescontos = descontosPedido.reduce((soma, d) => {
+    const peso = Number(d.peso_calculado || 0);
+    const valorKg = Number(d.valor_unitario || 0);
+    return soma + (peso * valorKg);
+  }, 0);
+
+  // 🔁 Recalcular total de venda
+  const totalFinalVenda = totalComNota + totalSemNota - totalDescontos;
+  const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
+
+  // Atualizar etiqueta de valor total da venda
+  const tagTotalVenda = document.querySelector('#reset-vencimentos');
+  if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
+
+  // Atualizar vencimentos
+  valoresPadrao = calcularValoresVencimentos();
+  renderizarVencimentos(valoresPadrao);
+
+  // Atualizar botão liberar
+  atualizarBotaoLiberar();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
