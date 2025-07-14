@@ -601,29 +601,40 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
   const isConf = row.dataset.confirmado === 'true';
 
-  if (!isConf) {
-    row.dataset.confirmado = 'true';
-    inp.disabled = true;
-    btn.replaceWith(etiquetaConfirmado);
+ if (!isConf) {
+  row.dataset.confirmado = 'true';
+  inp.disabled = true;
+  btn.replaceWith(etiquetaConfirmado);
 
-    // 🔧 NOVO TRECHO — recalcula vencimentos restantes
-    const valorConfirmado = num;
-    const restante = totalVenda - valorConfirmado;
+  // NOVO TRECHO: recalcula vencimentos restantes manualmente
+  const valorConfirmado = num;
+  const restante = totalVenda - valorConfirmado;
 
-    // Recalcula apenas os vencimentos não confirmados (começando do segundo)
-    const qtdRestante = numVencimentos - 1;
-    let base = Math.floor((restante * 100) / qtdRestante) / 100;
-    let valoresNovos = [valorConfirmado];
-    let parcial = 0;
+  let restanteParcelas = numVencimentos - 1;
+  let base = Math.floor((restante * 100) / restanteParcelas) / 100;
+  let parcial = 0;
 
-    for (let j = 1; j < numVencimentos; j++) {
+  for (let j = 1; j < numVencimentos; j++) {
+    const rowJ = vencContainer.querySelectorAll('.vencimento-row')[j];
+    const inpJ = rowJ.querySelector('input');
+    const isConfirmado = rowJ.dataset.confirmado === 'true';
+
+    if (!isConfirmado) {
+      let novoValor;
       if (j < numVencimentos - 1) {
-        valoresNovos.push(base);
+        novoValor = base;
         parcial += base;
       } else {
-        valoresNovos.push(restante - parcial);
+        novoValor = (restante - parcial);
       }
+
+      inpJ.value = novoValor.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
+  }
+}
 
     renderizarVencimentos(valoresNovos);
   } else {
