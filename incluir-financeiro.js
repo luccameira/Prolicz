@@ -590,13 +590,6 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     return;
   }
 
-  if (num > totalVenda) {
-    rowErr.textContent = 'Valor excede o total da venda.';
-    if (!row.contains(rowErr)) row.appendChild(rowErr);
-    inp.focus();
-    return;
-  }
-
   if (row.contains(rowErr)) row.removeChild(rowErr);
 
   const isConf = row.dataset.confirmado === 'true';
@@ -610,40 +603,43 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     etiquetaConfirmado.replaceWith(btn);
   }
 
-  // 🔧 NOVO CÁLCULO: Recalcular vencimentos restantes
+  // 🔧 NOVA REGRA: recalcular apenas vencimentos não confirmados
   const valoresConfirmados = [];
+  const indicesNaoConfirmados = [];
   let totalConfirmado = 0;
-  let numNaoConfirmados = 0;
 
   for (let j = 0; j < inputs.length; j++) {
     const rowAtual = inputs[j].closest('.vencimento-row');
-    const isConfirmado = rowAtual.dataset.confirmado === 'true';
-    if (isConfirmado) {
-      const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
+    const confirmado = rowAtual.dataset.confirmado === 'true';
+    const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
+
+    if (confirmado) {
       valoresConfirmados[j] = valor;
       totalConfirmado += valor;
     } else {
       valoresConfirmados[j] = null;
-      numNaoConfirmados++;
+      indicesNaoConfirmados.push(j);
     }
   }
 
   const valorRestante = totalVenda - totalConfirmado;
-  const base = Math.floor((valorRestante * 100) / numNaoConfirmados) / 100;
-  let totalDistribuido = 0;
+  const qtdNaoConfirmados = indicesNaoConfirmados.length;
 
-  for (let j = 0; j < inputs.length; j++) {
-    if (valoresConfirmados[j] === null) {
+  if (qtdNaoConfirmados > 0) {
+    const base = Math.floor((valorRestante * 100) / qtdNaoConfirmados) / 100;
+    let acumulado = 0;
+
+    indicesNaoConfirmados.forEach((idx, i) => {
       let valorAtual;
-      if (j < inputs.length - 1) {
+      if (i < qtdNaoConfirmados - 1) {
         valorAtual = base;
-        totalDistribuido += base;
+        acumulado += base;
       } else {
-        // Último input não confirmado recebe o restante para ajustar centavos
-        valorAtual = valorRestante - totalDistribuido;
+        // Último vencimento não confirmado: pega o que sobrar
+        valorAtual = valorRestante - acumulado;
       }
-      inputs[j].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    }
+      inputs[idx].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    });
   }
 
   atualizarBotaoLiberar();
