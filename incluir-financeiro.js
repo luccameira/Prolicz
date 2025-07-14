@@ -552,7 +552,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     vencContainer.appendChild(row);
   
- function toggleConfirmacao() {
+function toggleConfirmacao() {
   const raw = inp.value.replace(/\./g, '').replace(',', '.');
   const num = parseFloat(raw);
   let rowErr = row.querySelector('.row-error');
@@ -603,10 +603,11 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   }
 
   const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
-const totalVendaAtual = tagTotalVenda
-  ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
-  : 0;
-const valorRestante = totalVendaAtual - totalConfirmado;
+  const totalVendaAtual = tagTotalVenda
+    ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
+    : 0;
+  const valorRestante = totalVendaAtual - totalConfirmado;
+  const qtdNaoConfirmados = indicesNaoConfirmados.length;
 
   if (qtdNaoConfirmados > 0) {
     const base = Math.floor((valorRestante * 100) / qtdNaoConfirmados) / 100;
@@ -618,7 +619,6 @@ const valorRestante = totalVendaAtual - totalConfirmado;
         valorAtual = base;
         acumulado += base;
       } else {
-        // Último vencimento não confirmado: pega o que sobrar
         valorAtual = valorRestante - acumulado;
       }
       inputs[idx].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
