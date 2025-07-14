@@ -368,6 +368,11 @@ async function carregarPedidosFinanceiro() {
       });
     }
 
+    // 🔧 NOVO TRECHO: calcular o total de "Compra de Material" para abater do total da venda
+      const totalCompras = descontosPedido
+        .filter(d => d.motivo === 'Compra de Material')
+        .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+
       const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
