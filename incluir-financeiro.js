@@ -524,43 +524,54 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 }
 
     function renderizarVencimentos(valores) {
-      vencContainer.innerHTML = '';
-      inputs.length = 0;
+  vencContainer.innerHTML = '';
+  inputs.length = 0;
 
-      for (let i = 0; i < numVencimentos; i++) {
-        const dt = new Date(pedido.prazos_pagamento[i]);
-        const ok = !isNaN(dt.getTime());
-        const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
+  for (let i = 0; i < numVencimentos; i++) {
+    const dt = new Date(pedido.prazos_pagamento[i]);
+    const ok = !isNaN(dt.getTime());
+    const valorRaw = Number(valores[i] || 0);
+    const valorFmt = valorRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-        const row = document.createElement('div');
-        row.className = 'vencimento-row';
-        row.dataset.confirmado = 'false';
-        row.innerHTML = `
-          <span class="venc-label">Vencimento ${i + 1}</span>
-          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" />
-          <button type="button">✓</button>
-        `;
+    const row = document.createElement('div');
+    row.className = 'vencimento-row';
+    row.dataset.confirmado = 'false';
+    row.innerHTML = `
+      <span class="venc-label">Vencimento ${i + 1}</span>
+      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+      <input type="text" value="${valorFmt}" />
+      <button type="button">✓</button>
+    `;
 
-        const inp = row.querySelector('input');
-        const btn = row.querySelector('button');
-        inputs[i] = inp;
+    const inp = row.querySelector('input');
+    const btn = row.querySelector('button');
+    inputs[i] = inp;
 
-        inp.addEventListener('input', () => {
-          let valor = inp.value.replace(/\D/g, '');
-          valor = (parseInt(valor, 10) / 100).toFixed(2);
-          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-        });
+    inp.addEventListener('input', () => {
+      let valor = inp.value.replace(/\D/g, '');
+      valor = (parseInt(valor, 10) / 100).toFixed(2);
+      inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    });
 
-        inp.addEventListener('blur', atualizarBotaoLiberar);
+    inp.addEventListener('blur', atualizarBotaoLiberar);
 
-        const etiquetaConfirmado = document.createElement('span');
-        etiquetaConfirmado.className = 'etiqueta-valor-item';
-        etiquetaConfirmado.textContent = 'CONFIRMADO';
-        etiquetaConfirmado.style.cursor = 'pointer';
+    btn.addEventListener('click', () => {
+      row.dataset.confirmado = 'true';
+      btn.replaceWith(etiquetaConfirmado.cloneNode(true));
+      atualizarBotaoLiberar();
+    });
+
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
+
+    vencContainer.appendChild(row);
+  }
+}
 
         function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
