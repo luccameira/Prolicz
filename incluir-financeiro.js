@@ -473,6 +473,56 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos();
 
+    function atualizarResumoFinanceiro() {
+  let totalComNotaNovo = 0;
+  let totalSemNotaNovo = 0;
+
+  pedido.materiais?.forEach(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    totalComNotaNovo += pesoFinal * valorComNota;
+    totalSemNotaNovo += pesoFinal * valorSemNota;
+  });
+
+  const totalDescontos = descontosPedido.reduce((soma, d) => {
+    const peso = Number(d.peso_calculado || 0);
+    const valorKg = Number(d.valor_unitario || 0);
+    return soma + (peso * valorKg);
+  }, 0);
+
+  const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
+  const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
+
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
+
+  valoresPadrao = (() => {
+    let parcelas = [];
+    let base = Math.floor((totalFinalVenda * 100) / numVencimentos) / 100;
+    let totalParcial = 0;
+    for (let i = 0; i < numVencimentos; i++) {
+      if (i < numVencimentos - 1) {
+        parcelas.push(base);
+        totalParcial += base;
+      } else {
+        let ultima = (totalFinalVenda - totalParcial);
+        parcelas.push(ultima);
+      }
+    }
+    return parcelas;
+  })();
+
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
+
     function renderizarVencimentos(valores) {
       vencContainer.innerHTML = '';
       inputs.length = 0;
@@ -716,56 +766,6 @@ function adicionarZoomImagem(idImagem) {
     overlay.appendChild(closeBtn);
     document.body.appendChild(overlay);
   });
-}
-
-function atualizarResumoFinanceiro() {
-  let totalComNotaNovo = 0;
-  let totalSemNotaNovo = 0;
-
-  pedido.materiais?.forEach(item => {
-    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-
-    const descontosPalete = item.descontos?.filter(d =>
-      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-    ) || [];
-
-    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
-
-    totalComNotaNovo += pesoFinal * valorComNota;
-    totalSemNotaNovo += pesoFinal * valorSemNota;
-  });
-
-  const totalDescontos = descontosPedido.reduce((soma, d) => {
-    const peso = Number(d.peso_calculado || 0);
-    const valorKg = Number(d.valor_unitario || 0);
-    return soma + (peso * valorKg);
-  }, 0);
-
-  const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
-  const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
-
-  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
-  if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
-
-  valoresPadrao = (() => {
-    let parcelas = [];
-    let base = Math.floor((totalFinalVenda * 100) / numVencimentos) / 100;
-    let totalParcial = 0;
-    for (let i = 0; i < numVencimentos; i++) {
-      if (i < numVencimentos - 1) {
-        parcelas.push(base);
-        totalParcial += base;
-      } else {
-        let ultima = (totalFinalVenda - totalParcial);
-        parcelas.push(ultima);
-      }
-    }
-    return parcelas;
-  })();
-
-  renderizarVencimentos(valoresPadrao);
-  atualizarBotaoLiberar();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
