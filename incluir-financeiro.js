@@ -682,39 +682,6 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   }
 }
 
-    renderizarVencimentos(valoresPadrao);
-    form.appendChild(containerCinza);
-
-    const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
-    if (valorTotalTag) {
-      valorTotalTag.style.cursor = 'pointer';
-      valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-      valorTotalTag.onclick = resetarVencimentosPadrao;
-    }
-
-    const blocoFin = document.createElement('div');
-    blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = `
-      <label>Observações do Financeiro:</label>
-      <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    `;
-    const taFin = blocoFin.querySelector('textarea');
-    const btnFin = blocoFin.querySelector('button');
-    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(blocoFin);
-
-    card.appendChild(form);
-
-    header.addEventListener('click', () => {
-      if (pedido.status !== 'Em Análise pelo Financeiro') return;
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
-
-    lista.appendChild(card);
-  });
-}
-
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
     const res = await fetch(`/api/pedidos/${pedidoId}/financeiro`, {
