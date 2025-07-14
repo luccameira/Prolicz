@@ -472,7 +472,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
+    let valoresPadrao = calcularValoresVencimentos(totalVenda);
 
     function atualizarResumoFinanceiro() {
   let totalComNotaNovo = 0;
