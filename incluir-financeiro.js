@@ -583,6 +583,9 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     rowErr.style.fontSize = '13px';
   }
 
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
+
   if (isNaN(num) || num <= 0) {
     rowErr.textContent = 'Valor inválido.';
     if (!row.contains(rowErr)) row.appendChild(rowErr);
@@ -590,25 +593,14 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     return;
   }
 
-  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
-  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
-
-  if (num > totalVendaNum) {
-    rowErr.textContent = 'Valor excede o total da venda.';
-    if (!row.contains(rowErr)) row.appendChild(rowErr);
-    inp.focus();
-    return;
-  }
-
-  if (row.contains(rowErr)) row.removeChild(rowErr);
-
   const isConf = row.dataset.confirmado === 'true';
+
   if (!isConf) {
     row.dataset.confirmado = 'true';
     inp.disabled = true;
     btn.replaceWith(etiquetaConfirmado);
 
-    // 🔧 NOVO: recalcular vencimentos restantes
+    // 🔧 NOVO: recalcular vencimentos restantes após confirmação
     let somaConfirmados = 0;
     let indicesRestantes = [];
 
@@ -625,22 +617,43 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     const restante = totalVendaNum - somaConfirmados;
     const partes = indicesRestantes.length;
-    let base = Math.floor((restante * 100) / partes) / 100;
-    let acumulado = 0;
 
-    for (let k = 0; k < partes; k++) {
-      const idx = indicesRestantes[k];
-      let valor = (k < partes - 1) ? base : (restante - acumulado);
-      acumulado += valor;
-      inputs[idx].value = valor.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+    if (partes > 0) {
+      let base = Math.floor((restante * 100) / partes) / 100;
+      let acumulado = 0;
+
+      for (let k = 0; k < partes; k++) {
+        const idx = indicesRestantes[k];
+        let valor = (k < partes - 1) ? base : (restante - acumulado);
+        acumulado += valor;
+        inputs[idx].value = valor.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
     }
   } else {
     row.dataset.confirmado = 'false';
     inp.disabled = false;
     etiquetaConfirmado.replaceWith(btn);
+  }
+
+  // 🔧 Aplica/Remove mensagem de erro se ultrapassar total
+  const soma = [...inputs].reduce((s, input, i) => {
+    const val = parseFloat(input.value.replace(/\./g, '').replace(',', '.')) || 0;
+    return s + val;
+  }, 0);
+
+  const erroMsg = row.querySelector('.row-error') || document.createElement('div');
+  erroMsg.className = 'row-error';
+  erroMsg.style.color = 'red';
+  erroMsg.style.fontSize = '13px';
+
+  if (Math.abs(soma - totalVendaNum) > 0.02) {
+    erroMsg.textContent = 'Valor excede o total da venda.';
+    if (!row.contains(erroMsg)) row.appendChild(erroMsg);
+  } else if (row.contains(erroMsg)) {
+    row.removeChild(erroMsg);
   }
 
   atualizarBotaoLiberar();
