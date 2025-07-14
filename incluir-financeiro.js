@@ -624,34 +624,31 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       atualizarBotaoLiberar();
     }
 
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach((r) => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
+   function atualizarBotaoLiberar() {
+  let soma = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    let valor = inputs[i].value.replace(/\D/g, '');
+    valor = parseInt(valor, 10) / 100;
+    soma += valor;
+  }
 
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-      } else {
-        erroEl.textContent = '';
-      }
+  // Usa o novo total atualizado pela função atualizarResumoFinanceiro
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
 
-      const todosConfirmados = Array.from(document.querySelectorAll('.vencimento-row'))
-        .every(r => r.dataset.confirmado === 'true');
+  const erro = document.querySelector('.erro-vencimentos');
+  const liberador = document.querySelector('#liberar-btn');
 
-      const devolucoesValidas = descontosPedido.every(d => {
-        if (d.motivo === 'Devolução de Material') {
-          return d.confirmado_valor_kg === true;
-        }
-        return true;
-      });
-
-      const btnFin = form.querySelector('.btn-registrar');
-      if (btnFin) btnFin.disabled = !(todosConfirmados && devolucoesValidas && erroEl.textContent === '');
-    }
+  if (Math.abs(soma - totalVendaNum) > 0.02) {
+    erro.style.display = 'block';
+    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
+    liberador.disabled = true;
+  } else {
+    erro.style.display = 'none';
+    erro.textContent = '';
+    liberador.disabled = false;
+  }
+}
 
     renderizarVencimentos(valoresPadrao);
     form.appendChild(containerCinza);
