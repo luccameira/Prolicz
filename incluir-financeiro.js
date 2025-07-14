@@ -719,7 +719,6 @@ function adicionarZoomImagem(idImagem) {
 }
 
 function atualizarResumoFinanceiro() {
-  // Recalcula os totais com e sem nota com base nos materiais
   let totalComNotaNovo = 0;
   let totalSemNotaNovo = 0;
 
