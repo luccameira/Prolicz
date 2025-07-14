@@ -572,7 +572,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     vencContainer.appendChild(row);
   
-        function toggleConfirmacao() {
+ function toggleConfirmacao() {
   const raw = inp.value.replace(/\./g, '').replace(',', '.');
   const num = parseFloat(raw);
   let rowErr = row.querySelector('.row-error');
@@ -610,41 +610,44 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     etiquetaConfirmado.replaceWith(btn);
   }
 
-  // 🔧 Recalcular vencimentos restantes
+  // 🔧 NOVO CÁLCULO: Recalcular vencimentos restantes
   const valoresConfirmados = [];
   let totalConfirmado = 0;
+  let numNaoConfirmados = 0;
+
   for (let j = 0; j < inputs.length; j++) {
-    const rowConf = inputs[j].closest('.vencimento-row');
-    if (rowConf.dataset.confirmado === 'true') {
-      const v = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
-      valoresConfirmados[j] = v;
-      totalConfirmado += v;
+    const rowAtual = inputs[j].closest('.vencimento-row');
+    const isConfirmado = rowAtual.dataset.confirmado === 'true';
+    if (isConfirmado) {
+      const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
+      valoresConfirmados[j] = valor;
+      totalConfirmado += valor;
     } else {
       valoresConfirmados[j] = null;
+      numNaoConfirmados++;
     }
   }
 
-  const restante = totalVenda - totalConfirmado;
-  const numRestantes = valoresConfirmados.filter(v => v === null).length;
-  let base = Math.floor((restante * 100) / numRestantes) / 100;
-  let acumulado = 0;
+  const valorRestante = totalVenda - totalConfirmado;
+  const base = Math.floor((valorRestante * 100) / numNaoConfirmados) / 100;
+  let totalDistribuido = 0;
 
   for (let j = 0; j < inputs.length; j++) {
     if (valoresConfirmados[j] === null) {
-      let novoValor;
-      if (acumulado + base * (numRestantes - 1) < restante) {
-        novoValor = base;
+      let valorAtual;
+      if (j < inputs.length - 1) {
+        valorAtual = base;
+        totalDistribuido += base;
       } else {
-        novoValor = restante - acumulado;
+        // Último input não confirmado recebe o restante para ajustar centavos
+        valorAtual = valorRestante - totalDistribuido;
       }
-      acumulado += novoValor;
-      inputs[j].value = novoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      inputs[j].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     }
   }
 
   atualizarBotaoLiberar();
 }
-
 
         btn.addEventListener('click', toggleConfirmacao);
         etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
