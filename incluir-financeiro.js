@@ -570,9 +570,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     etiquetaConfirmado.style.cursor = 'pointer';
 
     vencContainer.appendChild(row);
-  }
-}
-
+  
         function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
