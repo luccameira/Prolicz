@@ -678,14 +678,24 @@ router.get('/financeiro', async (req, res) => {
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
 
-      // Materiais do pedido
-      const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal,
-                (COALESCE(valor_unitario, 0) * COALESCE(peso, 0)) AS valor_total
-         FROM itens_pedido
-         WHERE pedido_id = ?`,
-        [pedido.pedido_id]
-      );
+     // Materiais do pedido — agora com campos de personalização fiscal
+const [materiais] = await db.query(
+  `SELECT 
+     id, 
+     nome_produto, 
+     peso AS quantidade, 
+     tipo_peso, 
+     unidade, 
+     peso_carregado, 
+     valor_unitario, 
+     codigo_fiscal,
+     valor_com_nota,
+     valor_sem_nota,
+     (COALESCE(valor_unitario, 0) * COALESCE(peso, 0)) AS valor_total
+   FROM itens_pedido
+   WHERE pedido_id = ?`,
+  [pedido.pedido_id]
+);
 
       // Descontos por item
       for (const item of materiais) {
