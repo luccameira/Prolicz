@@ -678,9 +678,20 @@ router.get('/financeiro', async (req, res) => {
       );
       pedido.observacoes_setor = obs.map(o => o.texto);
 
-      // Materiais do pedido
+      // Materiais do pedido — agora incluindo valor_com_nota e valor_sem_nota
       const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
+        `SELECT 
+          id, 
+          nome_produto, 
+          peso AS quantidade, 
+          tipo_peso, 
+          unidade, 
+          peso_carregado, 
+          valor_unitario, 
+          codigo_fiscal, 
+          valor_com_nota, 
+          valor_sem_nota,
+          (valor_unitario * peso) AS valor_total
          FROM itens_pedido
          WHERE pedido_id = ?`,
         [pedido.pedido_id]
@@ -729,7 +740,7 @@ router.get('/financeiro', async (req, res) => {
       );
       pedido.produtos_autorizados_venda = autorizadosVenda || [];
 
-      // ✅ Produtos autorizados a devolver
+      // Produtos autorizados a devolver
       const [autorizadosDevolucao] = await db.query(
         `SELECT 
           pa.produto_id AS id,
