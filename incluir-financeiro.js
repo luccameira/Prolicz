@@ -525,147 +525,28 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 }
 
     function renderizarVencimentos(valores) {
-  const container = document.getElementById('vencimentos-container');
-  container.innerHTML = '';
+  vencContainer.innerHTML = '';
+  inputs.length = 0;
 
-  const vencimentos = [];
-  const totalVenda = Number(document.getElementById('reset-vencimentos')?.textContent.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    const dt = new Date(pedido.prazos_pagamento[i]);
+    const ok = !isNaN(dt.getTime());
+    const valorRaw = Number(valores[i] || 0);
+    const valorFmt = valorRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-  valores.forEach((valor, index) => {
-    vencimentos.push({
-      data: pedido.prazos_pagamento[index]?.data || '',
-      valor: valor,
-      confirmado: false
-    });
-  });
+    const row = document.createElement('div');
+    row.className = 'vencimento-row';
+    row.dataset.confirmado = 'false';
+    row.innerHTML = `
+      <span class="venc-label">Vencimento ${i + 1}</span>
+      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+      <input type="text" value="${valorFmt}" />
+      <button type="button">✓</button>
+    `;
 
-  // Verifica se já existem vencimentos confirmados e salva os valores
-  container.querySelectorAll('.vencimento-item').forEach((el, idx) => {
-    const input = el.querySelector('input');
-    const btn = el.querySelector('button');
-    if (btn?.dataset.confirmado === 'true') {
-      vencimentos[idx].valor = Number(input.value.replace(/[^\d,-]/g, '').replace(',', '.'));
-      vencimentos[idx].confirmado = true;
-    }
-  });
-
-  // Soma dos valores já confirmados
-  const totalConfirmado = vencimentos.reduce((soma, v) => v.confirmado ? soma + v.valor : soma, 0);
-
-  // Valor restante a ser distribuído
-  const restante = totalVenda - totalConfirmado;
-
-  // Quantos vencimentos ainda faltam distribuir
-  const pendentes = vencimentos.filter(v => !v.confirmado).length;
-
-  if (pendentes > 0) {
-    const valorPadrao = Math.floor((restante * 100) / pendentes) / 100;
-    let acumulado = 0;
-
-    vencimentos.forEach((v, i, arr) => {
-      if (!v.confirmado) {
-        if (pendentes > 1) {
-          v.valor = valorPadrao;
-          acumulado += valorPadrao;
-        } else {
-          v.valor = Math.max(0, restante - acumulado);
-        }
-      }
-    });
-  }
-
-  vencimentos.forEach((venc, i) => {
-    const vencimentoEl = document.createElement('div');
-    vencimentoEl.className = 'vencimento-item';
-
-    const label = document.createElement('label');
-    label.textContent = `Vencimento ${i + 1}`;
-    vencimentoEl.appendChild(label);
-
-    const dataInput = document.createElement('input');
-    dataInput.type = 'text';
-    dataInput.value = pedido.prazos_pagamento[i]?.data || '';
-    dataInput.readOnly = true;
-    dataInput.className = 'input-data';
-    vencimentoEl.appendChild(dataInput);
-
-    const valorInput = document.createElement('input');
-    valorInput.type = 'text';
-    valorInput.value = formatarMoeda(venc.valor);
-    valorInput.className = 'input-valor';
-    valorInput.dataset.index = i;
-    valorInput.readOnly = venc.confirmado;
-    vencimentoEl.appendChild(valorInput);
-
-    const btnConfirmar = document.createElement('button');
-    btnConfirmar.innerHTML = venc.confirmado ? 'CONFIRMADO' : '✓';
-    btnConfirmar.className = venc.confirmado ? 'btn-confirmado' : 'btn-pendente';
-    btnConfirmar.dataset.index = i;
-    btnConfirmar.dataset.confirmado = venc.confirmado.toString();
-
-    btnConfirmar.onclick = () => {
-      if (venc.confirmado) return;
-
-      const novoValor = Number(valorInput.value.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-      const somaConfirmadoAtual = vencimentos.reduce((s, v, idx) =>
-        idx !== i && v.confirmado ? s + v.valor : s, 0);
-
-      if (novoValor < 0 || novoValor + somaConfirmadoAtual > totalVenda) {
-        alert('Valor inválido ou excede o total da venda.');
-        return;
-      }
-
-      venc.valor = novoValor;
-      venc.confirmado = true;
-
-      renderizarVencimentos(vencimentos.map(v => v.valor));
-    };
-
-    vencimentoEl.appendChild(btnConfirmar);
-    container.appendChild(vencimentoEl);
-  });
-
-  atualizarBotaoLiberar();
-}
-
-    function toggleConfirmacao() {
-      const raw = inp.value.replace(/\./g, '').replace(',', '.');
-      const num = parseFloat(raw);
-      let rowErr = row.querySelector('.row-error');
-      if (!rowErr) {
-        rowErr = document.createElement('div');
-        rowErr.className = 'row-error';
-        rowErr.style.color = 'red';
-        rowErr.style.fontSize = '13px';
-      }
-
-      if (isNaN(num) || num <= 0) {
-        rowErr.textContent = 'Valor inválido.';
-        if (!row.contains(rowErr)) row.appendChild(rowErr);
-        inp.focus();
-        return;
-      }
-
-      if (row.contains(rowErr)) row.removeChild(rowErr);
-
-      const isConf = row.dataset.confirmado === 'true';
-      if (!isConf) {
-        row.dataset.confirmado = 'true';
-        inp.disabled = true;
-        btn.replaceWith(etiquetaConfirmado);
-        redistribuirRestantes();
-      } else {
-        row.dataset.confirmado = 'false';
-        inp.disabled = false;
-        etiquetaConfirmado.replaceWith(btn);
-        redistribuirRestantes();
-      }
-
-      atualizarBotaoLiberar();
-    }
-
-    btn.addEventListener('click', toggleConfirmacao);
-    etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+    const inp = row.querySelector('input');
+    const btn = row.querySelector('button');
+    inputs[i] = inp;
 
     inp.addEventListener('input', () => {
       let valor = inp.value.replace(/\D/g, '');
@@ -678,9 +559,65 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     inp.addEventListener('blur', atualizarBotaoLiberar);
 
+    btn.addEventListener('click', () => {
+      row.dataset.confirmado = 'true';
+      btn.replaceWith(etiquetaConfirmado.cloneNode(true));
+      atualizarBotaoLiberar();
+    });
+
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
+
     vencContainer.appendChild(row);
-  }
-}
+  
+        function toggleConfirmacao() {
+          const raw = inp.value.replace(/\./g, '').replace(',', '.');
+          const num = parseFloat(raw);
+          let rowErr = row.querySelector('.row-error');
+          if (!rowErr) {
+            rowErr = document.createElement('div');
+            rowErr.className = 'row-error';
+            rowErr.style.color = 'red';
+            rowErr.style.fontSize = '13px';
+          }
+
+          if (isNaN(num) || num <= 0) {
+            rowErr.textContent = 'Valor inválido.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (num > totalVenda) {
+            rowErr.textContent = 'Valor excede o total da venda.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (row.contains(rowErr)) row.removeChild(rowErr);
+
+          const isConf = row.dataset.confirmado === 'true';
+          if (!isConf) {
+            row.dataset.confirmado = 'true';
+            inp.disabled = true;
+            btn.replaceWith(etiquetaConfirmado);
+          } else {
+            row.dataset.confirmado = 'false';
+            inp.disabled = false;
+            etiquetaConfirmado.replaceWith(btn);
+          }
+
+          atualizarBotaoLiberar();
+        }
+
+        btn.addEventListener('click', toggleConfirmacao);
+        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+        vencContainer.appendChild(row);
+      }
+    }
 
    function resetarVencimentosPadrao() {
   atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
