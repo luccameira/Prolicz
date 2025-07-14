@@ -603,7 +603,9 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   }
 
   const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
-const totalVendaAtual = tagTotalVenda ? parseFloat(tagTotalVenda.textContent.replace(/\./g, '').replace(',', '.')) : 0;
+const totalVendaAtual = tagTotalVenda
+  ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
+  : 0;
 const valorRestante = totalVendaAtual - totalConfirmado;
 
   if (qtdNaoConfirmados > 0) {
