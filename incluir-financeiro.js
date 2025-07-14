@@ -524,15 +524,14 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   atualizarBotaoLiberar();
 }
 
-    function renderizarVencimentos(valores) {
+   function renderizarVencimentos(valores) {
   vencContainer.innerHTML = '';
   inputs.length = 0;
 
   for (let i = 0; i < numVencimentos; i++) {
     const dt = new Date(pedido.prazos_pagamento[i]);
     const ok = !isNaN(dt.getTime());
-    const valorRaw = Number(valores[i] || 0);
-    const valorFmt = valorRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
 
     const row = document.createElement('div');
     row.className = 'vencimento-row';
@@ -557,54 +556,101 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       });
     });
 
+    // ✅ NOVO BLUR COM RECÁLCULO DE VENCIMENTOS RESTANTES
     inp.addEventListener('blur', () => {
-  // Verifica se o campo atual foi confirmado
-  if (row.dataset.confirmado === 'true') return;
+      if (row.dataset.confirmado === 'true') return;
 
-  const valores = inputs.map((input, idx) => {
-    const val = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
-    return isNaN(val) ? 0 : val;
-  });
-
-  const totalConfirmado = valores.reduce((soma, val, idx) => {
-    const r = vencContainer.querySelectorAll('.vencimento-row')[idx];
-    return r.dataset.confirmado === 'true' ? soma + val : soma;
-  }, 0);
-
-  const naoConfirmados = [];
-  inputs.forEach((input, idx) => {
-    const r = vencContainer.querySelectorAll('.vencimento-row')[idx];
-    if (r.dataset.confirmado !== 'true') naoConfirmados.push(idx);
-  });
-
-  const restante = totalVenda - totalConfirmado;
-
-  if (naoConfirmados.length > 0) {
-    const base = Math.floor((restante * 100) / naoConfirmados.length) / 100;
-    let parcial = 0;
-
-    naoConfirmados.forEach((idx, i) => {
-      let valorFinal = base;
-      if (i === naoConfirmados.length - 1) {
-        valorFinal = restante - parcial;
-      } else {
-        parcial += base;
-      }
-
-      inputs[idx].value = valorFinal.toLocaleString('pt-BR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+      const valoresAtuais = inputs.map((input, idx) => {
+        const val = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
+        return isNaN(val) ? 0 : val;
       });
-    });
-  }
 
-  atualizarBotaoLiberar();
+      const totalConfirmado = valoresAtuais.reduce((soma, val, idx) => {
+        const r = vencContainer.querySelectorAll('.vencimento-row')[idx];
+        return r.dataset.confirmado === 'true' ? soma + val : soma;
+      }, 0);
 
-        btn.addEventListener('click', toggleConfirmacao);
-        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-        vencContainer.appendChild(row);
+      const naoConfirmados = [];
+      inputs.forEach((input, idx) => {
+        const r = vencContainer.querySelectorAll('.vencimento-row')[idx];
+        if (r.dataset.confirmado !== 'true') naoConfirmados.push(idx);
+      });
+
+      const restante = totalVenda - totalConfirmado;
+
+      if (naoConfirmados.length > 0) {
+        const base = Math.floor((restante * 100) / naoConfirmados.length) / 100;
+        let parcial = 0;
+
+        naoConfirmados.forEach((idx, i) => {
+          let valorFinal = base;
+          if (i === naoConfirmados.length - 1) {
+            valorFinal = restante - parcial;
+          } else {
+            parcial += base;
+          }
+
+          inputs[idx].value = valorFinal.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        });
       }
+
+      atualizarBotaoLiberar();
+    });
+
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
+
+    function toggleConfirmacao() {
+      const raw = inp.value.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(raw);
+      let rowErr = row.querySelector('.row-error');
+      if (!rowErr) {
+        rowErr = document.createElement('div');
+        rowErr.className = 'row-error';
+        rowErr.style.color = 'red';
+        rowErr.style.fontSize = '13px';
+      }
+
+      if (isNaN(num) || num <= 0) {
+        rowErr.textContent = 'Valor inválido.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      if (num > totalVenda) {
+        rowErr.textContent = 'Valor excede o total da venda.';
+        if (!row.contains(rowErr)) row.appendChild(rowErr);
+        inp.focus();
+        return;
+      }
+
+      if (row.contains(rowErr)) row.removeChild(rowErr);
+
+      const isConf = row.dataset.confirmado === 'true';
+      if (!isConf) {
+        row.dataset.confirmado = 'true';
+        inp.disabled = true;
+        btn.replaceWith(etiquetaConfirmado);
+      } else {
+        row.dataset.confirmado = 'false';
+        inp.disabled = false;
+        etiquetaConfirmado.replaceWith(btn);
+      }
+
+      atualizarBotaoLiberar();
     }
+
+    btn.addEventListener('click', toggleConfirmacao);
+    etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+    vencContainer.appendChild(row);
+  }
+}
 
    function resetarVencimentosPadrao() {
   atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
