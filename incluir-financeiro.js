@@ -624,24 +624,60 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       atualizarBotaoLiberar();
     }
 
-   function atualizarBotaoLiberar() {
-  let soma = 0;
-  for (let i = 0; i < numVencimentos; i++) {
-    let valor = inputs[i].value.replace(/\D/g, '');
-    valor = parseInt(valor, 10) / 100;
-    soma += valor;
-  }
-
-  // Usa o novo total atualizado pela função atualizarResumoFinanceiro
-  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
-  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
-
+ function atualizarBotaoLiberar() {
   const erro = document.querySelector('.erro-vencimentos');
   const liberador = document.querySelector('#liberar-btn');
 
-  if (Math.abs(soma - totalVendaNum) > 0.02) {
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
+
+  const valores = [];
+  for (let i = 0; i < numVencimentos; i++) {
+    let valor = inputs[i].value.replace(/\D/g, '');
+    valor = parseInt(valor || '0', 10) / 100;
+    valores.push(valor);
+  }
+
+  const soma = valores.reduce((a, b) => a + b, 0);
+
+  // Regra 1 — recalcula os demais vencimentos automaticamente se o primeiro for alterado manualmente
+  if (document.activeElement === inputs[0]) {
+    const primeiro = valores[0];
+    const restante = totalVendaNum - primeiro;
+    let parcelas = [];
+
+    if (numVencimentos > 1) {
+      let base = Math.floor((restante * 100) / (numVencimentos - 1)) / 100;
+      let totalParcial = 0;
+      for (let i = 1; i < numVencimentos; i++) {
+        if (i < numVencimentos - 1) {
+          parcelas.push(base);
+          totalParcial += base;
+        } else {
+          let ultima = (restante - totalParcial);
+          parcelas.push(ultima);
+        }
+      }
+
+      for (let i = 1; i < numVencimentos; i++) {
+        inputs[i].value = parseFloat(parcelas[i - 1]).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+    }
+  }
+
+  // Regra 2 — validação final com mensagem de erro
+  const novaSoma = inputs.reduce((soma, inp) => {
+    let val = inp.value.replace(/\D/g, '');
+    val = parseInt(val || '0', 10) / 100;
+    return soma + val;
+  }, 0);
+
+  if (Math.abs(novaSoma - totalVendaNum) > 0.02) {
     erro.style.display = 'block';
-    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
+    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(novaSoma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
     liberador.disabled = true;
   } else {
     erro.style.display = 'none';
