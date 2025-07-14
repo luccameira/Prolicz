@@ -572,52 +572,79 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     vencContainer.appendChild(row);
   
-        function toggleConfirmacao() {
-          const raw = inp.value.replace(/\./g, '').replace(',', '.');
-          const num = parseFloat(raw);
-          let rowErr = row.querySelector('.row-error');
-          if (!rowErr) {
-            rowErr = document.createElement('div');
-            rowErr.className = 'row-error';
-            rowErr.style.color = 'red';
-            rowErr.style.fontSize = '13px';
-          }
+       function toggleConfirmacao() {
+  const raw = inp.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  let rowErr = row.querySelector('.row-error');
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
+  }
 
-          if (isNaN(num) || num <= 0) {
-            rowErr.textContent = 'Valor inválido.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
+  if (isNaN(num) || num <= 0) {
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
 
-          if (num > totalVenda) {
-            rowErr.textContent = 'Valor excede o total da venda.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
 
-          if (row.contains(rowErr)) row.removeChild(rowErr);
+  if (num > totalVendaNum) {
+    rowErr.textContent = 'Valor excede o total da venda.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
 
-          const isConf = row.dataset.confirmado === 'true';
-          if (!isConf) {
-            row.dataset.confirmado = 'true';
-            inp.disabled = true;
-            btn.replaceWith(etiquetaConfirmado);
-          } else {
-            row.dataset.confirmado = 'false';
-            inp.disabled = false;
-            etiquetaConfirmado.replaceWith(btn);
-          }
+  if (row.contains(rowErr)) row.removeChild(rowErr);
 
-          atualizarBotaoLiberar();
-        }
+  const isConf = row.dataset.confirmado === 'true';
+  if (!isConf) {
+    row.dataset.confirmado = 'true';
+    inp.disabled = true;
+    btn.replaceWith(etiquetaConfirmado);
 
-        btn.addEventListener('click', toggleConfirmacao);
-        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-        vencContainer.appendChild(row);
+    // 🔧 NOVO: recalcular vencimentos restantes
+    let somaConfirmados = 0;
+    let indicesRestantes = [];
+
+    for (let j = 0; j < inputs.length; j++) {
+      const linha = vencContainer.children[j];
+      const rawVal = inputs[j].value.replace(/\./g, '').replace(',', '.');
+      const numVal = parseFloat(rawVal);
+      if (linha.dataset.confirmado === 'true') {
+        somaConfirmados += numVal;
+      } else {
+        indicesRestantes.push(j);
       }
     }
+
+    const restante = totalVendaNum - somaConfirmados;
+    const partes = indicesRestantes.length;
+    let base = Math.floor((restante * 100) / partes) / 100;
+    let acumulado = 0;
+
+    for (let k = 0; k < partes; k++) {
+      const idx = indicesRestantes[k];
+      let valor = (k < partes - 1) ? base : (restante - acumulado);
+      acumulado += valor;
+      inputs[idx].value = valor.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+  } else {
+    row.dataset.confirmado = 'false';
+    inp.disabled = false;
+    etiquetaConfirmado.replaceWith(btn);
+  }
+
+  atualizarBotaoLiberar();
+}
 
    function resetarVencimentosPadrao() {
   atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
