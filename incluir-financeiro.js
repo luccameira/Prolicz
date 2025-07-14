@@ -727,15 +727,30 @@ function atualizarResumoFinanceiro() {
   }, 0);
 
   // 🔁 Recalcular total de venda
-  const totalFinalVenda = totalComNota + totalSemNota - totalDescontos;
+  const totalFinalVenda = (totalComNota + totalSemNota) - totalDescontos;
   const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
 
   // Atualizar etiqueta de valor total da venda
-  const tagTotalVenda = document.querySelector('#reset-vencimentos');
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
   if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
 
   // Atualizar vencimentos
-  valoresPadrao = calcularValoresVencimentos();
+  valoresPadrao = (() => {
+    let parcelas = [];
+    let base = Math.floor((totalFinalVenda * 100) / numVencimentos) / 100;
+    let totalParcial = 0;
+    for (let i = 0; i < numVencimentos; i++) {
+      if (i < numVencimentos - 1) {
+        parcelas.push(base);
+        totalParcial += base;
+      } else {
+        let ultima = (totalFinalVenda - totalParcial);
+        parcelas.push(ultima);
+      }
+    }
+    return parcelas;
+  })();
+
   renderizarVencimentos(valoresPadrao);
 
   // Atualizar botão liberar
