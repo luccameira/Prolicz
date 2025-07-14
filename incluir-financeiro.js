@@ -446,21 +446,21 @@ const totalVenda = totalComNota + totalSemNota - totalDescontosComerciais;
 const totalVendaFmt = formatarMoeda(totalVenda);
 const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-    function calcularValoresVencimentos() {
-      let parcelas = [];
-      let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
-      let totalParcial = 0;
-      for (let i = 0; i < numVencimentos; i++) {
-        if (i < numVencimentos - 1) {
-          parcelas.push(base);
-          totalParcial += base;
-        } else {
-          let ultima = (totalVenda - totalParcial);
-          parcelas.push(ultima);
-        }
-      }
-      return parcelas;
+   function calcularValoresVencimentos(valorTotal) {
+  let parcelas = [];
+  let base = Math.floor((valorTotal * 100) / numVencimentos) / 100;
+  let totalParcial = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    if (i < numVencimentos - 1) {
+      parcelas.push(base);
+      totalParcial += base;
+    } else {
+      let ultima = (valorTotal - totalParcial);
+      parcelas.push(ultima);
     }
+  }
+  return parcelas;
+}
 
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
@@ -504,21 +504,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
   const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
   if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
 
-  valoresPadrao = (() => {
-    let parcelas = [];
-    let base = Math.floor((totalFinalVenda * 100) / numVencimentos) / 100;
-    let totalParcial = 0;
-    for (let i = 0; i < numVencimentos; i++) {
-      if (i < numVencimentos - 1) {
-        parcelas.push(base);
-        totalParcial += base;
-      } else {
-        let ultima = (totalFinalVenda - totalParcial);
-        parcelas.push(ultima);
-      }
-    }
-    return parcelas;
-  })();
+  valoresPadrao = calcularValoresVencimentos(totalFinalVenda);
 
   renderizarVencimentos(valoresPadrao);
   atualizarBotaoLiberar();
