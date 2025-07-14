@@ -600,16 +600,16 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     inp.disabled = true;
     btn.replaceWith(etiquetaConfirmado);
 
-    // 🔧 NOVO: recalcular vencimentos restantes após confirmação
+    // 🔄 Recalcula vencimentos restantes automaticamente
     let somaConfirmados = 0;
     let indicesRestantes = [];
 
     for (let j = 0; j < inputs.length; j++) {
       const linha = vencContainer.children[j];
-      const rawVal = inputs[j].value.replace(/\./g, '').replace(',', '.');
-      const numVal = parseFloat(rawVal);
+      const valRaw = inputs[j].value.replace(/\./g, '').replace(',', '.');
+      const valNum = parseFloat(valRaw) || 0;
       if (linha.dataset.confirmado === 'true') {
-        somaConfirmados += numVal;
+        somaConfirmados += valNum;
       } else {
         indicesRestantes.push(j);
       }
@@ -621,10 +621,9 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     if (partes > 0) {
       let base = Math.floor((restante * 100) / partes) / 100;
       let acumulado = 0;
-
       for (let k = 0; k < partes; k++) {
         const idx = indicesRestantes[k];
-        let valor = (k < partes - 1) ? base : (restante - acumulado);
+        const valor = (k < partes - 1) ? base : (restante - acumulado);
         acumulado += valor;
         inputs[idx].value = valor.toLocaleString('pt-BR', {
           minimumFractionDigits: 2,
@@ -638,22 +637,17 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     etiquetaConfirmado.replaceWith(btn);
   }
 
-  // 🔧 Aplica/Remove mensagem de erro se ultrapassar total
-  const soma = [...inputs].reduce((s, input, i) => {
+  // 🔍 Validação final da soma
+  const somaFinal = inputs.reduce((acc, input) => {
     const val = parseFloat(input.value.replace(/\./g, '').replace(',', '.')) || 0;
-    return s + val;
+    return acc + val;
   }, 0);
 
-  const erroMsg = row.querySelector('.row-error') || document.createElement('div');
-  erroMsg.className = 'row-error';
-  erroMsg.style.color = 'red';
-  erroMsg.style.fontSize = '13px';
-
-  if (Math.abs(soma - totalVendaNum) > 0.02) {
-    erroMsg.textContent = 'Valor excede o total da venda.';
-    if (!row.contains(erroMsg)) row.appendChild(erroMsg);
-  } else if (row.contains(erroMsg)) {
-    row.removeChild(erroMsg);
+  if (Math.abs(somaFinal - totalVendaNum) > 0.02) {
+    rowErr.textContent = 'Valor excede o total da venda.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+  } else {
+    if (row.contains(rowErr)) row.removeChild(rowErr);
   }
 
   atualizarBotaoLiberar();
