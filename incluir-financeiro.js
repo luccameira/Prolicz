@@ -556,7 +556,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       });
     });
 
-    // ✅ NOVO BLUR COM RECÁLCULO DE VENCIMENTOS RESTANTES
+    // ✅ Recalcula vencimentos restantes dinamicamente
     inp.addEventListener('blur', () => {
       if (row.dataset.confirmado === 'true') return;
 
