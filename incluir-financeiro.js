@@ -719,22 +719,36 @@ function adicionarZoomImagem(idImagem) {
 }
 
 function atualizarResumoFinanceiro() {
-  // 🔁 Recalcular total de descontos
+  // Recalcula os totais com e sem nota com base nos materiais
+  let totalComNotaNovo = 0;
+  let totalSemNotaNovo = 0;
+
+  pedido.materiais?.forEach(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    totalComNotaNovo += pesoFinal * valorComNota;
+    totalSemNotaNovo += pesoFinal * valorSemNota;
+  });
+
   const totalDescontos = descontosPedido.reduce((soma, d) => {
     const peso = Number(d.peso_calculado || 0);
     const valorKg = Number(d.valor_unitario || 0);
     return soma + (peso * valorKg);
   }, 0);
 
-  // 🔁 Recalcular total de venda
-  const totalFinalVenda = (totalComNota + totalSemNota) - totalDescontos;
+  const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
   const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
 
-  // Atualizar etiqueta de valor total da venda
   const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
   if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
 
-  // Atualizar vencimentos
   valoresPadrao = (() => {
     let parcelas = [];
     let base = Math.floor((totalFinalVenda * 100) / numVencimentos) / 100;
@@ -752,8 +766,6 @@ function atualizarResumoFinanceiro() {
   })();
 
   renderizarVencimentos(valoresPadrao);
-
-  // Atualizar botão liberar
   atualizarBotaoLiberar();
 }
 
