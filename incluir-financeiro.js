@@ -1,3 +1,4 @@
+
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
@@ -62,7 +63,7 @@ async function carregarPedidosFinanceiro() {
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
     document.getElementById('lista-pedidos').innerHTML =
-      <p style="padding:0 25px;">Erro ao carregar tarefas financeiras.</p>;
+      `<p style="padding:0 25px;">Erro ao carregar tarefas financeiras.</p>`;
     return;
   }
 
@@ -79,7 +80,7 @@ async function carregarPedidosFinanceiro() {
 
   lista.innerHTML = '';
   if (!filtrados.length) {
-    lista.innerHTML = <p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>;
+    lista.innerHTML = `<p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>`;
     return;
   }
 
@@ -90,7 +91,7 @@ async function carregarPedidosFinanceiro() {
 
     const header = document.createElement('div');
     header.className = 'card-header';
-    header.innerHTML = 
+    header.innerHTML = `
       <div class="info">
         <h3>${pedido.cliente}</h3>
         <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
@@ -98,7 +99,7 @@ async function carregarPedidosFinanceiro() {
       <div class="status-badge status-amarelo">
         <i class="fa fa-money-bill"></i> ${pedido.status}
       </div>
-    ;
+    `;
     card.appendChild(header);
 
       const timelineHTML = gerarLinhaTempoCompleta(pedido);
@@ -167,20 +168,20 @@ async function carregarPedidosFinanceiro() {
       let blocoAmareloHTML = '';
       if (descontosPalete.length) {
         const linhas = descontosPalete.map(desc => {
-          return <li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UN (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>;
+          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UN (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
         }).join('');
 
-        blocoAmareloHTML = 
+        blocoAmareloHTML = `
           <div class="descontos-aplicados">
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>${linhas}</ul>
           </div>
-        ;
+        `;
       }
 
       const valorTotal = formatarMoeda(pesoFinalNum * (Number(item.valor_unitario) || 0));
 
-      bloco.innerHTML = 
+      bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
@@ -190,7 +191,7 @@ async function carregarPedidosFinanceiro() {
           <strong>Valor Total do Item:</strong>
           <span style="color: green;">${valorTotal}</span>
         </div>
-      ;
+      `;
 
       form.appendChild(bloco);
     });
@@ -205,14 +206,14 @@ async function carregarPedidosFinanceiro() {
         let valorKg = Number(desc.valor_unitario || 0);
         let totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
-        blocoDesc.innerHTML = 
+        blocoDesc.innerHTML = `
           <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
           <p><strong>Produto:</strong> ${nomeProduto}</p>
           <p><strong>Quantidade:</strong> ${qtd} Kg</p>
-        ;
+        `;
 
-            const valorInputId = valor-kg-${id}-${idx};
-        const confirmarBtnId = confirmar-kg-${id}-${idx};
+            const valorInputId = `valor-kg-${id}-${idx}`;
+        const confirmarBtnId = `confirmar-kg-${id}-${idx}`;
 
         if (desc.motivo === 'Devolução de Material') {
           const row = document.createElement('div');
@@ -241,7 +242,7 @@ async function carregarPedidosFinanceiro() {
           const valorTotalDesc = document.createElement('p');
           const calcularValorTotal = (valorKgAtual) => {
             const novoTotal = Number(desc.peso_calculado || 0) * valorKgAtual;
-            valorTotalDesc.innerHTML = <strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>;
+            valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>`;
           };
 
           function toggleConfirmacaoDevolucao(row, input, btn, desc) {
@@ -305,7 +306,7 @@ async function carregarPedidosFinanceiro() {
             toggleConfirmacaoDevolucao(row, valorInput, btnConfirmar, desc);
           });
 
-          row.innerHTML = <span class="venc-label">Valor por Kg:</span>;
+          row.innerHTML = `<span class="venc-label">Valor por Kg:</span>`;
           row.appendChild(valorInput);
           row.appendChild(btnConfirmar);
 
@@ -315,15 +316,15 @@ async function carregarPedidosFinanceiro() {
         } else if (desc.motivo === 'Compra de Material') {
           const row = document.createElement('div');
           row.className = 'vencimento-row';
-          row.innerHTML = 
+          row.innerHTML = `
             <span class="venc-label">Valor por Kg:</span>
             <span style="font-weight: bold;">${formatarMoeda(valorKg)}</span>
-          ;
+          `;
           blocoDesc.appendChild(row);
 
           const valorTotalDesc = document.createElement('p');
           const total = Number(desc.peso_calculado || 0) * valorKg;
-          valorTotalDesc.innerHTML = <strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(total)}</span>;
+          valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(total)}</span>`;
           blocoDesc.appendChild(valorTotalDesc);
         }
 
@@ -342,25 +343,25 @@ async function carregarPedidosFinanceiro() {
         blocoImagens.style.gap = '20px';
 
         if (desc.ticket_devolucao || desc.ticket_compra) {
-          const idImg = ticket-desc-${id}-${idx};
+          const idImg = `ticket-desc-${id}-${idx}`;
           const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
           const ticket = desc.ticket_devolucao || desc.ticket_compra;
           const imgDiv = document.createElement('div');
-          imgDiv.innerHTML = 
+          imgDiv.innerHTML = `
             <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
             <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
-          ;
+          `;
           blocoImagens.appendChild(imgDiv);
           setTimeout(() => adicionarZoomImagem(idImg), 100);
         }
 
         if (pedido.ticket_balanca) {
-          const idImgPedido = ticket-pedido-${id}-${idx};
+          const idImgPedido = `ticket-pedido-${id}-${idx}`;
           const imgDivPedido = document.createElement('div');
-          imgDivPedido.innerHTML = 
+          imgDivPedido.innerHTML = `
             <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
             <img id="${idImgPedido}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Pedido" class="ticket-balanca">
-          ;
+          `;
           blocoImagens.appendChild(imgDivPedido);
           setTimeout(() => adicionarZoomImagem(idImgPedido), 100);
         }
@@ -388,9 +389,9 @@ async function carregarPedidosFinanceiro() {
     ) {
       const blocoCondicao = document.createElement('div');
       blocoCondicao.className = 'obs-pedido';
-      blocoCondicao.innerHTML = 
+      blocoCondicao.innerHTML = `
         <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
-      ;
+      `;
       containerCinza.appendChild(blocoCondicao);
     }
 
@@ -404,7 +405,7 @@ async function carregarPedidosFinanceiro() {
         let cod = (item.codigo_fiscal || '').toUpperCase();
         if (!cod) cod = '(não informado)';
         if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ?  (${item.nome_produto}) : '';
+        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
 
         const descontosPalete = item.descontos?.filter(d =>
           d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
@@ -418,7 +419,7 @@ async function carregarPedidosFinanceiro() {
         totalComNota += totalCom;
         totalSemNota += totalSem;
 
-        return 
+        return `
           <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
             <span class="etiqueta-codigo-fiscal">
               <strong>Código Fiscal: ${cod}</strong> |
@@ -429,7 +430,7 @@ async function carregarPedidosFinanceiro() {
               <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
             </span>
           </div>
-        ;
+        `;
       }).join('');
     }
 
@@ -461,13 +462,13 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
       return parcelas;
     }
 
-    containerCinza.innerHTML += 
+    containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
-      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div> : ''}
-    ;
+      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+    `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
@@ -536,12 +537,12 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     const row = document.createElement('div');
     row.className = 'vencimento-row';
     row.dataset.confirmado = 'false';
-    row.innerHTML = 
+    row.innerHTML = `
       <span class="venc-label">Vencimento ${i + 1}</span>
       <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
       <input type="text" value="${valorFmt}" />
       <button type="button">✓</button>
-    ;
+    `;
 
     const inp = row.querySelector('input');
     const btn = row.querySelector('button');
@@ -639,7 +640,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
   if (Math.abs(soma - totalVendaNum) > 0.02) {
     erro.style.display = 'block';
-    erro.textContent = A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.;
+    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
     liberador.disabled = true;
   } else {
     erro.style.display = 'none';
@@ -660,11 +661,11 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = 
+    blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
       <textarea placeholder="Digite suas observações aqui..."></textarea>
       <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    ;
+    `;
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
@@ -683,7 +684,7 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
-    const res = await fetch(/api/pedidos/${pedidoId}/financeiro, {
+    const res = await fetch(`/api/pedidos/${pedidoId}/financeiro`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ observacoes_financeiro: observacoes })
@@ -742,7 +743,7 @@ function adicionarZoomImagem(idImagem) {
       const percentY = (offsetY / rect.height) * 100;
 
       if (!zoomed) {
-        modalImg.style.transformOrigin = ${percentX}% ${percentY}%;
+        modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
         modalImg.style.transform = 'scale(2.5)';
         modalImg.style.cursor = 'zoom-out';
         zoomed = true;
