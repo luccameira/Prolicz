@@ -285,18 +285,21 @@ const observacao = ''; // não usamos mais campo único, deixamos vazio
     if (Array.isArray(itens)) {
       for (const item of itens) {
         await db.query(
-          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            pedido_id,
-            item.nome_produto,
-            item.valor_unitario,
-            item.peso,
-            item.tipo_peso,
-            item.unidade || '',
-            item.codigo_fiscal || ''
-          ]
-        );
+  `INSERT INTO itens_pedido (
+     pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal, valor_com_nota, valor_sem_nota
+   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    pedido_id,
+    item.nome_produto,
+    item.valor_unitario,
+    item.peso,
+    item.tipo_peso,
+    item.unidade || '',
+    item.codigo_fiscal || '',
+    item.valor_com_nota || null,
+    item.valor_sem_nota || null
+  ]
+);
       }
     }
 
