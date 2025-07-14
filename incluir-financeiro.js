@@ -602,8 +602,9 @@ const numVencimentos = pedido.prazos_pagamento?.length || 1;
     }
   }
 
-  const valorRestante = totalVenda - totalConfirmado;
-  const qtdNaoConfirmados = indicesNaoConfirmados.length;
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+const totalVendaAtual = tagTotalVenda ? parseFloat(tagTotalVenda.textContent.replace(/\./g, '').replace(',', '.')) : 0;
+const valorRestante = totalVendaAtual - totalConfirmado;
 
   if (qtdNaoConfirmados > 0) {
     const base = Math.floor((valorRestante * 100) / qtdNaoConfirmados) / 100;
