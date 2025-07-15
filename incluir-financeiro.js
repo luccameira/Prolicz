@@ -402,7 +402,8 @@ async function carregarPedidosFinanceiro() {
 
   const descontosPedido = extrairDescontosComerciais(pedido);
 
-  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+  if (itensPedido.length && produtosVenda.length) {
+    codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
     const descontosPalete = item.descontos?.filter(d => d.motivo.includes("Palete")) || [];
     const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
