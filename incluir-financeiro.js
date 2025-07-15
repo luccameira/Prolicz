@@ -399,59 +399,38 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-    if (pedido.materiais && pedido.materiais.length) {
-     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-  const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+   // BLOCO FISCAL — BARRA AZUL
+if (itensPedido.length && produtosVenda.length) {
+  const codigosFiscaisBarraAzul = produtosVenda.map(item => {
+    const nomeProduto = item.nome_produto || item.material || 'Produto';
+    const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+    const valorKg = Number(item.valor_unitario || 0);
+    const valorTotal = valorKg * Number(item.peso_carregado || 0);
+    const descontoTotal = descontosPedido
+      .filter(d => d.material === item.material || d.nome_produto === item.nome_produto)
+      .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
 
-  const descontosPalete = item.descontos?.filter(d =>
-    d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-  ) || [];
+    const valorComNota = (codigoFmt.endsWith('2') || codigoFmt.endsWith('X') || codigoFmt.endsWith('P')) 
+      ? valorTotal 
+      : totalVenda; // Para GA1, assume nota cheia com base no total final
 
-  const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-  const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+    const valorSemNota = (codigoFmt.endsWith('2') || codigoFmt.endsWith('X') || codigoFmt.endsWith('P')) 
+      ? Math.max(0, valorTotal - descontoTotal) 
+      : 0;
 
-  const totalCom = pesoFinal * valorComNota;
-  const totalSem = pesoFinal * valorSemNota;
+    const pesoNF = (codigoFmt.endsWith('1') && descontoTotal > 0 && valorKg > 0)
+      ? (totalVenda / valorKg)
+      : null;
 
-  totalComNota += totalCom;
-  totalSemNota += totalSem;
-
-  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
-  const precoComNotaFmt = formatarMoeda(valorComNota);
-  const precoSemNotaFmt = formatarMoeda(valorSemNota);
-  const totalComFmt = formatarMoeda(totalCom);
-  const totalSemFmt = formatarMoeda(totalSem);
-  const valorTotalVenda = totalCom + totalSem;
-
-  // NOVA REGRA: aplica lógica de nota cheia se qualquer produto do pedido tiver desconto
-  const temDescontoNoPedido = descontosPedido.length > 0;
-
-  const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoNoPedido && valorComNota > 0)
-    ? (valorTotalVenda / valorComNota)
-    : null;
-
-  const pesoFiscalFmt = pesoFiscal ? formatarPesoComMilhar(pesoFiscal) + ' Kg' : null;
-
-  // Se código termina com 1 E há desconto em qualquer item, aplicar regra de nota cheia
-  if (codigoFmt.endsWith('1') && temDescontoNoPedido) {
     return `
-      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-        ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${formatarMoeda(valorTotalVenda)}</span>
-        <span style="margin-left: 16px;">Peso na NF: <strong>${pesoFiscalFmt}</strong></span>
-      </div>
+      <p class="linha-barra-fiscal">
+        ${nomeProduto}: <strong>(${codigoFmt})</strong> 
+        ${valorSemNota > 0 ? `<span class="valor-sem-nota">(R$ ${valorKg.toFixed(2)}) ${formatarMoeda(valorSemNota)}</span>` : ''}
+        ${valorComNota > 0 ? `<span class="valor-com-nota">(R$ ${valorKg.toFixed(2)}) ${formatarMoeda(valorComNota)}</span>` : ''}
+        ${pesoNF ? `<span class="peso-na-nf">Peso na NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>` : ''}
+      </p>
     `;
-  }
-
-  // Caso padrão: exibe parte com e sem nota normalmente
-  return `
-    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
-    </div>
-  `;
-}).join('');
+  }).join('');
     }
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
