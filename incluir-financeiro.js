@@ -423,7 +423,8 @@ async function carregarPedidosFinanceiro() {
   const totalSemFmt = formatarMoeda(totalSem);
   const valorTotalVenda = totalCom + totalSem;
 
-  const temDescontoComercial = descontosPedido.some(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto));
+  const nomesPossiveis = [item.nome_produto, item.material].map(normalizarTexto);
+  const temDescontoComercial = descontosPedido.some(d => nomesPossiveis.includes(normalizarTexto(d.nome_produto || d.material)));
 
   const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoComercial && valorComNota > 0)
     ? (valorTotalVenda / valorComNota)
