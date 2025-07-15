@@ -400,8 +400,6 @@ async function carregarPedidosFinanceiro() {
   let totalSemNota = 0;
   let codigosFiscaisBarraAzul = '';
 
-  const descontosPedido = extrairDescontosComerciais(pedido);
-
   if (itensPedido.length && produtosVenda.length) {
     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
