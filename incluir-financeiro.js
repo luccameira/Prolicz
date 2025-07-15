@@ -399,7 +399,7 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-    if (pedido.materiais && pedido.materiais.length) {
+   if (pedido.materiais && pedido.materiais.length) {
   codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
     const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
@@ -409,22 +409,29 @@ async function carregarPedidosFinanceiro() {
     const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
     const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-    let pesoFiscal = pesoFinal;
-    let totalCom = pesoFinal * valorComNota;
-    let totalSem = pesoFinal * valorSemNota;
+    // Valor bruto antes de aplicar qualquer desconto comercial
+    const valorTotalBruto = pesoFinal * (valorComNota + valorSemNota);
 
+    // Total de descontos aplicados nesse item
     const totalDescontos = descontosPedido
       .filter(d => d.nome_produto === item.nome_produto)
       .reduce((sum, d) => sum + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
 
+    let totalCom = pesoFinal * valorComNota;
+    let totalSem = pesoFinal * valorSemNota;
+
+    let infoExtra = ''; // para exibir peso ajustado quando nota cheia
+
     if (codigoFmt.endsWith('1')) {
-      // Pedido com nota cheia — desconta no total e recalcula o peso fiscal
-      const valorTotalComDesconto = totalCom + totalSem - totalDescontos;
-      pesoFiscal = valorTotalComDesconto / valorComNota;
-      totalCom = valorTotalComDesconto;
+      const valorFinalComDesconto = totalCom + totalSem - totalDescontos;
+      const pesoFiscal = valorFinalComDesconto / valorComNota;
+
+      // Recalcula valor com base no peso ajustado
+      totalCom = valorFinalComDesconto;
       totalSem = 0;
+
+      infoExtra = `<br><span style="font-size: 13px; color: #555;">Peso fiscal na NF: <strong>${formatarPesoComMilhar(pesoFiscal)} Kg</strong></span>`;
     } else {
-      // Pedido com meia nota ou parte fora — aplica desconto só na parte sem nota
       totalSem = Math.max(0, totalSem - totalDescontos);
     }
 
@@ -438,6 +445,7 @@ async function carregarPedidosFinanceiro() {
         ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
         <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
         <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+        ${infoExtra}
       </div>
     `;
   }).join('');
