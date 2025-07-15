@@ -432,19 +432,6 @@ async function carregarPedidosFinanceiro() {
 }).join('');
     }
 
-   // Envolve tudo num card azul
-const cardFiscal = `
-  <div style="
-    background: #f1f7fd;
-    border: 1px solid #cfe1f2;
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin-top: 12px;
-  ">
-    ${codigosFiscaisBarraAzul}
-  </div>
-`;
-
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
   const peso = Number(d.peso_calculado || 0);
