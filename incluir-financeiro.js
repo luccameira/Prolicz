@@ -423,27 +423,17 @@ async function carregarPedidosFinanceiro() {
   const totalSemFmt = formatarMoeda(totalSem);
   const valorTotalVenda = totalCom + totalSem;
 
-  const nomesPossiveis = [item.nome_produto, item.material].map(normalizarTexto);
-  const temDescontoComercial = descontosPedido.some(d => {
-  const nomeDesconto = normalizarTexto(d.nome_produto || d.material);
-  const encontrado = nomesPossiveis.includes(nomeDesconto);
+  // NOVA REGRA: aplica lógica de nota cheia se qualquer produto do pedido tiver desconto
+  const temDescontoNoPedido = descontosPedido.length > 0;
 
-  // LOG DE VERIFICAÇÃO
-  console.log('[CHECK] Produto:', item.nome_produto);
-  console.log('→ Código Fiscal:', item.codigo_fiscal);
-  console.log('→ Nome no desconto:', d.nome_produto || d.material);
-  console.log('→ Match encontrado?', encontrado);
-  return encontrado;
-});
-
-  const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoComercial && valorComNota > 0)
+  const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoNoPedido && valorComNota > 0)
     ? (valorTotalVenda / valorComNota)
     : null;
 
   const pesoFiscalFmt = pesoFiscal ? formatarPesoComMilhar(pesoFiscal) + ' Kg' : null;
 
-  // REGRA: Se termina com 1 e há desconto, mostrar apenas com nota e peso na NF
-  if (codigoFmt.endsWith('1') && temDescontoComercial) {
+  // Se código termina com 1 E há desconto em qualquer item, aplicar regra de nota cheia
+  if (codigoFmt.endsWith('1') && temDescontoNoPedido) {
     return `
       <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
         ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
@@ -453,7 +443,7 @@ async function carregarPedidosFinanceiro() {
     `;
   }
 
-  // REGRA: Mostrar parte com e sem nota normalmente
+  // Caso padrão: exibe parte com e sem nota normalmente
   return `
     <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
       ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
