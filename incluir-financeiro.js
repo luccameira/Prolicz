@@ -424,7 +424,17 @@ async function carregarPedidosFinanceiro() {
   const valorTotalVenda = totalCom + totalSem;
 
   const nomesPossiveis = [item.nome_produto, item.material].map(normalizarTexto);
-  const temDescontoComercial = descontosPedido.some(d => nomesPossiveis.includes(normalizarTexto(d.nome_produto || d.material)));
+  const temDescontoComercial = descontosPedido.some(d => {
+  const nomeDesconto = normalizarTexto(d.nome_produto || d.material);
+  const encontrado = nomesPossiveis.includes(nomeDesconto);
+
+  // LOG DE VERIFICAÇÃO
+  console.log('[CHECK] Produto:', item.nome_produto);
+  console.log('→ Código Fiscal:', item.codigo_fiscal);
+  console.log('→ Nome no desconto:', d.nome_produto || d.material);
+  console.log('→ Match encontrado?', encontrado);
+  return encontrado;
+});
 
   const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoComercial && valorComNota > 0)
     ? (valorTotalVenda / valorComNota)
