@@ -399,66 +399,38 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-  if (pedido.materiais && pedido.materiais.length) {
-  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-    const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
-    const descontosPalete = item.descontos?.filter(d =>
-      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-    ) || [];
-    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+    if (pedido.materiais && pedido.materiais.length) {
+     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+  const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
 
-    // Valor bruto antes de qualquer desconto
-    const totalComBruto = pesoFinal * valorComNota;
-    const totalSemBruto = pesoFinal * valorSemNota;
+  const descontosPalete = item.descontos?.filter(d =>
+    d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+  ) || [];
 
-    // Total de descontos aplicados nesse item
-    const totalDescontos = descontosPedido
-      .filter(d => d.nome_produto === item.nome_produto)
-      .reduce((sum, d) => sum + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+  const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+  const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-    let totalCom = totalComBruto;
-    let totalSem = totalSemBruto;
-    let infoExtra = '';
+  const totalCom = pesoFinal * valorComNota;
+  const totalSem = pesoFinal * valorSemNota;
 
-    if (codigoFmt.endsWith('1')) {
-      // Nota cheia: aplicar desconto direto na parte com nota
-      const valorFinalComDesconto = totalComBruto + totalSemBruto - totalDescontos;
-      const pesoFiscal = valorFinalComDesconto / valorComNota;
+  totalComNota += totalCom;
+  totalSemNota += totalSem;
 
-      totalCom = valorFinalComDesconto;
-      totalSem = 0;
+  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+  const precoComNotaFmt = formatarMoeda(valorComNota);
+  const precoSemNotaFmt = formatarMoeda(valorSemNota);
+  const totalComFmt = formatarMoeda(totalCom);
+  const totalSemFmt = formatarMoeda(totalSem);
 
-      infoExtra = `<br><span style="font-size: 13px; color: #555;">Peso fiscal na NF: <strong>${formatarPesoComMilhar(pesoFiscal)} Kg</strong></span>`;
-    } else {
-      // Parte sem nota existe: aplica desconto somente ali
-      totalSem = Math.max(0, totalSemBruto - totalDescontos);
+  return `
+    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
+      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
+      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+    </div>
+  `;
+}).join('');
     }
-
-    // Nunca deixa negativos visuais
-    totalCom = Math.max(0, totalCom);
-    totalSem = Math.max(0, totalSem);
-
-    const precoComNotaFmt = formatarMoeda(valorComNota);
-    const precoSemNotaFmt = formatarMoeda(valorSemNota);
-    const totalComFmt = formatarMoeda(totalCom);
-    const totalSemFmt = formatarMoeda(totalSem);
-
-    const comNotaHTML = `<span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>`;
-    const semNotaHTML = totalSem > 0
-      ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
-      : ''; // não exibe bloco vermelho se totalSem for 0
-
-    return `
-      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-        ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-        ${comNotaHTML}${semNotaHTML}
-        ${infoExtra}
-      </div>
-    `;
-  }).join('');
-}
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
