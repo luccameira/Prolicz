@@ -399,7 +399,7 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-   if (pedido.materiais && pedido.materiais.length) {
+  if (pedido.materiais && pedido.materiais.length) {
   codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
     const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
@@ -409,42 +409,51 @@ async function carregarPedidosFinanceiro() {
     const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
     const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-    // Valor bruto antes de aplicar qualquer desconto comercial
-    const valorTotalBruto = pesoFinal * (valorComNota + valorSemNota);
+    // Valor bruto antes de qualquer desconto
+    const totalComBruto = pesoFinal * valorComNota;
+    const totalSemBruto = pesoFinal * valorSemNota;
 
     // Total de descontos aplicados nesse item
     const totalDescontos = descontosPedido
       .filter(d => d.nome_produto === item.nome_produto)
       .reduce((sum, d) => sum + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
 
-    let totalCom = pesoFinal * valorComNota;
-    let totalSem = pesoFinal * valorSemNota;
-
-    let infoExtra = ''; // para exibir peso ajustado quando nota cheia
+    let totalCom = totalComBruto;
+    let totalSem = totalSemBruto;
+    let infoExtra = '';
 
     if (codigoFmt.endsWith('1')) {
-      const valorFinalComDesconto = totalCom + totalSem - totalDescontos;
+      // Nota cheia: aplicar desconto direto na parte com nota
+      const valorFinalComDesconto = totalComBruto + totalSemBruto - totalDescontos;
       const pesoFiscal = valorFinalComDesconto / valorComNota;
 
-      // Recalcula valor com base no peso ajustado
       totalCom = valorFinalComDesconto;
       totalSem = 0;
 
       infoExtra = `<br><span style="font-size: 13px; color: #555;">Peso fiscal na NF: <strong>${formatarPesoComMilhar(pesoFiscal)} Kg</strong></span>`;
     } else {
-      totalSem = Math.max(0, totalSem - totalDescontos);
+      // Parte sem nota existe: aplica desconto somente ali
+      totalSem = Math.max(0, totalSemBruto - totalDescontos);
     }
+
+    // Nunca deixa negativos visuais
+    totalCom = Math.max(0, totalCom);
+    totalSem = Math.max(0, totalSem);
 
     const precoComNotaFmt = formatarMoeda(valorComNota);
     const precoSemNotaFmt = formatarMoeda(valorSemNota);
     const totalComFmt = formatarMoeda(totalCom);
     const totalSemFmt = formatarMoeda(totalSem);
 
+    const comNotaHTML = `<span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>`;
+    const semNotaHTML = totalSem > 0
+      ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
+      : ''; // não exibe bloco vermelho se totalSem for 0
+
     return `
       <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
         ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-        <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+        ${comNotaHTML}${semNotaHTML}
         ${infoExtra}
       </div>
     `;
