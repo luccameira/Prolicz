@@ -1,3 +1,5 @@
+
+
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
@@ -20,41 +22,28 @@ function formatarPesoComMilhar(valor) {
   return numero.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
-function calcularValoresFiscais(item, descontos) {
+function calcularValoresFiscais(item) {
   const valorUnitario = Number(item.valor_unitario) || 0;
-  const tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
   let valorComNota = 0;
   let valorSemNota = 0;
-
-  const descontosItem = (descontos || []).filter(d => d.nome_produto === item.nome_produto);
-  const totalDescontos = descontosItem.reduce((soma, d) => {
-    const peso = Number(d.peso_calculado || 0);
-    const valorKg = Number(d.valor_unitario || 0);
-    return soma + (peso * valorKg);
-  }, 0);
+  let tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
 
   if (tipoCodigo === "PERSONALIZAR" && item.valor_com_nota != null && item.valor_sem_nota != null) {
     valorComNota = Number(item.valor_com_nota);
     valorSemNota = Number(item.valor_sem_nota);
   } else if (tipoCodigo.endsWith("1")) {
-    // Nota cheia — valor total da venda não muda, mas o peso com nota é ajustado
     valorComNota = valorUnitario;
     valorSemNota = 0;
-  } else if (tipoCodigo.endsWith("2") || tipoCodigo.endsWith("X") || tipoCodigo.endsWith("P")) {
-    // Desconto aplicado somente fora da nota
-    const baseSemNota = valorUnitario / 2;
-    const baseComNota = valorUnitario / 2;
-
-    // Aplica o desconto na parte sem nota apenas
-    const valorSemNotaFinal = baseSemNota - (totalDescontos > 0 ? (totalDescontos / (item.peso_carregado || 1)) : 0);
-    valorComNota = baseComNota;
-    valorSemNota = valorSemNotaFinal > 0 ? valorSemNotaFinal : 0;
+  } else if (tipoCodigo.endsWith("2")) {
+    valorComNota = valorUnitario / 2;
+    valorSemNota = valorUnitario / 2;
+  } else if (tipoCodigo.endsWith("X")) {
+    valorComNota = 0;
+    valorSemNota = valorUnitario;
   } else {
-    // Código não identificado — padrão: tudo com nota
     valorComNota = valorUnitario;
     valorSemNota = 0;
   }
-
   return { valorComNota, valorSemNota };
 }
 
@@ -114,7 +103,7 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    const timelineHTML = gerarLinhaTempoCompleta(pedido);
+      const timelineHTML = gerarLinhaTempoCompleta(pedido);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = timelineHTML;
     const timelineElement = tempDiv.querySelector('.timeline-simples');
@@ -208,7 +197,7 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-      // BLOCO — Descontos Comerciais reorganizados
+    // BLOCO — Descontos Comerciais reorganizados
     if (descontosPedido.length) {
       descontosPedido.forEach((desc, idx) => {
         const blocoDesc = document.createElement('div');
@@ -224,7 +213,7 @@ async function carregarPedidosFinanceiro() {
           <p><strong>Quantidade:</strong> ${qtd} Kg</p>
         `;
 
-        const valorInputId = `valor-kg-${id}-${idx}`;
+            const valorInputId = `valor-kg-${id}-${idx}`;
         const confirmarBtnId = `confirmar-kg-${id}-${idx}`;
 
         if (desc.motivo === 'Devolução de Material') {
@@ -347,7 +336,7 @@ async function carregarPedidosFinanceiro() {
         blocoDesc.style.border = '1px solid #e66';
         form.appendChild(blocoDesc);
 
-             const blocoImagens = document.createElement('div');
+        const blocoImagens = document.createElement('div');
         blocoImagens.className = 'bloco-tickets-comerciais';
         blocoImagens.style.margin = '12px 0 20px 0';
         blocoImagens.style.display = 'flex';
@@ -382,106 +371,309 @@ async function carregarPedidosFinanceiro() {
       });
     }
 
-    const separador = document.createElement('div');
+      const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // Exibição fiscal com base na nova regra
+    if (
+      pedido.condicao_pagamento_avista &&
+      pedido.prazos_pagamento?.length &&
+      pedido.prazos_pagamento.some((dataVencimento, index) => {
+        const prazoOriginal = pedido.prazos_pagamento[index];
+        const dataColeta = new Date(pedido.data_coleta).toDateString();
+        const dataVenc = new Date(prazoOriginal).toDateString();
+        return dataVenc === dataColeta;
+      })
+    ) {
+      const blocoCondicao = document.createElement('div');
+      blocoCondicao.className = 'obs-pedido';
+      blocoCondicao.innerHTML = `
+        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+      `;
+      containerCinza.appendChild(blocoCondicao);
+    }
+
     let totalComNota = 0;
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
     if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item, descontosPedido);
+     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+  const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
 
-        const descontosPalete = item.descontos?.filter(d =>
-          d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-        ) || [];
+  const descontosPalete = item.descontos?.filter(d =>
+    d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+  ) || [];
 
-        const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+  const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+  const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-        const totalCom = pesoFinal * valorComNota;
-        const totalSem = pesoFinal * valorSemNota;
+  const totalCom = pesoFinal * valorComNota;
+  const totalSem = pesoFinal * valorSemNota;
 
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
+  totalComNota += totalCom;
+  totalSemNota += totalSem;
 
-        const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
-        const precoComNotaFmt = formatarMoeda(valorComNota);
-        const precoSemNotaFmt = formatarMoeda(valorSemNota);
-        const totalComFmt = formatarMoeda(totalCom);
-        const totalSemFmt = formatarMoeda(totalSem);
+  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+  const precoComNotaFmt = formatarMoeda(valorComNota);
+  const precoSemNotaFmt = formatarMoeda(valorSemNota);
+  const totalComFmt = formatarMoeda(totalCom);
+  const totalSemFmt = formatarMoeda(totalSem);
 
-        if (codigoFmt.endsWith('1')) {
-          return `
-            <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-              ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-              <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>
-              <span style="color: #555;">• Peso na Nota: ${formatarPesoComMilhar(pesoFinal)} Kg</span>
-            </div>
-          `;
-        } else if (valorSemNota > 0) {
-          return `
-            <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-              ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-              <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-              <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-              ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-              <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>
-              <span style="color: #555;">• Peso na Nota: ${formatarPesoComMilhar(pesoFinal)} Kg</span>
-            </div>
-          `;
-        }
-      }).join('');
+  return `
+    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
+      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
+      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+    </div>
+  `;
+}).join('');
     }
 
-    const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
-      const peso = Number(d.peso_calculado || 0);
-      const valorKg = Number(d.valor_unitario || 0);
-      return soma + (peso * valorKg);
-    }, 0);
+    // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
+const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
+  const peso = Number(d.peso_calculado || 0);
+  const valorKg = Number(d.valor_unitario || 0);
+  return soma + (peso * valorKg);
+}, 0);
 
-    const totalVenda = totalComNota + totalSemNota - totalDescontosComerciais;
-    const totalVendaFmt = formatarMoeda(totalVenda);
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
+// 🔧 Valor total da venda com desconto aplicado
+const totalVenda = totalComNota + totalSemNota - totalDescontosComerciais;
+const totalVendaFmt = formatarMoeda(totalVenda);
+const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
-    function calcularValoresVencimentos(valorTotal) {
-      let parcelas = [];
-      let base = Math.floor((valorTotal * 100) / numVencimentos) / 100;
-      let totalParcial = 0;
-      for (let i = 0; i < numVencimentos; i++) {
-        if (i < numVencimentos - 1) {
-          parcelas.push(base);
-          totalParcial += base;
-        } else {
-          let ultima = (valorTotal - totalParcial);
-          parcelas.push(ultima);
-        }
-      }
-      return parcelas;
+   function calcularValoresVencimentos(valorTotal) {
+  let parcelas = [];
+  let base = Math.floor((valorTotal * 100) / numVencimentos) / 100;
+  let totalParcial = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    if (i < numVencimentos - 1) {
+      parcelas.push(base);
+      totalParcial += base;
+    } else {
+      let ultima = (valorTotal - totalParcial);
+      parcelas.push(ultima);
     }
+  }
+  return parcelas;
+}
 
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
-      <p class="erro-vencimentos" style="color:red; display:none;"></p>
+      <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
-      ${pedido.observacoes ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
+      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
     `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
     let valoresPadrao = calcularValoresVencimentos(totalVenda);
+
+    function atualizarResumoFinanceiro() {
+  let totalComNotaNovo = 0;
+  let totalSemNotaNovo = 0;
+
+  pedido.materiais?.forEach(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    totalComNotaNovo += pesoFinal * valorComNota;
+    totalSemNotaNovo += pesoFinal * valorSemNota;
+  });
+
+  const totalDescontos = descontosPedido.reduce((soma, d) => {
+    const peso = Number(d.peso_calculado || 0);
+    const valorKg = Number(d.valor_unitario || 0);
+    return soma + (peso * valorKg);
+  }, 0);
+
+  const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
+  const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
+
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
+
+  valoresPadrao = calcularValoresVencimentos(totalFinalVenda);
+
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
+
+    function renderizarVencimentos(valores) {
+  vencContainer.innerHTML = '';
+  inputs.length = 0;
+
+  for (let i = 0; i < numVencimentos; i++) {
+    const dt = new Date(pedido.prazos_pagamento[i]);
+    const ok = !isNaN(dt.getTime());
+    const valorRaw = Number(valores[i] || 0);
+    const valorFmt = valorRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+    const row = document.createElement('div');
+    row.className = 'vencimento-row';
+    row.dataset.confirmado = 'false';
+    row.innerHTML = `
+      <span class="venc-label">Vencimento ${i + 1}</span>
+      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+      <input type="text" value="${valorFmt}" />
+      <button type="button">✓</button>
+    `;
+
+    const inp = row.querySelector('input');
+    const btn = row.querySelector('button');
+    inputs[i] = inp;
+
+    inp.addEventListener('input', () => {
+      let valor = inp.value.replace(/\D/g, '');
+      valor = (parseInt(valor, 10) / 100).toFixed(2);
+      inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    });
+
+    inp.addEventListener('blur', atualizarBotaoLiberar);
+
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
+
+    vencContainer.appendChild(row);
+  
+function toggleConfirmacao() {
+  const raw = inp.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  let rowErr = row.querySelector('.row-error');
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
+  }
+
+  if (isNaN(num) || num <= 0) {
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
+
+  const isConf = row.dataset.confirmado === 'true';
+
+  // Pega o total da venda exibido na tela
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  const totalVendaAtual = tagTotalVenda
+    ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
+    : 0;
+
+  // Calcula total já confirmado + esse que o usuário está tentando confirmar
+  const valoresConfirmados = [];
+  const indicesNaoConfirmados = [];
+  let totalConfirmado = 0;
+
+  for (let j = 0; j < inputs.length; j++) {
+    const rowAtual = inputs[j].closest('.vencimento-row');
+    const confirmado = rowAtual.dataset.confirmado === 'true';
+    const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
+
+    if (row === rowAtual && !isConf) {
+      // Estamos tentando confirmar este agora
+      totalConfirmado += num;
+    } else if (confirmado) {
+      totalConfirmado += valor;
+    } else {
+      indicesNaoConfirmados.push(j);
+    }
+  }
+
+  if (!isConf && totalConfirmado > totalVendaAtual + 0.01) {
+    rowErr.textContent = 'A soma dos vencimentos excede o valor total da venda.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
+
+  if (row.contains(rowErr)) row.removeChild(rowErr);
+
+  if (!isConf) {
+    row.dataset.confirmado = 'true';
+    inp.disabled = true;
+    btn.replaceWith(etiquetaConfirmado);
+  } else {
+    row.dataset.confirmado = 'false';
+    inp.disabled = false;
+    etiquetaConfirmado.replaceWith(btn);
+  }
+
+  // Recalcular vencimentos restantes
+  const valorRestante = totalVendaAtual - totalConfirmado;
+  const qtdNaoConfirmados = indicesNaoConfirmados.length;
+
+  if (qtdNaoConfirmados > 0) {
+    const base = Math.floor((valorRestante * 100) / qtdNaoConfirmados) / 100;
+    let acumulado = 0;
+
+    indicesNaoConfirmados.forEach((idx, i) => {
+      let valorAtual;
+      if (i < qtdNaoConfirmados - 1) {
+        valorAtual = base;
+        acumulado += base;
+      } else {
+        valorAtual = valorRestante - acumulado;
+      }
+      inputs[idx].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    });
+  }
+
+  atualizarBotaoLiberar();
+}
+
+        btn.addEventListener('click', toggleConfirmacao);
+        etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
+        vencContainer.appendChild(row);
+      }
+    }
+
+   function resetarVencimentosPadrao() {
+  atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
+}
+
+   function atualizarBotaoLiberar() {
+  let soma = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    let valor = inputs[i].value.replace(/\D/g, '');
+    valor = parseInt(valor, 10) / 100;
+    soma += valor;
+  }
+
+  // Usa o novo total atualizado pela função atualizarResumoFinanceiro
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
+
+  const erro = document.querySelector('.erro-vencimentos');
+  const liberador = document.querySelector('#liberar-btn');
+
+  if (Math.abs(soma - totalVendaNum) > 0.02) {
+    erro.style.display = 'block';
+    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
+    liberador.disabled = true;
+  } else {
+    erro.style.display = 'none';
+    erro.textContent = '';
+    liberador.disabled = false;
+  }
+}
 
     renderizarVencimentos(valoresPadrao);
     form.appendChild(containerCinza);
@@ -498,7 +690,7 @@ async function carregarPedidosFinanceiro() {
     blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
       <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" id="liberar-btn" disabled>Confirmar Liberação do Cliente</button>
+      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
     `;
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
