@@ -34,10 +34,12 @@ async function carregarPedidosConferencia() {
   }
 
   pedidos.forEach(pedido => {
-    const idPedido = pedido.pedido_id || pedido.id;
+  const idPedido = pedido.pedido_id || pedido.id;
 
-    const card = document.createElement('div');
-    card.className = 'card';
+  let podeExecutar = ['Aguardando Conferência do Peso', 'Conferência de Peso'].includes(pedido.status);
+
+  const card = document.createElement('div');
+  card.className = 'card';
 
     let statusHtml = '';
     if (pedido.status === 'Em Análise pelo Financeiro') {
@@ -227,19 +229,17 @@ ${ticketsHTML}
     }
 
     // Botão de confirmar peso
-    if (pedido.status === 'Aguardando Conferência do Peso') {
-      const botaoConfirmar = document.createElement('button');
-      botaoConfirmar.className = 'btn btn-registrar';
-      botaoConfirmar.innerText = 'Confirmar Peso';
-      botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
-      form.appendChild(botaoConfirmar);
-    } else {
-      const botaoConfirmar = document.createElement('button');
-      botaoConfirmar.className = 'btn btn-registrar btn-disabled';
-      botaoConfirmar.innerText = 'Coleta ainda não foi finalizada';
-      botaoConfirmar.disabled = true;
-      form.appendChild(botaoConfirmar);
-    }
+
+const botaoConfirmar = document.createElement('button');
+botaoConfirmar.className = podeExecutar ? 'btn btn-registrar' : 'btn btn-registrar btn-disabled';
+botaoConfirmar.innerText = podeExecutar ? 'Confirmar Peso' : 'Coleta ainda não foi finalizada';
+botaoConfirmar.disabled = !podeExecutar;
+
+if (podeExecutar) {
+  botaoConfirmar.onclick = () => confirmarPeso(idPedido, botaoConfirmar);
+}
+
+form.appendChild(botaoConfirmar);
 
     const timeline = document.createElement('div');
     timeline.className = 'area-clique-timeline';
@@ -251,10 +251,11 @@ ${ticketsHTML}
     timeline.style.zIndex = '1';
 
     timeline.addEventListener('click', (e) => {
-      if (pedido.status !== 'Aguardando Conferência do Peso') return;
-      e.stopPropagation();
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+  podeExecutar = ['Aguardando Conferência do Peso', 'Conferência de Peso'].includes(pedido.status);
+  if (!podeExecutar) return;
+  e.stopPropagation();
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
 
     card.style.position = 'relative';
     card.appendChild(form);
