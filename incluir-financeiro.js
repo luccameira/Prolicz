@@ -409,7 +409,9 @@ async function carregarPedidosFinanceiro() {
     let codigosFiscaisBarraAzul = '';
 
     if (pedido.materiais && pedido.materiais.length) {
-     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+     let pesoNotaTotal = 0;
+
+codigosFiscaisBarraAzul = pedido.materiais.map(item => {
   const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
 
   const descontosPalete = item.descontos?.filter(d =>
@@ -431,13 +433,29 @@ async function carregarPedidosFinanceiro() {
   const totalComFmt = formatarMoeda(totalCom);
   const totalSemFmt = formatarMoeda(totalSem);
 
-  return `
-    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
-    </div>
-  `;
+  const pesoNaNota = (valorSemNota === 0 && valorComNota > 0)
+    ? totalVenda / valorComNota
+    : pesoFinal;
+
+  const pesoFmt = formatarPesoComMilhar(pesoNaNota);
+
+  if (valorSemNota === 0) {
+    pesoNotaTotal += pesoNaNota;
+    return `
+      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+        ${item.nome_produto} (${codigoFmt}) —
+        <span style="color: #2e7d32;">Peso na Nota Fiscal: ${pesoFmt} Kg</span>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+        ${item.nome_produto} (${codigoFmt}) |
+        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
+        <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+      </div>
+    `;
+  }
 }).join('');
     }
 
