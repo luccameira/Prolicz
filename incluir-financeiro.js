@@ -435,7 +435,7 @@ codigosFiscaisBarraAzul = pedido.materiais.map(item => {
   // Novo cálculo — peso fiscal ajustado quando nota é cheia
   if (codigoFmt.endsWith('1')) {
     const valorTotalComDesconto = totalCom + totalSem;
-    const pesoAjustado = valorUnitario > 0 ? valorTotalComDesconto / valorComNota : 0;
+    const pesoAjustado = valorComNota > 0 ? valorTotalComDesconto / valorComNota : 0;
     const pesoFmt = formatarPesoComMilhar(pesoAjustado);
 
     return `
