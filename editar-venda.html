@@ -1,112 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Editar Pedido</title>
-  <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="layout.css" />
+  <link rel="stylesheet" href="editar-venda.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <script defer src="incluir-layout.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-  <style>
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      max-width: 600px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 16px;
-    }
-
-    label {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    input, select, textarea {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .produto-bloco {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 15px;
-      background-color: #f9f9f9;
-      position: relative;
-    }
-
-    .produto-bloco .form-group {
-      margin-bottom: 12px;
-    }
-
-    .btn {
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #ffc107;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      display: block;
-    }
-
-    .btn-remove {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: red;
-      border: none;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    input[readonly]:not(#data-coleta), select[readonly] {
-      background-color: #e0e0e0;
-      color: #666;
-    }
-
-    #valor-total {
-      font-weight: bold;
-      text-align: right;
-      padding-top: 10px;
-      font-size: 16px;
-    }
-
-    .btn-voltar {
-      margin-bottom: 20px;
-      padding: 10px 20px;
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      text-align: center;
-    }
-
-    .btn-voltar:hover {
-      background-color: #5a6268;
-    }
-  </style>
 </head>
 <body>
   <div class="topbar"></div>
@@ -117,228 +19,82 @@
     <a href="vendas.html" class="btn-voltar">Voltar</a>
 
     <form id="form-editar-pedido">
-      <div class="form-group">
-        <label for="cliente_nome">Cliente</label>
-        <input type="text" id="cliente_nome" readonly>
-      </div>
-      <div class="form-group">
-        <label for="data-coleta">Data da Coleta</label>
-        <input type="text" id="data-coleta" required>
-      </div>
-      <div class="form-group">
-        <label for="pedido-para">Pedido para</label>
-        <select id="pedido-para" required>
-          <option value="retirar">Retirar</option>
-          <option value="entregar">Entregar</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="codigo">Código Fiscal</label>
-        <input type="text" id="codigo" readonly class="readonly">
-      </div>
-      <div class="form-group">
-        <label for="prazo-pagamento">Prazo de Pagamento</label>
-        <select id="prazo-pagamento"></select>
-      </div>
-
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
-      <div id="valor-total"></div>
 
-      <div class="form-group">
-        <label for="observacao">Observação</label>
-        <textarea id="observacao"></textarea>
+      <div id="valor-total-previsto" class="valor-total-previsto">
+        Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
       </div>
 
-      <button type="button" id="salvar-alteracoes" class="btn">Salvar Alterações</button>
+      <button type="button" id="btn-adicionar-observacao" class="btn">Adicionar Observação</button>
+
+      <div id="observacao-bloco">
+        <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
+
+        <div class="form-group">
+          <label for="setor-observacao">Setor</label>
+          <select id="setor-observacao" multiple="multiple">
+            <option value="Todos">Todos</option>
+            <option value="Portaria">Portaria</option>
+            <option value="Carga e Descarga">Carga e Descarga</option>
+            <option value="Conferência de Peso">Conferência de Peso</option>
+            <option value="Financeiro">Financeiro</option>
+            <option value="Emissão de NF">Emissão de NF</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="texto-observacao">Observação</label>
+          <textarea id="texto-observacao" disabled></textarea>
+        </div>
+
+        <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
+      </div>
+
+      <div class="observacoes-lista" style="margin-top: 20px;">
+  <div id="observacoes-comuns"></div>
+  <div id="resets-confirmados"></div>
+</div>
+
+      <!-- Botão Resetar Tarefa -->
+      <button type="button" id="btn-resetar-tarefa" class="btn">Resetar Tarefa</button>
+
+      <!-- 🔁 Botão Salvar Alterações (agora por último) -->
+      <button type="submit" class="btn btn-azul">Salvar Alterações</button>
     </form>
   </div>
 
-  <!-- SCRIPT INTEGRADO -->
-  <script>
-    flatpickr("#data-coleta", { locale: "pt", dateFormat: "Y-m-d" });
-    const urlParams = new URLSearchParams(window.location.search);
-    const pedidoId = urlParams.get("id");
-    let produtosAutorizados = [];
+  <!-- Modal Resetar Tarefa -->
+  <div id="modal-resetar-tarefa" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2>Resetar Tarefa</h2>
 
-    function getProdutosSelecionados() {
-      return Array.from(document.querySelectorAll('.select-produto'))
-        .map(select => parseInt(select.value))
-        .filter(id => !isNaN(id));
-    }
+      <label for="setor-resetar">Para qual setor você deseja resetar esta tarefa?</label>
+      <select id="setor-resetar" required>
+        <option value="">Selecione o setor</option>
+        <option value="Portaria">Portaria</option>
+        <option value="Carga e Descarga">Carga e Descarga</option>
+        <option value="Conferência de Peso">Conferência de Peso</option>
+        <option value="Financeiro">Financeiro</option>
+        <option value="Emissão de NF">Emissão de NF</option>
+      </select>
 
-    function atualizarDropdownsProdutos() {
-      const selecionados = getProdutosSelecionados();
-      document.querySelectorAll('.select-produto').forEach(select => {
-        const valorAtual = parseInt(select.value);
-        Array.from(select.options).forEach(opt => {
-          const id = parseInt(opt.value);
-          if (!isNaN(id)) {
-            opt.disabled = selecionados.includes(id) && id !== valorAtual;
-          }
-        });
-      });
-    }
+      <label for="motivo-reset">Explique o motivo do reset (mínimo 30 caracteres)</label>
+      <textarea id="motivo-reset" rows="4" required></textarea>
 
-    function adicionarProdutoSelecionavel(produtoIdSelecionado = null, peso = '', tipo_peso = 'Exato', valorForcado = null) {
-      const container = document.getElementById("produtos");
-      const bloco = document.createElement("div");
-      bloco.className = "produto-bloco";
+      <div class="modal-botoes">
+        <button id="btn-confirmar-reset" class="btn btn-azul">Confirmar Reset</button>
+        <button id="btn-cancelar-reset" class="btn">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
-      const produtosSelecionados = getProdutosSelecionados();
-
-      const options = produtosAutorizados.map(p => {
-        const disabled = produtosSelecionados.includes(p.id) && p.id !== produtoIdSelecionado ? 'disabled' : '';
-        const selected = p.id === produtoIdSelecionado ? 'selected' : '';
-        return `<option value="${p.id}" data-nome="${p.nome}" data-valor="${p.valor_unitario}" ${selected} ${disabled}>${p.nome}</option>`;
-      }).join('');
-
-      const valorInicial = parseFloat(valorForcado !== null ? valorForcado : produtosAutorizados.find(p => p.id === produtoIdSelecionado)?.valor_unitario || 0);
-
-      bloco.innerHTML = `
-        <div class="form-group">
-          <label>Produto</label>
-          <select class="select-produto">${options}</select>
-        </div>
-        <div class="form-group">
-          <label>Valor Unitário</label>
-          <input type="text" class="valor" value="${valorInicial.toFixed(2)}" readonly data-valor="${valorInicial}">
-        </div>
-        <div class="form-group">
-          <label>Peso (Kg)</label>
-          <input type="number" class="peso" step="0.01" value="${peso}">
-        </div>
-        <div class="form-group">
-          <label>Tipo de Peso</label>
-          <select class="tipo-peso">
-            <option ${tipo_peso === 'Exato' ? 'selected' : ''}>Exato</option>
-            <option ${tipo_peso === 'Aproximado' ? 'selected' : ''}>Aproximado</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Subtotal</label>
-          <input type="text" class="subtotal" value="R$ 0,00" readonly>
-        </div>`;
-
-      if (document.querySelectorAll('.produto-bloco').length > 0) {
-        const botaoRemover = document.createElement('button');
-        botaoRemover.textContent = 'Remover';
-        botaoRemover.className = 'btn-remove';
-        botaoRemover.type = 'button';
-        botaoRemover.onclick = () => {
-          bloco.remove();
-          atualizarValorTotal();
-          atualizarDropdownsProdutos();
-        };
-        bloco.appendChild(botaoRemover);
-      }
-
-      container.appendChild(bloco);
-      bindEventosProduto(bloco);
-      atualizarDropdownsProdutos();
-    }
-
-    function bindEventosProduto(bloco) {
-      const produtoSelect = bloco.querySelector('.select-produto');
-      const valorInput = bloco.querySelector('.valor');
-      const pesoInput = bloco.querySelector('.peso');
-      const subtotalInput = bloco.querySelector('.subtotal');
-
-      produtoSelect.addEventListener('change', () => {
-        const valor = parseFloat(produtoSelect.selectedOptions[0].dataset.valor || 0);
-        valorInput.value = valor.toFixed(2);
-        valorInput.dataset.valor = valor;
-        const peso = parseFloat(pesoInput.value.replace(',', '.')) || 0;
-        subtotalInput.value = `R$ ${(valor * peso).toFixed(2).replace('.', ',')}`;
-        atualizarValorTotal();
-        atualizarDropdownsProdutos();
-      });
-
-      pesoInput.addEventListener('input', () => {
-        const valor = parseFloat(valorInput.dataset.valor) || 0;
-        const peso = parseFloat(pesoInput.value.replace(',', '.')) || 0;
-        subtotalInput.value = `R$ ${(valor * peso).toFixed(2).replace('.', ',')}`;
-        atualizarValorTotal();
-      });
-    }
-
-    function atualizarValorTotal() {
-      let total = 0;
-      document.querySelectorAll(".produto-bloco").forEach(bloco => {
-        const valor = parseFloat(bloco.querySelector(".valor").dataset.valor || 0);
-        const peso = parseFloat(bloco.querySelector(".peso").value || 0);
-        const subtotal = valor * peso;
-        bloco.querySelector(".subtotal").value = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-        total += subtotal;
-      });
-      const totalEl = document.getElementById("valor-total");
-      if (totalEl) totalEl.textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      if (pedidoId) {
-        fetch(`/api/pedidos/${pedidoId}`)
-          .then(res => res.json())
-          .then(pedido => {
-            document.getElementById("cliente_nome").value = pedido.cliente_nome || '';
-            document.getElementById("data-coleta")._flatpickr.setDate(pedido.data_coleta);
-            document.getElementById("pedido-para").value = pedido.tipo;
-            document.getElementById("codigo").value = pedido.codigo_fiscal;
-            document.getElementById("observacao").value = pedido.observacao;
-
-            const prazoPagamento = document.getElementById("prazo-pagamento");
-            pedido.prazos.forEach(prazo => {
-              const opt = document.createElement("option");
-              opt.value = prazo;
-              opt.textContent = prazo;
-              if (prazo === pedido.prazo_pagamento) opt.selected = true;
-              prazoPagamento.appendChild(opt);
-            });
-
-            produtosAutorizados = pedido.produtos_autorizados;
-            pedido.itens.forEach(item => {
-              const valor_unitario = item.valor_unitario || produtosAutorizados.find(p => p.id === item.produto_id)?.valor_unitario || 0;
-              adicionarProdutoSelecionavel(item.produto_id, item.peso, item.tipo_peso, valor_unitario);
-            });
-
-            atualizarValorTotal();
-          });
-      }
-
-      document.getElementById("adicionar-produto").addEventListener("click", () => adicionarProdutoSelecionavel());
-
-      document.getElementById("salvar-alteracoes").addEventListener("click", (e) => {
-        e.preventDefault();
-        const itens = Array.from(document.querySelectorAll(".produto-bloco")).map(bloco => ({
-          produto_id: parseInt(bloco.querySelector(".select-produto").value),
-          peso: parseFloat(bloco.querySelector(".peso").value.replace(',', '.')),
-          tipo_peso: bloco.querySelector(".tipo-peso").value
-        }));
-
-        const dados = {
-          tipo: document.getElementById("pedido-para").value,
-          data_coleta: document.getElementById("data-coleta").value,
-          prazo_pagamento: document.getElementById("prazo-pagamento").value,
-          observacao: document.getElementById("observacao").value,
-          itens
-        };
-
-        fetch(`/api/pedidos/${pedidoId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dados)
-        })
-        .then(res => {
-          if (!res.ok) throw new Error("Erro ao salvar pedido");
-          alert("Alterações salvas com sucesso!");
-          window.location.href = "vendas.html";
-        })
-        .catch(err => {
-          console.error("Erro ao salvar:", err);
-          alert("Erro ao salvar alterações.");
-        });
-      });
-    });
-  </script>
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <script src="editar-venda.js"></script>
 </body>
 </html>
