@@ -1,0 +1,285 @@
+/* editar-venda.css */
+
+.main-content {
+  margin-left: 280px;
+  padding: 100px 40px 40px;
+}
+
+form {
+  background: white;
+  padding: 30px 35px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 860px;
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+input, select, textarea {
+  font-size: 15px;
+  border-radius: 4px;
+  background: #fff;
+  color: #222 !important;
+}
+
+.select2-container {
+  width: 100% !important;
+}
+
+.produto-bloco {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  background: #f9f9f9;
+  position: relative;
+}
+
+.produto-bloco .form-group {
+  margin-bottom: 12px;
+}
+
+.btn {
+  margin: 20px auto;
+  padding: 10px 20px;
+  background: #ffc107;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: block;
+}
+
+.btn-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-voltar {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-voltar:hover {
+  background: #5a6268;
+}
+
+.valor-total-previsto {
+  background: #fffbe6;
+  border: 1.5px solid #ffe066;
+  border-radius: 7px;
+  padding: 16px 20px;
+  margin: 22px auto 10px auto;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 500px;
+}
+
+.valor-total-previsto #valor-total {
+  font-size: 22px;
+  font-weight: bold;
+  color: #178009;
+  margin-left: 10px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.input-nao-editavel {
+  background: #ececec !important;
+  color: #495057 !important;
+  border: 1.5px solid #d1d1d1 !important;
+  cursor: not-allowed;
+  font-weight: bold;
+  opacity: 0.6;
+}
+
+textarea:disabled {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+#observacao-bloco {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: none;
+  position: relative;
+}
+
+.btn-fechar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  font-size: 16px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#observacoes-confirmadas {
+  margin-top: 20px;
+  padding: 15px;
+  background: #e6f7e6;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.obs-item {
+  margin-bottom: 8px;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.obs-texto {
+  flex-grow: 1;
+}
+
+.obs-acoes {
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.obs-acoes button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.btn-azul {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Modal Resetar Tarefa */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  background: white;
+  padding: 30px 25px 25px;
+  border-radius: 10px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+
+.modal-box h2 {
+  margin-top: 0;
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.modal-box label {
+  font-weight: 600;
+  margin: 10px 0 6px;
+  display: block;
+}
+
+.modal-box select,
+.modal-box textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  resize: vertical;
+}
+
+.modal-botoes {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.modal-botoes .btn {
+  width: 48%;
+  margin: 0;
+  padding: 10px;
+}
+
+#btn-confirmar-reset {
+  background: #007bff;
+  color: white;
+}
+
+#btn-cancelar-reset {
+  background: #ffc107;
+  color: black;
+}
+
+.obs-item {
+  margin-bottom: 15px;
+}
+
+.obs-normal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #f7f7f7;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #444;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.obs-normal strong {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 5px;
+}
