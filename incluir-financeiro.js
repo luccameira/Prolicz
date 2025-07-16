@@ -421,29 +421,7 @@ async function carregarPedidosFinanceiro() {
   const precoSemNotaFmt = formatarMoeda(valorSemNota);
   const totalComFmt = formatarMoeda(totalCom);
   const totalSemFmt = formatarMoeda(totalSem);
-  const valorTotalVenda = totalCom + totalSem;
 
-  const nomesPossiveis = [item.nome_produto, item.material].map(normalizarTexto);
-  const temDescontoComercial = descontosPedido.some(d => nomesPossiveis.includes(normalizarTexto(d.nome_produto || d.material)));
-
-  const pesoFiscal = (codigoFmt.endsWith('1') && temDescontoComercial && valorComNota > 0)
-    ? (valorTotalVenda / valorComNota)
-    : null;
-
-  const pesoFiscalFmt = pesoFiscal ? formatarPesoComMilhar(pesoFiscal) + ' Kg' : null;
-
-  // REGRA: Se termina com 1 e há desconto, mostrar apenas com nota e peso na NF
-  if (codigoFmt.endsWith('1') && temDescontoComercial) {
-    return `
-      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-        ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${formatarMoeda(valorTotalVenda)}</span>
-        <span style="margin-left: 16px;">Peso na NF: <strong>${pesoFiscalFmt}</strong></span>
-      </div>
-    `;
-  }
-
-  // REGRA: Mostrar parte com e sem nota normalmente
   return `
     <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
       ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
