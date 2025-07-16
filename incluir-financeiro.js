@@ -455,7 +455,6 @@ codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     </div>
   `;
 }).join('');
-    }
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
