@@ -23,35 +23,26 @@ function formatarPesoComMilhar(valor) {
 
 function calcularValoresFiscais(item) {
   const valorUnitario = Number(item.valor_unitario) || 0;
-  const codigoFiscal = (item.codigo_fiscal || '').toUpperCase();
-
   let valorComNota = 0;
   let valorSemNota = 0;
+  let tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
 
-  // Caso o campo valor_com_nota e valor_sem_nota estejam preenchidos manualmente
-  if (codigoFiscal === 'PERSONALIZAR' && item.valor_com_nota != null && item.valor_sem_nota != null) {
+  if (tipoCodigo === "PERSONALIZAR" && item.valor_com_nota != null && item.valor_sem_nota != null) {
     valorComNota = Number(item.valor_com_nota);
     valorSemNota = Number(item.valor_sem_nota);
-    return { valorComNota, valorSemNota };
-  }
-
-  // Código fiscal terminado em 1 = nota cheia → aplica desconto no peso, não no valor
-  if (codigoFiscal.endsWith('1')) {
+  } else if (tipoCodigo.endsWith("1")) {
     valorComNota = valorUnitario;
     valorSemNota = 0;
-    return { valorComNota, valorSemNota };
-  }
-
-  // Códigos com parte sem nota: aplica desconto só fora da nota
-  if (codigoFiscal.endsWith('2') || codigoFiscal.endsWith('X') || codigoFiscal.endsWith('P')) {
-    valorComNota = valorUnitario;
+  } else if (tipoCodigo.endsWith("2")) {
+    valorComNota = valorUnitario / 2;
+    valorSemNota = valorUnitario / 2;
+  } else if (tipoCodigo.endsWith("X")) {
+    valorComNota = 0;
     valorSemNota = valorUnitario;
-    return { valorComNota, valorSemNota };
+  } else {
+    valorComNota = valorUnitario;
+    valorSemNota = 0;
   }
-
-  // Outros casos (sem código conhecido) → assume nota cheia
-  valorComNota = valorUnitario;
-  valorSemNota = 0;
   return { valorComNota, valorSemNota };
 }
 
@@ -408,9 +399,8 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-    let pesoNotaTotal = 0;
-
-codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    if (pedido.materiais && pedido.materiais.length) {
+     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
   const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
 
   const descontosPalete = item.descontos?.filter(d =>
@@ -432,29 +422,15 @@ codigosFiscaisBarraAzul = pedido.materiais.map(item => {
   const totalComFmt = formatarMoeda(totalCom);
   const totalSemFmt = formatarMoeda(totalSem);
 
-  // Novo cálculo — peso fiscal ajustado quando nota é cheia
-  if (codigoFmt.endsWith('1')) {
-    const valorTotalComDesconto = totalCom + totalSem;
-    const pesoAjustado = valorComNota > 0 ? valorTotalComDesconto / valorComNota : 0;
-    const pesoFmt = formatarPesoComMilhar(pesoAjustado);
-
-    return `
-      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-        ${item.nome_produto} (${codigoFmt}) —
-        <span style="color: #2e7d32;">Peso na Nota Fiscal: ${pesoFmt} Kg</span>
-      </div>
-    `;
-  }
-
-  // Se tem parte sem nota, exibe os dois lados
   return `
     <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-      ${item.nome_produto} (${codigoFmt}) |
+      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
       <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
       <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
     </div>
   `;
 }).join('');
+    }
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
@@ -829,4 +805,3 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
-
