@@ -23,26 +23,35 @@ function formatarPesoComMilhar(valor) {
 
 function calcularValoresFiscais(item) {
   const valorUnitario = Number(item.valor_unitario) || 0;
+  const codigoFiscal = (item.codigo_fiscal || '').toUpperCase();
+
   let valorComNota = 0;
   let valorSemNota = 0;
-  let tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
 
-  if (tipoCodigo === "PERSONALIZAR" && item.valor_com_nota != null && item.valor_sem_nota != null) {
+  // Caso o campo valor_com_nota e valor_sem_nota estejam preenchidos manualmente
+  if (codigoFiscal === 'PERSONALIZAR' && item.valor_com_nota != null && item.valor_sem_nota != null) {
     valorComNota = Number(item.valor_com_nota);
     valorSemNota = Number(item.valor_sem_nota);
-  } else if (tipoCodigo.endsWith("1")) {
-    valorComNota = valorUnitario;
-    valorSemNota = 0;
-  } else if (tipoCodigo.endsWith("2")) {
-    valorComNota = valorUnitario / 2;
-    valorSemNota = valorUnitario / 2;
-  } else if (tipoCodigo.endsWith("X")) {
-    valorComNota = 0;
-    valorSemNota = valorUnitario;
-  } else {
-    valorComNota = valorUnitario;
-    valorSemNota = 0;
+    return { valorComNota, valorSemNota };
   }
+
+  // Código fiscal terminado em 1 = nota cheia → aplica desconto no peso, não no valor
+  if (codigoFiscal.endsWith('1')) {
+    valorComNota = valorUnitario;
+    valorSemNota = 0;
+    return { valorComNota, valorSemNota };
+  }
+
+  // Códigos com parte sem nota: aplica desconto só fora da nota
+  if (codigoFiscal.endsWith('2') || codigoFiscal.endsWith('X') || codigoFiscal.endsWith('P')) {
+    valorComNota = valorUnitario;
+    valorSemNota = valorUnitario;
+    return { valorComNota, valorSemNota };
+  }
+
+  // Outros casos (sem código conhecido) → assume nota cheia
+  valorComNota = valorUnitario;
+  valorSemNota = 0;
   return { valorComNota, valorSemNota };
 }
 
