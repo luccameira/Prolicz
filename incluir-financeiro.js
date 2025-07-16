@@ -14,11 +14,10 @@ function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function formatarPesoSemDecimal(valor) {
+function formatarPesoComMilhar(valor) {
   if (valor == null) return '—';
   const numero = Number(valor);
-  if (Number.isInteger(numero)) return numero.toString();
-  return numero.toFixed(2).replace('.', ',');
+  return numero.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function calcularValoresFiscais(item) {
@@ -46,50 +45,11 @@ function calcularValoresFiscais(item) {
   return { valorComNota, valorSemNota };
 }
 
-// Linha do tempo visual
-function gerarLinhaTempo(statusAtual) {
-  const etapas = [
-    'Aguardando Início da Coleta',
-    'Coleta Iniciada',
-    'Aguardando Conferência do Peso',
-    'Em Análise pelo Financeiro',
-    'Aguardando Emissão de NF',
-    'Cliente Liberado',
-    'Finalizado'
-  ];
-  let etapaAtiva = false;
-  return `
-    <div class="linha-tempo" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
-      ${etapas.map((etapa, idx) => {
-        if (etapa === statusAtual) etapaAtiva = true;
-        return `
-          <span class="etapa ${!etapaAtiva ? 'concluida' : etapa === statusAtual ? 'ativa' : ''}" 
-            style="
-              padding: 2px 12px;
-              border-radius: 12px;
-              font-size: 13px;
-              background: ${etapa === statusAtual ? '#ffe066' : !etapaAtiva ? '#90ee90' : '#ececec'};
-              color: #222;
-              font-weight: ${etapa === statusAtual ? 'bold' : 'normal'};
-              border: 1px solid #d7d7d7;
-              ">
-            ${etapa}
-          </span>
-          ${idx < etapas.length - 1 ? '<span style="font-size:18px;color:#aaa;">→</span>' : ''}
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
 async function carregarPedidosFinanceiro() {
-  const [resPendentes, resAnteriores] = await Promise.all([
-    fetch('/api/pedidos?status=Em%20An%C3%A1lise%20pelo%20Financeiro'),
-    fetch('/api/pedidos?status=Aguardando%20Confer%C3%AAncia%20do%20Peso')
-  ]);
+  const res = await fetch('/api/pedidos/financeiro');
   let pedidos = [];
   try {
-    pedidos = [...await resPendentes.json(), ...await resAnteriores.json()];
+    pedidos = await res.json();
     if (!Array.isArray(pedidos)) throw new Error('Resposta inválida');
   } catch (erro) {
     console.error('Erro ao carregar pedidos:', erro);
@@ -120,10 +80,6 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    // Linha do tempo visual no topo
-    card.innerHTML = gerarLinhaTempo(pedido.status);
-
-    // Header
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
@@ -137,26 +93,32 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    // Formulário oculto
+    const timelineHTML = gerarLinhaTempoCompleta(pedido);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = timelineHTML;
+    const timelineElement = tempDiv.querySelector('.timeline-simples');
+    if (timelineElement) {
+      card.appendChild(timelineElement);
+      setTimeout(() => animarLinhaProgresso(timelineElement), 0);
+    }
+
     const form = document.createElement('div');
     form.className = 'formulario';
     form.style.display = 'none';
 
-    // ---- Materiais da venda ----
     pedido.materiais?.forEach(item => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
-      // dados do item
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
-      const pesoPrevisto = formatarPesoSemDecimal(item.quantidade);
-      const pesoCarregado = formatarPesoSemDecimal(item.peso_carregado);
+      const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
+      const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
       let descontosKg = 0;
       if (item.descontos?.length) {
         descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
       }
       const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-      const pesoFinal = formatarPesoSemDecimal(pesoFinalNum);
+      const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
 
       bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
@@ -167,12 +129,12 @@ async function carregarPedidosFinanceiro() {
             <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
             <ul>
               ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${formatarPesoSemDecimal(d.quantidade)} UNIDADES (${formatarPesoSemDecimal(d.peso_calculado)} Kg)</li>`
+                `<li>${d.motivo}: ${formatarPesoComMilhar(d.quantidade)} UNIDADES (${formatarPesoComMilhar(d.peso_calculado)} Kg)</li>`
               ).join('')}
             </ul>
           </div>
         ` : ''}
-        <p style="margin-top:16px;"><strong>Peso Final com Desconto:</strong> ${pesoFinal} Kg</p>
+        <p style="margin-top:16px;"><strong>${item.descontos?.length ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
           <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
@@ -181,16 +143,102 @@ async function carregarPedidosFinanceiro() {
       form.appendChild(bloco);
     });
 
-    // separador visual
-    const separador = document.createElement('div');
+    if (pedido.ticket_balanca) {
+      const ticketId = `ticket-${id}`;
+      const blocoTicket = document.createElement('div');
+      blocoTicket.style.marginTop = '25px';
+      blocoTicket.innerHTML = `
+        <label style="font-weight: bold;">Ticket da Balança:</label><br>
+        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
+      `;
+      form.appendChild(blocoTicket);
+
+      setTimeout(() => {
+        const img = document.getElementById(ticketId);
+        if (img) {
+          img.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100vw';
+            overlay.style.height = '100vh';
+            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '9999';
+
+            const modalImg = document.createElement('img');
+            modalImg.src = img.src;
+            modalImg.style.maxWidth = '90vw';
+            modalImg.style.maxHeight = '90vh';
+            modalImg.style.objectFit = 'contain';
+            modalImg.style.borderRadius = '8px';
+            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+            modalImg.style.cursor = 'zoom-in';
+            modalImg.style.transition = 'transform 0.3s ease';
+
+            let zoomed = false;
+            modalImg.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const rect = modalImg.getBoundingClientRect();
+              const offsetX = e.clientX - rect.left;
+              const offsetY = e.clientY - rect.top;
+              const percentX = (offsetX / rect.width) * 100;
+              const percentY = (offsetY / rect.height) * 100;
+
+              if (!zoomed) {
+                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+                modalImg.style.transform = 'scale(2.5)';
+                modalImg.style.cursor = 'zoom-out';
+                zoomed = true;
+              } else {
+                modalImg.style.transform = 'scale(1)';
+                modalImg.style.cursor = 'zoom-in';
+                zoomed = false;
+              }
+            });
+
+            const closeBtn = document.createElement('div');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '20px';
+            closeBtn.style.right = '30px';
+            closeBtn.style.fontSize = '40px';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = (e) => {
+              e.stopPropagation();
+              document.body.removeChild(overlay);
+            };
+
+            overlay.appendChild(modalImg);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+          });
+        }
+      }, 200);
+    }
+
+      const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
 
-    // resumo financeiro
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // total da venda (soma total dos itens: com nota + sem nota)
+    // Exibir condição para pagamento à vista
+    if (pedido.condicao_pagamento_avista) {
+      const blocoCondicao = document.createElement('div');
+      blocoCondicao.className = 'obs-pedido';
+      blocoCondicao.innerHTML = `
+        <strong>Condição para pagamento à vista:</strong> ${pedido.condicao_pagamento_avista}
+      `;
+      containerCinza.appendChild(blocoCondicao);
+    }
+
     let totalComNota = 0;
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
@@ -225,17 +273,15 @@ async function carregarPedidosFinanceiro() {
         `;
       }).join('');
     }
+
     const totalVenda = totalComNota + totalSemNota;
     const totalVendaFmt = formatarMoeda(totalVenda);
-
     const numVencimentos = pedido.prazos_pagamento?.length || 1;
 
     function calcularValoresVencimentos() {
       let parcelas = [];
-      // Cálculo com precisão para centavos
       let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
       let totalParcial = 0;
-
       for (let i = 0; i < numVencimentos; i++) {
         if (i < numVencimentos - 1) {
           parcelas.push(base);
@@ -248,12 +294,12 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
-    containerCinza.innerHTML = `
+    containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
-      <div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes || '—'}</div>
+      ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
     `;
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
@@ -262,10 +308,12 @@ async function carregarPedidosFinanceiro() {
 
     function renderizarVencimentos(valores) {
       vencContainer.innerHTML = '';
+      inputs.length = 0;
+
       for (let i = 0; i < numVencimentos; i++) {
         const dt = new Date(pedido.prazos_pagamento[i]);
         const ok = !isNaN(dt.getTime());
-        const valorFmt = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
 
         const row = document.createElement('div');
         row.className = 'vencimento-row';
@@ -273,7 +321,7 @@ async function carregarPedidosFinanceiro() {
         row.innerHTML = `
           <span class="venc-label">Vencimento ${i + 1}</span>
           <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" />
+          <input type="text" value="${valorFmt}" ${i === 2 ? 'disabled' : ''} />
           <button type="button">✓</button>
         `;
 
@@ -281,77 +329,82 @@ async function carregarPedidosFinanceiro() {
         const btn = row.querySelector('button');
         inputs[i] = inp;
 
-        // elemento de confirmação alternável
+        // Máscara de moeda no input
+        inp.addEventListener('input', () => {
+          let valor = inp.value.replace(/\D/g, '');
+          valor = (parseInt(valor, 10) / 100).toFixed(2);
+          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        });
+
+         inp.addEventListener('blur', () => {
+          const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
+          const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
+
+          if (i === 0 && numVencimentos === 3) {
+            const restante = Math.max(0, totalVenda - v1);
+            const metade = restante / 2;
+            inputs[1].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            inputs[2].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          } else if (i === 1 && numVencimentos === 3) {
+            const restante = Math.max(0, totalVenda - v1 - v2);
+            inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          }
+
+          atualizarBotaoLiberar();
+        });
+
         const etiquetaConfirmado = document.createElement('span');
         etiquetaConfirmado.className = 'etiqueta-valor-item';
         etiquetaConfirmado.textContent = 'CONFIRMADO';
         etiquetaConfirmado.style.cursor = 'pointer';
 
-        inp.addEventListener('blur', () => {
+        function toggleConfirmacao() {
           const raw = inp.value.replace(/\./g, '').replace(',', '.');
           const num = parseFloat(raw);
-          if (!isNaN(num)) {
-            inp.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          }
-          const lastIndex = inputs.length - 1;
-          const curIndex = i;
-          if (curIndex !== lastIndex) {
-            const somaExcUlt = inputs.slice(0, lastIndex)
-              .map(iEl => parseFloat(iEl.value.replace(/\./g, '').replace(',', '.')) || 0)
-              .reduce((s, v) => s + v, 0);
-            const restante = totalVenda - somaExcUlt;
-            let rowErr = row.querySelector('.row-error');
-            if (restante < 0) {
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Parcela excede o valor total da venda.';
-                row.appendChild(rowErr);
-              }
-            } else {
-              if (rowErr) row.removeChild(rowErr);
-              inputs[lastIndex].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-          }
-          atualizarBotaoLiberar();
-        });
 
-        function toggleConfirmacao() {
+          let rowErr = row.querySelector('.row-error');
+          if (!rowErr) {
+            rowErr = document.createElement('div');
+            rowErr.className = 'row-error';
+            rowErr.style.color = 'red';
+            rowErr.style.fontSize = '13px';
+          }
+
+          if (isNaN(num) || num <= 0) {
+            rowErr.textContent = 'Valor inválido.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (num > totalVenda) {
+            rowErr.textContent = 'Valor excede o total da venda.';
+            if (!row.contains(rowErr)) row.appendChild(rowErr);
+            inp.focus();
+            return;
+          }
+
+          if (row.contains(rowErr)) row.removeChild(rowErr);
+
           const isConf = row.dataset.confirmado === 'true';
           if (!isConf) {
-            const raw = inp.value.replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(raw);
-            if (isNaN(num) || num < 0) {
-              let rowErr = row.querySelector('.row-error');
-              if (!rowErr) {
-                rowErr = document.createElement('div');
-                rowErr.className = 'row-error';
-                rowErr.style.color = 'red';
-                rowErr.style.fontSize = '13px';
-                rowErr.textContent = 'Valor inválido.';
-                row.appendChild(rowErr);
-              }
-              inp.focus();
-              return;
-            }
-            pedido.vencimentosValores = pedido.vencimentosValores || [];
-            pedido.vencimentosValores[i] = num;
             row.dataset.confirmado = 'true';
             inp.disabled = true;
             btn.replaceWith(etiquetaConfirmado);
           } else {
             row.dataset.confirmado = 'false';
-            inp.disabled = false;
+            if (i !== 2) inp.disabled = false;
             etiquetaConfirmado.replaceWith(btn);
           }
+
           atualizarBotaoLiberar();
         }
 
         btn.addEventListener('click', toggleConfirmacao);
         etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
-
         vencContainer.appendChild(row);
       }
     }
@@ -362,38 +415,45 @@ async function carregarPedidosFinanceiro() {
       atualizarBotaoLiberar();
     }
 
-    // Ao clicar no valor total, reseta os vencimentos
-    setTimeout(() => {
-      const valorTotalTag = document.getElementById('reset-vencimentos');
-      if (valorTotalTag) {
-        valorTotalTag.style.cursor = 'pointer';
-        valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-        valorTotalTag.onclick = resetarVencimentosPadrao;
-      }
-    }, 200);
-
-    renderizarVencimentos(valoresPadrao);
-
     function atualizarBotaoLiberar() {
       const rows = containerCinza.querySelectorAll('.vencimento-row');
       let soma = 0;
-      rows.forEach((r, idx) => {
+      rows.forEach((r) => {
         const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
         if (!isNaN(val)) soma += val;
       });
+
       const erroEl = containerCinza.querySelector('.venc-soma-error');
       if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
+        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
       } else {
         erroEl.textContent = '';
       }
+
       const btnFin = form.querySelector('.btn-registrar');
       if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
     }
 
-    atualizarBotaoLiberar();
+    renderizarVencimentos(valoresPadrao);
 
-    // Observações do Financeiro e botão
+    form.appendChild(containerCinza);
+
+if (pedido.observacoes_setor && pedido.observacoes_setor.length) {
+  const obsFinanceiro = document.createElement('div');
+  obsFinanceiro.className = 'obs-pedido';
+  obsFinanceiro.innerHTML = `
+    <strong>Observações:</strong> ${pedido.observacoes_setor.join('<br>')}
+  `;
+  containerCinza.insertBefore(obsFinanceiro, containerCinza.firstChild);
+}
+
+    const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
+    if (valorTotalTag) {
+      valorTotalTag.style.cursor = 'pointer';
+      valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+      valorTotalTag.onclick = resetarVencimentosPadrao;
+    }
+
     const blocoFin = document.createElement('div');
     blocoFin.className = 'bloco-fin';
     blocoFin.innerHTML = `
@@ -404,14 +464,16 @@ async function carregarPedidosFinanceiro() {
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(containerCinza);
     form.appendChild(blocoFin);
 
-    // toggle form visibility
     card.appendChild(form);
-    header.addEventListener('click', () => {
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+
+const podeExecutar = ['Em Análise pelo Financeiro', 'Financeiro'];
+
+header.addEventListener('click', () => {
+  if (!podeExecutar.includes(pedido.status)) return;
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
 
     lista.appendChild(card);
   });
@@ -424,6 +486,7 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ observacoes_financeiro: observacoes })
     });
+
     if (res.ok) {
       alert('Cliente liberado com sucesso!');
       carregarPedidosFinanceiro();
@@ -439,6 +502,9 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
-  document.getElementById('filtro-cliente')?.addEventListener('input', carregarPedidosFinanceiro);
-  document.getElementById('ordenar')?.addEventListener('change', carregarPedidosFinanceiro);
+
+  const filtro = document.getElementById('filtro-cliente');
+  const ordenar = document.getElementById('ordenar');
+  if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
+  if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
 });
