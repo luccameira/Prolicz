@@ -485,7 +485,6 @@ async function carregarPedidosFinanceiro() {
     }
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
-const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
   const peso = Number(d.peso_calculado || 0);
   const valorKg = Number(d.valor_unitario || 0);
   return soma + (peso * valorKg);
