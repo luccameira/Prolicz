@@ -246,12 +246,19 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET produtos autorizados por cliente
+// GET produtos autorizados por cliente (corrigido e com codigo_fiscal)
 router.get('/clientes/:id/produtos', async (req, res) => {
   const clienteId = req.params.id;
   try {
     const [produtos] = await db.query(
-      `SELECT nome_produto, valor_unitario, unidade FROM produtos_autorizados WHERE cliente_id = ?`,
+      `SELECT 
+         p.nome AS nome_produto, 
+         p.valor_unitario, 
+         p.unidade,
+         p.codigo_fiscal
+       FROM produtos_autorizados pa
+       INNER JOIN produtos p ON pa.produto_id = p.id
+       WHERE pa.cliente_id = ?`,
       [clienteId]
     );
     res.json(produtos);
@@ -280,19 +287,21 @@ router.post('/', async (req, res) => {
     // Inserir itens do pedido
     if (Array.isArray(itens)) {
       for (const item of itens) {
-        await db.query(
-          `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            pedido_id,
-            item.nome_produto,
-            item.valor_unitario,
-            item.peso,
-            item.tipo_peso,
-            item.unidade || '',
-            item.codigo_fiscal || ''
-          ]
-        );
+       await db.query(
+  `INSERT INTO itens_pedido (pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal, valor_com_nota, valor_sem_nota)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    pedido_id,
+    item.nome_produto,
+    item.valor_unitario,
+    item.peso,
+    item.tipo_peso,
+    item.unidade || '',
+    item.codigo_fiscal || '',
+    item.valor_com_nota || null,
+    item.valor_sem_nota || null
+  ]
+);
       }
     }
 
@@ -783,7 +792,7 @@ router.get('/:id', async (req, res) => {
         p.codigo_interno,
         p.desconto_peso,
         p.motivo_desconto,
-        c.nome_fantasia AS cliente_nome,
+        c.nome_fantasia AS cliente,
         c.documento,
         c.situacao_tributaria,
         c.inscricao_estadual,
@@ -801,46 +810,124 @@ router.get('/:id', async (req, res) => {
     const pedido = pedidos[0];
 
     // Buscar os itens do pedido
-    const [materiais] = await db.query(
-      `SELECT id, nome_produto, peso, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
-       FROM itens_pedido
-       WHERE pedido_id = ?`,
-      [pedidoId]
-    );
-    pedido.materiais = materiais;
+const [materiais] = await db.query(
+  `SELECT 
+     id, 
+     nome_produto, 
+     peso, 
+     tipo_peso, 
+     unidade, 
+     peso_carregado, 
+     valor_unitario, 
+     codigo_fiscal, 
+     valor_com_nota, 
+     valor_sem_nota, 
+     (valor_unitario * peso) AS valor_total
+   FROM itens_pedido
+   WHERE pedido_id = ?`,
+  [pedidoId]
+);
+pedido.materiais = materiais;
 
-    // Buscar prazos de pagamento
-    const [prazosPedido] = await db.query(
-      `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
-      [pedidoId]
-    );
-    pedido.prazos_pagamento = prazosPedido;
+// Buscar prazos de pagamento usados no pedido
+const [prazosPedido] = await db.query(
+  `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
+  [pedidoId]
+);
+pedido.prazos_pagamento = prazosPedido;
+pedido.prazo_pagamento = prazosPedido.map(p => `${p.descricao} (${p.dias} dias)`);
 
-    // Buscar histórico do pedido
-    const [historico] = await db.query(
-      `SELECT titulo, descricao, data
-       FROM historico_pedido
-       WHERE pedido_id = ?
-       ORDER BY data ASC`,
-      [pedidoId]
-    );
-    pedido.historico = historico;
+// Buscar prazos permitidos para o cliente (todos os prazos possíveis)
+const [prazosPermitidos] = await db.query(
+  `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?`,
+  [pedido.cliente_id]
+);
+pedido.prazos_permitidos = prazosPermitidos.map(p => `${p.descricao} (${p.dias} dias)`);
 
-    // Buscar observações do pedido (todos os setores)
-    const [observacoes] = await db.query(
-      `SELECT id, setor, texto AS texto_observacao, usuario_nome, data_criacao
-       FROM observacoes_pedido
-       WHERE pedido_id = ?
-       ORDER BY data_criacao ASC`,
-      [pedidoId]
-    );
-    pedido.observacoes = observacoes;
+// Buscar histórico do pedido
+const [historico] = await db.query(
+  `SELECT titulo, descricao, data
+   FROM historico_pedido
+   WHERE pedido_id = ? 
+   ORDER BY data ASC`,
+  [pedidoId]
+);
+pedido.historico = historico;
 
-    // Retornar o pedido completo
-    res.json(pedido);
+// Buscar observações do pedido (todos os setores)
+const [observacoes] = await db.query(
+  `SELECT id, setor, texto AS texto_observacao, usuario_nome, data_criacao
+   FROM observacoes_pedido
+   WHERE pedido_id = ?
+   ORDER BY data_criacao ASC`,
+  [pedidoId]
+);
+pedido.observacoes = observacoes;
+
+// Buscar produtos autorizados para o cliente (para preencher o select com os códigos fiscais)
+const [produtosAutorizados] = await db.query(
+  `SELECT 
+     p.nome AS nome_produto, 
+     p.valor_unitario, 
+     p.unidade, 
+     p.codigo_fiscal
+   FROM produtos_autorizados pa
+   INNER JOIN produtos p ON pa.produto_id = p.id
+   WHERE pa.cliente_id = ?`,
+  [pedido.cliente_id]
+);
+pedido.produtos_autorizados = produtosAutorizados;
+
+// Retornar o pedido completo
+res.json(pedido);
+} catch (error) {
+  console.error('Erro ao buscar pedido:', error);
+  res.status(500).json({ erro: 'Erro ao buscar pedido' });
+}
+});
+
+// ✅ ROTA RESETAR TAREFA (corrigida com status conforme setor)
+router.post('/:id/resetar-tarefa', async (req, res) => {
+  const pedidoId = req.params.id;
+  const { setor, motivo, usuario_nome } = req.body;
+
+  if (!setor || !motivo || motivo.length < 30) {
+    return res.status(400).json({ erro: 'Setor e motivo (mínimo 30 caracteres) são obrigatórios.' });
+  }
+
+  // Define o status conforme o setor
+  const statusPorSetor = {
+    'Portaria': 'Aguardando Início da Coleta',
+    'Carga e Descarga': 'Coleta Iniciada',
+    'Conferência de Peso': 'Aguardando Conferência do Peso',
+    'Financeiro': 'Em Análise pelo Financeiro',
+    'Emissão de NF': 'Aguardando Emissão de NF'
+  };
+
+  const novoStatus = statusPorSetor[setor] || setor; // fallback: setor se não estiver mapeado
+
+  try {
+    await db.query(
+      `UPDATE pedidos SET status = ? WHERE id = ?`,
+      [novoStatus, pedidoId]
+    );
+
+    await db.query(
+      `INSERT INTO observacoes_pedido (pedido_id, setor, texto, usuario_nome, data_criacao)
+       VALUES (?, ?, ?, ?, NOW())`,
+      [pedidoId, setor, `[RESET] ${motivo}`, usuario_nome || 'Sistema']
+    );
+
+    await db.query(
+      `INSERT INTO historico_pedido (pedido_id, titulo, descricao, data)
+       VALUES (?, ?, ?, NOW())`,
+      [pedidoId, 'Reset de Tarefa', `Pedido resetado para o setor "${setor}" com motivo: ${motivo}`]
+    );
+
+    res.json({ sucesso: true });
   } catch (error) {
-    console.error('Erro ao buscar pedido:', error);
-    res.status(500).json({ erro: 'Erro ao buscar pedido' });
+    console.error('Erro ao resetar tarefa:', error);
+    res.status(500).json({ erro: 'Erro ao resetar tarefa' });
   }
 });
 
