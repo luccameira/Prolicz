@@ -48,13 +48,30 @@ async function carregarPedidos() {
       nome_produto: p.produto,
       quantidade: parseFloat(p.peso_previsto),
       unidade: 'Kg',
-      tipo_peso: p.tipo_peso
+      tipo_peso: p.tipo_peso,
+      peso_carregado: p.peso_carregado || 0
     });
   });
 
   const listaFiltrada = Object.values(pedidosAgrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
   pedidos = listaFiltrada;
   renderizarPedidos(listaFiltrada);
+}
+
+function gerarBadgeStatus(status) {
+  const statusComPesoRegistrado = [
+    'Aguardando Conferência do Peso',
+    'Em Análise pelo Financeiro',
+    'Aguardando Emissão de NF'
+  ];
+
+  if (statusComPesoRegistrado.includes(status)) {
+    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
+  } else if (status === 'Coleta Iniciada') {
+    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
+  } else {
+    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
+  }
 }
 
 function renderizarPedidos(lista) {
@@ -114,7 +131,7 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const podeExecutar = p.status === 'Coleta Iniciada';
+    const podeExecutar = ['Coleta Iniciada', 'Carga e Descarga'].includes(p.status);
     const form = document.createElement('div');
     form.className = 'formulario';
     form.id = `form-${p.id}`;
@@ -128,58 +145,40 @@ function renderizarPedidos(lista) {
       const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
       form.innerHTML += `
-  <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
-    <h4>${item.nome_produto || '—'}</h4>
-    <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
-    <div class="linha-peso">
-      <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
-      <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
-    </div>
-    <div id="grupo-descontos-${itemId}"></div>
-    <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId}, ${p.id})">Adicionar Desconto</button>
-  </div>
-`;
+        <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
+          <h4>${item.nome_produto || '—'}</h4>
+          <p><strong>${textoPeso}:</strong> ${formatarPeso(item.quantidade)} Kg ${icone}</p>
+          <div class="linha-peso">
+            <label for="peso-${p.id}-${index}">Peso Carregado (Kg):</label>
+            <input type="text" id="peso-${p.id}-${index}" class="input-sem-seta" placeholder="Insira o peso carregado aqui">
+          </div>
+          <div id="grupo-descontos-${itemId}"></div>
+          <button type="button" class="btn btn-desconto" onclick="adicionarDescontoMaterial(${itemId}, ${p.id})">Adicionar Desconto</button>
+        </div>
+      `;
     });
 
     const observacoesHTML = (p.observacoes_setor?.length)
-      ? `
-        <div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
+      ? `<div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px; margin-bottom: 20px;">
           <strong>Observações para Carga e Descarga:</strong><br>
           ${p.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
-        </div>
-      `
+        </div>`
       : '';
 
     form.innerHTML += `
-  <div class="upload-ticket">
-    <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
-    <input type="file" id="ticket-${p.id}" accept="image/*">
-  </div>
-  ${observacoesHTML}
-  <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
-`;
+      <div class="upload-ticket">
+        <label for="ticket-${p.id}">Foto do Ticket da Balança:</label>
+        <input type="file" id="ticket-${p.id}" accept="image/*">
+      </div>
+      ${observacoesHTML}
+      <button class="btn btn-registrar" onclick="registrarPeso(${p.id})">Registrar Peso</button>
+    `;
 
     card.appendChild(form);
     listaEl.appendChild(card);
 
     form.querySelectorAll('input[type="text"]').forEach(input => aplicarMascaraMilhar(input));
   });
-}
-
-function gerarBadgeStatus(status) {
-  const statusComPesoRegistrado = [
-    'Aguardando Conferência do Peso',
-    'Em Análise pelo Financeiro',
-    'Aguardando Emissão de NF'
-  ];
-
-  if (statusComPesoRegistrado.includes(status)) {
-    return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
-  } else if (status === 'Coleta Iniciada') {
-    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
-  } else {
-    return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
-  }
 }
 
 function adicionarDescontoMaterial(itemId, pedidoId) {
@@ -260,41 +259,6 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
 
     aplicarMascaraMilhar(document.getElementById(pesoId));
   }
-
-  const campoQtd = document.getElementById(`quantidade-${itemId}-${index}`);
-  const campoPeso = document.getElementById(`peso-${itemId}-${index}`);
-  const campoMaterial = document.getElementById(`material-${itemId}-${index}`);
-  const campoUpload = document.getElementById(`upload-${itemId}-${index}`);
-
-  let pesoCalculado = 0;
-  let infoExtra = {};
-
-  if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
-    const qtd = parseFloat(campoQtd?.value.replace(/\./g, ''));
-    if (!isNaN(qtd)) {
-      pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
-      infoExtra = { quantidade: qtd };
-    }
-  } else if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
-    const peso = parseFloat(campoPeso?.value.replace(/\./g, '').replace(',', '.'));
-    if (!isNaN(peso)) {
-      pesoCalculado = peso;
-      infoExtra = {
-        material: campoMaterial?.value,
-        unidade: 'kg',
-        ticket_devolucao: motivo === 'Devolução de Material' ? (campoUpload?.files?.[0] || null) : null,
-        ticket_compra: motivo === 'Compra de Material' ? (campoUpload?.files?.[0] || null) : null
-      };
-    }
-  }
-
-  const desconto = {
-    motivo,
-    peso_calculado: pesoCalculado,
-    ...infoExtra
-  };
-
-  descontosPorItem[itemId][index] = desconto;
 }
 
 function removerDescontoMaterial(itemId, index) {
@@ -320,36 +284,52 @@ async function registrarPeso(pedidoId) {
     const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
 
     if (!isNaN(valor)) {
-      const descontos = (descontosPorItem[itemId] || []).filter(d => d.motivo && d.peso_calculado > 0);
-      descontos.forEach((desc, i) => {
-        const motivo = desc.motivo;
-        const uploadId = `upload-${itemId}-${i}`;
-        const campoUpload = document.getElementById(uploadId);
-        if (campoUpload && campoUpload.files.length > 0) {
-          const file = campoUpload.files[0];
-          const field = motivo === 'Compra de Material'
-            ? `ticket_compra_${itemId}_${i}`
-            : `ticket_devolucao_${itemId}_${i}`;
-          arquivosExtras.push({ file, field });
-          if (motivo === 'Compra de Material') {
-            desc.ticket_compra = field;
-          } else if (motivo === 'Devolução de Material') {
-            desc.ticket_devolucao = field;
+      const descontos = [];
+      const grupos = bloco.querySelectorAll('.grupo-desconto');
+      grupos.forEach((grupo, i) => {
+        const motivo = grupo.querySelector('select')?.value;
+        if (!motivo) return;
+
+        let pesoCalculado = 0;
+        let infoExtra = {};
+
+        if (motivo.includes('Palete')) {
+          const campoQtd = grupo.querySelector(`#quantidade-${itemId}-${i}`);
+          const qtd = parseFloat(campoQtd?.value.replace(/\./g, '').replace(',', '.'));
+          if (!isNaN(qtd)) {
+            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
+            infoExtra = { quantidade: qtd };
           }
+        } else {
+          const campoPeso = grupo.querySelector(`#peso-${itemId}-${i}`);
+          const peso = parseFloat(campoPeso?.value.replace(/\./g, '').replace(',', '.'));
+          const material = grupo.querySelector(`#material-${itemId}-${i}`)?.value;
+          const arquivo = grupo.querySelector(`#upload-${itemId}-${i}`)?.files?.[0];
+          if (!isNaN(peso)) {
+            pesoCalculado = peso;
+            const fieldName = `${motivo === 'Compra de Material' ? 'ticket_compra' : 'ticket_devolucao'}_${itemId}_${i}`;
+            if (arquivo) {
+              arquivosExtras.push({ file: arquivo, field: fieldName });
+              infoExtra[motivo === 'Compra de Material' ? 'ticket_compra' : 'ticket_devolucao'] = fieldName;
+            }
+            infoExtra.material = material;
+          }
+        }
+
+        if (pesoCalculado > 0) {
+          descontos.push({ motivo, peso_calculado: pesoCalculado, ...infoExtra });
         }
       });
 
-      itens.push({
-        item_id: itemId,
-        peso_carregado: valor,
-        descontos
-      });
+      itens.push({ item_id: itemId, peso_carregado: valor, descontos });
     }
   });
 
   const ticketInput = document.getElementById(`ticket-${pedidoId}`);
   const ticketFile = ticketInput?.files[0];
   if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
+
+  console.log(">>> Itens enviados:", itens);
 
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
