@@ -259,13 +259,14 @@
   </div>
   <script>
     $(function(){
+
       flatpickr("#data-coleta", {
         locale: "pt",
         dateFormat: "d/m/Y",
         minDate: "today"
       });
 
-      let windowPrazos = [], windowProdutos = [], windowCodigos = [];
+         let windowPrazos = [], windowProdutos = [], windowCodigos = [];
       let observacoes = [];
       let editandoIndex = null;
 
@@ -282,39 +283,62 @@
         });
       });
 
-      $("#cliente").change(function(){
+      $("#cliente").change(async function () {
         const id = $(this).val();
         $("#grupo-prazos").hide();
         $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("R$ 0,00");
         $(".error-prazos, #condicao-a-vista").hide();
         windowProdutos = [];
+        windowCodigos = [];
+        windowPrazos = [];
 
         if (!id) {
           updateAddButton();
           return;
         }
 
-        $.get(`/api/clientes/${id}`, function(cli){
-          windowCodigos = cli.codigosFiscais || [];
-          windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
-          windowProdutos = cli.produtos_autorizados || [];
+        try {
+          const cli = await $.get(`/api/clientes/${id}`);
 
+          // 🔹 Carrega prazos
+          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           $("#grupo-prazos").show();
           windowPrazos.forEach(pz => {
-            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
+            $("#prazosCheckboxes").append(
+              `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
+            );
           });
 
-          updateAddButton();
-          adicionarProduto();
-        });
-      });
+          // 🔹 Exibe condicional à vista, se necessário
+          if (windowPrazos.some(p => p.toLowerCase().includes("vista"))) {
+            $("#condicao-a-vista").hide();
+          } else {
+            $("#condicao-a-vista").hide();
+            $("#condicao_pagamento_a_vista").val("");
+          }
 
-      $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
-        const avista = $("#prazosCheckboxes input:checked")
-          .filter((i, el) => el.value.toLowerCase().includes("vista")).length > 0;
-        $("#condicao-a-vista").toggle(avista);
-      });
+    // 🔹 Carrega códigos fiscais
+    windowCodigos = (cli.codigosFiscais || [])
+      .filter(codigo => typeof codigo === 'string' && codigo.trim() !== '')
+      .filter((valor, indice, self) => self.indexOf(valor) === indice);
+
+    // 🔹 Carrega produtos autorizados
+    if (Array.isArray(cli.produtos)) {
+      windowProdutos = cli.produtos.map(item => ({
+        nome: item.nome,
+        valor_unitario: parseFloat(item.valor_unitario)
+      }));
+    }
+
+    updateAddButton();
+    adicionarProduto();
+
+  } catch (error) {
+    alert("Erro ao carregar dados do cliente.");
+    console.error(error);
+  }
+});
 
       $("#btn-adicionar-observacao").click(function(){
   $("#setor-observacao").val(null).trigger("change"); // limpa seleção de setor
@@ -618,6 +642,19 @@ $("#setor-observacao").on("change", function() {
         .catch(() => alert("Erro ao salvar o pedido."));
       });
     });
+// Mostra ou esconde o campo condicional de pagamento à vista conforme checkbox
+$(document).on("change", "#prazosCheckboxes input[type=checkbox]", function () {
+  const prazosSelecionados = $("#prazosCheckboxes input:checked")
+    .map((i, el) => el.value.toLowerCase()).get();
+
+  if (prazosSelecionados.some(p => p.includes("vista"))) {
+    $("#condicao-a-vista").slideDown();
+  } else {
+    $("#condicao-a-vista").slideUp();
+    $("#condicao_pagamento_a_vista").val("");
+  }
+});
+
   </script>
 </body>
 </html>
