@@ -261,11 +261,11 @@ let pedidoAtual = null;
         <p>${justificativa}</p>
         <span class="usuario-reset">Usuário: ${usuario}</span>
         ${etapaAntes && etapaDepois ? `
-          <div class="etapas-reset">
-            Pré-Reset → ${etapaAntes}<br>
-            Pós-Reset → ${etapaDepois}
-          </div>
-        ` : ''}
+  <div class="usuario-reset" style="margin-top: 5px;">
+    Estava na etapa → ${etapaAntes}<br>
+    Retornado para → ${etapaDepois}
+  </div>
+` : ''}
       </div>
     </div>
   `;
