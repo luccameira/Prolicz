@@ -891,9 +891,9 @@ router.post('/:id/resetar-tarefa', async (req, res) => {
   const pedidoId = req.params.id;
   const { setor, motivo, usuario_nome } = req.body;
 
-if (!setor || !motivo) {
-  return res.status(400).json({ erro: 'Setor e motivo são obrigatórios.' });
-}
+  if (!setor || !motivo) {
+    return res.status(400).json({ erro: 'Setor e motivo são obrigatórios.' });
+  }
 
   // Define o status conforme o setor
   const statusPorSetor = {
@@ -907,34 +907,29 @@ if (!setor || !motivo) {
   const novoStatus = statusPorSetor[setor] || setor; // fallback: setor se não estiver mapeado
 
   try {
+    // Buscar status atual (antes do reset)
+    const [resultado] = await db.query(
+  `SELECT status FROM pedidos WHERE id = ?`,
+  [pedidoId]
+);
+
+const pedidoAtual = resultado[0];
+const etapaAnterior = pedidoAtual?.status || 'Desconhecido';
+
+    // Atualizar status
     await db.query(
       `UPDATE pedidos SET status = ? WHERE id = ?`,
       [novoStatus, pedidoId]
     );
 
-    const etapaAtual = await db.query(
-  `SELECT status FROM pedidos WHERE id = ?`,
-  [pedidoId]
-);
+    // Criar observação com as etapas e justificativa
+    const textoObservacao = `[RESET] Etapa anterior: ${etapaAnterior}. Nova etapa: ${setor}. Justificativa: ${motivo}`;
 
-const etapaAntes = etapaAtual[0]?.status || 'Desconhecido';
-
-const textoObservacao = `[RESET] Etapa anterior: ${etapaAntes}. Nova etapa: ${setor}. Justificativa: ${motivo}`;
-
-const [pedidoAtual] = await db.query(
-  `SELECT status FROM pedidos WHERE id = ?`,
-  [pedidoId]
-);
-
-const etapaAntes = pedidoAtual?.status || 'Desconhecido';
-
-const textoObservacao = `[RESET] Etapa anterior: ${etapaAntes}. Nova etapa: ${setor}. Justificativa: ${motivo}`;
-
-await db.query(
-  `INSERT INTO observacoes_pedido (pedido_id, setor, texto, usuario_nome, data_criacao)
-   VALUES (?, ?, ?, ?, NOW())`,
-  [pedidoId, setor, textoObservacao, usuario_nome || 'Sistema']
-);
+    await db.query(
+      `INSERT INTO observacoes_pedido (pedido_id, setor, texto, usuario_nome, data_criacao)
+       VALUES (?, ?, ?, ?, NOW())`,
+      [pedidoId, setor, textoObservacao, usuario_nome || 'Sistema']
+    );
 
     await db.query(
       `INSERT INTO historico_pedido (pedido_id, titulo, descricao, data)
