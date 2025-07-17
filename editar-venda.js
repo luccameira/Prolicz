@@ -14,6 +14,8 @@ $(function () {
   let observacoes = [];
   let materiais = [];
   let editandoIndex = null;
+let pedidoAtual = null;
+
 
   function formatarNumero(valor, inteiro = false) {
     const partes = inteiro
@@ -237,19 +239,40 @@ $(function () {
     const div = document.createElement("div");
     div.className = "obs-item";
 
-    if (ehReset) {
-      div.innerHTML = `
-        <div class="obs-resetada">
-          <strong>🔁 RESET de Tarefa:</strong><br>
-          <span class="obs-reset-texto">${textoLimpo}</span>
-          <div class="obs-reset-meta">
-            <span><strong>Usuário:</strong> ${usuario}</span><br>
-            <span><strong>Data:</strong> ${data}</span>
+   if (ehReset) {
+  const match = item.texto.match(/\[RESET\] Etapa anterior: (.+?)\. Nova etapa: (.+?)\. Justificativa: (.+)/);
+  let etapaAntes = '';
+  let etapaDepois = '';
+  let justificativa = textoLimpo;
+
+  if (match) {
+    etapaAntes = match[1];
+    etapaDepois = match[2];
+    justificativa = match[3];
+  }
+
+  div.innerHTML = `
+    <div class="obs-resetada">
+      <div class="obs-reset-header">
+        <strong class="titulo-reset">Justificativa da Correção</strong>
+        <span class="data-reset">${data}</span>
+      </div>
+      <div class="texto-reset">
+        <p>${justificativa}</p>
+        <span class="usuario-reset">Usuário: ${usuario}</span>
+        ${etapaAntes && etapaDepois ? `
+          <div class="etapas-reset">
+            Pré-Reset → ${etapaAntes}<br>
+            Pós-Reset → ${etapaDepois}
           </div>
-        </div>
-      `;
-      containerReset.appendChild(div);
-    } else {
+        ` : ''}
+      </div>
+    </div>
+  `;
+  containerReset.appendChild(div);
+}
+
+ else {
       div.innerHTML = `
         <div class="obs-normal">
           <strong>🔸 ${setores}:</strong><br>
@@ -338,6 +361,7 @@ $(function () {
     fetch(`/api/pedidos/${pedidoId}`)
       .then(res => res.json())
       .then(pedido => {
+     pedidoAtual = pedido;
         $("#empresa").val(pedido.empresa || "");
         $("#cliente_nome").val(pedido.cliente_nome || "");
         $("#data-coleta").val(pedido.data_coleta?.substring(0, 10) || "");
@@ -394,6 +418,38 @@ $(function () {
   // ========== IMPLEMENTAÇÃO DO BOTÃO "RESETAR TAREFA" ==========
 
 $("#btn-resetar-tarefa").on("click", function () {
+  const mapaStatus = {
+    "Aguardando Início da Coleta": "Portaria",
+    "Coleta Iniciada": "Carga e Descarga",
+    "Coleta Finalizada": "Carga e Descarga",
+    "Aguardando Conferência do Peso": "Conferência de Peso",
+    "Em Análise pelo Financeiro": "Financeiro",
+    "Aguardando Emissão de NF": "Emissão de NF"
+  };
+
+  const fluxoSetores = [
+    "Portaria",
+    "Carga e Descarga",
+    "Conferência de Peso",
+    "Financeiro",
+    "Emissão de NF"
+  ];
+
+  const etapaAtual = mapaStatus[pedidoAtual.status] || "";
+  $("#nome-etapa-atual").text(etapaAtual);
+
+  const indexAtual = fluxoSetores.indexOf(etapaAtual);
+
+  $("#setor-resetar option").each(function () {
+    const setor = $(this).val();
+    const indexSetor = fluxoSetores.indexOf(setor);
+    if (indexSetor >= indexAtual) {
+  $(this).prop("disabled", true); // desativa setores futuros E o atual
+} else {
+  $(this).prop("disabled", false); // mantém setores anteriores ativos
+}
+  });
+
   $("#modal-resetar-tarefa").fadeIn();
 });
 
@@ -410,10 +466,10 @@ $("#btn-confirmar-reset").on("click", function () {
     return;
   }
 
-  if (motivo.length < 30) {
-    alert("Explique o motivo do reset com pelo menos 30 caracteres.");
-    return;
-  }
+  if (!motivo) {
+  alert("Explique o motivo da correção.");
+  return;
+}
 
   if (!confirm(`Tem certeza que deseja resetar esta tarefa para o setor ${setor}? Esta ação é irreversível.`)) {
     return;
