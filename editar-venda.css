@@ -283,3 +283,52 @@ textarea:disabled {
   display: block;
   margin-bottom: 5px;
 }
+
+.obs-resetada {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-left: 6px solid #faad14;
+  margin: 12px 0;
+  padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 6px;
+}
+
+.obs-reset-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.titulo-reset {
+  font-size: 16px;
+  font-weight: 700;
+  color: #555;
+}
+
+.data-reset {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.texto-reset p {
+  margin: 6px 0;
+  font-size: 15px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.usuario-reset {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.etapas-reset {
+  font-size: 13px;
+  color: #333;
+  margin-top: 4px;
+}
