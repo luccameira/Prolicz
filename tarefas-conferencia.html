@@ -6,7 +6,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="layout.css">
-  <link rel="stylesheet" href="tarefas.css">
+  <link rel="stylesheet" href="tarefasconferencia.css"> <!-- ✅ CSS correto -->
   <script src="incluir-layout.js" defer></script>
   <script src="timeline-prolicz.js"></script>
   <script src="incluir-conferencia.js" defer></script>
@@ -15,23 +15,7 @@
   <div class="topbar"></div>
   <div class="sidebar"></div>
 
-  <div class="content">
-    <h1 style="font-size: 28px; margin-bottom: 25px; padding: 0 25px;">Tarefas - Conferência de Peso</h1>
-
-    <div class="filtros-tarefa">
-      <div>
-        <label for="filtro-cliente">Buscar por cliente</label>
-        <input type="text" id="filtro-cliente" placeholder="Digite o nome do cliente...">
-      </div>
-      <div>
-        <label for="ordenar">Ordenar por</label>
-        <select id="ordenar">
-          <option value="data">Data da Coleta</option>
-          <option value="cliente">Nome do Cliente</option>
-        </select>
-      </div>
-    </div>
-
+  <div class="main-content">
     <div id="lista-pedidos"></div>
   </div>
 </body>

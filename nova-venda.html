@@ -75,13 +75,24 @@
       color: #666;
     }
     #observacao-bloco {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f5f5f5;
-      border-radius: 8px;
-      display: none;
-      position: relative;
-    }
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: none;
+  position: relative;
+}
+
+.select2-container {
+  z-index: auto !important;
+}
+
+.select2-container--open + #texto-observacao {
+  margin-top: 150px !important; /* não funciona porque o campo não está logo após o select */
+}
+.select2-container {
+  z-index: 2 !important;
+}
 
     .btn-fechar {
       position: absolute;
@@ -212,14 +223,23 @@
 
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
-          <select id="setor-observacao">
-            <option value="">Selecione o setor</option>
-            <option value="Portaria">Portaria</option>
-            <option value="Carga e Descarga">Carga e Descarga</option>
-            <option value="Conferência de Peso">Conferência de Peso</option>
-            <option value="Financeiro">Financeiro</option>
-            <option value="Emissão de NF">Emissão de NF</option>
-          </select>
+          <select id="setor-observacao" multiple="multiple" style="width: 100%;">
+  <option value="Todos">Todos</option>
+  <option value="Portaria">Portaria</option>
+  <option value="Carga e Descarga">Carga e Descarga</option>
+  <option value="Conferência de Peso">Conferência de Peso</option>
+  <option value="Financeiro">Financeiro</option>
+  <option value="Emissão de NF">Emissão de NF</option>
+</select>
+<script>
+  $(document).ready(function() {
+    $('#setor-observacao').select2({
+      placeholder: "Selecione os setores",
+      closeOnSelect: false,
+      width: 'resolve'
+    });
+  });
+</script>
         </div>
 
         <div class="form-group">
@@ -239,13 +259,14 @@
   </div>
   <script>
     $(function(){
+
       flatpickr("#data-coleta", {
         locale: "pt",
         dateFormat: "d/m/Y",
         minDate: "today"
       });
 
-      let windowPrazos = [], windowProdutos = [], windowCodigos = [];
+         let windowPrazos = [], windowProdutos = [], windowCodigos = [];
       let observacoes = [];
       let editandoIndex = null;
 
@@ -262,45 +283,71 @@
         });
       });
 
-      $("#cliente").change(function(){
+      $("#cliente").change(async function () {
         const id = $(this).val();
         $("#grupo-prazos").hide();
         $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("R$ 0,00");
         $(".error-prazos, #condicao-a-vista").hide();
         windowProdutos = [];
+        windowCodigos = [];
+        windowPrazos = [];
 
         if (!id) {
           updateAddButton();
           return;
         }
 
-        $.get(`/api/clientes/${id}`, function(cli){
-          windowCodigos = cli.codigosFiscais || [];
-          windowPrazos  = cli.prazos_pagamento.map(p => p.descricao);
-          windowProdutos = cli.produtos_autorizados || [];
+        try {
+          const cli = await $.get(`/api/clientes/${id}`);
 
+          // 🔹 Carrega prazos
+          windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
           $("#grupo-prazos").show();
           windowPrazos.forEach(pz => {
-            $("#prazosCheckboxes").append(`<label><input type="checkbox" value="${pz}"> ${pz}</label>`);
+            $("#prazosCheckboxes").append(
+              `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
+            );
           });
 
-          updateAddButton();
-          adicionarProduto();
-        });
-      });
+          // 🔹 Exibe condicional à vista, se necessário
+          if (windowPrazos.some(p => p.toLowerCase().includes("vista"))) {
+            $("#condicao-a-vista").hide();
+          } else {
+            $("#condicao-a-vista").hide();
+            $("#condicao_pagamento_a_vista").val("");
+          }
 
-      $("#prazosCheckboxes").on("change", "input[type=checkbox]", function(){
-        const avista = $("#prazosCheckboxes input:checked")
-          .filter((i, el) => el.value.toLowerCase().includes("vista")).length > 0;
-        $("#condicao-a-vista").toggle(avista);
-      });
+    // 🔹 Carrega códigos fiscais
+    windowCodigos = (cli.codigosFiscais || [])
+      .filter(codigo => typeof codigo === 'string' && codigo.trim() !== '')
+      .filter((valor, indice, self) => self.indexOf(valor) === indice);
+
+    // 🔹 Carrega produtos autorizados
+    if (Array.isArray(cli.produtos)) {
+      windowProdutos = cli.produtos.map(item => ({
+        nome: item.nome,
+        valor_unitario: parseFloat(item.valor_unitario)
+      }));
+    }
+
+    updateAddButton();
+    adicionarProduto();
+
+  } catch (error) {
+    alert("Erro ao carregar dados do cliente.");
+    console.error(error);
+  }
+});
 
       $("#btn-adicionar-observacao").click(function(){
-        $("#observacao-bloco").slideDown();
-        $(this).hide();
-        $("#btn-confirmar-observacao").text("Confirmar Observação");
-      });
+  $("#setor-observacao").val(null).trigger("change"); // limpa seleção de setor
+  $("#texto-observacao").val("").prop("disabled", true); // limpa e desativa o campo de texto
+  $("#observacao-bloco").slideDown();
+  $(this).hide();
+  $("#btn-confirmar-observacao").text("Confirmar Observação");
+  editandoIndex = null;
+});
 
       $("#btn-fechar-observacao").click(function(){
         $("#observacao-bloco").slideUp();
@@ -310,9 +357,31 @@
         editandoIndex = null;
       });
 
-      $("#setor-observacao").change(function(){
-        $("#texto-observacao").prop("disabled", !$(this).val());
-      });
+      $("#setor-observacao").on("select2:open", function () {
+  $("#texto-observacao").css("margin-top", "150px");
+});
+
+$("#setor-observacao").on("select2:close", function () {
+  $("#texto-observacao").css("margin-top", "0");
+});
+
+$("#setor-observacao").on("change", function() {
+  let valores = $(this).val();
+
+  if (valores && valores.includes("Todos")) {
+    const todosSetores = [
+      "Portaria",
+      "Carga e Descarga",
+      "Conferência de Peso",
+      "Financeiro",
+      "Emissão de NF"
+    ];
+    $("#setor-observacao").val(todosSetores).trigger("change");
+    valores = todosSetores;
+  }
+
+  $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
+});
 
       $("#btn-confirmar-observacao").click(function(){
         const setor = $("#setor-observacao").val();
@@ -324,10 +393,10 @@
         }
 
         if (editandoIndex !== null) {
-          observacoes[editandoIndex] = { setor, texto };
-        } else {
-          observacoes.push({ setor, texto });
-        }
+  observacoes[editandoIndex] = { setor, texto };
+} else {
+  setor.forEach(s => observacoes.push({ setor: s, texto }));
+}
 
         renderizarObservacoes();
         $("#setor-observacao").val("");
@@ -338,16 +407,38 @@
       });
 
       function renderizarObservacoes() {
-        const html = observacoes.map((obs, i) => `
-          <div class="obs-item">
-            <div class="obs-texto">🔹 <strong>${obs.setor}:</strong> ${obs.texto}</div>
-            <div class="obs-acoes">
-              <button onclick="editarObservacao(${i}, event)">✏️</button>
-              <button onclick="excluirObservacao(${i})">🗑️</button>
-            </div>
-          </div>`).join("");
-        $("#observacoes-confirmadas").html(html).show();
-      }
+  const agrupadas = [];
+
+  observacoes.forEach((obs, index) => {
+    const existente = agrupadas.find(item => item.texto === obs.texto);
+    if (existente) {
+      existente.setores.push(obs.setor);
+      existente.indices.push(index);
+    } else {
+      agrupadas.push({
+        texto: obs.texto,
+        setores: [obs.setor],
+        indices: [index]
+      });
+    }
+  });
+
+  const html = agrupadas.map((item) => {
+    const setores = item.setores.join(", ");
+    const primeiroIndex = item.indices[0]; // referência principal
+
+    return `
+      <div class="obs-item">
+        <div class="obs-texto">🔹 <strong>${setores}:</strong> ${item.texto}</div>
+        <div class="obs-acoes">
+          <button onclick="editarObservacao(${primeiroIndex}, event)">✏️</button>
+          <button onclick="excluirObservacao(${primeiroIndex})">🗑️</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  $("#observacoes-confirmadas").html(html).show();
+}
 
       window.editarObservacao = function(i, event) {
   if (event) event.preventDefault(); // impede o envio do formulário
@@ -359,11 +450,16 @@
   $("#btn-confirmar-observacao").text("Editar Observação");
   editandoIndex = i;
 };
-
       window.excluirObservacao = function(i) {
-        observacoes.splice(i, 1);
-        renderizarObservacoes();
-      };
+  if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
+
+  const textoReferencia = observacoes[i].texto;
+
+  // Remove todas as observações com o mesmo texto
+  observacoes = observacoes.filter(obs => obs.texto !== textoReferencia);
+
+  renderizarObservacoes();
+};
       function formatarNumero(valor, inteiro = false) {
         const partes = inteiro
           ? [Math.floor(valor).toString()]
@@ -510,25 +606,28 @@
         };
 
         $(".produto-bloco").each(function(){
-          const nome  = $(this).find(".select-produto").val();
-          const valor = parseMask($(this).find(".valor-por-quilo").val());
-          const peso  = parseMask($(this).find(".peso").val());
-          const tp    = $(this).find(".tipo-peso").val();
-          const cod   = $(this).find(".select-codigo-fiscal").val();
-          const vc    = parseMask($(this).find(".valor-com-nota").val());
-          const vs    = parseMask($(this).find(".valor-sem-nota").val());
-          if (nome && valor && peso) {
-            dados.itens.push({
-              nome_produto: nome,
-              valor_unitario: valor,
-              peso,
-              tipo_peso: tp,
-              codigo_fiscal: cod,
-              valor_com_nota: vc,
-              valor_sem_nota: vs
-            });
-          }
-        });
+  const nome  = $(this).find(".select-produto").val();
+  const valor = parseMask($(this).find(".valor-por-quilo").val());
+  const peso  = parseMask($(this).find(".peso").val());
+  const tp    = $(this).find(".tipo-peso").val();
+  const cod   = $(this).find(".select-codigo-fiscal").val();
+  const vc    = parseMask($(this).find(".valor-com-nota").val());
+  const vs    = parseMask($(this).find(".valor-sem-nota").val());
+  const unidade = "kg";
+
+  if (nome && valor && peso) {
+    dados.itens.push({
+      nome_produto: nome,
+      valor_unitario: valor,
+      peso,
+      tipo_peso: tp,
+      codigo_fiscal: cod,
+      valor_com_nota: vc,
+      valor_sem_nota: vs,
+      unidade: unidade
+    });
+  }
+});
 
         fetch("/api/pedidos", {
           method: "POST",
@@ -543,6 +642,19 @@
         .catch(() => alert("Erro ao salvar o pedido."));
       });
     });
+// Mostra ou esconde o campo condicional de pagamento à vista conforme checkbox
+$(document).on("change", "#prazosCheckboxes input[type=checkbox]", function () {
+  const prazosSelecionados = $("#prazosCheckboxes input:checked")
+    .map((i, el) => el.value.toLowerCase()).get();
+
+  if (prazosSelecionados.some(p => p.includes("vista"))) {
+    $("#condicao-a-vista").slideDown();
+  } else {
+    $("#condicao-a-vista").slideUp();
+    $("#condicao_pagamento_a_vista").val("");
+  }
+});
+
   </script>
 </body>
 </html>

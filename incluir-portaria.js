@@ -72,6 +72,7 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
 
     statusDiv.innerHTML = html;
     statusDiv.style.display = 'block';
+    statusDiv.style.marginTop = '6px'; // alinhamento com o campo de CPF
 
     if (!isAjudante) {
       const nomeInput = document.getElementById(`nome-${pedidoId}`);
@@ -165,6 +166,7 @@ function exibirCardAjudante(pedidoId, valor) {
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
+const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].includes(status);
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
   const pedidos = await res.json();
 
@@ -194,9 +196,10 @@ async function carregarPedidosPortaria() {
     const info = document.createElement('div');
     info.className = 'info';
     info.innerHTML = `
-      <h3>${pedido.cliente}</h3>
-      <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
-    `;
+  <h3>${pedido.cliente}</h3>
+  <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
+  ${pedido.observacoes?.portaria ? `<p style="margin-top: 6px;"><strong>Obs:</strong> ${pedido.observacoes.portaria}</p>` : ''}
+`;
 
     const statusTag = document.createElement('div');
     statusTag.className = 'status-badge';
@@ -221,11 +224,13 @@ async function carregarPedidosPortaria() {
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    if (status === 'Aguardando Início da Coleta') {
-      renderizarFormularioColeta(pedido, card);
-    }
+    if (podeExecutar(pedido.status)) {
+  renderizarFormularioColeta(pedido, card);
+}
 
-    lista.appendChild(card);
+// Inserir observações da portaria se existirem
+
+lista.appendChild(card);
   });
 }
 
@@ -235,16 +240,24 @@ function renderizarFormularioColeta(pedido, card) {
   const container = document.createElement('div');
   container.className = 'formulario';
   container.innerHTML = `
+${pedido.observacoes && pedido.observacoes.length
+  ? `<div class="bloco-observacao">
+      <h3><i class="fas fa-comment-dots"></i> Observação para Portaria</h3>
+      <div class="box-observacao">${pedido.observacoes}</div>
+    </div>`
+  : ''
+}
+
     <div class="bloco-motorista">
       <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
 
-      <div class="linha-cpf-status">
-        <div class="cpf-input">
-          <label for="cpf-${pedidoId}">CPF do Motorista</label>
-          <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" placeholder="000.000.000-00" required>
-        </div>
-        <div class="status-label" id="status-cadastro-${pedidoId}" style="display: none;"></div>
-      </div>
+      <div class="linha-cpf-status" style="display: flex; align-items: flex-end; gap: 10px;">
+  <div class="cpf-input">
+    <label for="cpf-${pedidoId}">CPF do Motorista</label>
+    <input type="text" id="cpf-${pedidoId}" data-pedido="${pedidoId}" placeholder="000.000.000-00" required>
+  </div>
+  <div class="status-label" id="status-cadastro-${pedidoId}" style="display: none;"></div>
+</div>
 
       <div id="bloco-form-${pedidoId}" style="display: none;">
         <div class="linha-motorista">
@@ -288,11 +301,17 @@ function renderizarFormularioColeta(pedido, card) {
 
         <div id="card-ajudante-container-${pedidoId}" style="margin-top: 20px;"></div>
 
-        <div style="margin-top: 28px;">
-          <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta btn-reduzido">
-            <i class="fas fa-truck"></i> Iniciar Coleta
-          </button>
-        </div>
+${(pedido.observacoes_setor?.length)
+  ? `<div style="background: #fff3cd; padding: 12px; border-left: 5px solid #ffc107; border-radius: 4px; margin-top: 20px;">
+        <strong>Observações para Portaria:</strong><br>${pedido.observacoes_setor.join('<br>')}
+     </div>`
+  : ''}
+
+<div style="margin-top: 28px;">
+  <button onclick="registrarColeta('${pedidoId}', this)" class="botao-iniciar-coleta btn-reduzido">
+    <i class="fas fa-truck"></i> Iniciar Coleta
+  </button>
+</div>
       </div>
     </div>
   `;
@@ -313,6 +332,11 @@ async function registrarColeta(pedidoId, botao) {
   const caminhaoInput = document.getElementById(`foto-caminhao-${pedidoId}`);
   const fichaInput = document.getElementById(`ficha-${pedidoId}`);
   const docInput = document.getElementById(`doc-${pedidoId}`);
+  const temAjudante = document.getElementById(`tem-ajudante-${pedidoId}`)?.value;
+if (!temAjudante) {
+  alert('Você precisa informar se há ajudante ou não.');
+  return;
+}
 
   if (!cpf || !placa || !caminhaoInput.files.length) {
     alert('Preencha todos os campos obrigatórios.');

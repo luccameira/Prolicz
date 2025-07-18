@@ -320,3 +320,45 @@ img.ticket-balanca {
   object-fit: contain;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+
+.bloco-desconto-vermelho {
+  background-color: #fde7e7;
+  border: 1px solid #f19999;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.bloco-desconto-vermelho .titulo-desconto {
+  color: #cc0000; /* Título em vermelho */
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.bloco-desconto-vermelho .linha-info {
+  margin-bottom: 4px;
+  color: #333; /* Texto normal em cinza escuro */
+}
+
+.bloco-desconto-vermelho .linha-info strong {
+  color: #333; /* Label em cinza escuro */
+}
+
+.bloco-desconto-vermelho .valor-final {
+  margin-top: 8px;
+  font-weight: bold;
+  color: #b50000; /* Valor final em vermelho */
+}
+
+.bloco-fiscal {
+  background-color: #f1f7fd;
+  border: 1px solid #cfe1f2;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  font-size: 15px;
+  color: #1e2637;
+  font-weight: 500;
+}

@@ -44,22 +44,12 @@
         </select>
 
         <label for="documento">Documento</label>
-        <input
-          type="text"
-          id="documento"
-          required
-          maxlength="18"
-          pattern="(\d{3}\.\d{3}\.\d{3}-\d{2})|(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})"
-          title="Digite no formato CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)"
-        >
+        <input type="text" id="documento" required maxlength="18"
+               pattern="(\d{3}\.\d{3}\.\d{3}-\d{2})|(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})"
+               title="Digite no formato CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00)">
 
         <label for="nomeFantasia">Nome Fantasia</label>
-        <input
-          type="text"
-          id="nomeFantasia"
-          required
-          maxlength="50"
-        >
+        <input type="text" id="nomeFantasia" required maxlength="50">
 
         <label for="situacaoTributaria">Situação Tributária</label>
         <select id="situacaoTributaria">
@@ -68,6 +58,9 @@
           <option value="lucroPresumido">Lucro Presumido</option>
           <option value="lucroReal">Lucro Real</option>
         </select>
+
+        <label for="inscricaoEstadual">Inscrição Estadual</label>
+        <input type="text" id="inscricaoEstadual" maxlength="14" placeholder="000.000.000.000">
 
         <label>Códigos Fiscais Permitidos</label>
         <div id="codigosFiscaisCheckboxes" class="checkbox-group">
@@ -83,49 +76,19 @@
         </div>
 
         <label for="cep">CEP</label>
-        <input
-          type="text"
-          id="cep"
-          required
-          maxlength="9"
-          pattern="\d{5}-?\d{3}"
-          title="Digite um CEP válido"
-          onblur="buscarEndereco()"
-        >
+        <input type="text" id="cep" required maxlength="9" pattern="\d{5}-?\d{3}" onblur="buscarEndereco()">
 
         <label for="logradouro">Logradouro</label>
-        <input
-          type="text"
-          id="logradouro"
-          required
-          maxlength="50"
-        >
+        <input type="text" id="logradouro" required maxlength="50">
 
         <label for="numero">Número</label>
-        <input
-          type="text"
-          id="numero"
-          required
-          maxlength="10"
-          pattern="\d+"
-          title="Apenas números, até 10 dígitos"
-        >
+        <input type="text" id="numero" required maxlength="10" pattern="\d+" title="Apenas números">
 
         <label for="bairro">Bairro</label>
-        <input
-          type="text"
-          id="bairro"
-          required
-          maxlength="60"
-        >
+        <input type="text" id="bairro" required maxlength="60">
 
         <label for="cidade">Cidade</label>
-        <input
-          type="text"
-          id="cidade"
-          required
-          maxlength="60"
-        >
+        <input type="text" id="cidade" required maxlength="60">
 
         <label for="estado">Estado</label>
         <select id="estado" required>
@@ -138,15 +101,19 @@
 
         <h3>Contatos</h3>
         <div id="contatos"></div>
-        <button type="button" class="btn-adicionar" onclick="adicionarContato()">+ Contato</button>
+        <button type="button" class="btn-adicionar" onclick="adicionarContato()">+ Adicionar Contato</button>
 
-        <h3>Produtos Autorizados</h3>
+        <h3>Produtos Autorizado a Comprar</h3>
         <div id="produtosAutorizados"></div>
-        <button type="button" class="btn-adicionar" onclick="adicionarProduto()">+ Produto</button>
+        <button type="button" class="btn-adicionar" onclick="adicionarProduto()">+ Adicionar Produto</button>
 
-        <h3>Prazos de Pagamento</h3>
+        <h3>Produtos Autorizado a Vender</h3>
+        <div id="produtosAutorizadosVenda"></div>
+        <button type="button" class="btn-adicionar" onclick="adicionarProdutoVenda()">+ Adicionar Produto</button>
+
+        <h3>Prazos de Pagamento Permitidos</h3>
         <div id="prazosPagamento"></div>
-        <button type="button" class="btn-adicionar" onclick="adicionarPrazo()">+ Prazo</button>
+        <button type="button" class="btn-adicionar" onclick="adicionarPrazo()">+ Adicionar Prazo</button>
 
         <button type="submit" class="btn-salvar">Salvar Alterações</button>
       </form>
@@ -154,7 +121,6 @@
   </div>
 
   <script>
-    // atualizar máscaras e preenchimento
     function atualizarCamposPessoa() {
       const tipo = $('#tipoPessoa').val();
       if (tipo === 'Fisica') {
@@ -164,7 +130,6 @@
       }
     }
 
-    // busca e preenche endereço pelo CEP
     function buscarEndereco() {
       const cep = $('#cep').val().replace(/\D/g, '');
       if (cep.length !== 8) return;
@@ -177,15 +142,14 @@
             $('#cidade').val(data.localidade);
             $('#estado').val(data.uf);
           }
-        })
-        .catch(() => console.warn('CEP não encontrado'));
+        });
     }
 
-    // carregamento de produtos e cliente
     let listaProdutos = [];
     async function carregarProdutosDoSistema() {
       listaProdutos = await fetch('/api/clientes/produtos').then(r => r.json()).catch(() => []);
     }
+
     async function carregarCliente() {
       const id = new URLSearchParams(window.location.search).get('id');
       $('#clienteId').val(id);
@@ -195,30 +159,39 @@
       $('#documento').val(c.documento);
       $('#nomeFantasia').val(c.nome_fantasia);
       $('#situacaoTributaria').val(c.situacao_tributaria);
+      $('#inscricaoEstadual').val(c.inscricao_estadual || '');
       $('#cep').val(c.cep);
       $('#logradouro').val(c.logradouro);
       $('#numero').val(c.numero);
       $('#bairro').val(c.bairro);
       $('#cidade').val(c.cidade);
       $('#estado').val(c.estado);
-      // contatos
       c.contatos.forEach(adicionarContato);
-      // produtos
-      c.produtos_autorizados.forEach(p => {
-        adicionarProduto();
-        const g = $('#produtosAutorizados .grupo-dinamico').last();
-        g.find('select').val(p.id);
-        g.find('.valor').val('R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ','));
-      });
-      // prazos
-      c.prazos_pagamento.forEach(p => adicionarPrazo(p.descricao));
-      // códigos fiscais
-      (c.codigosFiscais || []).forEach(code => 
+      if (Array.isArray(c.produtos_autorizados)) {
+  c.produtos_autorizados.forEach(p => {
+    adicionarProduto();
+    const g = $('#produtosAutorizados .grupo-dinamico').last();
+    g.find('select').val(p.id);
+    g.find('.valor').val('R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ','));
+  });
+}
+
+if (Array.isArray(c.produtos_venda)) {
+  c.produtos_venda.forEach(p => {
+    adicionarProdutoVenda();
+    const g = $('#produtosAutorizadosVenda .grupo-dinamico').last();
+    g.find('select').val(p.id);
+    g.find('.valor-venda').val('R$ ' + parseFloat(p.valor_unitario).toFixed(2).replace('.', ','));
+  });
+}
+      (c.prazos_pagamento || []).forEach(p => {
+  adicionarPrazo({ descricao: p.descricao, dias: p.dias });
+});
+      (c.codigosFiscais || []).forEach(code =>
         $(`#codigosFiscaisCheckboxes input[value="${code}"]`).prop('checked', true)
       );
     }
 
-    // adição dinâmica de itens
     function adicionarContato(ct = {}) {
       const d = $('<div class="grupo-dinamico">\
         <input type="text" placeholder="Nome" value="'+(ct.nome||'')+'" required maxlength="35">\
@@ -230,83 +203,146 @@
       $('#contatos').append(d);
       d.find('.tel').mask('(00) 00000-0000');
     }
+
     function adicionarProduto() {
-      const opts = listaProdutos.map(p =>
-        '<option value="'+p.id+'">'+p.nome+'</option>'
-      ).join('');
-      const d = $('<div class="grupo-dinamico">\
-        <select required><option value="">Selecione um produto</option>'+opts+'</select>\
-        <input type="text" class="valor" placeholder="Valor (R$)" value="R$ 0,00" required>\
-        <button type="button" class="remover-btn">&times;</button>\
-      </div>');
-      d.find('.remover-btn').click(() => d.remove());
-      $('#produtosAutorizados').append(d);
-      d.find('.valor').mask('R$ 000.000.000,00',{reverse:true});
-    }
-    function adicionarPrazo(desc = '') {
-      const d = $('<div class="grupo-dinamico">\
-        <input type="text" placeholder="Ex: À vista" value="'+desc+'" required maxlength="50">\
-        <button type="button" class="remover-btn">&times;</button>\
-      </div>');
-      d.find('.remover-btn').click(() => d.remove());
-      $('#prazosPagamento').append(d);
-    }
+  const produtosSelecionados = $('#produtosAutorizados select').map(function () {
+    return $(this).val();
+  }).get();
 
-    // envio do formulário
-    $('#formEditarCliente').submit(async e => {
-      e.preventDefault();
-      const id = $('#clienteId').val();
-      const cliente = {
-        tipo_pessoa: $('#tipoPessoa').val().toLowerCase(),
-        documento: $('#documento').val(),
-        nome_fantasia: $('#nomeFantasia').val(),
-        situacao_tributaria: $('#situacaoTributaria').val() || null,
-        codigosFiscais: $('#codigosFiscaisCheckboxes input:checked').map((_,cb)=>cb.value).get(),
-        cep: $('#cep').val(),
-        logradouro: $('#logradouro').val(),
-        numero: $('#numero').val(),
-        bairro: $('#bairro').val(),
-        cidade: $('#cidade').val(),
-        estado: $('#estado').val(),
-        contatos: [], produtos: [], prazos: []
-      };
-      $('#contatos .grupo-dinamico').each(function(){
-        const inputs = $(this).find('input');
-        cliente.contatos.push({
-          nome: inputs.eq(0).val(),
-          telefone: inputs.eq(1).val(),
-          email: inputs.eq(2).val()
-        });
-      });
-      $('#produtosAutorizados .grupo-dinamico').each(function(){
-        const sel = $(this).find('select').val();
-        const raw = $(this).find('.valor').val();
-        const val = parseFloat(raw.replace(/[R$\.\s]/g,'').replace(',','.'))||0;
-        cliente.produtos.push({ id: parseInt(sel), valor_unitario: val });
-      });
-      $('#prazosPagamento .grupo-dinamico').each(function(){
-        cliente.prazos.push({ descricao: $(this).find('input').val(), dias: 0 });
-      });
-      const res = await fetch(`/api/clientes/${id}`, {
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(cliente)
-      });
-      if (res.ok) {
-        alert('Cliente atualizado com sucesso!');
-        window.location.href='clientes.html';
-      } else {
-        const err = await res.json();
-        alert('Erro: '+(err.erro||err.detalhes||'desconhecido'));
-      }
+  const d = $('<div class="grupo-dinamico"></div>');
+
+  const select = $('<select required><option value="">Selecione um produto</option></select>');
+  listaProdutos.forEach(p => {
+    if (!produtosSelecionados.includes(p.id.toString())) {
+      select.append(`<option value="${p.id}">${p.nome}</option>`);
+    }
+  });
+
+  const input = $('<input type="text" class="valor" placeholder="Valor (R$)" value="R$ 0,00" required>');
+  const remover = $('<button type="button" class="remover-btn">&times;</button>').click(() => d.remove());
+
+  d.append(select).append(input).append(remover);
+  $('#produtosAutorizados').append(d);
+  input.mask('R$ 000.000.000,00', { reverse: true });
+}
+function adicionarProdutoVenda() {
+  const produtosSelecionados = $('#produtosAutorizadosVenda select').map(function() {
+    return $(this).val();
+  }).get();
+
+  const d = $('<div class="grupo-dinamico"></div>');
+
+  const select = $('<select required><option value="">Selecione um produto</option></select>');
+  listaProdutos.forEach(p => {
+    if (!produtosSelecionados.includes(p.id.toString())) {
+      select.append(`<option value="${p.id}">${p.nome}</option>`);
+    }
+  });
+
+  const input = $('<input type="text" class="valor-venda" placeholder="Valor (R$)" value="R$ 0,00" required>');
+  const remover = $('<button type="button" class="remover-btn">&times;</button>').click(() => d.remove());
+
+  d.append(select).append(input).append(remover);
+  $('#produtosAutorizadosVenda').append(d);
+  input.mask('R$ 000.000.000,00', { reverse: true });
+}
+    function adicionarPrazo(prazo = {}) {
+  const descricao = prazo.descricao || '';
+  const dias = (prazo.dias !== undefined && prazo.dias !== null) ? prazo.dias : '';
+
+  const d = $('<div class="grupo-dinamico">\
+    <input type="text" placeholder="Descrição do prazo" value="'+descricao+'" required maxlength="50">\
+    <input type="number" placeholder="Dias após coleta" value="'+dias+'" required min="0">\
+    <button type="button" class="remover-btn">&times;</button>\
+  </div>');
+  d.find('.remover-btn').click(() => d.remove());
+  $('#prazosPagamento').append(d);
+}
+
+    $('#formEditarCliente').off('submit').on('submit', async e => {
+  e.preventDefault();
+  const id = $('#clienteId').val();
+  const cliente = {
+    tipo_pessoa: $('#tipoPessoa').val().toLowerCase(),
+    documento: $('#documento').val(),
+    nome_fantasia: $('#nomeFantasia').val(),
+    situacao_tributaria: $('#situacaoTributaria').val() || null,
+    inscricao_estadual: $('#inscricaoEstadual').val() || null,
+    codigosFiscais: $('#codigosFiscaisCheckboxes input:checked').map((_,cb)=>cb.value).get(),
+    cep: $('#cep').val(),
+    logradouro: $('#logradouro').val(),
+    numero: $('#numero').val(),
+    bairro: $('#bairro').val(),
+    cidade: $('#cidade').val(),
+    estado: $('#estado').val(),
+    contatos: [],
+    produtos: [],
+    produtos_venda: [],
+    prazos_pagamento: []
+  };
+
+  // Contatos
+  $('#contatos .grupo-dinamico').each(function(){
+    const inputs = $(this).find('input');
+    cliente.contatos.push({
+      nome: inputs.eq(0).val(),
+      telefone: inputs.eq(1).val(),
+      email: inputs.eq(2).val()
     });
+  });
 
-    // inicialização
+  // Produtos autorizados a comprar
+  $('#produtosAutorizados .grupo-dinamico').each(function(){
+    const sel = $(this).find('select').val();
+    const raw = $(this).find('.valor').val();
+    const val = parseFloat(raw.replace(/[R$\.\s]/g,'').replace(',','.'))||0;
+    cliente.produtos.push({ id: parseInt(sel), valor_unitario: val });
+  });
+
+  // Produtos autorizados a vender
+  $('#produtosAutorizadosVenda .grupo-dinamico').each(function(){
+    const sel = $(this).find('select').val();
+    const raw = $(this).find('.valor-venda').val();
+    const val = parseFloat(raw.replace(/[R$\.\s]/g,'').replace(',','.'))||0;
+    cliente.produtos_venda.push({ id: parseInt(sel), valor_unitario: val });
+  });
+
+  // Prazos de pagamento
+cliente.prazos = [];
+
+$('#prazosPagamento .grupo-dinamico').each(function(){
+  const inputs = $(this).find('input');
+  const descricao = inputs.eq(0).val().trim();
+  const diasStr = inputs.eq(1).val().trim();
+  const dias = diasStr === '' ? null : parseInt(diasStr);
+
+  if (descricao !== '' && dias !== null && !isNaN(dias)) {
+    cliente.prazos.push({ descricao, dias });
+  }
+});
+
+  const res = await fetch(`/api/clientes/${id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(cliente)
+  });
+
+  if (res.ok) {
+    alert('Cliente atualizado com sucesso!');
+    window.location.href='clientes.html';
+  } else {
+    const err = await res.json();
+    alert('Erro: '+(err.erro||err.detalhes||'desconhecido'));
+  }
+});
+
     $(document).ready(async () => {
-      await carregarProdutosDoSistema();
-      $('#cep').mask('00000-000');
-      carregarCliente();
-    });
+  $('#cep').mask('00000-000');
+  $('#inscricaoEstadual').mask('000.000.000.000'); // máscara
+
+  await carregarProdutosDoSistema();
+  await carregarCliente();
+});
   </script>
 </body>
 </html>

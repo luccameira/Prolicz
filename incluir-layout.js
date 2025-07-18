@@ -20,9 +20,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (topbar) {
         const topbarContainer = document.querySelector(".topbar");
-        if (topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
+        if (topbarContainer) {
+          topbarContainer.innerHTML = topbar.innerHTML;
 
-        // ✅ INSERIR NOME DO USUÁRIO NA TOPOBAR
+          // Botão ☰ para abrir/fechar sidebar
+          const botaoToggle = document.createElement("button");
+          botaoToggle.textContent = "☰";
+          botaoToggle.style.background = "transparent";
+          botaoToggle.style.color = "white";
+          botaoToggle.style.border = "none";
+          botaoToggle.style.fontSize = "24px";
+          botaoToggle.style.cursor = "pointer";
+          botaoToggle.style.marginRight = "20px";
+          botaoToggle.style.outline = "none";
+
+          botaoToggle.addEventListener("click", () => {
+            document.querySelector(".sidebar")?.classList.toggle("oculta");
+            document.querySelector(".main-content")?.classList.toggle("expandida");
+          });
+
+          const logo = topbarContainer.querySelector(".logo");
+          if (logo) logo.prepend(botaoToggle);
+        }
+
         const nomeUsuario = localStorage.getItem("nomeUsuario");
         if (nomeUsuario) {
           const spanNome = document.createElement("span");
@@ -63,4 +83,16 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch(err => {
       console.error("🔴 Erro ao carregar layout.html:", err);
     });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.addEventListener("click", function (e) {
+    if (e.target.textContent === "☰") {
+      setTimeout(() => {
+        document.querySelectorAll(".timeline-simples").forEach(container => {
+          animarLinhaProgresso(container);
+        });
+      }, 300);
+    }
+  });
 });
