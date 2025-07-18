@@ -399,38 +399,61 @@ async function carregarPedidosFinanceiro() {
     let totalSemNota = 0;
     let codigosFiscaisBarraAzul = '';
 
-    if (pedido.materiais && pedido.materiais.length) {
-     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-  const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+    // 🔄 NOVO BLOCO FISCAL COM VARIÁVEIS LOCAIS
+let codigosFiscaisBarraAzul = '';
+if (pedido.materiais && pedido.materiais.length) {
+  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    const codFiscal = (item.codigo_fiscal || '').toUpperCase();
+    const valorUnitario = Number(item.valor_unitario) || 0;
+    const pesoCarregado = Number(item.peso_carregado) || 0;
+    const pesoDescontado = item.descontos?.reduce((acc, d) => acc + Number(d.peso_calculado || 0), 0) || 0;
+    const pesoFinal = pesoCarregado - pesoDescontado;
 
-  const descontosPalete = item.descontos?.filter(d =>
-    d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-  ) || [];
+    // Valor bruto do item
+    const valorBruto = pesoFinal * valorUnitario;
 
-  const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-  const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+    // Total de desconto por devolução ou compra de material
+    let valorTotalDesconto = 0;
+    const nomeProdutoItem = normalizarTexto(item.nome_produto);
+    (descontosPedido || []).forEach(desc => {
+      const nomeDesc = normalizarTexto(desc.nome_produto || desc.material || '');
+      if (nomeDesc === nomeProdutoItem) {
+        valorTotalDesconto += Number(desc.peso_calculado || 0) * Number(desc.valor_unitario || 0);
+      }
+    });
 
-  const totalCom = pesoFinal * valorComNota;
-  const totalSem = pesoFinal * valorSemNota;
+    let valorComNotaLocal = 0;
+    let valorSemNotaLocal = 0;
+    let pesoNaNota = null;
 
-  totalComNota += totalCom;
-  totalSemNota += totalSem;
-
-  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
-  const precoComNotaFmt = formatarMoeda(valorComNota);
-  const precoSemNotaFmt = formatarMoeda(valorSemNota);
-  const totalComFmt = formatarMoeda(totalCom);
-  const totalSemFmt = formatarMoeda(totalSem);
-
-  return `
-    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
-    </div>
-  `;
-}).join('');
+    if (codFiscal.endsWith('1')) {
+      // Nota cheia — mantém valor total, ajusta peso na NF
+      valorComNotaLocal = valorBruto;
+      valorSemNotaLocal = 0;
+      const valorPorKg = valorUnitario > 0 ? valorUnitario : 1;
+      pesoNaNota = (valorBruto / valorPorKg).toFixed(2);
+    } else if (codFiscal.endsWith('2') || codFiscal.endsWith('X') || codFiscal.endsWith('P')) {
+      // Aplica desconto apenas fora da nota
+      valorComNotaLocal = valorBruto / 2;
+      valorSemNotaLocal = valorBruto / 2 - valorTotalDesconto;
+    } else {
+      // Outros códigos: tudo com nota
+      valorComNotaLocal = valorBruto;
+      valorSemNotaLocal = 0;
+      pesoNaNota = pesoFinal.toFixed(2);
     }
+
+    const exibirComNota = `<span class="valor-azul">Com NF: <strong>${formatarMoeda(valorComNotaLocal)}</strong></span>`;
+    const exibirSemNota = valorSemNotaLocal > 0
+      ? `<span class="valor-vermelho">Sem NF: <strong>${formatarMoeda(valorSemNotaLocal)}</strong></span>`
+      : '';
+    const exibirPeso = pesoNaNota && (!valorSemNotaLocal || valorSemNotaLocal <= 0)
+      ? `<span class="peso-nota">Peso na NF: <strong>${formatarPesoComMilhar(pesoNaNota)} Kg</strong></span>`
+      : '';
+
+    return `<div class="linha-fiscal">${exibirComNota} ${exibirSemNota} ${exibirPeso}</div>`;
+  }).join('');
+}
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
