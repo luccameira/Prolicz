@@ -76,29 +76,19 @@ function gerarBadgeStatus(status) {
 
 function renderizarPedidos(lista) {
   const listaEl = document.getElementById('lista-pedidos');
-  const filtro = document.getElementById('filtro-cliente').value.toLowerCase();
-  const ordenar = document.getElementById('ordenar').value;
+  listaEl.innerHTML = '';
 
-  let pedidosFiltrados = lista.filter(p => (p.cliente || '').toLowerCase().includes(filtro));
-
-  if (ordenar === 'cliente') {
-    pedidosFiltrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
-  } else {
-    pedidosFiltrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
-  }
-
-  const pendentes = pedidosFiltrados.filter(p =>
+  const pendentes = lista.filter(p =>
     p.status === 'Coleta Iniciada' &&
     p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0)
   );
 
-  const concluidos = pedidosFiltrados.filter(p =>
+  const concluidos = lista.filter(p =>
     !(p.status === 'Coleta Iniciada' &&
     p.materiais.every(m => !m.peso_carregado || parseFloat(m.peso_carregado) === 0))
   );
 
   const pedidosOrdenados = [...pendentes, ...concluidos];
-  listaEl.innerHTML = '';
 
   pedidosOrdenados.forEach(p => {
     const card = document.createElement('div');
@@ -141,8 +131,9 @@ function renderizarPedidos(lista) {
       const itemId = item.item_id;
       if (!descontosPorItem[itemId]) descontosPorItem[itemId] = [];
 
-      const textoPeso = item.tipo_peso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
-      const icone = item.tipo_peso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
+      const tipoPeso = (item.tipo_peso || '').toLowerCase().includes('aproximado') ? 'Aproximado' : 'Exato';
+      const textoPeso = tipoPeso === 'Aproximado' ? 'Peso Aproximado' : 'Peso Exato';
+      const icone = tipoPeso === 'Exato' ? '<i class="fa fa-check check-exato"></i>' : '';
 
       form.innerHTML += `
         <div class="material-bloco" data-item-id="${itemId}" data-pedido-id="${p.id}">
@@ -256,7 +247,6 @@ function atualizarDescontoItem(itemId, index, pedidoId) {
       </div>
     `;
     containerExtra.innerHTML = htmlExtra;
-
     aplicarMascaraMilhar(document.getElementById(pesoId));
   }
 }
@@ -297,7 +287,7 @@ async function registrarPeso(pedidoId) {
           const campoQtd = grupo.querySelector(`#quantidade-${itemId}-${i}`);
           const qtd = parseFloat(campoQtd?.value.replace(/\./g, '').replace(',', '.'));
           if (!isNaN(qtd)) {
-            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 12 : qtd * 20;
+            pesoCalculado = motivo === 'Palete Pequeno' ? qtd * 6 : qtd * 14.37;
             infoExtra = { quantidade: qtd };
           }
         } else {
@@ -329,8 +319,6 @@ async function registrarPeso(pedidoId) {
   const ticketFile = ticketInput?.files[0];
   if (!ticketFile) return alert("Por favor, selecione a foto do ticket da balança.");
 
-  console.log(">>> Itens enviados:", itens);
-
   const formData = new FormData();
   formData.append('itens', JSON.stringify(itens));
   formData.append('ticket_balanca', ticketFile);
@@ -360,6 +348,4 @@ async function registrarPeso(pedidoId) {
 
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
-  document.getElementById('filtro-cliente').addEventListener('input', carregarPedidos);
-  document.getElementById('ordenar').addEventListener('change', carregarPedidos);
 });
