@@ -741,20 +741,19 @@ function toggleConfirmacao() {
       <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
     `;
     const taFin = blocoFin.querySelector('textarea');
-    const btnFin = blocoFin.querySelector('button');
-    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(blocoFin);
+const btnFin = blocoFin.querySelector('button');
+btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
+form.appendChild(blocoFin);
 
-    card.appendChild(form);
+card.appendChild(form);
 
-    header.addEventListener('click', () => {
-      if (pedido.status !== 'Em Análise pelo Financeiro') return;
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+header.addEventListener('click', () => {
+  if (pedido.status !== 'Em Análise pelo Financeiro') return;
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
 
-    lista.appendChild(card);
-  });
-}
+lista.appendChild(card);
+});
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
