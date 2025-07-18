@@ -1,3 +1,4 @@
+
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
 }
@@ -43,6 +44,14 @@ function calcularValoresFiscais(item) {
     valorSemNota = 0;
   }
   return { valorComNota, valorSemNota };
+}
+
+function normalizarTexto(texto) {
+  return (texto || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 async function carregarPedidosFinanceiro() {
@@ -93,7 +102,7 @@ async function carregarPedidosFinanceiro() {
     `;
     card.appendChild(header);
 
-    const timelineHTML = gerarLinhaTempoCompleta(pedido);
+      const timelineHTML = gerarLinhaTempoCompleta(pedido);
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = timelineHTML;
     const timelineElement = tempDiv.querySelector('.timeline-simples');
@@ -106,120 +115,313 @@ async function carregarPedidosFinanceiro() {
     form.className = 'formulario';
     form.style.display = 'none';
 
-    pedido.materiais?.forEach(item => {
+    let descontosPedido = [];
+
+pedido.materiais?.forEach((item) => {
+  const descontosComerciais = item.descontos?.filter(d =>
+    d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+  ) || [];
+
+  descontosComerciais.forEach(desc => {
+    const nomeMat = normalizarTexto(desc.material);
+    let listaProdutos;
+
+    if (desc.motivo === 'Compra de Material') {
+      listaProdutos = pedido.produtos_autorizados_venda || [];
+    } else if (desc.motivo === 'Devolução de Material') {
+      listaProdutos = pedido.produtos_autorizados_devolucao || [];
+    }
+
+    const produtoReal = listaProdutos.find(p => {
+      const nomeProd = normalizarTexto(p.nome_produto);
+      return nomeProd === nomeMat;
+    });
+
+    descontosPedido.push({
+      ...desc,
+      nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+      valor_unitario: produtoReal?.valor_unitario || 0,
+      ticket_devolucao: desc.ticket_devolucao || null,
+      ticket_compra: desc.ticket_compra || null,
+      confirmado_valor_kg: false
+    });
+  });
+});
+
+// 🔵 BARRA FISCAL - após descontosPedido já existir
+let totalComNota = 0;
+let totalSemNota = 0;
+let codigosFiscaisBarraAzul = '';
+
+if (pedido.materiais && pedido.materiais.length) {
+  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    // Soma os descontos comerciais aplicados a este material
+    const descontoComercialMaterial = descontosPedido
+      .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
+      .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+
+    // Totais brutos
+    let totalCom = pesoFinal * valorComNota;
+    let totalSem = pesoFinal * valorSemNota;
+
+    // Aplica desconto apenas na parte sem nota
+    if (totalSem >= descontoComercialMaterial) {
+      totalSem -= descontoComercialMaterial;
+    } else {
+      totalSem = 0;
+    }
+
+    totalComNota += totalCom;
+    totalSemNota += totalSem;
+
+    const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+    const precoComNotaFmt = formatarMoeda(valorComNota);
+    const precoSemNotaFmt = formatarMoeda(valorSemNota);
+    const totalComFmt = formatarMoeda(totalCom);
+    const totalSemFmt = formatarMoeda(totalSem);
+
+    return `
+      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+        ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
+        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>${
+          totalSem > 0
+            ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
+            : ''
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+    // Exibe materiais
+    pedido.materiais?.forEach((item) => {
       const bloco = document.createElement('div');
       bloco.className = 'material-bloco';
 
       const tipoPeso = item.tipo_peso === 'Aproximado' ? 'Aproximado' : 'Exato';
       const pesoPrevisto = formatarPesoComMilhar(item.quantidade);
       const pesoCarregado = formatarPesoComMilhar(item.peso_carregado);
-      let descontosKg = 0;
-      if (item.descontos?.length) {
-        descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-      }
-      const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
+
+      const descontosPalete = item.descontos?.filter(d =>
+        d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+      ) || [];
+
+      const totalDescontoPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+      const pesoFinalNum = (Number(item.peso_carregado) || 0) - totalDescontoPalete;
       const pesoFinal = formatarPesoComMilhar(pesoFinalNum);
+
+      let blocoAmareloHTML = '';
+      if (descontosPalete.length) {
+        const linhas = descontosPalete.map(desc => {
+          return `<li>${desc.motivo}: ${formatarPesoComMilhar(desc.quantidade)} UN (${formatarPesoComMilhar(desc.peso_calculado)} Kg)</li>`;
+        }).join('');
+
+        blocoAmareloHTML = `
+          <div class="descontos-aplicados">
+            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
+            <ul>${linhas}</ul>
+          </div>
+        `;
+      }
+
+      const valorTotal = formatarMoeda(pesoFinalNum * (Number(item.valor_unitario) || 0));
 
       bloco.innerHTML = `
         <h4>${item.nome_produto} (${formatarMoeda(Number(item.valor_unitario))}/Kg)</h4>
         <p>Peso Previsto para Carregamento (${tipoPeso}): ${pesoPrevisto} Kg</p>
         <p>Peso Registrado na Carga: ${pesoCarregado} Kg</p>
-        ${item.descontos?.length ? `
-          <div class="descontos-aplicados" style="margin-top:16px;">
-            <p><i class="fa fa-tags"></i> Descontos Aplicados:</p>
-            <ul>
-              ${item.descontos.map(d =>
-                `<li>${d.motivo}: ${formatarPesoComMilhar(d.quantidade)} UNIDADES (${formatarPesoComMilhar(d.peso_calculado)} Kg)</li>`
-              ).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        <p style="margin-top:16px;"><strong>${item.descontos?.length ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
+        ${blocoAmareloHTML}
+        <p style="margin-top:16px;"><strong>${totalDescontoPalete > 0 ? 'Peso Final com Desconto' : 'Peso Final'}:</strong> ${pesoFinal} Kg</p>
         <div style="margin-top:12px; margin-bottom:4px;">
           <strong>Valor Total do Item:</strong>
-          <span style="color: green;">${formatarMoeda((Number(pesoFinalNum) || 0) * (Number(item.valor_unitario) || 0))}</span>
+          <span style="color: green;">${valorTotal}</span>
         </div>
       `;
+
       form.appendChild(bloco);
     });
 
-    if (pedido.ticket_balanca) {
-      const ticketId = `ticket-${id}`;
-      const blocoTicket = document.createElement('div');
-      blocoTicket.style.marginTop = '25px';
-      blocoTicket.innerHTML = `
-        <label style="font-weight: bold;">Ticket da Balança:</label><br>
-        <img id="${ticketId}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket da Balança" class="ticket-balanca">
-      `;
-      form.appendChild(blocoTicket);
+    // BLOCO — Descontos Comerciais reorganizados
+    if (descontosPedido.length) {
+      descontosPedido.forEach((desc, idx) => {
+        const blocoDesc = document.createElement('div');
+        blocoDesc.className = 'bloco-desconto-vermelho';
+        const nomeProduto = desc.nome_produto || desc.material || 'Produto não informado';
+        const qtd = formatarPesoComMilhar(desc.peso_calculado);
+        let valorKg = Number(desc.valor_unitario || 0);
+        let totalCompra = valorKg * Number(desc.peso_calculado || 0);
 
-      setTimeout(() => {
-        const img = document.getElementById(ticketId);
-        if (img) {
-          img.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100vw';
-            overlay.style.height = '100vh';
-            overlay.style.background = 'rgba(0, 0, 0, 0.8)';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.zIndex = '9999';
+        blocoDesc.innerHTML = `
+          <p class="titulo-desconto"><i class="fa fa-exclamation-triangle"></i> ${desc.motivo}:</p>
+          <p><strong>Produto:</strong> ${nomeProduto}</p>
+          <p><strong>Quantidade:</strong> ${qtd} Kg</p>
+        `;
 
-            const modalImg = document.createElement('img');
-            modalImg.src = img.src;
-            modalImg.style.maxWidth = '90vw';
-            modalImg.style.maxHeight = '90vh';
-            modalImg.style.objectFit = 'contain';
-            modalImg.style.borderRadius = '8px';
-            modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-            modalImg.style.cursor = 'zoom-in';
-            modalImg.style.transition = 'transform 0.3s ease';
+            const valorInputId = `valor-kg-${id}-${idx}`;
+        const confirmarBtnId = `confirmar-kg-${id}-${idx}`;
 
-            let zoomed = false;
-            modalImg.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const rect = modalImg.getBoundingClientRect();
-              const offsetX = e.clientX - rect.left;
-              const offsetY = e.clientY - rect.top;
-              const percentX = (offsetX / rect.width) * 100;
-              const percentY = (offsetY / rect.height) * 100;
+        if (desc.motivo === 'Devolução de Material') {
+          const row = document.createElement('div');
+          row.className = 'vencimento-row';
+          row.dataset.confirmado = 'false';
 
-              if (!zoomed) {
-                modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
-                modalImg.style.transform = 'scale(2.5)';
-                modalImg.style.cursor = 'zoom-out';
-                zoomed = true;
-              } else {
-                modalImg.style.transform = 'scale(1)';
-                modalImg.style.cursor = 'zoom-in';
-                zoomed = false;
-              }
+          const valorInput = document.createElement('input');
+          valorInput.type = 'text';
+          valorInput.id = valorInputId;
+          valorInput.value = valorKg.toFixed(2).replace('.', ',');
+
+          valorInput.addEventListener('input', () => {
+            let valor = valorInput.value.replace(/\D/g, '');
+            valor = (parseInt(valor, 10) / 100).toFixed(2);
+            valorInput.value = parseFloat(valor).toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
             });
-
-            const closeBtn = document.createElement('div');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.style.position = 'absolute';
-            closeBtn.style.top = '20px';
-            closeBtn.style.right = '30px';
-            closeBtn.style.fontSize = '40px';
-            closeBtn.style.color = '#fff';
-            closeBtn.style.cursor = 'pointer';
-            closeBtn.onclick = (e) => {
-              e.stopPropagation();
-              document.body.removeChild(overlay);
-            };
-
-            overlay.appendChild(modalImg);
-            overlay.appendChild(closeBtn);
-            document.body.appendChild(overlay);
           });
+
+          const btnConfirmar = document.createElement('button');
+          btnConfirmar.type = 'button';
+          btnConfirmar.id = confirmarBtnId;
+          btnConfirmar.textContent = '✓';
+
+          const valorTotalDesc = document.createElement('p');
+          const calcularValorTotal = (valorKgAtual) => {
+            const novoTotal = Number(desc.peso_calculado || 0) * valorKgAtual;
+            valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(novoTotal)}</span>`;
+          };
+
+          function toggleConfirmacaoDevolucao(row, input, btn, desc) {
+            const raw = input.value.replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(raw);
+            let rowErr = row.querySelector('.row-error');
+            if (!rowErr) {
+              rowErr = document.createElement('div');
+              rowErr.className = 'row-error';
+              rowErr.style.color = 'red';
+              rowErr.style.fontSize = '13px';
+            }
+
+            if (isNaN(num) || num <= 0) {
+              rowErr.textContent = 'Valor inválido.';
+              if (!row.contains(rowErr)) row.appendChild(rowErr);
+              input.focus();
+              return;
+            }
+
+            if (row.contains(rowErr)) row.removeChild(rowErr);
+
+            const isConfirmado = row.dataset.confirmado === 'true';
+
+            if (!isConfirmado) {
+              row.dataset.confirmado = 'true';
+              input.disabled = true;
+              const etiqueta = document.createElement('span');
+              etiqueta.className = 'etiqueta-valor-item';
+              etiqueta.textContent = 'CONFIRMADO';
+              etiqueta.style.cursor = 'pointer';
+              etiqueta.addEventListener('click', () => {
+                toggleConfirmacaoDevolucao(row, input, btn, desc);
+              });
+              row.replaceChild(etiqueta, btn);
+              desc.valor_unitario = num;
+              desc.confirmado_valor_kg = true;
+              calcularValorTotal(num);
+              atualizarResumoFinanceiro();
+            } else {
+              row.dataset.confirmado = 'false';
+              input.disabled = false;
+              const novoBtn = document.createElement('button');
+              novoBtn.id = confirmarBtnId;
+              novoBtn.textContent = '✓';
+              novoBtn.type = 'button';
+              novoBtn.addEventListener('click', () => {
+                toggleConfirmacaoDevolucao(row, input, novoBtn, desc);
+              });
+              const etiquetaAtual = row.querySelector('.etiqueta-valor-item');
+              if (etiquetaAtual) {
+                row.replaceChild(novoBtn, etiquetaAtual);
+              }
+              desc.confirmado_valor_kg = false;
+            }
+
+            atualizarBotaoLiberar();
+          }
+
+          btnConfirmar.addEventListener('click', () => {
+            toggleConfirmacaoDevolucao(row, valorInput, btnConfirmar, desc);
+          });
+
+          row.innerHTML = `<span class="venc-label">Valor por Kg:</span>`;
+          row.appendChild(valorInput);
+          row.appendChild(btnConfirmar);
+
+          blocoDesc.appendChild(row);
+          calcularValorTotal(valorKg);
+          blocoDesc.appendChild(valorTotalDesc);
+        } else if (desc.motivo === 'Compra de Material') {
+          const row = document.createElement('div');
+          row.className = 'vencimento-row';
+          row.innerHTML = `
+            <span class="venc-label">Valor por Kg:</span>
+            <span style="font-weight: bold;">${formatarMoeda(valorKg)}</span>
+          `;
+          blocoDesc.appendChild(row);
+
+          const valorTotalDesc = document.createElement('p');
+          const total = Number(desc.peso_calculado || 0) * valorKg;
+          valorTotalDesc.innerHTML = `<strong>Valor total:</strong> <span style="color:#b12e2e; font-weight: bold;">${formatarMoeda(total)}</span>`;
+          blocoDesc.appendChild(valorTotalDesc);
         }
-      }, 200);
+
+        blocoDesc.style.marginTop = '20px';
+        blocoDesc.style.padding = '12px 16px';
+        blocoDesc.style.borderRadius = '8px';
+        blocoDesc.style.background = '#fde4e1';
+        blocoDesc.style.border = '1px solid #e66';
+        form.appendChild(blocoDesc);
+
+        const blocoImagens = document.createElement('div');
+        blocoImagens.className = 'bloco-tickets-comerciais';
+        blocoImagens.style.margin = '12px 0 20px 0';
+        blocoImagens.style.display = 'flex';
+        blocoImagens.style.flexWrap = 'wrap';
+        blocoImagens.style.gap = '20px';
+
+        if (desc.ticket_devolucao || desc.ticket_compra) {
+          const idImg = `ticket-desc-${id}-${idx}`;
+          const tipo = desc.ticket_devolucao ? 'Devolução' : 'Compra';
+          const ticket = desc.ticket_devolucao || desc.ticket_compra;
+          const imgDiv = document.createElement('div');
+          imgDiv.innerHTML = `
+            <label style="font-weight:bold;">Ticket ${tipo}:</label><br>
+            <img id="${idImg}" src="/uploads/tickets/${ticket}" alt="Ticket ${tipo}" class="ticket-balanca">
+          `;
+          blocoImagens.appendChild(imgDiv);
+          setTimeout(() => adicionarZoomImagem(idImg), 100);
+        }
+
+        if (pedido.ticket_balanca) {
+          const idImgPedido = `ticket-pedido-${id}-${idx}`;
+          const imgDivPedido = document.createElement('div');
+          imgDivPedido.innerHTML = `
+            <label style="font-weight:bold;">Ticket Pesagem do Pedido:</label><br>
+            <img id="${idImgPedido}" src="/uploads/tickets/${pedido.ticket_balanca}" alt="Ticket Pedido" class="ticket-balanca">
+          `;
+          blocoImagens.appendChild(imgDivPedido);
+          setTimeout(() => adicionarZoomImagem(idImgPedido), 100);
+        }
+
+        form.appendChild(blocoImagens);
+      });
     }
 
       const separador = document.createElement('div');
@@ -229,8 +431,16 @@ async function carregarPedidosFinanceiro() {
     const containerCinza = document.createElement('div');
     containerCinza.className = 'resumo-financeiro';
 
-    // Exibir condição para pagamento à vista
-    if (pedido.condicao_pagamento_avista) {
+    if (
+      pedido.condicao_pagamento_avista &&
+      pedido.prazos_pagamento?.length &&
+      pedido.prazos_pagamento.some((dataVencimento, index) => {
+        const prazoOriginal = pedido.prazos_pagamento[index];
+        const dataColeta = new Date(pedido.data_coleta).toDateString();
+        const dataVenc = new Date(prazoOriginal).toDateString();
+        return dataVenc === dataColeta;
+      })
+    ) {
       const blocoCondicao = document.createElement('div');
       blocoCondicao.className = 'obs-pedido';
       blocoCondicao.innerHTML = `
@@ -239,60 +449,33 @@ async function carregarPedidosFinanceiro() {
       containerCinza.appendChild(blocoCondicao);
     }
 
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
-    if (pedido.materiais && pedido.materiais.length) {
-      codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-        const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-        let cod = (item.codigo_fiscal || '').toUpperCase();
-        if (!cod) cod = '(não informado)';
-        if (cod === "PERSONALIZAR") cod = "Personalizado";
-        const nomeProduto = item.nome_produto ? ` (${item.nome_produto})` : '';
-        let descontosKg = 0;
-        if (item.descontos?.length) {
-          descontosKg = item.descontos.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-        }
-        const pesoFinalNum = (Number(item.peso_carregado) || 0) - descontosKg;
-        const totalCom = pesoFinalNum * valorComNota;
-        const totalSem = pesoFinalNum * valorSemNota;
-        totalComNota += totalCom;
-        totalSemNota += totalSem;
+    // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
+const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
+  const peso = Number(d.peso_calculado || 0);
+  const valorKg = Number(d.valor_unitario || 0);
+  return soma + (peso * valorKg);
+}, 0);
 
-        return `
-          <div style="background:#eef2f7;padding:8px 16px 8px 10px; border-radius:6px; margin-top:8px; margin-bottom:2px; font-size:15px; color:#1e2637; font-weight:600;">
-            <span class="etiqueta-codigo-fiscal">
-              <strong>Código Fiscal: ${cod}</strong> |
-              <strong>Com nota:</strong> ${formatarMoeda(valorComNota)}/kg |
-              <strong>Sem nota:</strong> ${formatarMoeda(valorSemNota)}/kg |
-              <i class="fa fa-file-invoice"></i> <strong>Total com nota:</strong> <span style="color:#225c20">${formatarMoeda(totalCom)}</span> |
-              <i class="fa fa-ban"></i> <strong>Total sem nota:</strong> <span style="color:#b12e2e">${formatarMoeda(totalSem)}</span>
-              <span style="margin-left:10px;color:#777;font-size:14px;">${nomeProduto}</span>
-            </span>
-          </div>
-        `;
-      }).join('');
+// 🔧 Valor total da venda com desconto aplicado
+const totalVenda = totalComNota + totalSemNota - totalDescontosComerciais;
+const totalVendaFmt = formatarMoeda(totalVenda);
+const numVencimentos = pedido.prazos_pagamento?.length || 1;
+
+   function calcularValoresVencimentos(valorTotal) {
+  let parcelas = [];
+  let base = Math.floor((valorTotal * 100) / numVencimentos) / 100;
+  let totalParcial = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    if (i < numVencimentos - 1) {
+      parcelas.push(base);
+      totalParcial += base;
+    } else {
+      let ultima = (valorTotal - totalParcial);
+      parcelas.push(ultima);
     }
-
-    const totalVenda = totalComNota + totalSemNota;
-    const totalVendaFmt = formatarMoeda(totalVenda);
-    const numVencimentos = pedido.prazos_pagamento?.length || 1;
-
-    function calcularValoresVencimentos() {
-      let parcelas = [];
-      let base = Math.floor((totalVenda * 100) / numVencimentos) / 100;
-      let totalParcial = 0;
-      for (let i = 0; i < numVencimentos; i++) {
-        if (i < numVencimentos - 1) {
-          parcelas.push(base);
-          totalParcial += base;
-        } else {
-          let ultima = (totalVenda - totalParcial);
-          parcelas.push(ultima);
-        }
-      }
-      return parcelas;
-    }
+  }
+  return parcelas;
+}
 
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
@@ -304,104 +487,173 @@ async function carregarPedidosFinanceiro() {
 
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
     const inputs = [];
-    let valoresPadrao = calcularValoresVencimentos();
+    let valoresPadrao = calcularValoresVencimentos(totalVenda);
+
+    function atualizarResumoFinanceiro() {
+  let totalComNotaNovo = 0;
+  let totalSemNotaNovo = 0;
+
+  pedido.materiais?.forEach(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    totalComNotaNovo += pesoFinal * valorComNota;
+    totalSemNotaNovo += pesoFinal * valorSemNota;
+  });
+
+  const totalDescontos = descontosPedido.reduce((soma, d) => {
+    const peso = Number(d.peso_calculado || 0);
+    const valorKg = Number(d.valor_unitario || 0);
+    return soma + (peso * valorKg);
+  }, 0);
+
+  const totalFinalVenda = totalComNotaNovo + totalSemNotaNovo - totalDescontos;
+  const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
+
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
+
+  valoresPadrao = calcularValoresVencimentos(totalFinalVenda);
+
+  renderizarVencimentos(valoresPadrao);
+  atualizarBotaoLiberar();
+}
 
     function renderizarVencimentos(valores) {
-      vencContainer.innerHTML = '';
-      inputs.length = 0;
+  vencContainer.innerHTML = '';
+  inputs.length = 0;
 
-      for (let i = 0; i < numVencimentos; i++) {
-        const dt = new Date(pedido.prazos_pagamento[i]);
-        const ok = !isNaN(dt.getTime());
-        const valorFmt = valores[i]?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00';
+  for (let i = 0; i < numVencimentos; i++) {
+    const dt = new Date(pedido.prazos_pagamento[i]);
+    const ok = !isNaN(dt.getTime());
+    const valorRaw = Number(valores[i] || 0);
+    const valorFmt = valorRaw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-        const row = document.createElement('div');
-        row.className = 'vencimento-row';
-        row.dataset.confirmado = 'false';
-        row.innerHTML = `
-          <span class="venc-label">Vencimento ${i + 1}</span>
-          <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
-          <input type="text" value="${valorFmt}" ${i === 2 ? 'disabled' : ''} />
-          <button type="button">✓</button>
-        `;
+    const row = document.createElement('div');
+    row.className = 'vencimento-row';
+    row.dataset.confirmado = 'false';
+    row.innerHTML = `
+      <span class="venc-label">Vencimento ${i + 1}</span>
+      <span class="venc-data">${ok ? formatarData(dt) : 'Data inválida'}</span>
+      <input type="text" value="${valorFmt}" />
+      <button type="button">✓</button>
+    `;
 
-        const inp = row.querySelector('input');
-        const btn = row.querySelector('button');
-        inputs[i] = inp;
+    const inp = row.querySelector('input');
+    const btn = row.querySelector('button');
+    inputs[i] = inp;
 
-        // Máscara de moeda no input
-        inp.addEventListener('input', () => {
-          let valor = inp.value.replace(/\D/g, '');
-          valor = (parseInt(valor, 10) / 100).toFixed(2);
-          inp.value = parseFloat(valor).toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-        });
+    inp.addEventListener('input', () => {
+      let valor = inp.value.replace(/\D/g, '');
+      valor = (parseInt(valor, 10) / 100).toFixed(2);
+      inp.value = parseFloat(valor).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    });
 
-         inp.addEventListener('blur', () => {
-          const v1 = parseFloat(inputs[0].value.replace(/\./g, '').replace(',', '.')) || 0;
-          const v2 = parseFloat(inputs[1]?.value.replace(/\./g, '').replace(',', '.')) || 0;
+    inp.addEventListener('blur', atualizarBotaoLiberar);
 
-          if (i === 0 && numVencimentos === 3) {
-            const restante = Math.max(0, totalVenda - v1);
-            const metade = restante / 2;
-            inputs[1].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            inputs[2].value = metade.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-          } else if (i === 1 && numVencimentos === 3) {
-            const restante = Math.max(0, totalVenda - v1 - v2);
-            inputs[2].value = restante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-          }
+    const etiquetaConfirmado = document.createElement('span');
+    etiquetaConfirmado.className = 'etiqueta-valor-item';
+    etiquetaConfirmado.textContent = 'CONFIRMADO';
+    etiquetaConfirmado.style.cursor = 'pointer';
 
-          atualizarBotaoLiberar();
-        });
+    vencContainer.appendChild(row);
+  
+function toggleConfirmacao() {
+  const raw = inp.value.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(raw);
+  let rowErr = row.querySelector('.row-error');
+  if (!rowErr) {
+    rowErr = document.createElement('div');
+    rowErr.className = 'row-error';
+    rowErr.style.color = 'red';
+    rowErr.style.fontSize = '13px';
+  }
 
-        const etiquetaConfirmado = document.createElement('span');
-        etiquetaConfirmado.className = 'etiqueta-valor-item';
-        etiquetaConfirmado.textContent = 'CONFIRMADO';
-        etiquetaConfirmado.style.cursor = 'pointer';
+  if (isNaN(num) || num <= 0) {
+    rowErr.textContent = 'Valor inválido.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
 
-        function toggleConfirmacao() {
-          const raw = inp.value.replace(/\./g, '').replace(',', '.');
-          const num = parseFloat(raw);
+  const isConf = row.dataset.confirmado === 'true';
 
-          let rowErr = row.querySelector('.row-error');
-          if (!rowErr) {
-            rowErr = document.createElement('div');
-            rowErr.className = 'row-error';
-            rowErr.style.color = 'red';
-            rowErr.style.fontSize = '13px';
-          }
+  // Pega o total da venda exibido na tela
+  const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
+  const totalVendaAtual = tagTotalVenda
+    ? parseFloat(tagTotalVenda.textContent.replace(/[^\d,]/g, '').replace(',', '.'))
+    : 0;
 
-          if (isNaN(num) || num <= 0) {
-            rowErr.textContent = 'Valor inválido.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
+  // Calcula total já confirmado + esse que o usuário está tentando confirmar
+  const valoresConfirmados = [];
+  const indicesNaoConfirmados = [];
+  let totalConfirmado = 0;
 
-          if (num > totalVenda) {
-            rowErr.textContent = 'Valor excede o total da venda.';
-            if (!row.contains(rowErr)) row.appendChild(rowErr);
-            inp.focus();
-            return;
-          }
+  for (let j = 0; j < inputs.length; j++) {
+    const rowAtual = inputs[j].closest('.vencimento-row');
+    const confirmado = rowAtual.dataset.confirmado === 'true';
+    const valor = parseFloat(inputs[j].value.replace(/\./g, '').replace(',', '.')) || 0;
 
-          if (row.contains(rowErr)) row.removeChild(rowErr);
+    if (row === rowAtual && !isConf) {
+      // Estamos tentando confirmar este agora
+      totalConfirmado += num;
+    } else if (confirmado) {
+      totalConfirmado += valor;
+    } else {
+      indicesNaoConfirmados.push(j);
+    }
+  }
 
-          const isConf = row.dataset.confirmado === 'true';
-          if (!isConf) {
-            row.dataset.confirmado = 'true';
-            inp.disabled = true;
-            btn.replaceWith(etiquetaConfirmado);
-          } else {
-            row.dataset.confirmado = 'false';
-            if (i !== 2) inp.disabled = false;
-            etiquetaConfirmado.replaceWith(btn);
-          }
+  if (!isConf && totalConfirmado > totalVendaAtual + 0.01) {
+    rowErr.textContent = 'A soma dos vencimentos excede o valor total da venda.';
+    if (!row.contains(rowErr)) row.appendChild(rowErr);
+    inp.focus();
+    return;
+  }
 
-          atualizarBotaoLiberar();
-        }
+  if (row.contains(rowErr)) row.removeChild(rowErr);
+
+  if (!isConf) {
+    row.dataset.confirmado = 'true';
+    inp.disabled = true;
+    btn.replaceWith(etiquetaConfirmado);
+  } else {
+    row.dataset.confirmado = 'false';
+    inp.disabled = false;
+    etiquetaConfirmado.replaceWith(btn);
+  }
+
+  // Recalcular vencimentos restantes
+  const valorRestante = totalVendaAtual - totalConfirmado;
+  const qtdNaoConfirmados = indicesNaoConfirmados.length;
+
+  if (qtdNaoConfirmados > 0) {
+    const base = Math.floor((valorRestante * 100) / qtdNaoConfirmados) / 100;
+    let acumulado = 0;
+
+    indicesNaoConfirmados.forEach((idx, i) => {
+      let valorAtual;
+      if (i < qtdNaoConfirmados - 1) {
+        valorAtual = base;
+        acumulado += base;
+      } else {
+        valorAtual = valorRestante - acumulado;
+      }
+      inputs[idx].value = valorAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    });
+  }
+
+  atualizarBotaoLiberar();
+}
 
         btn.addEventListener('click', toggleConfirmacao);
         etiquetaConfirmado.addEventListener('click', toggleConfirmacao);
@@ -409,43 +661,38 @@ async function carregarPedidosFinanceiro() {
       }
     }
 
-    function resetarVencimentosPadrao() {
-      valoresPadrao = calcularValoresVencimentos();
-      renderizarVencimentos(valoresPadrao);
-      atualizarBotaoLiberar();
-    }
+   function resetarVencimentosPadrao() {
+  atualizarResumoFinanceiro(); // isso já chama renderizarVencimentos internamente
+}
 
-    function atualizarBotaoLiberar() {
-      const rows = containerCinza.querySelectorAll('.vencimento-row');
-      let soma = 0;
-      rows.forEach((r) => {
-        const val = parseFloat(r.querySelector('input').value.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(val)) soma += val;
-      });
+   function atualizarBotaoLiberar() {
+  let soma = 0;
+  for (let i = 0; i < numVencimentos; i++) {
+    let valor = inputs[i].value.replace(/\D/g, '');
+    valor = parseInt(valor, 10) / 100;
+    soma += valor;
+  }
 
-      const erroEl = containerCinza.querySelector('.venc-soma-error');
-      if (Math.abs(soma - totalVenda) > 0.005) {
-        erroEl.textContent = `A soma dos vencimentos (R$ ${soma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) difere do total R$ ${totalVendaFmt}.`;
-      } else {
-        erroEl.textContent = '';
-      }
+  // Usa o novo total atualizado pela função atualizarResumoFinanceiro
+  const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
+  const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
 
-      const btnFin = form.querySelector('.btn-registrar');
-      if (btnFin) btnFin.disabled = Math.abs(soma - totalVenda) > 0.005;
-    }
+  const erro = document.querySelector('.erro-vencimentos');
+  const liberador = document.querySelector('#liberar-btn');
+
+  if (Math.abs(soma - totalVendaNum) > 0.02) {
+    erro.style.display = 'block';
+    erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
+    liberador.disabled = true;
+  } else {
+    erro.style.display = 'none';
+    erro.textContent = '';
+    liberador.disabled = false;
+  }
+}
 
     renderizarVencimentos(valoresPadrao);
-
     form.appendChild(containerCinza);
-
-if (pedido.observacoes_setor && pedido.observacoes_setor.length) {
-  const obsFinanceiro = document.createElement('div');
-  obsFinanceiro.className = 'obs-pedido';
-  obsFinanceiro.innerHTML = `
-    <strong>Observações:</strong> ${pedido.observacoes_setor.join('<br>')}
-  `;
-  containerCinza.insertBefore(obsFinanceiro, containerCinza.firstChild);
-}
 
     const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
     if (valorTotalTag) {
@@ -468,12 +715,10 @@ if (pedido.observacoes_setor && pedido.observacoes_setor.length) {
 
     card.appendChild(form);
 
-const podeExecutar = ['Em Análise pelo Financeiro', 'Financeiro'];
-
-header.addEventListener('click', () => {
-  if (!podeExecutar.includes(pedido.status)) return;
-  form.style.display = form.style.display === 'block' ? 'none' : 'block';
-});
+    header.addEventListener('click', () => {
+      if (pedido.status !== 'Em Análise pelo Financeiro') return;
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    });
 
     lista.appendChild(card);
   });
@@ -500,9 +745,78 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
   }
 }
 
+function adicionarZoomImagem(idImagem) {
+  const img = document.getElementById(idImagem);
+  if (!img) return;
+
+  img.addEventListener('click', (event) => {
+    event.stopPropagation();
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+
+    const modalImg = document.createElement('img');
+    modalImg.src = img.src;
+    modalImg.style.maxWidth = '90vw';
+    modalImg.style.maxHeight = '90vh';
+    modalImg.style.objectFit = 'contain';
+    modalImg.style.borderRadius = '8px';
+    modalImg.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    modalImg.style.cursor = 'zoom-in';
+    modalImg.style.transition = 'transform 0.3s ease';
+
+    let zoomed = false;
+
+    modalImg.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = modalImg.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      const percentX = (offsetX / rect.width) * 100;
+      const percentY = (offsetY / rect.height) * 100;
+
+      if (!zoomed) {
+        modalImg.style.transformOrigin = `${percentX}% ${percentY}%`;
+        modalImg.style.transform = 'scale(2.5)';
+        modalImg.style.cursor = 'zoom-out';
+        zoomed = true;
+      } else {
+        modalImg.style.transform = 'scale(1)';
+        modalImg.style.cursor = 'zoom-in';
+        zoomed = false;
+      }
+    });
+
+    const closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '20px';
+    closeBtn.style.right = '30px';
+    closeBtn.style.fontSize = '40px';
+    closeBtn.style.color = '#fff';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      document.body.removeChild(overlay);
+    };
+
+    overlay.appendChild(modalImg);
+    overlay.appendChild(closeBtn);
+    document.body.appendChild(overlay);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
-
   const filtro = document.getElementById('filtro-cliente');
   const ordenar = document.getElementById('ordenar');
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
