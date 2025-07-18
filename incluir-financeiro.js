@@ -89,6 +89,9 @@ async function carregarPedidosFinanceiro() {
     const card = document.createElement('div');
     card.className = 'card';
 
+    const card = document.createElement('div');
+card.className = 'card';
+
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
