@@ -117,36 +117,90 @@ async function carregarPedidosFinanceiro() {
 
     let descontosPedido = [];
 
-    pedido.materiais?.forEach((item) => {
-      const descontosComerciais = item.descontos?.filter(d =>
-        d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
-      ) || [];
+pedido.materiais?.forEach((item) => {
+  const descontosComerciais = item.descontos?.filter(d =>
+    d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
+  ) || [];
 
-      descontosComerciais.forEach(desc => {
-        const nomeMat = normalizarTexto(desc.material);
-        let listaProdutos;
+  descontosComerciais.forEach(desc => {
+    const nomeMat = normalizarTexto(desc.material);
+    let listaProdutos;
 
-        if (desc.motivo === 'Compra de Material') {
-          listaProdutos = pedido.produtos_autorizados_venda || [];
-        } else if (desc.motivo === 'Devolução de Material') {
-          listaProdutos = pedido.produtos_autorizados_devolucao || [];
-        }
+    if (desc.motivo === 'Compra de Material') {
+      listaProdutos = pedido.produtos_autorizados_venda || [];
+    } else if (desc.motivo === 'Devolução de Material') {
+      listaProdutos = pedido.produtos_autorizados_devolucao || [];
+    }
 
-        const produtoReal = listaProdutos.find(p => {
-          const nomeProd = normalizarTexto(p.nome_produto);
-          return nomeProd === nomeMat;
-        });
-
-        descontosPedido.push({
-          ...desc,
-          nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-          valor_unitario: produtoReal?.valor_unitario || 0,
-          ticket_devolucao: desc.ticket_devolucao || null,
-          ticket_compra: desc.ticket_compra || null,
-          confirmado_valor_kg: false
-        });
-      });
+    const produtoReal = listaProdutos.find(p => {
+      const nomeProd = normalizarTexto(p.nome_produto);
+      return nomeProd === nomeMat;
     });
+
+    descontosPedido.push({
+      ...desc,
+      nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
+      valor_unitario: produtoReal?.valor_unitario || 0,
+      ticket_devolucao: desc.ticket_devolucao || null,
+      ticket_compra: desc.ticket_compra || null,
+      confirmado_valor_kg: false
+    });
+  });
+});
+
+// 🔵 BARRA FISCAL - após descontosPedido já existir
+let totalComNota = 0;
+let totalSemNota = 0;
+let codigosFiscaisBarraAzul = '';
+
+if (pedido.materiais && pedido.materiais.length) {
+  codigosFiscaisBarraAzul = pedido.materiais.map(item => {
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+
+    const descontosPalete = item.descontos?.filter(d =>
+      d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
+    ) || [];
+
+    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
+
+    // Soma os descontos comerciais aplicados a este material
+    const descontoComercialMaterial = descontosPedido
+      .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
+      .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+
+    // Totais brutos
+    let totalCom = pesoFinal * valorComNota;
+    let totalSem = pesoFinal * valorSemNota;
+
+    // Aplica desconto apenas na parte sem nota
+    if (totalSem >= descontoComercialMaterial) {
+      totalSem -= descontoComercialMaterial;
+    } else {
+      totalSem = 0;
+    }
+
+    totalComNota += totalCom;
+    totalSemNota += totalSem;
+
+    const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+    const precoComNotaFmt = formatarMoeda(valorComNota);
+    const precoSemNotaFmt = formatarMoeda(valorSemNota);
+    const totalComFmt = formatarMoeda(totalCom);
+    const totalSemFmt = formatarMoeda(totalSem);
+
+    return `
+      <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
+        ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
+        <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>${
+          totalSem > 0
+            ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
+            : ''
+        }
+      </div>
+    `;
+  }).join('');
+}
 
     // Exibe materiais
     pedido.materiais?.forEach((item) => {
@@ -394,60 +448,6 @@ async function carregarPedidosFinanceiro() {
       `;
       containerCinza.appendChild(blocoCondicao);
     }
-
-    let totalComNota = 0;
-    let totalSemNota = 0;
-    let codigosFiscaisBarraAzul = '';
-
-    if (pedido.materiais && pedido.materiais.length) {
-     codigosFiscaisBarraAzul = pedido.materiais.map(item => {
-  const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
-
-  const descontosPalete = item.descontos?.filter(d =>
-    d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
-  ) || [];
-
-  const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-  const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
-
-  // Soma os descontos comerciais para esse material
-  const descontoComercialMaterial = descontosPedido
-    .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
-    .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
-
-  // Totais brutos
-  let totalCom = pesoFinal * valorComNota;
-  let totalSem = pesoFinal * valorSemNota;
-
-  // Aplica desconto SOMENTE na parte sem nota
-  if (totalSem >= descontoComercialMaterial) {
-    totalSem -= descontoComercialMaterial;
-  } else {
-    // Desconto maior que parte sem nota → zera sem nota e mantém parte com nota cheia
-    totalSem = 0;
-  }
-
-  totalComNota += totalCom;
-  totalSemNota += totalSem;
-
-  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
-  const precoComNotaFmt = formatarMoeda(valorComNota);
-  const precoSemNotaFmt = formatarMoeda(valorSemNota);
-  const totalComFmt = formatarMoeda(totalCom);
-  const totalSemFmt = formatarMoeda(totalSem);
-
-  return `
-    <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
-      ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>${
-        totalSem > 0
-          ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
-          : ''
-      }
-    </div>
-  `;
-}).join('');
-}
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
