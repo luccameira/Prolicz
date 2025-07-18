@@ -734,17 +734,19 @@ function toggleConfirmacao() {
     }
 
     const blocoFin = document.createElement('div');
-    blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = `
-      <label>Observações do Financeiro:</label>
-      <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    `;
-    const taFin = blocoFin.querySelector('textarea');
-const btnFin = blocoFin.querySelector('button');
-btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-form.appendChild(blocoFin);
+blocoFin.className = 'bloco-fin';
+blocoFin.innerHTML = `
+  <label>Observações do Financeiro:</label>
+  <textarea placeholder="Digite suas observações aqui..."></textarea>
+  <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
+`;
 
+const taFin = blocoFin.querySelector('textarea');
+const btnFin = blocoFin.querySelector('button');
+
+btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
+
+form.appendChild(blocoFin);
 card.appendChild(form);
 
 header.addEventListener('click', () => {
@@ -753,7 +755,6 @@ header.addEventListener('click', () => {
 });
 
 lista.appendChild(card);
-});
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
   try {
