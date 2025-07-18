@@ -407,36 +407,62 @@ async function carregarPedidosFinanceiro() {
     const descontosPalete = item.descontos?.filter(d =>
       d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande'
     ) || [];
+    const descontoKgPalete = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKgPalete;
 
-    const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
-    const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
-
-    let pesoNaNota = 0;
+    // Total bruto
     let totalCom = 0;
     let totalSem = 0;
+    let pesoNaNota = 0;
+
+    // Total de desconto aplicado ao item
+    const descontosItem = [];
+
+    pedido.materiais?.forEach((mat) => {
+      if (mat.nome_produto === item.nome_produto) {
+        mat.descontos?.forEach(d => {
+          if (d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material') {
+            const peso = Number(d.peso_calculado || 0);
+            const valorKg = Number(d.valor_unitario || 0);
+            descontosItem.push(peso * valorKg);
+          }
+        });
+      }
+    });
+
+    const totalDesconto = descontosItem.reduce((acc, val) => acc + val, 0);
+
     let linhaInfoExtra = '';
 
     if (codigoFiscal.endsWith('1')) {
-      // Nota cheia: aplicar desconto no peso, manter valor cheio
-      pesoNaNota = (valorComNota > 0) ? (pesoFinal * (valorComNota + valorSemNota)) / valorComNota : 0;
-      totalCom = pesoNaNota * valorComNota;
+      // Nota cheia — ajusta o peso na NF para manter valor total da venda
+      pesoNaNota = pesoFinal;
+      const valorTotal = pesoFinal * valorComNota;
+      totalCom = valorTotal;
       totalSem = 0;
       totalComNota += totalCom;
-      linhaInfoExtra = `<span style="color: #2e7d32;">Peso na NF: ${formatarPesoComMilhar(pesoNaNota)} Kg</span> | <span style="color: #2e7d32;">${formatarMoeda(totalCom)}</span>`;
+      linhaInfoExtra = `
+        <span style="color: #2e7d32;">Peso na NF: ${formatarPesoComMilhar(pesoNaNota)} Kg</span> |
+        <span style="color: #2e7d32;">${formatarMoeda(totalCom)}</span>
+      `;
     } else {
-      // Meia nota ou sem nota: aplicar desconto apenas na parte sem nota
-      const metade = pesoFinal / 2;
+      // Meia nota ou sem nota — aplica o desconto na parte sem nota
       if (codigoFiscal.endsWith('2')) {
-        totalCom = metade * valorComNota;
-        totalSem = metade * valorSemNota;
+        const metadePeso = pesoFinal / 2;
+        totalCom = metadePeso * valorComNota;
+        totalSem = (metadePeso * valorSemNota) - totalDesconto;
+        totalSem = Math.max(0, totalSem); // evita valores negativos
         totalComNota += totalCom;
         totalSemNota += totalSem;
       } else if (codigoFiscal.endsWith('X') || codigoFiscal.endsWith('P')) {
         totalCom = 0;
-        totalSem = pesoFinal * valorSemNota;
+        totalSem = (pesoFinal * valorSemNota) - totalDesconto;
+        totalSem = Math.max(0, totalSem);
         totalSemNota += totalSem;
       } else {
+        // Código desconhecido → considera como 100% com nota
         totalCom = pesoFinal * valorComNota;
+        totalSem = 0;
         totalComNota += totalCom;
       }
 
