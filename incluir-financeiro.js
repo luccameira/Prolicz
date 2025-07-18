@@ -853,6 +853,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const ordenar = document.getElementById('ordenar');
   if (filtro) filtro.addEventListener('input', carregarPedidosFinanceiro);
   if (ordenar) ordenar.addEventListener('change', carregarPedidosFinanceiro);
-});
-
+ });
+}
 
