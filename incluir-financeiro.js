@@ -400,7 +400,6 @@ async function carregarPedidosFinanceiro() {
     let codigosFiscaisBarraAzul = '';
 
     // 🔄 NOVO BLOCO FISCAL COM VARIÁVEIS LOCAIS
-let codigosFiscaisBarraAzul = '';
 if (pedido.materiais && pedido.materiais.length) {
   codigosFiscaisBarraAzul = pedido.materiais.map(item => {
     const codFiscal = (item.codigo_fiscal || '').toUpperCase();
