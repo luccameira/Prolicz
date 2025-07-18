@@ -820,6 +820,66 @@ function adicionarZoomImagem(idImagem) {
   });
 }
 
+function montarBarraFiscal(pedido) {
+  const div = document.createElement('div');
+  div.className = 'barra-fiscal';
+
+  let totalComNota = 0;
+  let totalSemNota = 0;
+  let pesoNaNota = 0;
+  let possuiParteSemNota = false;
+
+  pedido.materiais.forEach(item => {
+    const desconto = pedido.descontos?.find(d => d.id_item === item.id);
+    const valorUnitario = Number(item.valor_unitario) || 0;
+    const peso = Number(item.peso_total_kg) || 0;
+    const tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
+
+    const { valorComNota, valorSemNota } = calcularValoresFiscais(item);
+    const subtotalComNota = valorComNota * peso;
+    const subtotalSemNota = valorSemNota * peso;
+
+    if (tipoCodigo.endsWith('2') || tipoCodigo.endsWith('X') || tipoCodigo.endsWith('P')) {
+      possuiParteSemNota = true;
+      let descontoAplicado = 0;
+
+      if (desconto?.motivo === 'Devolução de Material' || desconto?.motivo === 'Compra de Material') {
+        descontoAplicado = (Number(desconto.peso_calculado) || 0) * valorUnitario;
+      }
+
+      totalComNota += subtotalComNota;
+      totalSemNota += subtotalSemNota - descontoAplicado;
+    } else if (tipoCodigo.endsWith('1')) {
+      totalComNota += valorUnitario * peso;
+
+      if (pedido.descontos?.length) {
+        let totalDesconto = 0;
+
+        pedido.descontos.forEach(d => {
+          if (d.id_item === item.id && (d.motivo === 'Devolução de Material' || d.motivo === 'Compra de Material')) {
+            totalDesconto += (Number(d.peso_calculado) || 0) * valorUnitario;
+          }
+        });
+
+        const novoPesoFiscal = (valorUnitario * peso - totalDesconto) / valorUnitario;
+        pesoNaNota += novoPesoFiscal;
+      } else {
+        pesoNaNota += peso;
+      }
+    } else {
+      totalComNota += valorUnitario * peso;
+    }
+  });
+
+  const span = document.createElement('span');
+  span.innerHTML = possuiParteSemNota
+    ? `Com NF: <strong>${formatarMoeda(totalComNota)}</strong> &nbsp; Sem NF: <strong>${formatarMoeda(totalSemNota)}</strong>`
+    : `Peso na NF: <strong>${formatarPesoComMilhar(pesoNaNota)} Kg</strong>`;
+
+  div.appendChild(span);
+  return div;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosFinanceiro();
   const filtro = document.getElementById('filtro-cliente');
