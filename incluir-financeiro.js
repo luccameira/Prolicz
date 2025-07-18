@@ -410,13 +410,35 @@ async function carregarPedidosFinanceiro() {
   const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
   const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-  const totalCom = pesoFinal * valorComNota;
-  const totalSem = pesoFinal * valorSemNota;
+  // Cálculo base
+  let totalCom = pesoFinal * valorComNota;
+  let totalSem = pesoFinal * valorSemNota;
 
-  totalComNota += totalCom;
-  totalSemNota += totalSem;
+  // Aplicar descontos comerciais na parte sem nota
+  const descontosItem = descontosPedido.filter(d => {
+    const nome1 = normalizarTexto(d.nome_produto || '');
+    const nome2 = normalizarTexto(item.nome_produto || '');
+    return nome1 === nome2;
+  });
 
-  const codigoFmt = (item.codigo_fiscal || '').toUpperCase();
+  const totalDescontosItem = descontosItem.reduce((soma, d) => {
+    const peso = Number(d.peso_calculado || 0);
+    const valorKg = Number(d.valor_unitario || 0);
+    return soma + (peso * valorKg);
+  }, 0);
+
+  const tipoCodigo = (item.codigo_fiscal || '').toUpperCase();
+
+  if (tipoCodigo.endsWith('1')) {
+    // Nota cheia — desconto reflete no peso, não no valor
+    // NÃO altera totalCom nem totalSem aqui
+  } else if (tipoCodigo.endsWith('2') || tipoCodigo.endsWith('X') || tipoCodigo.endsWith('P')) {
+    // Meia nota ou sem nota — aplicar desconto apenas na parte sem nota
+    totalSem -= totalDescontosItem;
+    if (totalSem < 0) totalSem = 0;
+  }
+
+  const codigoFmt = tipoCodigo;
   const precoComNotaFmt = formatarMoeda(valorComNota);
   const precoSemNotaFmt = formatarMoeda(valorSemNota);
   const totalComFmt = formatarMoeda(totalCom);
