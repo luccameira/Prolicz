@@ -520,7 +520,7 @@ async function carregarPedidosFinanceiro() {
 
     lista.appendChild(card);
   });
-}
+
 function atualizarResumoFinanceiro() {
   let totalComNotaNovo = 0;
   let totalSemNotaNovo = 0;
