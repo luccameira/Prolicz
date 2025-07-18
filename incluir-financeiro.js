@@ -410,8 +410,22 @@ async function carregarPedidosFinanceiro() {
   const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
   const pesoFinal = (Number(item.peso_carregado) || 0) - descontoKg;
 
-  const totalCom = pesoFinal * valorComNota;
-  const totalSem = pesoFinal * valorSemNota;
+  // Soma os descontos comerciais para esse material
+  const descontoComercialMaterial = descontosPedido
+    .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
+    .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+
+  // Totais brutos
+  let totalCom = pesoFinal * valorComNota;
+  let totalSem = pesoFinal * valorSemNota;
+
+  // Aplica desconto SOMENTE na parte sem nota
+  if (totalSem >= descontoComercialMaterial) {
+    totalSem -= descontoComercialMaterial;
+  } else {
+    // Desconto maior que parte sem nota → zera sem nota e mantém parte com nota cheia
+    totalSem = 0;
+  }
 
   totalComNota += totalCom;
   totalSemNota += totalSem;
@@ -425,12 +439,15 @@ async function carregarPedidosFinanceiro() {
   return `
     <div class="barra-fiscal" style="font-weight: 600; padding: 4px 10px; font-size: 15px;">
       ${item.nome_produto}: <span style="color: black;">(${codigoFmt})</span>
-      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span> |
-      <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>
+      <span style="color: #2e7d32;">(${precoComNotaFmt}) ${totalComFmt}</span>${
+        totalSem > 0
+          ? ` | <span style="color: #c62828;">(${precoSemNotaFmt}) ${totalSemFmt}</span>`
+          : ''
+      }
     </div>
   `;
 }).join('');
-    }
+}
 
     // 🔧 Cálculo de total de descontos comerciais (compra e devolução)
 const totalDescontosComerciais = descontosPedido.reduce((soma, d) => {
