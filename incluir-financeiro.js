@@ -673,12 +673,13 @@ function toggleConfirmacao() {
     soma += valor;
   }
 
-  // Usa o novo total atualizado pela função atualizarResumoFinanceiro
   const totalVendaAtual = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
   const totalVendaNum = parseFloat(totalVendaAtual.replace(/\./g, '').replace(',', '.')) || 0;
 
   const erro = document.querySelector('.erro-vencimentos');
   const liberador = document.querySelector('#liberar-btn');
+
+  if (!erro || !liberador) return; // se algum dos dois for null, sai da função
 
   if (Math.abs(soma - totalVendaNum) > 0.02) {
     erro.style.display = 'block';
@@ -691,37 +692,45 @@ function toggleConfirmacao() {
   }
 }
 
-    renderizarVencimentos(valoresPadrao);
-    form.appendChild(containerCinza);
+renderizarVencimentos(valoresPadrao);
+form.appendChild(containerCinza);
 
-    const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
-    if (valorTotalTag) {
-      valorTotalTag.style.cursor = 'pointer';
-      valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
-      valorTotalTag.onclick = resetarVencimentosPadrao;
-    }
+const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
+if (valorTotalTag) {
+  valorTotalTag.style.cursor = 'pointer';
+  valorTotalTag.title = 'Clique para redefinir os vencimentos para o padrão';
+  valorTotalTag.onclick = resetarVencimentosPadrao;
+}
 
-    const blocoFin = document.createElement('div');
-    blocoFin.className = 'bloco-fin';
-    blocoFin.innerHTML = `
-      <label>Observações do Financeiro:</label>
-      <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
-    `;
-    const taFin = blocoFin.querySelector('textarea');
-    const btnFin = blocoFin.querySelector('button');
-    btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
-    form.appendChild(blocoFin);
+const blocoFin = document.createElement('div');
+blocoFin.className = 'bloco-fin';
+blocoFin.innerHTML = `
+  <label>Observações do Financeiro:</label>
+  <textarea placeholder="Digite suas observações aqui..."></textarea>
+  <button class="btn btn-registrar" id="liberar-btn" disabled>Confirmar Liberação do Cliente</button>
+`;
+const taFin = blocoFin.querySelector('textarea');
+const btnFin = blocoFin.querySelector('#liberar-btn');
 
-    card.appendChild(form);
+btnFin.addEventListener('click', () => {
+  console.log('clicou!');
+  confirmarFinanceiro(id, taFin.value);
+});
 
-    header.addEventListener('click', () => {
-      if (pedido.status !== 'Em Análise pelo Financeiro') return;
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+// Ativa o botão após renderizar o card
+btnFin.disabled = false;
 
-    lista.appendChild(card);
-  });
+form.appendChild(blocoFin);
+
+card.appendChild(form);
+
+header.addEventListener('click', () => {
+  if (pedido.status !== 'Em Análise pelo Financeiro') return;
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
+
+lista.appendChild(card);
+});
 }
 
 async function confirmarFinanceiro(pedidoId, observacoes) {
@@ -732,11 +741,13 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
       body: JSON.stringify({ observacoes_financeiro: observacoes })
     });
 
-    if (res.ok) {
+    if (!res.ok) throw new Error('Erro ao confirmar liberação.');
+
+    const data = await res.json();
+    if (data.sucesso) {
       alert('Cliente liberado com sucesso!');
       carregarPedidosFinanceiro();
     } else {
-      const data = await res.json();
       alert(data.erro || 'Erro ao confirmar liberação.');
     }
   } catch (err) {
