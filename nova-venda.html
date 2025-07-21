@@ -383,30 +383,39 @@ $("#setor-observacao").on("change", function() {
   $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
 });
 
-      $("#btn-confirmar-observacao").click(function(){
-        const setor = $("#setor-observacao").val();
-        const texto = $("#texto-observacao").val().trim();
+      $("#btn-confirmar-observacao").click(function () {
+  const setor = $("#setor-observacao").val();
+  const texto = $("#texto-observacao").val().trim();
 
-        if (!setor || !texto) {
-          alert("Selecione um setor e digite a observação.");
-          return;
-        }
+  if (!setor || !texto) {
+    alert("Selecione um setor e digite a observação.");
+    return;
+  }
 
-        if (editandoIndex !== null) {
-  observacoes[editandoIndex] = { setor, texto };
-} else {
-  setor.forEach(s => observacoes.push({ setor: s, texto }));
-}
+  if (editandoIndex !== null) {
+    const textoOriginal = $("#texto-observacao").data("texto-original");
 
-        renderizarObservacoes();
-        $("#setor-observacao").val("");
-        $("#texto-observacao").val("").prop("disabled", true);
-        $("#observacao-bloco").slideUp();
-        $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
-        editandoIndex = null;
-      });
+    // Atualiza TODAS as observações com mesmo texto original
+    observacoes = observacoes.map(obs => {
+      if (obs.texto === textoOriginal) {
+        return { setor: obs.setor, texto };
+      }
+      return obs;
+    });
 
-      function renderizarObservacoes() {
+    editandoIndex = null;
+  } else {
+    setor.forEach(s => observacoes.push({ setor: s, texto }));
+  }
+
+  renderizarObservacoes();
+  $("#setor-observacao").val("");
+  $("#texto-observacao").val("").prop("disabled", true).removeData("texto-original");
+  $("#observacao-bloco").slideUp();
+  $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
+});
+
+function renderizarObservacoes() {
   const agrupadas = [];
 
   observacoes.forEach((obs, index) => {
@@ -440,17 +449,18 @@ $("#setor-observacao").on("change", function() {
   $("#observacoes-confirmadas").html(html).show();
 }
 
-      window.editarObservacao = function(i, event) {
+window.editarObservacao = function (i, event) {
   if (event) event.preventDefault(); // impede o envio do formulário
   const obs = observacoes[i];
   $("#setor-observacao").val(obs.setor);
-  $("#texto-observacao").val(obs.texto).prop("disabled", false);
+  $("#texto-observacao").val(obs.texto).prop("disabled", false).data("texto-original", obs.texto);
   $("#observacao-bloco").slideDown();
   $("#btn-adicionar-observacao").hide();
   $("#btn-confirmar-observacao").text("Editar Observação");
   editandoIndex = i;
 };
-      window.excluirObservacao = function(i) {
+
+window.excluirObservacao = function (i) {
   if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
 
   const textoReferencia = observacoes[i].texto;
@@ -460,6 +470,7 @@ $("#setor-observacao").on("change", function() {
 
   renderizarObservacoes();
 };
+
       function formatarNumero(valor, inteiro = false) {
         const partes = inteiro
           ? [Math.floor(valor).toString()]
