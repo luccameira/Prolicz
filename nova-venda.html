@@ -587,71 +587,83 @@ window.excluirObservacao = function (i) {
       }
 
       $("#form-pedido").submit(function(e){
-        e.preventDefault();
+  e.preventDefault();
 
-        const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
-        if (!prSel.length) {
-          $(".error-prazos").show();
-          return;
-        }
-
-        const precisa = prSel.some(p => p.toLowerCase().includes("vista"));
-        const cond = $("#condicao_pagamento_a_vista").val();
-        if (precisa && !cond) {
-          alert('Marcou prazo "à vista", selecione a condição de pagamento.');
-          return;
-        }
-
-        // Só confirma se NÃO estiver editando uma observação
-        if (editandoIndex === null && !confirm("Você tem certeza que deseja gravar este pedido?")) return;
-
-        const dados = {
-          cliente_id: $("#cliente").val(),
-          empresa: $("#empresa").val(),
-          tipo: $("#pedido-para").val(),
-          data_coleta: $("#data-coleta").val(),
-          prazos: prSel,
-          condicao_pagamento_a_vista: cond,
-          observacoes: observacoes,
-          itens: []
-        };
-
-        $(".produto-bloco").each(function(){
-  const nome  = $(this).find(".select-produto").val();
-  const valor = parseMask($(this).find(".valor-por-quilo").val());
-  const peso  = parseMask($(this).find(".peso").val());
-  const tp    = $(this).find(".tipo-peso").val();
-  const cod   = $(this).find(".select-codigo-fiscal").val();
-  const vc    = parseMask($(this).find(".valor-com-nota").val());
-  const vs    = parseMask($(this).find(".valor-sem-nota").val());
-  const unidade = "kg";
-
-  if (nome && valor && peso) {
-    dados.itens.push({
-      nome_produto: nome,
-      valor_unitario: valor,
-      peso,
-      tipo_peso: tp,
-      codigo_fiscal: cod,
-      valor_com_nota: vc,
-      valor_sem_nota: vs,
-      unidade: unidade
-    });
+  const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
+  if (!prSel.length) {
+    $(".error-prazos").show();
+    return;
   }
-});
 
-        fetch("/api/pedidos", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(dados)
-        })
-        .then(r => r.json())
-        .then(r => {
-          if (r.mensagem) location.href = "vendas.html?sucesso=1";
-          else alert("Erro ao salvar o pedido.");
-        })
-        .catch(() => alert("Erro ao salvar o pedido."));
+  const precisa = prSel.some(p => p.toLowerCase().includes("vista"));
+  const cond = $("#condicao_pagamento_a_vista").val();
+  if (precisa && !cond) {
+    alert('Marcou prazo "à vista", selecione a condição de pagamento.');
+    return;
+  }
+
+  // Só confirma se NÃO estiver editando uma observação
+  if (editandoIndex === null && !confirm("Você tem certeza que deseja gravar este pedido?")) return;
+
+  const dados = {
+    cliente_id: $("#cliente").val(),
+    empresa: $("#empresa").val(),
+    tipo: $("#pedido-para").val(),
+    data_coleta: $("#data-coleta").val(),
+    prazos: prSel,
+    condicao_pagamento_a_vista: cond,
+    observacoes: observacoes,
+    itens: []
+  };
+
+  let erroPersonalizar = false;
+
+  $(".produto-bloco").each(function(){
+    const nome  = $(this).find(".select-produto").val();
+    const valor = parseMask($(this).find(".valor-por-quilo").val());
+    const peso  = parseMask($(this).find(".peso").val());
+    const tp    = $(this).find(".tipo-peso").val();
+    const cod   = $(this).find(".select-codigo-fiscal").val();
+    const vc    = parseMask($(this).find(".valor-com-nota").val());
+    const vs    = parseMask($(this).find(".valor-sem-nota").val());
+    const unidade = "kg";
+
+    if (cod === "Personalizar" && (!vc || !vs)) {
+      erroPersonalizar = true;
+      return false; // interrompe o each
+    }
+
+    if (nome && valor && peso) {
+      dados.itens.push({
+        nome_produto: nome,
+        valor_unitario: valor,
+        peso,
+        tipo_peso: tp,
+        codigo_fiscal: cod,
+        valor_com_nota: vc,
+        valor_sem_nota: vs,
+        unidade: unidade
       });
+    }
+  });
+
+  if (erroPersonalizar) {
+    alert("Para códigos 'Personalizar', os campos Valor com Nota e Valor sem Nota devem estar preenchidos.");
+    return;
+  }
+
+  fetch("/api/pedidos", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(dados)
+  })
+  .then(r => r.json())
+  .then(r => {
+    if (r.mensagem) location.href = "vendas.html?sucesso=1";
+    else alert("Erro ao salvar o pedido.");
+  })
+  .catch(() => alert("Erro ao salvar o pedido."));
+});
     });
 // Mostra ou esconde o campo condicional de pagamento à vista conforme checkbox
 $(document).on("change", "#prazosCheckboxes input[type=checkbox]", function () {
