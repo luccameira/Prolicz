@@ -269,11 +269,51 @@ async function registrarPeso(pedidoId) {
   const arquivosExtras = [];
 
   blocos.forEach(bloco => {
-    const itemId = parseInt(bloco.getAttribute('data-item-id'));
-    const input = bloco.querySelector('input[type="text"]');
-    const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
+  const itemId = parseInt(bloco.getAttribute('data-item-id'));
+  const input = bloco.querySelector('input[type="text"]');
+  const valor = parseFloat(input.value.replace(/\./g, '').replace(',', '.'));
 
-    if (!isNaN(valor)) {
+  const grupos = bloco.querySelectorAll('.grupo-desconto');
+  for (let i = 0; i < grupos.length; i++) {
+    const grupo = grupos[i];
+    const motivo = grupo.querySelector('select')?.value;
+
+    if (motivo === 'Palete Pequeno' || motivo === 'Palete Grande') {
+      const campoQtd = grupo.querySelector(`#quantidade-${itemId}-${i}`);
+      const qtd = parseFloat(campoQtd?.value.replace(/\./g, '').replace(',', '.'));
+      if (!campoQtd || isNaN(qtd) || qtd <= 0) {
+        alert("Preencha a quantidade de todos os descontos aplicados antes de finalizar.");
+        return;
+      }
+    }
+
+    if (motivo === 'Devolução de Material' || motivo === 'Compra de Material') {
+      const campoMaterial = grupo.querySelector(`#material-${itemId}-${i}`);
+      const materialSelecionado = campoMaterial?.value;
+      const campoPeso = grupo.querySelector(`#peso-${itemId}-${i}`);
+      const peso = parseFloat(campoPeso?.value.replace(/\./g, '').replace(',', '.'));
+      const campoArquivo = grupo.querySelector(`#upload-${itemId}-${i}`);
+      const arquivo = campoArquivo?.files?.[0];
+
+      if (!materialSelecionado) {
+        alert("Preencha todos os campos obrigatórios dos descontos de material antes de finalizar.\n(Material não selecionado)");
+        return;
+      }
+
+      if (!campoPeso || isNaN(peso) || peso <= 0) {
+        alert("Preencha todos os campos obrigatórios dos descontos de material antes de finalizar.\n(Peso inválido)");
+        return;
+      }
+
+      if (!arquivo) {
+        alert("Preencha todos os campos obrigatórios dos descontos de material antes de finalizar.\n(Foto do ticket ausente)");
+        return;
+      }
+    }
+  }
+
+  if (!isNaN(valor)) {
+
       const descontos = [];
       const grupos = bloco.querySelectorAll('.grupo-desconto');
       grupos.forEach((grupo, i) => {
