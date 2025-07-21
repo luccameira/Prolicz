@@ -1,0 +1,351 @@
+/* tarefascarga.css - Estilo exclusivo para página de Carga e Descarga */
+
+body {
+  background-color: #e2e4e7;
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+}
+
+.content {
+  background-color: #e2e4e7;
+  margin-left: 280px;
+  padding: 100px 40px 40px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+
+.filtros-tarefa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 0 25px;
+}
+
+.filtros-tarefa label {
+  font-size: 16px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.filtros-tarefa input,
+.filtros-tarefa select {
+  width: 240px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 25px;
+  border-left: 8px solid #ffc107;
+  transition: background 0.2s;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  cursor: pointer;
+}
+
+.card-header .info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.card-header .info p {
+  font-size: 15px;
+  color: #555;
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 13px;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-amarelo {
+  background-color: #ffc107;
+  color: #1f1f1f;
+}
+
+.status-verde {
+  background-color: #e6f4ea;
+  color: #34a853;
+}
+
+.timeline-simples {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  padding: 28px 32px 12px;
+  background: #fff;
+  border-radius: 10px 10px 0 0;
+  min-width: 540px;
+}
+
+.timeline-bar-bg,
+.timeline-bar-fg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 42px;
+  height: 7px;
+  background: #e6e8ea;
+  border-radius: 3.5px;
+  z-index: 0;
+}
+
+.timeline-bar-fg {
+  background: #45b36b;
+  z-index: 1;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-step .dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid #e6e8ea;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 17px;
+}
+
+.timeline-step.done .dot {
+  border-color: #45b36b;
+  background: #45b36b;
+  color: #fff;
+}
+
+.timeline-step.active .dot {
+  border-color: #007bff;
+}
+
+.timeline-step .label {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+}
+
+.timeline-step .data {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+.formulario {
+  padding: 10px 25px 25px;
+}
+
+.material-bloco {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.material-bloco h4 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.material-bloco p {
+  font-size: 15px;
+  margin: 6px 0;
+}
+
+.linha-peso {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.linha-peso label {
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.linha-peso input {
+  width: 100%;
+}
+
+.btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  margin-top: 16px;
+}
+
+.btn-registrar {
+  background-color: #007bff;
+  color: white;
+}
+.btn-registrar:hover {
+  background-color: #0069d9;
+}
+
+.btn-desconto {
+  background-color: #ffc107;
+  color: #1f1f1f;
+}
+.btn-desconto:hover {
+  background-color: #e0a800;
+}
+
+.upload-ticket {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px dashed #ccc;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.upload-ticket label {
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+input[type="file"] {
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  color: #444;
+  width: 100%;
+  max-width: 360px;
+}
+
+input[type="file"]::file-selector-button {
+  background-color: #ffc107;
+  color: #1f1f1f;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: #e0a800;
+}
+
+.input-sem-seta::-webkit-inner-spin-button,
+.input-sem-seta::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-sem-seta {
+  -moz-appearance: textfield;
+  width: 100%;
+  max-width: 280px;
+  font-size: 14px;
+}
+
+/* === ESTILO DO BLOCO DE DESCONTO === */
+.grupo-desconto {
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  padding: 18px 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  position: relative;
+  padding-right: 40px; /* evita que o botão sobreponha o campo */
+}
+
+.grupo-desconto .fechar-desconto {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #333;
+  cursor: pointer;
+  font-weight: bold;
+  line-height: 1;
+  padding: 0;
+}
+
+.linha-desconto {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.coluna-motivo,
+.coluna-desconto {
+  display: flex;
+  flex-direction: column;
+}
+
+.coluna-motivo label,
+.coluna-desconto label {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.desconto-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.desconto-container input {
+  max-width: 280px; /* largura ajustada */
+}
+
+.sufixo-unidade {
+  font-size: 14px;
+  color: #555;
+  white-space: nowrap;
+}

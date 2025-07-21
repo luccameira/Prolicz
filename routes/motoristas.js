@@ -168,4 +168,3 @@ router.put('/:cpf/formulario', upload.fields([
 });
 
 module.exports = router;
-

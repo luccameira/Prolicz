@@ -2,116 +2,168 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Prolicz</title>
+  <title>Login</title>
+  <link rel="stylesheet" href="layout.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f6fa;
+      background-color: #f4f6f8;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
     }
 
     .login-container {
       background: white;
-      padding: 30px;
-      border-radius: 8px;
+      padding: 40px;
+      border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-
-    h1 {
+      width: 360px;
       text-align: center;
-      margin-bottom: 20px;
-      color: #333;
     }
 
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
+    h2 {
+      margin-bottom: 12px;
+      font-size: 22px;
     }
 
-    input {
+    .descricao {
+      font-size: 13px;
+      margin-bottom: 24px;
+      color: #555;
+    }
+
+    .input-group {
+      position: relative;
       width: 100%;
-      padding: 10px;
-      margin-top: 5px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      padding-right: 40px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .input-group .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-40%);
+      cursor: pointer;
+      color: #888;
+      font-size: 16px;
     }
 
     button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 10px;
-      background-color: #007bff;
-      color: white;
+      background-color: #ffc107;
       border: none;
-      border-radius: 4px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
+      width: 100%;
+      font-size: 15px;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    .topbar {
+      height: 60px;
+      background-color: #000;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 30px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .error {
-      color: red;
-      margin-top: 10px;
-      text-align: center;
+    .topbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      display: flex;
+      gap: 0;
+    }
+
+    .topbar .logo span:first-child {
+      color: #ffc107;
+    }
+
+    .topbar .logo span:last-child {
+      color: white;
     }
   </style>
 </head>
 <body>
+  <div class="topbar">
+    <div class="logo">
+      <span>PRO</span><span>NASA</span>
+    </div>
+  </div>
+
   <div class="login-container">
-    <h1>Login</h1>
-    <form id="login-form">
-      <label for="email">E-mail</label>
-      <input type="email" id="email" required>
-
-      <label for="senha">Senha</label>
-      <input type="password" id="senha" required>
-
+    <h2>Login</h2>
+    <p class="descricao">Seja bem-vindo(a), por gentileza, insira suas credenciais para acessar o sistema.</p>
+    <form id="form-login">
+      <div class="input-group">
+        <label for="usuario">E-mail</label>
+        <input type="text" id="usuario" placeholder="Digite seu e-mail" required />
+      </div>
+      <div class="input-group">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" placeholder="Digite sua senha" required />
+        <i class="fa-solid fa-eye toggle-password" onclick="toggleSenha(this)"></i>
+      </div>
       <button type="submit">Entrar</button>
-      <div id="mensagem-erro" class="error"></div>
     </form>
   </div>
 
   <script>
-    document.getElementById('login-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
-
-      try {
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, senha })
-        });
-
-        if (!response.ok) {
-          const erro = await response.json();
-          document.getElementById('mensagem-erro').textContent = erro.erro || 'Falha ao fazer login.';
-          return;
-        }
-
-        const data = await response.json();
-        localStorage.setItem('usuarioLogado', JSON.stringify(data.usuario));
-        window.location.href = 'dashboard.html';
-
-      } catch (error) {
-        console.error('Erro no login:', error);
-        document.getElementById('mensagem-erro').textContent = 'Erro ao conectar ao servidor.';
+    document.getElementById("form-login").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const usuario = document.getElementById("usuario").value.trim();
+      if (usuario) {
+        localStorage.setItem("nomeUsuario", usuario);
+        window.location.href = "dashboard.html";
+      } else {
+        alert("Digite o nome do usuário.");
       }
     });
+
+    function toggleSenha(icon) {
+      const campoSenha = document.getElementById("senha");
+      if (campoSenha.type === "password") {
+        campoSenha.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        campoSenha.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
   </script>
 </body>
 </html>

@@ -16,6 +16,8 @@
     h1 {
       font-size: 28px;
       margin-bottom: 25px;
+      /* removido text-transform para manter capitalização normal */
+      font-weight: 700;
     }
 
     .card {
@@ -30,22 +32,15 @@
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
-    .btn-adicionar {
-      background-color: #ffc107;
-      color: black;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-adicionar:hover {
-      background-color: #e0ac00;
+    .filtros {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
     }
 
     .input-wrapper {
@@ -61,7 +56,7 @@
       font-size: 14px;
     }
 
-    .input-wrapper .input-filtro {
+    .input-filtro {
       padding: 10px 14px 10px 34px;
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -82,6 +77,23 @@
       outline: none;
     }
 
+    .btn-adicionar {
+      background-color: #ffc107;
+      color: black;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: fit-content;
+      margin-bottom: 20px;
+    }
+
+    .btn-adicionar:hover {
+      background-color: #e0ac00;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -96,7 +108,8 @@
 
     th {
       background-color: #f9f9f9;
-      font-weight: 500;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
     tr:hover {
@@ -118,21 +131,22 @@
   <div class="main-content">
     <h1>Produtos</h1>
 
-    <div class="card">
-      <div class="top-actions">
-        <button class="btn-adicionar" onclick="window.location.href='novo-produto.html'">+ Adicionar Produto</button>
-        <div class="input-wrapper">
-          <i class="fa fa-search"></i>
-          <input type="text" id="filtroNome" class="input-filtro" placeholder="Buscar produto..." oninput="filtrarTabela()" />
-        </div>
-        <select id="ordenar" class="select-ordenar" onchange="carregarProdutos()">
-          <option value="mais_recente">Cadastro mais recente</option>
-          <option value="mais_antigo">Cadastro mais antigo</option>
-          <option value="nome_az">Nome (A-Z)</option>
-          <option value="nome_za">Nome (Z-A)</option>
-        </select>
+    <div class="filtros">
+      <div class="input-wrapper">
+        <i class="fa fa-search"></i>
+        <input type="text" id="filtroNome" class="input-filtro" placeholder="Buscar produto..." oninput="filtrarTabela()" />
       </div>
+      <select id="ordenar" class="select-ordenar" onchange="carregarProdutos()">
+        <option value="mais_recente">Cadastro mais recente</option>
+        <option value="mais_antigo">Cadastro mais antigo</option>
+        <option value="nome_az">Nome (A-Z)</option>
+        <option value="nome_za">Nome (Z-A)</option>
+      </select>
+    </div>
 
+    <button class="btn-adicionar" onclick="window.location.href='novo-produto.html'">+ Adicionar Produto</button>
+
+    <div class="card">
       <table>
         <thead>
           <tr>
@@ -153,42 +167,42 @@
   </div>
 
   <script>
-  let dadosProdutos = [];
+    let dadosProdutos = [];
 
-  async function carregarProdutos() {
-    try {
-      const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
-      const resposta = await fetch(`/api/produtos?ordenar=${ordem}`);
-      dadosProdutos = await resposta.json();
-      renderizarTabela(dadosProdutos);
-    } catch (erro) {
-      console.error('Erro ao carregar produtos:', erro);
+    async function carregarProdutos() {
+      try {
+        const ordem = document.getElementById('ordenar')?.value || 'mais_recente';
+        const resposta = await fetch(`/api/produtos?ordenar=${ordem}`);
+        dadosProdutos = await resposta.json();
+        renderizarTabela(dadosProdutos);
+      } catch (erro) {
+        console.error('Erro ao carregar produtos:', erro);
+      }
     }
-  }
 
-  function renderizarTabela(lista) {
-    const tabela = document.getElementById('tabela-produtos');
-    tabela.innerHTML = '';
-    lista.forEach(produto => {
-      const linha = document.createElement('tr');
-      linha.innerHTML = `
-        <td>${produto.nome}</td>
-        <td>${produto.unidade}</td>
-        <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
-      `;
-      tabela.appendChild(linha);
+    function renderizarTabela(lista) {
+      const tabela = document.getElementById('tabela-produtos');
+      tabela.innerHTML = '';
+      lista.forEach(produto => {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${produto.nome}</td>
+          <td>${produto.unidade}</td>
+          <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
+        `;
+        tabela.appendChild(linha);
+      });
+    }
+
+    function filtrarTabela() {
+      const filtro = document.getElementById('filtroNome').value.toLowerCase();
+      const filtrados = dadosProdutos.filter(p => p.nome.toLowerCase().includes(filtro));
+      renderizarTabela(filtrados);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarProdutos();
     });
-  }
-
-  function filtrarTabela() {
-    const filtro = document.getElementById('filtroNome').value.toLowerCase();
-    const filtrados = dadosProdutos.filter(p => p.nome.toLowerCase().includes(filtro));
-    renderizarTabela(filtrados);
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    carregarProdutos();
-  });
-</script>
+  </script>
 </body>
 </html>

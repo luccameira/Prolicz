@@ -2,6 +2,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🟡 Iniciando carregamento do layout...");
 
+  if (window.location.pathname.endsWith("login.html")) {
+    console.log("Página login.html detectada, não carregando topbar/layout.");
+    return;
+  }
+
   fetch("layout.html")
     .then(res => res.text())
     .then(layout => {
@@ -15,24 +20,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (topbar) {
         const topbarContainer = document.querySelector(".topbar");
-        if (topbarContainer) topbarContainer.innerHTML = topbar.innerHTML;
+        if (topbarContainer) {
+          topbarContainer.innerHTML = topbar.innerHTML;
+
+          // Botão ☰ para abrir/fechar sidebar
+          const botaoToggle = document.createElement("button");
+          botaoToggle.textContent = "☰";
+          botaoToggle.style.background = "transparent";
+          botaoToggle.style.color = "white";
+          botaoToggle.style.border = "none";
+          botaoToggle.style.fontSize = "24px";
+          botaoToggle.style.cursor = "pointer";
+          botaoToggle.style.marginRight = "20px";
+          botaoToggle.style.outline = "none";
+
+          botaoToggle.addEventListener("click", () => {
+            document.querySelector(".sidebar")?.classList.toggle("oculta");
+            document.querySelector(".main-content")?.classList.toggle("expandida");
+          });
+
+          const logo = topbarContainer.querySelector(".logo");
+          if (logo) logo.prepend(botaoToggle);
+        }
+
+        const nomeUsuario = localStorage.getItem("nomeUsuario");
+        if (nomeUsuario) {
+          const spanNome = document.createElement("span");
+          spanNome.textContent = nomeUsuario;
+          spanNome.style.marginRight = "12px";
+          spanNome.style.fontWeight = "bold";
+
+          const containerUsuario = topbarContainer.querySelector("div:last-child");
+          if (containerUsuario) {
+            containerUsuario.insertBefore(spanNome, containerUsuario.querySelector("a"));
+          }
+        }
       }
 
       if (sidebar) {
         const sidebarContainer = document.querySelector(".sidebar");
-        if (sidebarContainer) sidebarContainer.innerHTML = sidebar.innerHTML;
+        if (sidebarContainer) {
+          sidebarContainer.innerHTML = sidebar.innerHTML;
 
-        // Ativar o link da sidebar correspondente à página atual
-        const path = window.location.pathname;
-        const links = document.querySelectorAll(".sidebar a");
-        links.forEach(link => {
-          if (path.includes(link.getAttribute("href"))) {
-            link.classList.add("active");
+          // Corrigir link do menu "Usuários" se estiver errado
+          const linkUsuarios = sidebarContainer.querySelector('a[href="login.html"]');
+          if (linkUsuarios) {
+            linkUsuarios.setAttribute('href', 'usuarios.html');
           }
-        });
+
+          // Marcar como ativo o menu correspondente à página atual
+          const path = window.location.pathname;
+          sidebarContainer.querySelectorAll("a").forEach(link => {
+            if (path.includes(link.getAttribute("href"))) {
+              link.classList.add("active");
+            }
+          });
+        }
       }
 
-      // Disparar evento global indicando que o layout foi carregado
       document.dispatchEvent(new Event("layoutCarregado"));
     })
     .catch(err => {
@@ -40,5 +85,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-
-
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.addEventListener("click", function (e) {
+    if (e.target.textContent === "☰") {
+      setTimeout(() => {
+        document.querySelectorAll(".timeline-simples").forEach(container => {
+          animarLinhaProgresso(container);
+        });
+      }, 300);
+    }
+  });
+});

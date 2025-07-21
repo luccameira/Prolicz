@@ -6,45 +6,36 @@
   <link rel="stylesheet" href="layout.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <script defer src="incluir-layout.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
     .main-content { margin-left: 280px; padding: 100px 40px 40px; }
     form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
     label { font-weight: bold; margin-bottom: 5px; }
     input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    .produto-bloco {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 15px;
-      background: #f9f9f9;
-      position: relative;
-    }
+    .select2-container { width: 100% !important; }
+    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; position: relative; }
     .produto-bloco .form-group { margin-bottom: 12px; }
     .btn { margin: 20px auto; padding: 10px 20px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; display: block; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-remove { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .btn-remove:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-voltar { margin-bottom: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; }
     .btn-voltar:hover { background: #5a6268; }
+
     #prazosCheckboxes label { display: flex; align-items: center; margin: 4px 0; }
     #prazosCheckboxes input { margin-right: 8px; }
     .error-prazos { color: red; display: none; font-size: 13px; }
+
     .grupo-personalizar { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
     .error-soma { color: red; display: none; font-size: 13px; margin-top: 4px; }
-    .select-codigo-fiscal {
-      appearance: menulist !important;
-      background-color: #fff !important;
-      color: #000 !important;
-      pointer-events: auto !important;
-    }
-    .select-codigo-fiscal option {
-      color: #000 !important;
-      background-color: #fff !important;
-    }
+
     .valor-total-previsto {
       background: #fffbe6;
       border: 1.5px solid #ffe066;
@@ -60,6 +51,7 @@
       max-width: 380px;
       flex-wrap: nowrap;
     }
+
     .valor-total-previsto #valor-total {
       font-size: 22px;
       font-weight: bold;
@@ -69,12 +61,91 @@
       white-space: nowrap;
       display: inline-block;
     }
+
     .input-nao-editavel {
       background: #ececec !important;
       color: #495057 !important;
       border: 1.5px solid #d1d1d1 !important;
       cursor: not-allowed;
       font-weight: bold;
+      opacity: 0.6;
+    }
+    textarea:disabled {
+      background-color: #e0e0e0;
+      color: #666;
+    }
+    #observacao-bloco {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: none;
+  position: relative;
+}
+
+.select2-container {
+  z-index: auto !important;
+}
+
+.select2-container--open + #texto-observacao {
+  margin-top: 150px !important; /* não funciona porque o campo não está logo após o select */
+}
+.select2-container {
+  z-index: 2 !important;
+}
+
+    .btn-fechar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: red;
+      color: white;
+      border: none;
+      font-size: 16px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #observacoes-confirmadas {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e6f7e6;
+      border: 1px solid #c3e6cb;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .obs-item {
+      margin-bottom: 8px;
+      font-weight: 500;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .obs-texto {
+      flex-grow: 1;
+    }
+
+    .obs-acoes {
+      white-space: nowrap;
+      margin-left: 10px;
+    }
+
+    .obs-acoes button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 4px;
+    }
+
+    .btn-azul {
+      background-color: #007bff;
+      color: white;
     }
   </style>
 </head>
@@ -85,6 +156,8 @@
     <h1>Novo Pedido</h1>
     <a href="vendas.html" class="btn-voltar">Voltar</a>
     <form id="form-pedido">
+
+      <!-- Empresa -->
       <div class="form-group">
         <label for="empresa">Empresa</label>
         <select id="empresa" required>
@@ -93,14 +166,22 @@
           <option value="pronasa">Pronasa</option>
         </select>
       </div>
+
+      <!-- Cliente -->
       <div class="form-group">
         <label for="cliente">Cliente</label>
-        <select id="cliente" required></select>
+        <select id="cliente" required style="width: 100%">
+          <option value="">Selecione</option>
+        </select>
       </div>
+
+      <!-- Data Prevista -->
       <div class="form-group">
         <label for="data-coleta">Data Prevista da Coleta</label>
         <input type="text" id="data-coleta" required />
       </div>
+
+      <!-- Pedido para -->
       <div class="form-group">
         <label for="pedido-para">Pedido para</label>
         <select id="pedido-para" required>
@@ -109,181 +190,409 @@
           <option value="entregar">Entregar</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Prazos de Pagamento</label>
+
+      <!-- Prazos de Pagamento -->
+      <div class="form-group" id="grupo-prazos" style="display: none;">
         <div id="prazosCheckboxes"></div>
+        <div id="condicao-a-vista" style="display:none; margin-top: 10px;">
+          <label for="condicao_pagamento_a_vista"><strong>Condição para pagamento à vista:</strong></label>
+          <select id="condicao_pagamento_a_vista">
+            <option value="">Selecione</option>
+            <option value="Liberar caminhão">Liberar caminhão</option>
+            <option value="Aguardar pagamento">Aguardar pagamento</option>
+          </select>
+        </div>
         <p class="error-prazos">Selecione ao menos um prazo.</p>
       </div>
+
+      <!-- Produtos -->
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
+
+      <!-- Valor Total Previsto -->
       <div id="valor-total-previsto" class="valor-total-previsto">
         Valor total previsto do pedido: <span id="valor-total">R$ 0,00</span>
       </div>
-      <div class="form-group">
-        <label for="observacao">Observação</label>
-        <textarea id="observacao"></textarea>
+
+      <!-- Botão azul de adicionar observação -->
+      <button type="button" id="btn-adicionar-observacao" class="btn btn-azul">Adicionar Observação</button>
+
+      <!-- Área de Observação -->
+      <div id="observacao-bloco">
+        <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
+
+        <div class="form-group">
+          <label for="setor-observacao">Setor</label>
+          <select id="setor-observacao" multiple="multiple" style="width: 100%;">
+  <option value="Todos">Todos</option>
+  <option value="Portaria">Portaria</option>
+  <option value="Carga e Descarga">Carga e Descarga</option>
+  <option value="Conferência de Peso">Conferência de Peso</option>
+  <option value="Financeiro">Financeiro</option>
+  <option value="Emissão de NF">Emissão de NF</option>
+</select>
+<script>
+  $(document).ready(function() {
+    $('#setor-observacao').select2({
+      placeholder: "Selecione os setores",
+      closeOnSelect: false,
+      width: 'resolve'
+    });
+  });
+</script>
+        </div>
+
+        <div class="form-group">
+          <label for="texto-observacao">Observação</label>
+          <textarea id="texto-observacao" disabled></textarea>
+        </div>
+
+        <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
       </div>
+
+      <!-- Lista de observações -->
+      <div id="observacoes-confirmadas" style="display:none;"></div>
+
+      <!-- Botão Gravar -->
       <button type="submit" class="btn">Gravar</button>
     </form>
   </div>
   <script>
     $(function(){
-      flatpickr("#data-coleta", { locale: "pt", dateFormat: "d/m/Y" });
-      let windowPrazos = [], windowProdutos = [], windowCodigos = [];
 
-      // carrega clientes
-      $.get("/api/clientes", function(clientes){
-        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
-        clientes.forEach(c => sel.append(`<option value="${c.id}">${c.nome_fantasia}</option>`));
+      flatpickr("#data-coleta", {
+        locale: "pt",
+        dateFormat: "d/m/Y",
+        minDate: "today"
       });
 
-      // ao mudar cliente
-      $("#cliente").change(function(){
+         let windowPrazos = [], windowProdutos = [], windowCodigos = [];
+      let observacoes = [];
+      let editandoIndex = null;
+
+      $.get("/api/clientes", function(clientes){
+        const sel = $("#cliente").empty().append('<option value="">Selecione</option>');
+        clientes.forEach(c => sel.append(new Option(c.nome_fantasia, c.id)));
+        $("#cliente").select2({
+          placeholder: "Selecione um cliente",
+          allowClear: true,
+          width: "resolve"
+        }).on("select2:open", () => {
+          document.querySelector(".select2-container--open .select2-search__field")
+            .setAttribute("placeholder", "Digite um nome de cliente");
+        });
+      });
+
+      $("#cliente").change(async function () {
         const id = $(this).val();
-        $("#prazosCheckboxes").empty();
-        $("#produtos").empty();
+        $("#grupo-prazos").hide();
+        $("#prazosCheckboxes, #produtos").empty();
         $("#valor-total").text("R$ 0,00");
-        $(".error-prazos").hide();
-        if (!id) return;
-        $.get(`/api/clientes/${id}`, function(cli){
-          windowCodigos = cli.codigosFiscais || [];
+        $(".error-prazos, #condicao-a-vista").hide();
+        windowProdutos = [];
+        windowCodigos = [];
+        windowPrazos = [];
+
+        if (!id) {
+          updateAddButton();
+          return;
+        }
+
+        try {
+          const cli = await $.get(`/api/clientes/${id}`);
+
+          // 🔹 Carrega prazos
           windowPrazos = cli.prazos_pagamento.map(p => p.descricao);
-          windowProdutos = cli.produtos_autorizados || [];
+          $("#grupo-prazos").show();
           windowPrazos.forEach(pz => {
             $("#prazosCheckboxes").append(
               `<label><input type="checkbox" value="${pz}"> ${pz}</label>`
             );
           });
-          adicionarProduto();
-        });
+
+          // 🔹 Exibe condicional à vista, se necessário
+          if (windowPrazos.some(p => p.toLowerCase().includes("vista"))) {
+            $("#condicao-a-vista").hide();
+          } else {
+            $("#condicao-a-vista").hide();
+            $("#condicao_pagamento_a_vista").val("");
+          }
+
+    // 🔹 Carrega códigos fiscais
+    windowCodigos = (cli.codigosFiscais || [])
+      .filter(codigo => typeof codigo === 'string' && codigo.trim() !== '')
+      .filter((valor, indice, self) => self.indexOf(valor) === indice);
+
+    // 🔹 Carrega produtos autorizados
+    if (Array.isArray(cli.produtos)) {
+      windowProdutos = cli.produtos.map(item => ({
+        nome: item.nome,
+        valor_unitario: parseFloat(item.valor_unitario)
+      }));
+    }
+
+    updateAddButton();
+    adicionarProduto();
+
+  } catch (error) {
+    alert("Erro ao carregar dados do cliente.");
+    console.error(error);
+  }
+});
+
+      $("#btn-adicionar-observacao").click(function(){
+  $("#setor-observacao").val(null).trigger("change"); // limpa seleção de setor
+  $("#texto-observacao").val("").prop("disabled", true); // limpa e desativa o campo de texto
+  $("#observacao-bloco").slideDown();
+  $(this).hide();
+  $("#btn-confirmar-observacao").text("Confirmar Observação");
+  editandoIndex = null;
+});
+
+      $("#btn-fechar-observacao").click(function(){
+        $("#observacao-bloco").slideUp();
+        $("#btn-adicionar-observacao").show();
+        $("#setor-observacao").val("");
+        $("#texto-observacao").val("").prop("disabled", true);
+        editandoIndex = null;
       });
 
-      $("#adicionar-produto").click(adicionarProduto);
+      $("#setor-observacao").on("select2:open", function () {
+  $("#texto-observacao").css("margin-top", "150px");
+});
 
-      function adicionarProduto(){
-        if (!windowProdutos.length) return;
-        const usados = $(".produto-bloco")
-          .map((i,el) => $(el).find(".select-produto").val()).get().filter(Boolean);
-        const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
-        if (!dispon.length) return;
-        const bloco = $('<div class="produto-bloco"></div>');
+$("#setor-observacao").on("select2:close", function () {
+  $("#texto-observacao").css("margin-top", "0");
+});
 
-        // Produto
-        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
-        dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
-        bloco.append('<div class="form-group"><label>Produto</label></div>')
-             .children().last().append(selProd);
+$("#setor-observacao").on("change", function() {
+  let valores = $(this).val();
 
-        // Valor por Quilo (não editável)
-        bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
-        bloco.find(".valor-por-quilo").mask("R$ 000.000.000,00", { reverse: true });
+  if (valores && valores.includes("Todos")) {
+    const todosSetores = [
+      "Portaria",
+      "Carga e Descarga",
+      "Conferência de Peso",
+      "Financeiro",
+      "Emissão de NF"
+    ];
+    $("#setor-observacao").val(todosSetores).trigger("change");
+    valores = todosSetores;
+  }
 
-        // Peso
-        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="number" step="0.01" class="peso"></div>');
+  $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
+});
 
-        // Tipo de Peso (com "Selecione" obrigatório)
-        bloco.append('<div class="form-group"><label>Tipo de Peso</label><select class="tipo-peso" required><option value="">Selecione</option><option value="Exato">Exato</option><option value="Aproximado">Aproximado</option></select></div>');
+      $("#btn-confirmar-observacao").click(function(){
+        const setor = $("#setor-observacao").val();
+        const texto = $("#texto-observacao").val().trim();
 
-        // Subtotal (não editável)
-        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
-
-        // Código Fiscal (com "Selecione" obrigatório)
-        const selCod = $('<select class="select-codigo-fiscal" required></select>');
-        selCod.append('<option value="">Selecione</option>');
-        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
-        if (windowCodigos.includes("Personalizar") || windowCodigos.includes("Personalizado")) {
-          if (!windowCodigos.includes("Personalizar")) selCod.append('<option value="Personalizar">Personalizar</option>');
+        if (!setor || !texto) {
+          alert("Selecione um setor e digite a observação.");
+          return;
         }
-        bloco.append('<div class="form-group"><label>Código Fiscal</label></div>')
-             .children().last().append(selCod);
 
-        // Personalizar
-        const gp = $(`\
-          <div class="grupo-personalizar">\
-            <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota"></div>\
-            <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota"></div>\
-            <p class="error-soma">A soma deve ser igual ao valor por quilo</p>\
-          </div>`);
-        bloco.append(gp);
-        gp.find("input").mask("R$ 000.000.000,00", { reverse: true });
+        if (editandoIndex !== null) {
+  observacoes[editandoIndex] = { setor, texto };
+} else {
+  setor.forEach(s => observacoes.push({ setor: s, texto }));
+}
 
-        // eventos internos
-        selCod.change(function(){
-          if ($(this).val() === "Personalizar") {
-            gp.show();
-          } else {
-            gp.hide().find("input").val("");
-            bloco.find(".error-soma").hide();
-          }
-        });
-        selProd.change(function(){
-          const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
-          bloco.find(".valor-por-quilo").val(`R$ ${v.toFixed(2).replace(".",",")}`);
-          atualizarSub(); atualizarTotal();
-        });
-        bloco.find(".peso").on("input", () => { atualizarSub(); atualizarTotal(); });
+        renderizarObservacoes();
+        $("#setor-observacao").val("");
+        $("#texto-observacao").val("").prop("disabled", true);
+        $("#observacao-bloco").slideUp();
+        $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
+        editandoIndex = null;
+      });
 
-        // Validação da soma (personalizar)
-        gp.on("input blur", "input", function() {
-          const vComNota = parseMask(gp.find(".valor-com-nota").val()),
-                vSemNota = parseMask(gp.find(".valor-sem-nota").val()),
-                vUnitario = parseMask(bloco.find(".valor-por-quilo").val());
-          const erro = Math.abs((vComNota + vSemNota) - vUnitario) > 0.01;
-          gp.find(".error-soma").toggle(erro);
-        });
+      function renderizarObservacoes() {
+  const agrupadas = [];
 
-        // Remover produto
-        if ($(".produto-bloco").length) {
-          const btn = $('<button type="button" class="btn-remove">Remover</button>')
-            .click(() => { bloco.remove(); atualizarTotal(); });
-          bloco.append(btn);
-        }
-        $("#produtos").append(bloco);
+  observacoes.forEach((obs, index) => {
+    const existente = agrupadas.find(item => item.texto === obs.texto);
+    if (existente) {
+      existente.setores.push(obs.setor);
+      existente.indices.push(index);
+    } else {
+      agrupadas.push({
+        texto: obs.texto,
+        setores: [obs.setor],
+        indices: [index]
+      });
+    }
+  });
 
-        function atualizarSub(){
-          const v = parseMask(bloco.find(".valor-por-quilo").val()),
-                p = parseFloat(bloco.find(".peso").val()) || 0;
-          bloco.find(".subtotal").val(`R$ ${(v * p).toFixed(2).replace(".",",")}`);
-        }
+  const html = agrupadas.map((item) => {
+    const setores = item.setores.join(", ");
+    const primeiroIndex = item.indices[0]; // referência principal
+
+    return `
+      <div class="obs-item">
+        <div class="obs-texto">🔹 <strong>${setores}:</strong> ${item.texto}</div>
+        <div class="obs-acoes">
+          <button onclick="editarObservacao(${primeiroIndex}, event)">✏️</button>
+          <button onclick="excluirObservacao(${primeiroIndex})">🗑️</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  $("#observacoes-confirmadas").html(html).show();
+}
+
+      window.editarObservacao = function(i, event) {
+  if (event) event.preventDefault(); // impede o envio do formulário
+  const obs = observacoes[i];
+  $("#setor-observacao").val(obs.setor);
+  $("#texto-observacao").val(obs.texto).prop("disabled", false);
+  $("#observacao-bloco").slideDown();
+  $("#btn-adicionar-observacao").hide();
+  $("#btn-confirmar-observacao").text("Editar Observação");
+  editandoIndex = i;
+};
+      window.excluirObservacao = function(i) {
+  if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
+
+  const textoReferencia = observacoes[i].texto;
+
+  // Remove todas as observações com o mesmo texto
+  observacoes = observacoes.filter(obs => obs.texto !== textoReferencia);
+
+  renderizarObservacoes();
+};
+      function formatarNumero(valor, inteiro = false) {
+        const partes = inteiro
+          ? [Math.floor(valor).toString()]
+          : valor.toFixed(2).replace(".", ",").split(",");
+        partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return inteiro ? partes[0] : partes.join(",");
       }
 
-      function atualizarTotal(){
+      function parseMask(str) {
+        return parseFloat((str || "").replace(/[R$.\s]/g, "").replace(",", ".")) || 0;
+      }
+
+      function updateAddButton() {
+        const count = $(".produto-bloco").length;
+        $("#adicionar-produto").prop("disabled", count >= windowProdutos.length);
+      }
+
+      function updateRemoveButtons() {
+        const cnt = $(".produto-bloco").length;
+        $(".btn-remove").prop("disabled", cnt <= 1);
+      }
+
+      function atualizarTotal() {
         let tot = 0;
         $(".produto-bloco").each(function(){
           tot += parseMask($(this).find(".subtotal").val());
         });
-        $("#valor-total").text(`R$ ${tot.toFixed(2).replace(".",",")}`);
+        $("#valor-total").text("R$ " + formatarNumero(tot));
       }
 
-      function parseMask(str){
-        return parseFloat((str||"").replace(/[R$\.]/g,"").replace(",",".")) || 0;
+      $("#adicionar-produto").click(adicionarProduto);
+
+      function adicionarProduto(){
+        if ($(".produto-bloco").length >= windowProdutos.length) return;
+        const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get().filter(Boolean);
+        const dispon = windowProdutos.filter(p => !usados.includes(p.nome));
+        if (!dispon.length) return;
+
+        const bloco = $('<div class="produto-bloco"></div>');
+        const btnRemove = $('<button type="button" class="btn-remove">×</button>')
+          .click(function(){
+            bloco.remove();
+            atualizarTotal();
+            updateAddButton();
+            updateRemoveButtons();
+          });
+        bloco.append(btnRemove);
+
+        const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+        dispon.forEach(p => selProd.append(`<option data-valor="${p.valor_unitario}">${p.nome}</option>`));
+        bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
+        bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
+        bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
+        bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
+          <select class="tipo-peso" required>
+            <option value="">Selecione</option>
+            <option value="Exato">Exato</option>
+            <option value="Aproximado">Aproximado</option>
+          </select>
+        </div>`);
+        bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
+
+        const selCod = $('<select class="select-codigo-fiscal" required></select>')
+          .append('<option value="">Selecione</option>');
+        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
+        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
+
+        const gp = $(`<div class="grupo-personalizar">
+          <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
+          <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
+          <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
+        </div>`);
+        bloco.append(gp);
+        selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
+
+        gp.find(".valor-com-nota")
+          .on("input", function(){
+            const vUnitCent = Math.round(parseMask(bloco.find(".valor-por-quilo").val()) * 100);
+            let rawCents = parseInt($(this).val().replace(/\D/g, "") || "0", 10);
+            rawCents = Math.min(rawCents, Math.max(vUnitCent - 1, 0), 99999);
+            const valor = rawCents / 100;
+            $(this).val(formatarNumero(valor));
+            const vPor = parseMask(bloco.find(".valor-por-quilo").val());
+            bloco.find(".valor-sem-nota").val(formatarNumero(vPor - valor));
+          })
+          .on("blur", function(){
+            const vUnit = parseMask(bloco.find(".valor-por-quilo").val());
+            let raw = parseMask($(this).val());
+            raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
+            $(this).val(formatarNumero(raw));
+          });
+
+        selProd.change(function(){
+          const v = parseFloat($(this).find("option:selected").data("valor")) || 0;
+          bloco.find(".valor-por-quilo").val(formatarNumero(v));
+          atualizarSub(); atualizarTotal();
+        });
+
+        bloco.find(".peso").on("input", function(){
+          const val = parseMask($(this).val());
+          $(this).val(formatarNumero(val, true));
+          atualizarSub(); atualizarTotal();
+        });
+
+        function atualizarSub(){
+          const v = parseMask(bloco.find(".valor-por-quilo").val());
+          const p = parseMask(bloco.find(".peso").val());
+          bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
+        }
+
+        $("#produtos").append(bloco);
+        updateAddButton();
+        updateRemoveButtons();
       }
 
       $("#form-pedido").submit(function(e){
         e.preventDefault();
-        const prSel = $("#prazosCheckboxes input:checked").map((i,c) => c.value).get();
+
+        const prSel = $("#prazosCheckboxes input:checked").map((i,c)=>c.value).get();
         if (!prSel.length) {
           $(".error-prazos").show();
           return;
         }
 
-        // Validação da soma dos campos personalizáveis
-        let erroPersonalizar = false;
-        $(".produto-bloco").each(function(){
-          const cod = $(this).find(".select-codigo-fiscal").val();
-          if (cod === "Personalizar") {
-            const vComNota = parseMask($(this).find(".valor-com-nota").val());
-            const vSemNota = parseMask($(this).find(".valor-sem-nota").val());
-            const vUnitario = parseMask($(this).find(".valor-por-quilo").val());
-            if (Math.abs((vComNota + vSemNota) - vUnitario) > 0.01) {
-              $(this).find(".error-soma").show();
-              erroPersonalizar = true;
-            } else {
-              $(this).find(".error-soma").hide();
-            }
-          }
-        });
-        if (erroPersonalizar) return;
+        const precisa = prSel.some(p => p.toLowerCase().includes("vista"));
+        const cond = $("#condicao_pagamento_a_vista").val();
+        if (precisa && !cond) {
+          alert('Marcou prazo "à vista", selecione a condição de pagamento.');
+          return;
+        }
+
+        // Só confirma se NÃO estiver editando uma observação
+        if (editandoIndex === null && !confirm("Você tem certeza que deseja gravar este pedido?")) return;
 
         const dados = {
           cliente_id: $("#cliente").val(),
@@ -291,41 +600,61 @@
           tipo: $("#pedido-para").val(),
           data_coleta: $("#data-coleta").val(),
           prazos: prSel,
-          observacao: $("#observacao").val(),
+          condicao_pagamento_a_vista: cond,
+          observacoes: observacoes,
           itens: []
         };
+
         $(".produto-bloco").each(function(){
-          const nome = $(this).find(".select-produto").val(),
-                valor = parseMask($(this).find(".valor-por-quilo").val()),
-                peso  = parseFloat($(this).find(".peso").val()) || 0,
-                tpeso = $(this).find(".tipo-peso").val(),
-                cod   = $(this).find(".select-codigo-fiscal").val(),
-                vcn   = parseMask($(this).find(".valor-com-nota").val()),
-                vsn   = parseMask($(this).find(".valor-sem-nota").val());
-          if (nome && valor && peso) {
-            dados.itens.push({
-              nome_produto: nome,
-              valor_unitario: valor,
-              peso,
-              tipo_peso: tpeso,
-              codigo_fiscal: cod,
-              valor_com_nota: cod === "Personalizar" ? vcn : null,
-              valor_sem_nota: cod === "Personalizar" ? vsn : null
-            });
-          }
-        });
+  const nome  = $(this).find(".select-produto").val();
+  const valor = parseMask($(this).find(".valor-por-quilo").val());
+  const peso  = parseMask($(this).find(".peso").val());
+  const tp    = $(this).find(".tipo-peso").val();
+  const cod   = $(this).find(".select-codigo-fiscal").val();
+  const vc    = parseMask($(this).find(".valor-com-nota").val());
+  const vs    = parseMask($(this).find(".valor-sem-nota").val());
+  const unidade = "kg";
+
+  if (nome && valor && peso) {
+    dados.itens.push({
+      nome_produto: nome,
+      valor_unitario: valor,
+      peso,
+      tipo_peso: tp,
+      codigo_fiscal: cod,
+      valor_com_nota: vc,
+      valor_sem_nota: vs,
+      unidade: unidade
+    });
+  }
+});
+
         fetch("/api/pedidos", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify(dados)
         })
         .then(r => r.json())
         .then(r => {
-          if (r.mensagem) window.location.href = "vendas.html?sucesso=1";
+          if (r.mensagem) location.href = "vendas.html?sucesso=1";
           else alert("Erro ao salvar o pedido.");
         })
-        .catch(err => { console.error(err); alert("Erro ao salvar o pedido."); });
+        .catch(() => alert("Erro ao salvar o pedido."));
       });
     });
+// Mostra ou esconde o campo condicional de pagamento à vista conforme checkbox
+$(document).on("change", "#prazosCheckboxes input[type=checkbox]", function () {
+  const prazosSelecionados = $("#prazosCheckboxes input:checked")
+    .map((i, el) => el.value.toLowerCase()).get();
+
+  if (prazosSelecionados.some(p => p.includes("vista"))) {
+    $("#condicao-a-vista").slideDown();
+  } else {
+    $("#condicao-a-vista").slideUp();
+    $("#condicao_pagamento_a_vista").val("");
+  }
+});
+
   </script>
 </body>
 </html>

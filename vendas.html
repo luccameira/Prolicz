@@ -7,123 +7,107 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script defer src="incluir-layout.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
-    .main-content {
-      margin-left: 280px;
-      padding: 100px 40px 40px;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-      font-weight: 600;
-      font-size: 22px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      margin-top: 20px;
+    .main-content { margin-left: 280px; padding: 100px 40px 40px; }
+    h1 { margin-bottom: 20px; font-weight: 600; font-size: 22px; }
+    .filtros { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .filtro-bloco { display: flex; flex-direction: column; }
+    .filtro-bloco label { font-size: 13px; margin-bottom: 4px; font-weight: 500; color: #333; }
+    /* Ajuste de largura para o input de busca */
+    .filtros input, .filtros select {
+      padding: 8px;
       font-size: 14px;
+      width: 240px;
     }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+    .btn-adicionar { background-color: #ffc107; color: black; margin: 10px 0 20px 0; }
+    .tabela-wrapper {
+      max-height: 450px;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+      border: 1px solid #ccc;
     }
-
+    table { width: 100%; min-width: 600px; border-collapse: collapse; background-color: white; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
     th {
-      background-color: #f0f0f0;
-      font-weight: 600;
+      background-color: #f0f0f0; font-weight: 600;
+      position: sticky !important; top: 0; z-index: 2;
+      background-clip: padding-box; cursor: pointer;
+      text-transform: uppercase;
     }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
-    tr:hover {
-      background-color: #e2e2e2;
-      cursor: pointer;
-    }
-
+    th.sort-asc::after { content: " \25B2"; }
+    th.sort-desc::after { content: " \25BC"; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    tr:hover { background-color: #e2e2e2; cursor: pointer; }
+    .cinza { color: #666; font-weight: bold; }
+    .hoje-row td:first-child { border-left: 6px solid gold; }
+    .hoje-row .icone-alerta { color: orange; margin-right: 6px; }
     .btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
+      padding: 6px 12px; border: none; border-radius: 4px;
+      cursor: pointer; font-size: 14px;
       transition: background-color 0.2s ease;
     }
-
-    .btn-editar,
-    .btn-excluir {
-      background-color: #f1f1f1;
-      color: #212529;
-    }
-
-    .btn-editar:hover,
-    .btn-excluir:hover {
-      background-color: #e2e6ea;
-    }
-
-    .btn-adicionar {
-      background-color: #ffc107;
-      color: black;
-      margin-bottom: 10px;
-    }
+    .btn-editar { background-color: #28a745; color: white; }
+    .btn-editar:hover { background-color: #218838; }
+    .btn-excluir { background-color: #dc3545; color: white; }
+    .btn-excluir:hover { background-color: #c82333; }
   </style>
 </head>
 <body>
   <div class="topbar"></div>
   <div class="sidebar"></div>
-
   <div class="main-content">
     <h1>Pedidos</h1>
+
+    <div class="filtros">
+      <div class="filtro-bloco">
+        <label for="buscaCliente">Cliente ou por NF</label>
+        <input type="text" id="buscaCliente" placeholder="Buscar por cliente ou por NF">
+      </div>
+      <div class="filtro-bloco">
+        <label for="filtroStatus">Status</label>
+        <select id="filtroStatus">
+          <option value="">Todos os status</option>
+          <option value="Aguardando Início da Coleta">Aguardando Início da Coleta</option>
+          <option value="Coleta Iniciada">Coleta Iniciada</option>
+          <option value="Coleta Finalizada">Coleta Finalizada</option>
+          <option value="Em Análise pelo Financeiro">Em Análise pelo Financeiro</option>
+          <option value="Aguardando Emissão de NF">Aguardando Emissão de NF</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+      </div>
+      <div class="filtro-bloco">
+        <label for="intervaloDatas">Filtrar por Período</label>
+        <input type="text" id="intervaloDatas" placeholder="Filtrar por Período">
+      </div>
+    </div>
+
     <button class="btn btn-adicionar" onclick="location.href='nova-venda.html'">+ Novo Pedido</button>
-    <table id="tabela-vendas">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Cliente</th>
-          <th>Produto</th>
-          <th>Peso</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+
+    <div class="tabela-wrapper" id="tabelaWrapper">
+      <table id="tabela-vendas">
+        <thead>
+          <tr>
+            <th data-campo="data_coleta">Data da Coleta</th>
+            <th data-campo="cliente">Cliente</th>
+            <th data-campo="status">Status</th>
+            <th data-campo="data_criacao">Criado em</th>
+            <th data-campo="nota_fiscal">Nota Fiscal</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    function excluirLinha(botao) {
-      if (confirm("Deseja realmente excluir este pedido?")) {
-        const linha = botao.closest("tr");
-        const editarBtn = linha.querySelector(".btn-editar");
-        const match = editarBtn.getAttribute("onclick").match(/id=(\d+)/);
-        if (!match) {
-          alert("ID do pedido não encontrado.");
-          return;
-        }
-        const pedidoId = match[1];
+    flatpickr("#intervaloDatas", {
+      mode: "range",
+      dateFormat: "Y-m-d"
+    });
 
-        fetch(`/api/pedidos/${pedidoId}`, {
-          method: 'DELETE'
-        })
-        .then(res => res.json())
-        .then(data => {
-          alert(data.mensagem);
-          linha.remove();
-        })
-        .catch(err => {
-          console.error('Erro ao excluir pedido:', err);
-          alert('Erro ao excluir o pedido.');
-        });
-      }
-    }
-
-    function formatarDataBRCompleto(dataIso) {
+    function formatarDataBR(dataIso) {
       if (!dataIso) return '-';
       const data = new Date(dataIso);
       if (isNaN(data)) return '-';
@@ -133,29 +117,99 @@
       return `${dia}/${mes}/${ano}`;
     }
 
-    fetch('/api/pedidos')
-      .then(res => res.json())
-      .then(pedidos => {
-        const tabela = document.querySelector('#tabela-vendas tbody');
-        pedidos.forEach(p => {
-          const linha = document.createElement('tr');
-          linha.addEventListener('click', () => {
-            window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
-          });
-          linha.innerHTML = `
-            <td>${formatarDataBRCompleto(p.data_criacao)}</td>
-            <td>${p.cliente}</td>
-            <td>${p.nome_produto || '-'}</td>
-            <td>${p.peso_total || 0} Kg</td>
-            <td>${p.status}</td>
-            <td>
-              <button class="btn btn-editar" onclick="event.stopPropagation(); window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
-              <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirLinha(this)">Excluir</button>
-            </td>
-          `;
-          tabela.appendChild(linha);
-        });
+    let pedidosAtuais = [];
+    let campoOrdenado = '';
+    let direcaoAscendente = true;
+
+    function ordenarTabela(campo) {
+      if (campoOrdenado === campo) direcaoAscendente = !direcaoAscendente;
+      else { campoOrdenado = campo; direcaoAscendente = true; }
+
+      pedidosAtuais.sort((a, b) => {
+        let valA = a[campo], valB = b[campo];
+        if (campo.includes('data')) { valA = new Date(valA); valB = new Date(valB); }
+        else { valA = String(valA).toLowerCase(); valB = String(valB).toLowerCase(); }
+        if (valA < valB) return direcaoAscendente ? -1 : 1;
+        if (valA > valB) return direcaoAscendente ? 1 : -1;
+        return 0;
       });
+
+      document.querySelectorAll('th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+      const th = document.querySelector(`th[data-campo="${campo}"]`);
+      if (th) th.classList.add(direcaoAscendente ? 'sort-asc' : 'sort-desc');
+
+      renderizarTabela();
+    }
+
+    function renderizarTabela() {
+      const tbody = document.querySelector("#tabela-vendas tbody");
+      const wrapper = document.getElementById("tabelaWrapper");
+      tbody.innerHTML = "";
+      const hoje = new Date().toISOString().split("T")[0];
+      let primeiraHoje = null;
+
+      pedidosAtuais.forEach(p => {
+        const dt = new Date(p.data_coleta).toISOString().split("T")[0];
+        const isHoje = dt === hoje;
+        const tr = document.createElement("tr");
+        if (isHoje) {
+          tr.classList.add("hoje-row");
+          if (!primeiraHoje) primeiraHoje = tr;
+        }
+        tr.addEventListener("click", () => {
+          window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
+        });
+        tr.innerHTML = `
+          <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
+          <td>${p.cliente}</td>
+          <td>${p.status}</td>
+          <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
+          <td>${p.nota_fiscal || '-'}</td>
+          <td>
+            <button class="btn btn-editar" onclick="event.stopPropagation();window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
+            <button class="btn btn-excluir" onclick="event.stopPropagation();excluirPedido(${p.pedido_id})">Excluir</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      if (primeiraHoje) setTimeout(() => {
+        wrapper.scrollTop = primeiraHoje.offsetTop - 30;
+      }, 150);
+    }
+
+    async function carregarPedidos() {
+      const cliente = document.getElementById("buscaCliente").value;
+      const status = document.getElementById("filtroStatus").value;
+      const intervalo = document.getElementById("intervaloDatas").value;
+      let de="", ate="";
+      if (intervalo.includes(" a ")) [de,ate] = intervalo.split(" a ");
+      else if (intervalo.includes(" to ")) [de,ate] = intervalo.split(" to ");
+
+      const url = new URL("/api/pedidos", location.origin);
+      if (cliente) url.searchParams.append("cliente", cliente);
+      if (status)  url.searchParams.append("status", status);
+      if (de)      url.searchParams.append("de", de);
+      if (ate)     url.searchParams.append("ate", ate);
+
+      const res = await fetch(url);
+      pedidosAtuais = await res.json();
+      if (campoOrdenado) ordenarTabela(campoOrdenado);
+      else renderizarTabela();
+    }
+
+    async function excluirPedido(id) {
+      if (!confirm("Deseja excluir este pedido?")) return;
+      const res = await fetch(`/api/pedidos/${id}`, { method:'DELETE' });
+      const data = await res.json();
+      alert(data.mensagem || 'Pedido excluído');
+      carregarPedidos();
+    }
+
+    document.querySelectorAll("#buscaCliente, #filtroStatus, #intervaloDatas")
+      .forEach(el => el.addEventListener("change", carregarPedidos));
+    document.querySelectorAll('th[data-campo]')
+      .forEach(th => th.addEventListener('click', () => ordenarTabela(th.dataset.campo)));
+    document.addEventListener("DOMContentLoaded", carregarPedidos);
   </script>
 </body>
 </html>
