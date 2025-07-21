@@ -1,3 +1,12 @@
+const estiloErro = document.createElement('style');
+estiloErro.textContent = `
+  .campo-invalido {
+    border: 2px solid red !important;
+    background-color: #fff5f5;
+  }
+`;
+document.head.appendChild(estiloErro);
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
   monitorarUploads();
@@ -338,10 +347,25 @@ if (!temAjudante) {
   return;
 }
 
-  if (!cpf || !placa || !caminhaoInput.files.length) {
-    alert('Preencha todos os campos obrigatórios.');
-    return;
-  }
+  let camposInvalidos = [];
+
+if (!cpf) {
+  camposInvalidos.push('CPF');
+  document.getElementById(`cpf-${pedidoId}`).classList.add('campo-invalido');
+}
+if (!placa) {
+  camposInvalidos.push('Placa');
+  document.getElementById(`placa-${pedidoId}`).classList.add('campo-invalido');
+}
+if (!caminhaoInput.files.length) {
+  camposInvalidos.push('Foto do Caminhão');
+  caminhaoInput.classList.add('campo-invalido');
+}
+
+if (camposInvalidos.length > 0) {
+  alert(`Preencha os seguintes campos obrigatórios: ${camposInvalidos.join(', ')}`);
+  return;
+}
 
   botao.disabled = true;
   botao.innerText = 'Enviando...';
