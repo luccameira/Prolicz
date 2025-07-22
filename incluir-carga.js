@@ -53,9 +53,12 @@ async function carregarPedidos() {
     });
   });
 
-  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => p.status !== 'Aguardando Início da Coleta');
-  pedidos = listaFiltrada;
-  renderizarPedidos(listaFiltrada);
+  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => {
+  // Oculta apenas os que ainda não iniciaram (primeiro passo real do fluxo)
+  return p.status !== 'Aguardando Início da Coleta' && p.status !== 'Aguardando Coleta';
+});
+pedidos = listaFiltrada;
+renderizarPedidos(listaFiltrada);
 }
 
 function gerarBadgeStatus(status) {
