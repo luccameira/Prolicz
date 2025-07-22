@@ -161,10 +161,10 @@ let pedidoAtual = null;
       divPersonalizado.toggle(isPersonalizar);
     });
 
-    selProd.change(function () {
+        selProd.change(function () {
       const nome = $(this).val();
       const prod = produtosAutorizados.find(p => p.nome_produto === nome);
-      const v = parseFloat(prod?.valor_unitario) / 100;
+      const v = parseFloat(prod?.valor_unitario || 0) / 100;
 
       const codigos = [...new Set(
         materiais
@@ -413,7 +413,16 @@ $("#btn-confirmar-observacao").click(function () {
           $("#condicao_pagamento_a_vista").val("").prop("required", false);
         }
 
-        materiais.forEach(adicionarProduto);
+        materiais.forEach(prod => {
+  adicionarProduto({
+    nome_produto: prod.nome_produto,
+    valor_unitario: prod.valor_unitario,
+    peso: prod.peso,
+    tipo_peso: prod.tipo_peso,
+    codigo_fiscal: prod.codigo_fiscal,
+    valor_com_nota: prod.valor_com_nota
+  });
+});
 
         if (pedido.observacoes) {
   observacoes = pedido.observacoes.map(obs => ({
@@ -506,11 +515,15 @@ $("#btn-confirmar-reset").on("click", function () {
       alert("Erro ao resetar tarefa.");
     });
 });
-});
-$('#setor-observacao').on("select2:open", function () {
-  $("#texto-observacao").css("margin-top", "150px");
-});
+  $('#setor-observacao').on("select2:open", function () {
+    $("#texto-observacao").css("margin-top", "150px");
+  });
 
-$('#setor-observacao').on("select2:close", function () {
-  $("#texto-observacao").css("margin-top", "0");
+  $('#setor-observacao').on("select2:close", function () {
+    $("#texto-observacao").css("margin-top", "0");
+  });
+
+  $("#adicionar-produto").on("click", function () {
+    adicionarProduto();
+  });
 });
