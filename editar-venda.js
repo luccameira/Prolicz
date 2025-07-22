@@ -507,3 +507,10 @@ $("#btn-confirmar-reset").on("click", function () {
     });
 });
 });
+$('#setor-observacao').on("select2:open", function () {
+  $("#texto-observacao").css("margin-top", "150px");
+});
+
+$('#setor-observacao').on("select2:close", function () {
+  $("#texto-observacao").css("margin-top", "0");
+});
