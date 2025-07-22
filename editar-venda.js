@@ -211,19 +211,22 @@ let pedidoAtual = null;
   const agrupadas = [];
 
   observacoes.forEach((obs, index) => {
-    const existente = agrupadas.find(item => item.texto === obs.texto);
-    if (existente) {
-      existente.setores.push(obs.setor);
+    const key = `${obs.texto}__${obs.usuario_nome || 'Sistema'}__${obs.data_criacao || ''}`;
+    const existente = agrupadas.find(item => item.chave === key);
+
+    if (existente && !obs.texto.trim().startsWith("[RESET]")) {
+      if (!existente.setores.includes(obs.setor)) {
+        existente.setores.push(obs.setor);
+      }
       existente.indices.push(index);
-      existente.usuarios.push(obs.usuario_nome || 'Sistema');
-      existente.datas.push(obs.data_criacao || '');
     } else {
       agrupadas.push({
+        chave: key,
         texto: obs.texto,
         setores: [obs.setor],
         indices: [index],
-        usuarios: [obs.usuario_nome || 'Sistema'],
-        datas: [obs.data_criacao || '']
+        usuario: obs.usuario_nome || 'Sistema',
+        data: obs.data_criacao || ''
       });
     }
   });
@@ -233,46 +236,44 @@ let pedidoAtual = null;
     const primeiroIndex = item.indices[0];
     const ehReset = item.texto.trim().startsWith("[RESET]");
     const textoLimpo = item.texto.replace("[RESET]", "").trim();
-    const usuario = item.usuarios[0];
-    const data = item.datas[0] ? new Date(item.datas[0]).toLocaleString("pt-BR") : "";
+    const usuario = item.usuario;
+    const data = item.data ? new Date(item.data).toLocaleString("pt-BR") : "";
 
     const div = document.createElement("div");
     div.className = "obs-item";
 
-   if (ehReset) {
-  const match = item.texto.match(/\[RESET\] Etapa anterior: (.+?)\. Nova etapa: (.+?)\. Justificativa: (.+)/);
-  let etapaAntes = '';
-  let etapaDepois = '';
-  let justificativa = textoLimpo;
+    if (ehReset) {
+      const match = item.texto.match(/\[RESET\] Etapa anterior: (.+?)\. Nova etapa: (.+?)\. Justificativa: (.+)/);
+      let etapaAntes = '';
+      let etapaDepois = '';
+      let justificativa = textoLimpo;
 
-  if (match) {
-    etapaAntes = match[1];
-    etapaDepois = match[2];
-    justificativa = match[3];
-  }
+      if (match) {
+        etapaAntes = match[1];
+        etapaDepois = match[2];
+        justificativa = match[3];
+      }
 
-  div.innerHTML = `
-    <div class="obs-resetada">
-      <div class="obs-reset-header">
-        <strong class="titulo-reset">Justificativa da Correção</strong>
-        <span class="data-reset">${data}</span>
-      </div>
-      <div class="texto-reset">
-        <p>${justificativa}</p>
-        <span class="usuario-reset">Usuário: ${usuario}</span>
-        ${etapaAntes && etapaDepois ? `
-  <div class="usuario-reset" style="margin-top: 5px;">
-    Estava na etapa → ${etapaAntes}<br>
-    Retornado para → ${etapaDepois}
-  </div>
-` : ''}
-      </div>
-    </div>
-  `;
-  containerReset.appendChild(div);
-}
-
- else {
+      div.innerHTML = `
+        <div class="obs-resetada">
+          <div class="obs-reset-header">
+            <strong class="titulo-reset">Justificativa da Correção</strong>
+            <span class="data-reset">${data}</span>
+          </div>
+          <div class="texto-reset">
+            <p>${justificativa}</p>
+            <span class="usuario-reset">Usuário: ${usuario}</span>
+            ${etapaAntes && etapaDepois ? `
+              <div class="usuario-reset" style="margin-top: 5px;">
+                Estava na etapa → ${etapaAntes}<br>
+                Retornado para → ${etapaDepois}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      containerReset.appendChild(div);
+    } else {
       div.innerHTML = `
         <div class="obs-normal">
           <strong>🔸 ${setores}:</strong><br>
@@ -288,67 +289,80 @@ let pedidoAtual = null;
   });
 }
 
-  window.editarObservacao = function (i, event) {
-    if (event) event.preventDefault();
-    const obs = observacoes[i];
-    $("#setor-observacao").val(obs.setor).trigger("change");
-    $("#texto-observacao").val(obs.texto).prop("disabled", false);
-    $("#observacao-bloco").slideDown();
-    $("#btn-adicionar-observacao").hide();
-    $("#btn-confirmar-observacao").text("Editar Observação");
-    editandoIndex = i;
-  };
+window.editarObservacao = function (i, event) {
+  if (event) event.preventDefault();
+  const obs = observacoes[i];
 
-  window.excluirObservacao = function (i) {
-    if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
-    const textoReferencia = observacoes[i].texto;
-    observacoes = observacoes.filter(obs => obs.texto !== textoReferencia);
-    renderizarObservacoes();
-  };
+  // Coleta todos os índices da observação com mesmo texto
+  const relacionados = observacoes
+    .map((o, idx) => ({ ...o, idx }))
+    .filter(o => o.texto === obs.texto);
 
-  $("#btn-adicionar-observacao").click(function () {
-    $("#setor-observacao").val(null).trigger("change");
-    $("#texto-observacao").val("").prop("disabled", true);
-    $("#observacao-bloco").slideDown();
-    $(this).hide();
-    $("#btn-confirmar-observacao").text("Confirmar Observação");
-    editandoIndex = null;
-  });
+  const setores = relacionados.map(o => o.setor);
 
-  $("#btn-fechar-observacao").click(function () {
-    $("#observacao-bloco").slideUp();
-    $("#btn-adicionar-observacao").show();
-    $("#setor-observacao").val("");
-    $("#texto-observacao").val("").prop("disabled", true);
-    editandoIndex = null;
-  });
+  $("#setor-observacao").val(setores).trigger("change");
+  $("#texto-observacao").val(obs.texto).prop("disabled", false);
+  $("#observacao-bloco").slideDown();
+  $("#btn-adicionar-observacao").hide();
+  $("#btn-confirmar-observacao").text("Editar Observação");
+  editandoIndex = relacionados.map(o => o.idx); // salva todos os índices da observação agrupada
+};
 
-  $("#setor-observacao").on("change", function () {
-    let valores = $(this).val();
-    if (valores && valores.includes("Todos")) {
-      const todosSetores = ["Portaria", "Carga e Descarga", "Conferência de Peso", "Financeiro", "Emissão de NF"];
-      $("#setor-observacao").val(todosSetores).trigger("change");
-      valores = todosSetores;
-    }
-    $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
-  });
+window.excluirObservacao = function (i) {
+  if (!confirm("Você tem certeza que deseja excluir esta observação?")) return;
+  const textoReferencia = observacoes[i].texto;
+  observacoes = observacoes.filter(obs => obs.texto !== textoReferencia);
+  renderizarObservacoes();
+};
 
-  $("#btn-confirmar-observacao").click(function () {
-    const setor = $("#setor-observacao").val();
-    const texto = $("#texto-observacao").val().trim();
-    if (!setor || !texto) return alert("Selecione um setor e digite a observação.");
-    if (editandoIndex !== null) {
-      observacoes[editandoIndex] = { setor, texto };
-    } else {
-      setor.forEach(s => observacoes.push({ setor: s, texto }));
-    }
-    renderizarObservacoes();
-    $("#setor-observacao").val("");
-    $("#texto-observacao").val("").prop("disabled", true);
-    $("#observacao-bloco").slideUp();
-    $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
-    editandoIndex = null;
-  });
+$("#btn-adicionar-observacao").click(function () {
+  $("#setor-observacao").val(null).trigger("change");
+  $("#texto-observacao").val("").prop("disabled", true);
+  $("#observacao-bloco").slideDown();
+  $(this).hide();
+  $("#btn-confirmar-observacao").text("Confirmar Observação");
+  editandoIndex = null;
+});
+
+$("#btn-fechar-observacao").click(function () {
+  $("#observacao-bloco").slideUp();
+  $("#btn-adicionar-observacao").show();
+  $("#setor-observacao").val("");
+  $("#texto-observacao").val("").prop("disabled", true);
+  editandoIndex = null;
+});
+
+$("#setor-observacao").on("change", function () {
+  let valores = $(this).val();
+  if (valores && valores.includes("Todos")) {
+    const todosSetores = ["Portaria", "Carga e Descarga", "Conferência de Peso", "Financeiro", "Emissão de NF"];
+    $("#setor-observacao").val(todosSetores).trigger("change");
+    valores = todosSetores;
+  }
+  $("#texto-observacao").prop("disabled", !valores || valores.length === 0);
+});
+
+$("#btn-confirmar-observacao").click(function () {
+  const setores = $("#setor-observacao").val();
+  const texto = $("#texto-observacao").val().trim();
+  if (!setores || !texto) return alert("Selecione um setor e digite a observação.");
+
+  if (editandoIndex !== null) {
+    // remove todas observações com o mesmo texto original
+    observacoes = observacoes.filter((_, idx) => !editandoIndex.includes(idx));
+    // adiciona as novas com os setores atualizados
+    setores.forEach(s => observacoes.push({ setor: s, texto }));
+  } else {
+    setores.forEach(s => observacoes.push({ setor: s, texto }));
+  }
+
+  renderizarObservacoes();
+  $("#setor-observacao").val("");
+  $("#texto-observacao").val("").prop("disabled", true);
+  $("#observacao-bloco").slideUp();
+  $("#btn-adicionar-observacao").text("Adicionar outra observação").show();
+  editandoIndex = null;
+});
 
   $("#prazo-pagamento").select2({
     width: '100%',
