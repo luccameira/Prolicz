@@ -688,38 +688,46 @@ router.get('/financeiro', async (req, res) => {
       FROM pedidos p
       INNER JOIN clientes c ON p.cliente_id = c.id
       WHERE DATE(p.data_coleta) = CURDATE()
-        AND p.status IN (
-          'Coleta Iniciada',
-          'Coleta Finalizada',
-          'Aguardando Conferência do Peso',
-          'Em Análise pelo Financeiro',
-          'Aguardando Emissão de NF',
-          'Cliente Liberado',
-          'Finalizado'
-        )
-      ORDER BY 
-        CASE 
-          WHEN p.status = 'Coleta Iniciada' THEN 1
-          WHEN p.status = 'Coleta Finalizada' THEN 2
-          WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
-          WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
-          WHEN p.status = 'Aguardando Emissão de NF' THEN 5
-          WHEN p.status = 'Cliente Liberado' THEN 6
-          WHEN p.status = 'Finalizado' THEN 7
-          ELSE 99
-        END,
-        p.data_coleta ASC
-    `;
+  AND (
+    p.status IN (
+      'Coleta Iniciada',
+      'Coleta Finalizada',
+      'Aguardando Conferência do Peso',
+      'Em Análise pelo Financeiro',
+      'Aguardando Emissão de NF',
+      'Cliente Liberado',
+      'Finalizado'
+    )
+    OR EXISTS (
+      SELECT 1 FROM observacoes_pedido op
+      WHERE op.pedido_id = p.id
+        AND op.setor = 'Financeiro'
+        AND LOWER(op.texto) LIKE '%motivo do reenvio:%'
+    )
+  )
+ORDER BY 
+  CASE 
+    WHEN p.status = 'Coleta Iniciada' THEN 1
+    WHEN p.status = 'Coleta Finalizada' THEN 2
+    WHEN p.status = 'Aguardando Conferência do Peso' THEN 3
+    WHEN p.status = 'Em Análise pelo Financeiro' THEN 4
+    WHEN p.status = 'Aguardando Emissão de NF' THEN 5
+    WHEN p.status = 'Cliente Liberado' THEN 6
+    WHEN p.status = 'Finalizado' THEN 7
+    ELSE 99
+  END,
+  p.data_coleta ASC
+`;
 
-    const [pedidos] = await db.query(sql);
+const [pedidos] = await db.query(sql);
 
-    for (const pedido of pedidos) {
-      // Observações do setor Financeiro
-      const [obs] = await db.query(
-        `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro'`,
-        [pedido.pedido_id]
-      );
-      pedido.observacoes_setor = obs.map(o => o.texto);
+for (const pedido of pedidos) {
+  // Observações do setor Financeiro
+  const [obs] = await db.query(
+    `SELECT texto FROM observacoes_pedido WHERE pedido_id = ? AND setor = 'Financeiro'`,
+    [pedido.pedido_id]
+  );
+  pedido.observacoes_setor = obs.map(o => o.texto);
 
      // Materiais do pedido — agora com campos de personalização fiscal
 const [materiais] = await db.query(
