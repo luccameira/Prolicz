@@ -18,7 +18,12 @@ const storageTickets = multer.diskStorage({
     cb(null, nome);
   }
 });
-const uploadTicket = multer({ storage: storageTickets });
+const uploadTicket = multer({
+  storage: storageTickets,
+  fileFilter: (req, file, cb) => {
+    cb(null, true); // Aceita qualquer campo de arquivo enviado
+  }
+});
 
 function formatarDataBRparaISO(dataBR) {
   const [dia, mes, ano] = dataBR.split('/');
@@ -99,7 +104,8 @@ router.get('/carga', async (req, res) => {
     FROM pedidos p
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN itens_pedido i ON p.id = i.pedido_id
-    WHERE DATE(p.data_coleta) = CURDATE() AND p.status != 'Aguardando Início da Coleta'
+    WHERE DATE(p.data_coleta) = CURDATE()
+      AND p.data_coleta_iniciada IS NOT NULL
     GROUP BY 
       p.id, i.id, p.data_criacao, c.nome_fantasia, i.nome_produto, i.tipo_peso,
       p.data_coleta, p.data_coleta_iniciada, p.data_carga_finalizada, 
@@ -446,15 +452,15 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
           let arquivoCompra = null;
           let arquivoDevolucao = null;
 
-          if (desc.ticket_compra && typeof desc.ticket_compra === 'string') {
-            const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
-            if (arquivo) arquivoCompra = arquivo.filename;
-          }
+          if (typeof desc.ticket_compra === 'string') {
+  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_compra);
+  if (arquivo) arquivoCompra = arquivo.filename;
+}
 
-          if (desc.ticket_devolucao && typeof desc.ticket_devolucao === 'string') {
-            const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
-            if (arquivo) arquivoDevolucao = arquivo.filename;
-          }
+if (typeof desc.ticket_devolucao === 'string') {
+  const arquivo = arquivos.find(f => f.fieldname === desc.ticket_devolucao);
+  if (arquivo) arquivoDevolucao = arquivo.filename;
+}
 
           await db.query(
             `INSERT INTO descontos_item_pedido
@@ -493,8 +499,8 @@ router.put('/:id/carga', uploadTicket.any(), async (req, res) => {
 
     res.json({ sucesso: true });
   } catch (error) {
-    console.error('Erro ao registrar carga:', error);
-    res.status(500).json({ erro: 'Erro ao registrar carga.' });
+    console.error('Erro ao registrar carga:', error.stack || error);
+res.status(500).json({ erro: error.message || 'Erro ao registrar carga.' });
   }
 });
 
@@ -963,6 +969,88 @@ router.post('/:id/resetar-tarefa', async (req, res) => {
     console.error('Erro ao resetar tarefa:', error);
     res.status(500).json({ erro: 'Erro ao resetar tarefa' });
   }
+});
+
+// POST /api/motoristas - cadastrar motorista e opcionalmente ajudante
+const pastaMotoristas = path.join(__dirname, '..', 'uploads', 'motoristas');
+if (!fs.existsSync(pastaMotoristas)) {
+  fs.mkdirSync(pastaMotoristas, { recursive: true });
+}
+
+const storageMotoristas = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, pastaMotoristas),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nome = `${Date.now()}-${file.fieldname}${ext}`;
+    cb(null, nome);
+  }
+});
+
+const uploadMotoristas = multer({
+  storage: storageMotoristas,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máx.
+}).fields([
+  { name: 'ficha_integracao', maxCount: 1 },
+  { name: 'foto_documento', maxCount: 1 },
+  { name: 'ficha_ajudante', maxCount: 1 },
+  { name: 'documento_ajudante', maxCount: 1 }
+]);
+
+router.post('/motoristas', (req, res) => {
+  uploadMotoristas(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      console.error('Erro do Multer:', err);
+      return res.status(400).json({ erro: err.message });
+    } else if (err) {
+      console.error('Erro desconhecido:', err);
+      return res.status(500).json({ erro: 'Erro ao processar os arquivos.' });
+    }
+
+    const {
+      cpf,
+      nome,
+      placa,
+      cpf_ajudante,
+      nome_ajudante
+    } = req.body;
+
+    const fichaIntegracao = req.files?.ficha_integracao?.[0]?.filename || null;
+    const documentoFoto = req.files?.foto_documento?.[0]?.filename || null;
+    const fichaAjudante = req.files?.ficha_ajudante?.[0]?.filename || null;
+    const documentoAjudante = req.files?.documento_ajudante?.[0]?.filename || null;
+
+    try {
+      // Cadastrar motorista se necessário (opcional, se já estiver implementado)
+
+      // 🔽 Cadastrar ajudante se ainda não existir
+      if (cpf_ajudante && nome_ajudante) {
+        const [existeAjudante] = await db.query(
+          'SELECT id FROM ajudantes WHERE cpf = ?',
+          [cpf_ajudante]
+        );
+
+        if (existeAjudante.length === 0) {
+          await db.query(
+            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante) VALUES (?, ?, ?, ?)`,
+            [cpf_ajudante, nome_ajudante, fichaAjudante, documentoAjudante]
+          );
+          console.log('Novo ajudante cadastrado com sucesso!');
+        } else {
+          console.log('Ajudante já cadastrado. Pulando inserção.');
+        }
+      }
+
+      console.log('Motorista recebido:', { cpf, nome, placa });
+      if (cpf_ajudante || nome_ajudante) {
+        console.log('Ajudante recebido:', { cpf_ajudante, nome_ajudante });
+      }
+
+      res.status(200).json({ sucesso: true });
+    } catch (erro) {
+      console.error('Erro ao salvar dados:', erro);
+      res.status(500).json({ erro: 'Erro ao salvar dados do motorista e ajudante.' });
+    }
+  });
 });
 
 module.exports = router;
