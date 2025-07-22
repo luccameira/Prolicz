@@ -28,12 +28,12 @@
 
       <button type="button" id="btn-adicionar-observacao" class="btn">Adicionar Observação</button>
 
-      <div id="observacao-bloco">
+      <div id="observacao-bloco" style="display: none;">
         <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
 
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
-          <select id="setor-observacao" multiple="multiple">
+          <select id="setor-observacao" multiple="multiple" style="width: 100%;">
             <option value="Todos">Todos</option>
             <option value="Portaria">Portaria</option>
             <option value="Carga e Descarga">Carga e Descarga</option>
@@ -45,34 +45,30 @@
 
         <div class="form-group">
           <label for="texto-observacao">Observação</label>
-          <textarea id="texto-observacao" disabled></textarea>
+          <textarea id="texto-observacao" style="width: 100%;" rows="4"></textarea>
         </div>
 
         <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
       </div>
 
       <div class="observacoes-lista" style="margin-top: 20px;">
-  <div id="observacoes-comuns"></div>
-  <div id="resets-confirmados"></div>
-</div>
+        <div id="observacoes-comuns"></div>
+        <div id="resets-confirmados"></div>
+      </div>
 
-      <!-- Botão Resetar Tarefa -->
       <button type="button" id="btn-resetar-tarefa" class="btn">Corrigir Tarefa</button>
-
-      <!-- 🔁 Botão Salvar Alterações (agora por último) -->
       <button type="submit" class="btn btn-azul">Salvar Alterações</button>
     </form>
   </div>
 
-  <!-- Modal Resetar Tarefa -->
   <div id="modal-resetar-tarefa" class="modal-overlay" style="display:none;">
     <div class="modal-box">
       <h2>Corrigir Tarefa</h2>
-<p id="etapa-atual-exibida" style="margin-top: 10px; margin-bottom: 15px;">
-  <strong>Etapa atual da tarefa:</strong> <span id="nome-etapa-atual">--</span>
-</p>
+      <p id="etapa-atual-exibida" style="margin-top: 10px; margin-bottom: 15px;">
+        <strong>Etapa atual da tarefa:</strong> <span id="nome-etapa-atual">--</span>
+      </p>
 
-      <label for="setor-resetar">Para qual etapa você deseja reenviar esta tarefa para correção??</label>
+      <label for="setor-resetar">Para qual etapa você deseja reenviar esta tarefa para correção?</label>
       <select id="setor-resetar" required>
         <option value="">Selecione a etapa</option>
         <option value="Portaria">Portaria</option>
@@ -98,6 +94,14 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#setor-observacao').select2({
+        placeholder: "Selecione os setores",
+        width: 'resolve'
+      });
+    });
+  </script>
   <script src="editar-venda.js"></script>
 </body>
 </html>
