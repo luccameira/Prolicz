@@ -53,12 +53,9 @@ async function carregarPedidos() {
     });
   });
 
-  const listaFiltrada = Object.values(pedidosAgrupados).filter(p => {
-  // Oculta apenas os que ainda não iniciaram (primeiro passo real do fluxo)
-  return p.status !== 'Aguardando Início da Coleta' && p.status !== 'Aguardando Coleta';
-});
-pedidos = listaFiltrada;
-renderizarPedidos(listaFiltrada);
+  const listaTodos = Object.values(pedidosAgrupados);
+pedidos = listaTodos;
+renderizarPedidos(listaTodos);
 }
 
 function gerarBadgeStatus(status) {
@@ -72,11 +69,12 @@ function gerarBadgeStatus(status) {
     return `<div class="status-badge status-verde"><i class="fa fa-check"></i> Peso Registrado</div>`;
   } else if (status === 'Coleta Iniciada') {
     return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
+  } else if (status === 'Aguardando Início da Coleta') {
+    return `<div class="status-badge status-amarelo"><i class="fa fa-truck"></i> ${status}</div>`;
   } else {
     return `<div class="status-badge status-cinza"><i class="fa fa-clock"></i> ${status}</div>`;
   }
 }
-
 function renderizarPedidos(lista) {
   const listaEl = document.getElementById('lista-pedidos');
   listaEl.innerHTML = '';
