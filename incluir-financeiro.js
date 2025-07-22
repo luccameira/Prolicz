@@ -71,35 +71,57 @@ async function carregarPedidosFinanceiro() {
   const filtro = document.getElementById('filtro-cliente')?.value.toLowerCase() || '';
   const ordenar = document.getElementById('ordenar')?.value || 'data';
 
-  let filtrados = pedidos.filter(p => p.cliente.toLowerCase().includes(filtro));
-  if (ordenar === 'cliente') {
-    filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
-  } else {
-    filtrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
-  }
+  let filtrados = pedidos.filter(p => {
+  const nomeCliente = p.cliente?.toLowerCase() || '';
+  const correspondeFiltro = nomeCliente.includes(filtro);
 
-  lista.innerHTML = '';
-  if (!filtrados.length) {
-    lista.innerHTML = `<p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>`;
-    return;
-  }
+  const podeExecutar = p.status === 'Em Análise pelo Financeiro';
 
-  filtrados.forEach(pedido => {
-    const id = pedido.pedido_id || pedido.id;
-    const card = document.createElement('div');
-    card.className = 'card';
+  const foiResetadoParaSetorAnterior = Array.isArray(p.observacoes_setor) &&
+    p.observacoes_setor.some(o =>
+      o.toLowerCase().includes('motivo do reenvio:')
+    );
 
-    const header = document.createElement('div');
-    header.className = 'card-header';
-    header.innerHTML = `
-      <div class="info">
-        <h3>${pedido.cliente}</h3>
-        <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
-      </div>
-      <div class="status-badge status-amarelo">
-        <i class="fa fa-money-bill"></i> ${pedido.status}
-      </div>
-    `;
+  const statusAtualEhAnterior = [
+    'Aguardando Coleta',
+    'Aguardando Início da Coleta',
+    'Coleta Iniciada',
+    'Coleta Finalizada',
+    'Conferência de Peso'
+  ].includes(p.status);
+
+  return correspondeFiltro && (podeExecutar || (foiResetadoParaSetorAnterior && statusAtualEhAnterior));
+});
+
+if (ordenar === 'cliente') {
+  filtrados.sort((a, b) => a.cliente.localeCompare(b.cliente));
+} else {
+  filtrados.sort((a, b) => new Date(a.data_coleta) - new Date(b.data_coleta));
+}
+
+lista.innerHTML = '';
+if (!filtrados.length) {
+  lista.innerHTML = `<p style="padding:0 25px;">Nenhum pedido disponível no momento.</p>`;
+  return;
+}
+
+filtrados.forEach(pedido => {
+  const id = pedido.pedido_id || pedido.id;
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const header = document.createElement('div');
+  header.className = 'card-header';
+  header.innerHTML = `
+    <div class="info">
+      <h3>${pedido.cliente}</h3>
+      <p>Empresa: ${formatarEmpresa(pedido.empresa)}</p>
+    </div>
+    <div class="status-badge status-amarelo">
+      <i class="fa fa-money-bill"></i> ${pedido.status}
+    </div>
+  `;
+
     card.appendChild(header);
 
       const timelineHTML = gerarLinhaTempoCompleta(pedido);
