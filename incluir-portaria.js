@@ -44,9 +44,7 @@ function formatarData(data) {
   try {
     const dt = new Date(data);
     if (isNaN(dt)) return '—';
-    return dt.toLocaleDateString('pt-BR').slice(0, 5) + ' ' +
-      String(dt.getHours()).padStart(2, '0') + ':' +
-      String(dt.getMinutes()).padStart(2, '0');
+    return dt.toLocaleDateString('pt-BR');
   } catch {
     return data;
   }
@@ -379,7 +377,7 @@ if (camposInvalidos.length > 0) {
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
   if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
   formData.append('foto_caminhao', caminhaoInput.files[0]);
-
+ 
 const nomeAjudante = [];
 
 const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
@@ -443,44 +441,6 @@ if (temAjudante === 'sim' && camposAjudanteInvalidos) {
   botao.innerText = 'Iniciar Coleta';
   return;
 }
-ajudantes.forEach((card, index) => {
-  const cpfAjInput = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`);
-  const nomeAjInput = card.querySelector(`#nome-ajudante-${index}`);
-  const fichaAjInput = card.querySelector(`#ficha-ajudante-${index}`);
-  const docAjInput = card.querySelector(`#doc-ajudante-${index}`);
-
-  const cpfAj = cpfAjInput?.value?.trim();
-  const nomeAj = nomeAjInput?.value?.trim();
-  const fichaAj = fichaAjInput?.files?.[0];
-  const docAj = docAjInput?.files?.[0];
-
-  if (!cpfAj) {
-    cpfAjInput?.classList.add('campo-invalido');
-    camposInvalidos.push(`CPF do Ajudante`);
-  }
-  if (!nomeAj) {
-    nomeAjInput?.classList.add('campo-invalido');
-    camposInvalidos.push(`Nome do Ajudante`);
-  }
-  if (!fichaAj) {
-    fichaAjInput?.classList.add('campo-invalido');
-    camposInvalidos.push(`Ficha de Integração do Ajudante`);
-  }
-  if (!docAj) {
-    docAjInput?.classList.add('campo-invalido');
-    camposInvalidos.push(`Documento com Foto do Ajudante`);
-  }
-
-  // Só envia se todos os dados obrigatórios estiverem preenchidos
-  if (cpfAj && nomeAj && fichaAj && docAj) {
-    formData.append('cpf_ajudante', cpfAj);
-    formData.append('nome_ajudante', nomeAj);
-    formData.append('ficha_ajudante', fichaAj);
-    formData.append('documento_ajudante', docAj);
-    nomeAjudante.push(nomeAj);
-  }
-});
-
   try {
     const res = await fetch('/api/motoristas', {
       method: 'POST',
