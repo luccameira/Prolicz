@@ -115,7 +115,9 @@ let pedidoAtual = null;
     const pesoInicial = parseMask(produto.peso) / 1000;
     const tipoPesoInicial = produto.tipo_peso || "";
 
-    if (produto.nome_produto) selProd.val(produto.nome_produto);
+    if (produto.nome_produto) {
+  selProd.val(produto.nome_produto).trigger("change");
+}
     bloco.find(".valor-por-quilo").val(formatarNumero(valorInicial));
     bloco.find(".peso").val(formatarNumero(pesoInicial, true));
     bloco.find(".tipo-peso").val(tipoPesoInicial);
@@ -162,27 +164,65 @@ let pedidoAtual = null;
     });
 
         selProd.change(function () {
-      const nome = $(this).val();
-      const prod = produtosAutorizados.find(p => p.nome_produto === nome);
-      const v = parseFloat(prod?.valor_unitario || 0) / 100;
+  const nome = $(this).val();
+  const prod = materiais.find(p => p.nome_produto === nome);
+  const v = parseFloat(prod?.valor_unitario || 0);
 
-      const codigos = [...new Set(
-        materiais
-          .filter(m => m.nome_produto === nome && m.codigo_fiscal)
-          .map(m => m.codigo_fiscal)
-      )];
+  bloco.find(".valor-por-quilo").val(formatarNumero(v));
 
-      const selectCodigo = bloco.find(".select-codigo");
-      selectCodigo.empty().append('<option value="">Selecione</option>');
-      codigos.forEach(c => {
-        selectCodigo.append(`<option value="${c}">${c}</option>`);
-      });
-      selectCodigo.val(codigos[0] || "").trigger("change");
+  const codigos = [...new Set(
+    materiais
+      .filter(m => m.nome_produto === nome && m.codigo_fiscal)
+      .map(m => m.codigo_fiscal)
+  )];
 
-      bloco.find(".valor-por-quilo").val(formatarNumero(v));
-      atualizarSub();
-      atualizarTotal();
+  const selectCodigo = bloco.find(".select-codigo");
+  selectCodigo.empty().append('<option value="">Selecione</option>');
+  codigos.forEach(c => {
+    selectCodigo.append(`<option value="${c}">${c}</option>`);
+  });
+
+  // Se já existir código "Personalizar" e houver campos personalizados, mostrar
+  selectCodigo.val(codigos[0] || "").trigger("change");
+
+  const inputComNota = bloco.find(".valor-com-nota");
+  const inputSemNota = bloco.find(".valor-sem-nota");
+
+  if (selectCodigo.val() === "Personalizar") {
+    divPersonalizado.show();
+
+    let valorNota = parseMask(inputComNota.val());
+    inputSemNota.val(formatarNumero(Math.max(0, v - valorNota)));
+
+    inputComNota.off("input blur");
+
+    inputComNota.on("input", function () {
+      let raw = $(this).val().replace(/\D/g, "");
+      raw = raw.replace(/^0+/, "");
+      if (raw.length < 3) raw = raw.padStart(3, "0");
+      const formatado = raw.replace(/(\d+)(\d{2})$/, "$1,$2");
+      $(this).val(formatado);
+
+      const novoValorNota = parseMask($(this).val());
+      inputSemNota.val(formatarNumero(Math.max(0, v - novoValorNota)));
     });
+
+    inputComNota.on("blur", function () {
+      let raw = parseMask($(this).val());
+      raw = Math.min(raw, Math.max(v - 0.01, 0));
+      $(this).val(formatarNumero(raw));
+      inputSemNota.val(formatarNumero(Math.max(0, v - raw)));
+    });
+
+  } else {
+    divPersonalizado.hide();
+    inputComNota.val('');
+    inputSemNota.val('');
+  }
+
+  atualizarSub();
+  atualizarTotal();
+});
 
     bloco.find(".peso").on("input", function () {
       const val = parseMask($(this).val());
@@ -524,6 +564,11 @@ $("#btn-confirmar-reset").on("click", function () {
   });
 
   $("#adicionar-produto").on("click", function () {
-    adicionarProduto();
-  });
+  adicionarProduto();
+
+  // força o .change() para preencher o valor por quilo após selecionar
+  const ultimoProduto = $(".produto-bloco").last();
+  const select = ultimoProduto.find(".select-produto");
+  select.trigger("change");
+});
 });
