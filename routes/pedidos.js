@@ -985,8 +985,23 @@ if (!fs.existsSync(pastaMotoristas)) {
   fs.mkdirSync(pastaMotoristas, { recursive: true });
 }
 
+const pastaAjudantes = path.join(__dirname, '..', 'uploads', 'ajudantes');
+if (!fs.existsSync(pastaAjudantes)) {
+  fs.mkdirSync(pastaAjudantes, { recursive: true });
+}
+
+if (!fs.existsSync(pastaMotoristas)) {
+  fs.mkdirSync(pastaMotoristas, { recursive: true });
+}
+
 const storageMotoristas = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, pastaMotoristas),
+  destination: (req, file, cb) => {
+    if (file.fieldname.includes('ajudante')) {
+      cb(null, pastaAjudantes);
+    } else {
+      cb(null, pastaMotoristas);
+    }
+  },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const nome = `${Date.now()}-${file.fieldname}${ext}`;
@@ -1028,9 +1043,26 @@ router.post('/motoristas', (req, res) => {
     const documentoAjudante = req.files?.documento_ajudante?.[0]?.filename || null;
 
     try {
-      // Cadastrar motorista se necessário (opcional, se já estiver implementado)
+      // ✅ Cadastrar motorista se ainda não existir
+      if (cpf && nome) {
+        const [existeMotorista] = await db.query(
+          'SELECT id FROM motoristas WHERE cpf = ?',
+          [cpf]
+        );
 
-      // 🔽 Cadastrar ajudante se ainda não existir
+        if (existeMotorista.length === 0) {
+          await db.query(
+            `INSERT INTO motoristas (cpf, nome, placa, ficha_integracao, documento_foto) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [cpf, nome, placa, fichaIntegracao, documentoFoto]
+          );
+          console.log('Novo motorista cadastrado com sucesso!');
+        } else {
+          console.log('Motorista já cadastrado. Pulando inserção.');
+        }
+      }
+
+      // ✅ Cadastrar ajudante se ainda não existir
       if (cpf_ajudante && nome_ajudante) {
         const [existeAjudante] = await db.query(
           'SELECT id FROM ajudantes WHERE cpf = ?',
@@ -1039,18 +1071,14 @@ router.post('/motoristas', (req, res) => {
 
         if (existeAjudante.length === 0) {
           await db.query(
-            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante) 
+             VALUES (?, ?, ?, ?)`,
             [cpf_ajudante, nome_ajudante, fichaAjudante, documentoAjudante]
           );
           console.log('Novo ajudante cadastrado com sucesso!');
         } else {
           console.log('Ajudante já cadastrado. Pulando inserção.');
         }
-      }
-
-      console.log('Motorista recebido:', { cpf, nome, placa });
-      if (cpf_ajudante || nome_ajudante) {
-        console.log('Ajudante recebido:', { cpf_ajudante, nome_ajudante });
       }
 
       res.status(200).json({ sucesso: true });
