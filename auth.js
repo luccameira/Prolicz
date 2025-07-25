@@ -7,11 +7,11 @@ function loadUsuarioLogado() {
   // Se não tiver usuário logado, redireciona para a página de login
   if (!usuarioLogado) {
     window.location.href = 'login.html';
-    return null;  // Caso não haja usuário logado, retorna null
+    return null;
   }
 
-  console.log("Usuário logado:", usuarioLogado);  // Mostra o usuário no console para depuração
-  return usuarioLogado; // Retorna o objeto do usuário logado
+  console.log("Usuário logado:", usuarioLogado);
+  return usuarioLogado;
 }
 
 // Função para carregar o menu lateral com base nas permissões
@@ -44,26 +44,21 @@ function carregarMenuLateral(usuarioLogado) {
     }
   ];
 
-  // Verifica se há o elemento sidebar
   const sidebar = document.getElementById('sidebar');
   if (sidebar) {
-    // Limpa o conteúdo anterior
     sidebar.innerHTML = '';
 
     menu.forEach(secao => {
-      // Título da seção
       const sectionTitle = document.createElement('div');
       sectionTitle.className = 'section-title';
       sectionTitle.textContent = secao.titulo;
       sidebar.appendChild(sectionTitle);
 
-      // Adiciona os itens da seção no menu lateral
       secao.itens.forEach(item => {
         if (usuarioLogado.permissoes.includes(item.perm)) {
           const a = document.createElement('a');
           a.href = item.href;
 
-          // Marca o item como ativo caso seja a página atual
           if (window.location.pathname.endsWith(item.href)) {
             a.classList.add('active');
           }
@@ -110,23 +105,39 @@ async function carregarUsuarios(usuarioLogado) {
 
 // Função para excluir o usuário
 async function excluirUsuario(id) {
-  if (confirm('Tem certeza que deseja excluir este usuário?')) {
-    try {
-      const response = await fetch(`http://localhost:3000/api/usuarios/${id}`, { method: 'DELETE' });
-      const result = await response.text();
-      alert(result);
-      carregarUsuarios();  // Recarrega a lista de usuários
-    } catch (error) {
-      alert('Erro ao excluir usuário.');
-      console.error(error);
+  if (!confirm(`Deseja realmente excluir o usuário com ID ${id}?`)) return;
+
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+  try {
+    const response = await fetch(`/api/usuarios/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'usuario-logado': JSON.stringify(usuarioLogado)
+      }
+    });
+
+    const msg = await response.text();
+    alert(msg);
+
+    if (response.ok) {
+      carregarUsuarios(usuarioLogado);
     }
+
+  } catch (error) {
+    console.error('Erro ao excluir usuário:', error);
+    alert('Erro ao excluir usuário.');
   }
 }
 
 // Carrega o usuário logado e executa as ações
-const usuarioLogado = loadUsuarioLogado();  // Obtém o usuário logado
+const usuarioLogado = loadUsuarioLogado();
 if (usuarioLogado) {
-  carregarMenuLateral(usuarioLogado);  // Carrega o menu lateral
-  carregarUsuarios(usuarioLogado);  // Carrega a lista de usuários
-}
+  carregarMenuLateral(usuarioLogado);
 
+  // Só carrega os usuários se a tabela existir na página
+  if (document.getElementById('lista-usuarios')) {
+    carregarUsuarios(usuarioLogado);
+  }
+}
