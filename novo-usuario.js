@@ -7,76 +7,81 @@ document.addEventListener('DOMContentLoaded', () => {
   const tipoSelect = document.getElementById('tipo');
   const permissoesContainer = document.getElementById('permissoes-container');
 
-  const permissoesPorTipo = {
-    'cadastrador': [
-      'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente',
-      'Visualizar Produtos', 'Adicionar Produto'
-    ],
-    'vendedor': [
-      'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda'
-    ],
-    'emissão de nf': [
-      'Visualizar Tarefas - Portaria',
-      'Visualizar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF',
-      'Executar Tarefas - Emissão de NF'
-    ],
-    'financeiro': [
-      'Visualizar Tarefas - Portaria',
-      'Visualizar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Emissão de NF',
-      'Visualizar Tarefas - Financeiro',
-      'Executar Tarefas - Financeiro'
-    ],
-    'conferência de peso': [
-      'Visualizar Tarefas - Portaria',
-      'Visualizar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF',
-      'Visualizar Tarefas - Conferência de Peso',
-      'Executar Tarefas - Conferência de Peso'
-    ],
-    'carga e descarga': [
-      'Visualizar Tarefas - Portaria',
-      'Visualizar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF',
-      'Visualizar Tarefas - Carga e Descarga',
-      'Executar Tarefas - Carga e Descarga'
-    ],
-    'portaria': [
-      'Visualizar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF',
-      'Visualizar Tarefas - Portaria',
-      'Executar Tarefas - Portaria'
-    ],
-    'coordenador': [
-      'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente',
-      'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda',
-      'Visualizar Produtos', 'Adicionar Produto',
-      'Visualizar Tarefas - Portaria', 'Editar Tarefas - Portaria',
-      'Visualizar Tarefas - Carga e Descarga', 'Editar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Conferência de Peso', 'Editar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Financeiro', 'Editar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF', 'Editar Tarefas - Emissão de NF'
-    ],
-    'administrador': [
-      'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente', 'Excluir Cliente',
-      'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda', 'Excluir Venda',
-      'Visualizar Produtos', 'Adicionar Produto',
-      'Visualizar Tarefas - Portaria', 'Executar Tarefas - Portaria', 'Editar Tarefas - Portaria',
-      'Visualizar Tarefas - Carga e Descarga', 'Executar Tarefas - Carga e Descarga', 'Editar Tarefas - Carga e Descarga',
-      'Visualizar Tarefas - Conferência de Peso', 'Executar Tarefas - Conferência de Peso', 'Editar Tarefas - Conferência de Peso',
-      'Visualizar Tarefas - Financeiro', 'Executar Tarefas - Financeiro', 'Editar Tarefas - Financeiro',
-      'Visualizar Tarefas - Emissão de NF', 'Executar Tarefas - Emissão de NF', 'Editar Tarefas - Emissão de NF',
-      'Visualizar Usuários', 'Adicionar Usuário', 'Editar Usuário', 'Excluir Usuário'
-    ]
-  };
+  const permissoesPorTipo = {};
+
+[
+  ['Cadastrador', [
+    'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente',
+    'Visualizar Produtos', 'Adicionar Produto'
+  ]],
+  ['Vendedor', [
+    'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda'
+  ]],
+  ['Emissão de NF', [
+    'Visualizar Tarefas - Portaria',
+    'Visualizar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF',
+    'Executar Tarefas - Emissão de NF'
+  ]],
+  ['Financeiro', [
+    'Visualizar Tarefas - Portaria',
+    'Visualizar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Emissão de NF',
+    'Visualizar Tarefas - Financeiro',
+    'Executar Tarefas - Financeiro'
+  ]],
+  ['Conferência de Peso', [
+    'Visualizar Tarefas - Portaria',
+    'Visualizar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF',
+    'Visualizar Tarefas - Conferência de Peso',
+    'Executar Tarefas - Conferência de Peso'
+  ]],
+  ['Carga e Descarga', [
+    'Visualizar Tarefas - Portaria',
+    'Visualizar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF',
+    'Visualizar Tarefas - Carga e Descarga',
+    'Executar Tarefas - Carga e Descarga'
+  ]],
+  ['Portaria', [
+    'Visualizar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF',
+    'Visualizar Tarefas - Portaria',
+    'Executar Tarefas - Portaria'
+  ]],
+  ['Coordenador', [
+    'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente',
+    'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda',
+    'Visualizar Produtos', 'Adicionar Produto',
+    'Visualizar Tarefas - Portaria', 'Editar Tarefas - Portaria',
+    'Visualizar Tarefas - Carga e Descarga', 'Editar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Conferência de Peso', 'Editar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Financeiro', 'Editar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF', 'Editar Tarefas - Emissão de NF'
+  ]],
+  ['Administrador', [
+    'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente', 'Excluir Cliente',
+    'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda', 'Excluir Venda',
+    'Visualizar Produtos', 'Adicionar Produto',
+    'Visualizar Tarefas - Portaria', 'Executar Tarefas - Portaria', 'Editar Tarefas - Portaria',
+    'Visualizar Tarefas - Carga e Descarga', 'Executar Tarefas - Carga e Descarga', 'Editar Tarefas - Carga e Descarga',
+    'Visualizar Tarefas - Conferência de Peso', 'Executar Tarefas - Conferência de Peso', 'Editar Tarefas - Conferência de Peso',
+    'Visualizar Tarefas - Financeiro', 'Executar Tarefas - Financeiro', 'Editar Tarefas - Financeiro',
+    'Visualizar Tarefas - Emissão de NF', 'Executar Tarefas - Emissão de NF', 'Editar Tarefas - Emissão de NF',
+    'Visualizar Usuários', 'Adicionar Usuário', 'Editar Usuário', 'Excluir Usuário'
+  ]]
+].forEach(([tipoOriginal, permissoes]) => {
+  const chaveNormalizada = tipoOriginal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  permissoesPorTipo[chaveNormalizada] = permissoes;
+});
 
   tipoSelect.addEventListener('change', () => {
     const tipoSelecionado = tipoSelect.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
