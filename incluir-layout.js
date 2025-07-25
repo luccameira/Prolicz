@@ -44,17 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const nomeUsuario = localStorage.getItem("nomeUsuario");
-        if (nomeUsuario) {
-          const spanNome = document.createElement("span");
-          spanNome.textContent = nomeUsuario;
-          spanNome.style.marginRight = "12px";
-          spanNome.style.fontWeight = "bold";
-
-          const containerUsuario = topbarContainer.querySelector("div:last-child");
-          if (containerUsuario) {
-            containerUsuario.insertBefore(spanNome, containerUsuario.querySelector("a"));
-          }
-        }
+if (nomeUsuario) {
+  const span = document.getElementById("nomeUsuarioTopo");
+  if (span) {
+    span.textContent = nomeUsuario;
+  }
+}
       }
 
       if (sidebar) {
