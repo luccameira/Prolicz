@@ -1,0 +1,128 @@
+.main-content {
+  margin-left: 280px;
+  padding: 100px 40px 40px;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+  min-height: 100vh;
+  max-width: 1200px;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 28px;
+  color: #333;
+}
+
+form {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 1100px;
+  width: 100%;
+  margin-left: 0;
+}
+
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 15px;
+}
+
+.btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#permissoes-container {
+  border: 1px solid #ddd;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  margin-top: 30px;
+}
+
+#permissoes-container h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+}
+
+/* BLOCO COMPLETO: UMA PERMISSÃO PRIMÁRIA + SUAS SECUNDÁRIAS */
+.permissao-bloco {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* COLUNA DA PERMISSÃO PRIMÁRIA */
+.permissao-primaria {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* PERMISSÕES SECUNDÁRIAS */
+.permissoes-secundarias {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-left: 10px;
+}
+
+.secundaria-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: normal;
+  color: #000;
+  cursor: pointer;
+  margin-right: 20px;
+  gap: 2px; /* REDUZIDO AQUI PARA APROXIMAR MAIS O TEXTO DO CHECKBOX */
+}
+
+.permissao-primaria input[type="checkbox"] {
+  accent-color: #ffc107;
+}
+
+.secundaria-label input[type="checkbox"] {
+  accent-color: #ffc107;
+  margin: 0;
+  padding: 0;
+}
+
+/* Destaque para permissões secundárias selecionadas */
+.secundaria-label input:checked + span {
+  font-weight: bold;
+  color: #d39e00;
+}
+
+/* Fundo amarelo quando a permissão primária estiver selecionada */
+.permissao-primaria input:checked + .primaria-texto {
+  background-color: #fff3cd;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
