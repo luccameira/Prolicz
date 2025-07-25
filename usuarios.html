@@ -34,7 +34,6 @@
       font-size: 15px;
       text-align: left;
     }
-    /* AQUI: removendo fundo azul e colocando cor preta no texto do cabeçalho */
     th {
       background-color: transparent !important;
       color: black !important;
@@ -55,7 +54,6 @@
       font-weight: 600;
       user-select: none;
     }
-    /* Botão Novo Usuário amarelo com letra preta */
     .btn-novo {
       background-color: #ffc107;
       color: black;
@@ -76,7 +74,7 @@
 
   <div class="main-content">
     <h1>Usuários</h1>
-    <button class="btn btn-novo" onclick="alert('Funcionalidade para criar usuário ainda não implementada')">+ Novo Usuário</button>
+    <a href="novo-usuario.html" class="btn btn-novo" style="text-decoration: none;">+ Novo Usuário</a>
     <table>
       <thead>
         <tr>
@@ -90,22 +88,25 @@
     </table>
   </div>
 
-  <script>
-    // Array estático simulando dados de usuários
-    const usuarios = [
-      { id: 1, nome: "Lucas", email: "lucas@prolicz.com", tipo: "Administrador" },
-      { id: 2, nome: "Rodrigo", email: "rodrigo@prolicz.com", tipo: "Master" },
-      { id: 3, nome: "Carlos Mendes", email: "carlos@email.com", tipo: "Usuário" }
-    ];
+<script>
+  async function carregarUsuarios() {
+    const tbody = document.getElementById('usuarios-tbody');
+    tbody.innerHTML = '';
 
-    // Função para montar a tabela de usuários
-    function carregarUsuarios() {
-      const tbody = document.getElementById('usuarios-tbody');
-      tbody.innerHTML = ''; // limpa a tabela
+    try {
+      const response = await fetch('/api/usuarios');
+
+      if (!response.ok) {
+        const texto = await response.text();
+        console.error('Erro do servidor:', texto);
+        alert('Erro ao carregar usuários: ' + texto);
+        return;
+      }
+
+      const usuarios = await response.json();
 
       usuarios.forEach(usuario => {
         const tr = document.createElement('tr');
-
         tr.innerHTML = `
           <td>${usuario.nome}</td>
           <td>${usuario.email}</td>
@@ -115,25 +116,47 @@
             <button class="btn btn-delete" onclick="excluirUsuario(${usuario.id})">Excluir</button>
           </td>
         `;
-
         tbody.appendChild(tr);
       });
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      alert('Erro ao carregar usuários (catch).');
     }
+  }
 
-    // Funções simuladas para editar e excluir
-    function editarUsuario(id) {
-      alert('Editar usuário com ID ' + id);
-    }
+  async function excluirUsuario(id) {
+  if (!confirm('Deseja realmente excluir o usuário com ID ' + id + '?')) return;
 
-    function excluirUsuario(id) {
-      if (confirm('Deseja realmente excluir o usuário com ID ' + id + '?')) {
-        alert('Usuário excluído (simulado): ' + id);
-        // Aqui você pode remover do array e recarregar a tabela para simular exclusão
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado')); // <-- ESSA LINHA É FUNDAMENTAL
+
+  try {
+    const response = await fetch(`/api/usuarios/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'usuario-logado': JSON.stringify(usuarioLogado) // <-- ISSO AQUI É O QUE GARANTE O BLOQUEIO LÁ NO BACKEND
       }
-    }
+    });
 
-    // Carrega os usuários ao abrir a página
-    window.onload = carregarUsuarios;
-  </script>
+    const msg = await response.text();
+
+    if (response.ok) {
+      alert(msg);
+      carregarUsuarios();
+    } else {
+      alert('Erro ao excluir: ' + msg);
+    }
+  } catch (error) {
+    console.error('Erro ao excluir:', error);
+    alert('Erro ao excluir usuário.');
+  }
+}
+
+  function editarUsuario(id) {
+    alert('Editar usuário com ID ' + id);
+  }
+
+  window.onload = carregarUsuarios;
+</script>
 </body>
 </html>
