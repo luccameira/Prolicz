@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
 [
   ['Cadastrador', [
     'Visualizar Clientes', 'Adicionar Cliente', 'Editar Cliente',
-    'Visualizar Produtos', 'Adicionar Produto'
-  ]],
+    'Visualizar Produtos', 'Adicionar Produto', 'Editar Produto', 'Excluir Produto'
+]],
   ['Vendedor', [
     'Visualizar Vendas', 'Adicionar Venda', 'Editar Venda'
   ]],
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const permissoesSecundarias = {
         'Visualizar Clientes': ['Adicionar Cliente', 'Editar Cliente', 'Excluir Cliente'],
         'Visualizar Vendas': ['Adicionar Venda', 'Editar Venda', 'Excluir Venda'],
-        'Visualizar Produtos': ['Adicionar Produto'],
+        'Visualizar Produtos': ['Adicionar Produto', 'Editar Produto', 'Excluir Produto'],
         'Visualizar Usuários': ['Adicionar Usuário', 'Editar Usuário', 'Excluir Usuário'],
         'Visualizar Tarefas - Portaria': ['Executar Tarefas - Portaria', 'Editar Tarefas - Portaria'],
         'Visualizar Tarefas - Carga e Descarga': ['Executar Tarefas - Carga e Descarga', 'Editar Tarefas - Carga e Descarga'],
