@@ -142,40 +142,53 @@
     }
 
     function renderizarTabela() {
-      const tbody = document.querySelector("#tabela-vendas tbody");
-      const wrapper = document.getElementById("tabelaWrapper");
-      tbody.innerHTML = "";
-      const hoje = new Date().toISOString().split("T")[0];
-      let primeiraHoje = null;
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const permissoes = usuario?.permissoes || [];
 
-      pedidosAtuais.forEach(p => {
-        const dt = new Date(p.data_coleta).toISOString().split("T")[0];
-        const isHoje = dt === hoje;
-        const tr = document.createElement("tr");
-        if (isHoje) {
-          tr.classList.add("hoje-row");
-          if (!primeiraHoje) primeiraHoje = tr;
-        }
-        tr.addEventListener("click", () => {
-          window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
-        });
-        tr.innerHTML = `
-          <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
-          <td>${p.cliente}</td>
-          <td>${p.status}</td>
-          <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
-          <td>${p.nota_fiscal || '-'}</td>
-          <td>
-            <button class="btn btn-editar" onclick="event.stopPropagation();window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
-            <button class="btn btn-excluir" onclick="event.stopPropagation();excluirPedido(${p.pedido_id})">Excluir</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
+  const podeExcluir = permissoes.includes("excluir_venda");
+  const podeEditar = permissoes.includes("editar_venda");
 
-      if (primeiraHoje) setTimeout(() => {
-        wrapper.scrollTop = primeiraHoje.offsetTop - 30;
-      }, 150);
+  const tbody = document.querySelector("#tabela-vendas tbody");
+  const wrapper = document.getElementById("tabelaWrapper");
+  tbody.innerHTML = "";
+  const hoje = new Date().toISOString().split("T")[0];
+  let primeiraHoje = null;
+
+  pedidosAtuais.forEach(p => {
+    const dt = new Date(p.data_coleta).toISOString().split("T")[0];
+    const isHoje = dt === hoje;
+    const tr = document.createElement("tr");
+    if (isHoje) {
+      tr.classList.add("hoje-row");
+      if (!primeiraHoje) primeiraHoje = tr;
     }
+    tr.addEventListener("click", () => {
+      window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
+    });
+
+    const botoes = [];
+    if (podeEditar) {
+      botoes.push(`<button class="btn btn-editar" onclick="event.stopPropagation();window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>`);
+    }
+    if (podeExcluir) {
+      botoes.push(`<button class="btn btn-excluir" onclick="event.stopPropagation();excluirPedido(${p.pedido_id})">Excluir</button>`);
+    }
+
+    tr.innerHTML = `
+      <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
+      <td>${p.cliente}</td>
+      <td>${p.status}</td>
+      <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
+      <td>${p.nota_fiscal || '-'}</td>
+      <td>${botoes.join(' ')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (primeiraHoje) setTimeout(() => {
+    wrapper.scrollTop = primeiraHoje.offsetTop - 30;
+  }, 150);
+}
 
     async function carregarPedidos() {
       const cliente = document.getElementById("buscaCliente").value;
@@ -198,12 +211,21 @@
     }
 
     async function excluirPedido(id) {
-      if (!confirm("Deseja excluir este pedido?")) return;
-      const res = await fetch(`/api/pedidos/${id}`, { method:'DELETE' });
-      const data = await res.json();
-      alert(data.mensagem || 'Pedido excluído');
-      carregarPedidos();
-    }
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const permissoes = usuario?.permissoes || [];
+
+  if (!permissoes.includes("excluir_venda")) {
+    alert("Você não tem permissão para excluir vendas.");
+    return;
+  }
+
+  if (!confirm("Deseja excluir este pedido?")) return;
+
+  const res = await fetch(`/api/pedidos/${id}`, { method:'DELETE' });
+  const data = await res.json();
+  alert(data.mensagem || 'Pedido excluído');
+  carregarPedidos();
+}
 
     document.querySelectorAll("#buscaCliente, #filtroStatus, #intervaloDatas")
       .forEach(el => el.addEventListener("change", carregarPedidos));
