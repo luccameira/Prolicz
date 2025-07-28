@@ -165,9 +165,7 @@
               <td>${cliente.status || 'Ativo'}</td>
               <td>
                 <button class="btn btn-editar" onclick="event.stopPropagation(); location.href='editar-cliente.html?id=${cliente.id}'">Editar</button>
-                ${window.usuarioLogado?.permissoes?.includes('excluir_cliente') ? `
                 <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirCliente(${cliente.id})">Excluir</button>
-                ` : ''}
               </td>
             `;
             tr.addEventListener('click', () => {
