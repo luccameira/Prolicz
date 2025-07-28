@@ -1,3 +1,14 @@
+function usuarioTemPermissao(chave) {
+  const permissoesJSON = sessionStorage.getItem('permissoes');
+  if (!permissoesJSON) return false;
+  try {
+    const permissoes = JSON.parse(permissoesJSON);
+    return permissoes.includes(chave);
+  } catch {
+    return false;
+  }
+}
+
 const estiloErro = document.createElement('style');
 estiloErro.textContent = `
   .campo-invalido {
@@ -233,7 +244,7 @@ const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].incl
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    if (podeExecutar(pedido.status)) {
+    if (podeExecutar(pedido.status) && usuarioTemPermissao('executar tarefa portaria')) {
   renderizarFormularioColeta(pedido, card);
 }
 
@@ -332,6 +343,11 @@ ${(pedido.observacoes_setor?.length)
 }
 
 async function registrarColeta(pedidoId, botao) {
+  if (!usuarioTemPermissao('executar tarefa portaria')) {
+    alert("Você não tem permissão para executar esta tarefa.");
+    return;
+  }
+
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
   if (!confirmar) return;
 
