@@ -35,10 +35,11 @@ router.post('/', async (req, res) => {
     }
 
     for (const p of produtos) {
+      const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
-        typeof p.valor_unitario === 'string'
-          ? p.valor_unitario.replace(/[^\d,-]/g, '').replace(',', '.')
-          : p.valor_unitario || 0
+        typeof raw === 'string'
+          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+          : raw
       ) || 0;
       await connection.query(
         'INSERT INTO produtos_autorizados (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
@@ -47,10 +48,11 @@ router.post('/', async (req, res) => {
     }
 
     for (const p of produtos_venda) {
+      const raw = p.valor_unitario != null ? p.valor_unitario : p.valor;
       const valor = parseFloat(
-        typeof p.valor_unitario === 'string'
-          ? p.valor_unitario.replace(/[^\d,-]/g, '').replace(',', '.')
-          : p.valor_unitario || 0
+        typeof raw === 'string'
+          ? raw.replace(/[^\d,-]/g, '').replace(',', '.')
+          : raw
       ) || 0;
       await connection.query(
         'INSERT INTO produtos_a_vender (cliente_id, produto_id, valor_unitario) VALUES (?, ?, ?)',
@@ -91,11 +93,6 @@ router.get('/', (req, res) => {
 
 // DELETE /api/clientes/:id
 router.delete('/:id', async (req, res) => {
-  const usuario = req.session?.usuario;
-  if (!usuario || !usuario.permissoes?.includes('excluir_cliente')) {
-    return res.status(403).json({ erro: 'Você não tem permissão para excluir clientes.' });
-  }
-
   const id = req.params.id;
   try {
     await connection.query('DELETE FROM contatos_cliente WHERE cliente_id = ?', [id]);
@@ -109,6 +106,16 @@ router.delete('/:id', async (req, res) => {
     console.error('Erro ao excluir cliente:', err);
     res.status(500).json({ erro: 'Erro ao excluir cliente.' });
   }
+});
+
+// GET /api/clientes/produtos
+router.get('/produtos', (req, res) => {
+  connection.query('SELECT id, nome, unidade FROM produtos ORDER BY nome ASC')
+    .then(([resultados]) => res.json(resultados))
+    .catch(err => {
+      console.error('Erro ao buscar produtos:', err);
+      res.status(500).json({ erro: 'Erro ao buscar produtos.' });
+    });
 });
 
 // GET /api/clientes/:id/produtos
@@ -137,7 +144,6 @@ router.get('/:id', async (req, res) => {
 
     const cliente = clienteRes[0];
 
-    // Extrair e converter codigos_fiscais em array
     const rawCodigos = cliente.codigos_fiscais;
     let codigosArray = [];
     if (Array.isArray(rawCodigos)) {
