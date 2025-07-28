@@ -144,55 +144,106 @@
     </table>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      fetch('/api/clientes')
-        .then(res => res.json())
-        .then(clientes => {
-          const tbody = document.getElementById('tabela-clientes');
-          tbody.innerHTML = '';
+<script>
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+  const tipoUsuario = usuario.tipo || '';
+  const permissoes = usuario.permissoes || [];
 
-          if (!clientes.length) {
-            tbody.innerHTML = '<tr><td colspan="4">Nenhum cliente encontrado.</td></tr>';
-            return;
-          }
+  // Se for do tipo portaria, vendedor ou conferência de peso, redireciona
+if (
+  tipoUsuario === "portaria" ||
+  tipoUsuario === "vendedor" ||
+  tipoUsuario === "conferência de peso"
+  tipoUsuario === "financeiro"
+  tipoUsuario === "emissão de nf"
+) {
+  alert("Você não tem permissão para acessar a página de clientes.");
+  window.location.href = "index.html";
+}
 
-          clientes.forEach(cliente => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${cliente.nome_fantasia}</td>
-              <td>${cliente.documento || '---'}</td>
-              <td>${cliente.status || 'Ativo'}</td>
-              <td>
-                <button class="btn btn-editar" onclick="event.stopPropagation(); location.href='editar-cliente.html?id=${cliente.id}'">Editar</button>
-                <button class="btn btn-excluir" onclick="event.stopPropagation(); excluirCliente(${cliente.id})">Excluir</button>
-              </td>
-            `;
-            tr.addEventListener('click', () => {
-              window.location.href = `visualizar-cliente.html?id=${cliente.id}`;
-            });
-            tbody.appendChild(tr);
-          });
-        })
-        .catch(() => {
-          document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4">Erro ao carregar clientes.</td></tr>';
-        });
-    });
-
-    function excluirCliente(id) {
-      if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
-
-      fetch(`/api/clientes/${id}`, { method: 'DELETE' })
-        .then(res => {
-          if (res.ok) {
-            alert("Cliente excluído com sucesso.");
-            location.reload();
-          } else {
-            alert("Erro ao excluir cliente.");
-          }
-        })
-        .catch(() => alert("Erro ao excluir cliente."));
+  document.addEventListener("DOMContentLoaded", () => {
+    // 🔐 Botão "Adicionar Cliente"
+    const btnAdicionar = document.querySelector('.btn-adicionar');
+    if (!permissoes.includes('Adicionar Cliente')) {
+      btnAdicionar?.remove();
     }
-  </script>
+
+    fetch('/api/clientes')
+      .then(res => res.json())
+      .then(clientes => {
+        const tbody = document.getElementById('tabela-clientes');
+        tbody.innerHTML = '';
+
+        if (!clientes.length) {
+          tbody.innerHTML = '<tr><td colspan="4">Nenhum cliente encontrado.</td></tr>';
+          return;
+        }
+
+        clientes.forEach(cliente => {
+          const tr = document.createElement('tr');
+
+          // 🔐 Definindo permissões por tipo de usuário
+          let podeEditar = false;
+          let podeExcluir = false;
+
+          if (tipoUsuario === 'administrador') {
+            podeEditar = true;
+            podeExcluir = true;
+          }
+
+          if (tipoUsuario === 'coordenador') {
+            podeEditar = permissoes.includes('Editar Cliente');
+            podeExcluir = false;
+          }
+
+          if (tipoUsuario === 'cadastrador') {
+            podeEditar = permissoes.includes('Editar Cliente');
+            podeExcluir = false;
+          }
+
+          // (futuramente: portaria, vendedor, etc...)
+
+          let acoes = '';
+          if (podeEditar) {
+            acoes += `<button class="btn btn-editar" onclick="event.stopPropagation(); location.href='editar-cliente.html?id=${cliente.id}'">Editar</button>`;
+          }
+          if (podeExcluir) {
+            acoes += `<button class="btn btn-excluir" onclick="event.stopPropagation(); excluirCliente(${cliente.id})">Excluir</button>`;
+          }
+
+          tr.innerHTML = `
+            <td>${cliente.nome_fantasia}</td>
+            <td>${cliente.documento || '---'}</td>
+            <td>${cliente.status || 'Ativo'}</td>
+            <td>${acoes}</td>
+          `;
+
+          tr.addEventListener('click', () => {
+            window.location.href = `visualizar-cliente.html?id=${cliente.id}`;
+          });
+
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(() => {
+        document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4">Erro ao carregar clientes.</td></tr>';
+      });
+  });
+
+  function excluirCliente(id) {
+    if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
+
+    fetch(`/api/clientes/${id}`, { method: 'DELETE' })
+      .then(res => {
+        if (res.ok) {
+          alert("Cliente excluído com sucesso.");
+          location.reload();
+        } else {
+          alert("Erro ao excluir cliente.");
+        }
+      })
+      .catch(() => alert("Erro ao excluir cliente."));
+  }
+</script>
 </body>
 </html>
