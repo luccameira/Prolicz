@@ -41,15 +41,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const logo = topbarContainer.querySelector(".logo");
           if (logo) logo.prepend(botaoToggle);
-        }
 
-        const nomeUsuario = localStorage.getItem("nomeUsuario");
-if (nomeUsuario) {
-  const span = document.getElementById("nomeUsuarioTopo");
-  if (span) {
-    span.textContent = nomeUsuario;
-  }
-}
+          // Mostrar nome do usuário
+          const nomeUsuario = localStorage.getItem("nomeUsuario");
+          if (nomeUsuario) {
+            const span = document.getElementById("nomeUsuarioTopo");
+            if (span) span.textContent = nomeUsuario;
+          }
+        }
       }
 
       if (sidebar) {
@@ -63,6 +62,17 @@ if (nomeUsuario) {
             linkUsuarios.setAttribute('href', 'usuarios.html');
           }
 
+// ⚠️ OCULTAR MENU "CLIENTES"
+const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+const tiposSemClientes = ["vendedor", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
+
+if (usuario && tiposSemClientes.includes(usuario.tipo)) {
+  const menuClientes = sidebarContainer.querySelector('a[href="clientes.html"]');
+  if (menuClientes) {
+    menuClientes.remove(); // Remove o item da sidebar
+    console.log(`🔒 Menu 'Clientes' ocultado para usuário tipo '${usuario.tipo}'`);
+  }
+}
           // Marcar como ativo o menu correspondente à página atual
           const path = window.location.pathname;
           sidebarContainer.querySelectorAll("a").forEach(link => {
