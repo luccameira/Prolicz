@@ -142,7 +142,7 @@ async function carregarPedidosFinanceiro() {
       const descontosComerciais = item.descontos?.filter(d =>
         d.motivo === 'Compra de Material' || d.motivo === 'Devolução de Material'
       ) || [];
-      descontosComerciais.forEach(desc => {
+        descontosComerciais.forEach(desc => {
         const nomeMat = normalizarTexto(desc.material);
         let listaProdutos;
         if (desc.motivo === 'Compra de Material') {
@@ -157,7 +157,10 @@ async function carregarPedidosFinanceiro() {
         descontosPedido.push({
           ...desc,
           nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-          valor_unitario: produtoReal?.valor_unitario || 0,
+          // Para o cálculo de desconto, utilize o valor por quilo do próprio item.
+          // Isso garante que o desconto seja calculado com o valor cheio do produto,
+          // independente de divisões de nota.
+          valor_unitario: Number(item.valor_unitario) || 0,
           ticket_devolucao: desc.ticket_devolucao || null,
           ticket_compra: desc.ticket_compra || null,
           confirmado_valor_kg: false
@@ -189,7 +192,10 @@ async function carregarPedidosFinanceiro() {
         // Desconto comercial deste material (compra/devolução)
         const descontoComercialMaterial = descontosPedido
           .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
-          .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+          // O desconto é sempre calculado pelo peso de desconto multiplicado
+          // pelo valor por quilo do material original (item.valor_unitario),
+          // garantindo que devoluções e compras abatam apenas a parte sem nota.
+          .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(item.valor_unitario || 0)), 0);
         // Totais brutos
         let totalCom = pesoFinal * valorComNota;
         let totalSem = pesoFinal * valorSemNota;
@@ -206,15 +212,30 @@ async function carregarPedidosFinanceiro() {
         const totalComFmt = formatarMoeda(totalCom);
         const totalSemFmt = formatarMoeda(totalSem);
         const valorKgFmt = formatarMoeda(Number(item.valor_unitario) || 0);
-        // Monta linhas de exibição separadas
+        // Monta linhas de exibição separadas. Para códigos de nota cheia (quando
+        // valorSemNota é zero) exibimos o peso fiscal recalculado no lugar da
+        // linha "sem nota". Para códigos parciais, exibimos as partes com
+        // nota e sem nota com seus respectivos valores. Caso o desconto
+        // consuma toda a parte sem nota, exibimos o valor 0 na linha vermelha.
         let linhas = '';
+        // Sempre mostra a parte com nota, se houver
         if (totalCom > 0) {
           linhas += `<span style="color:#2e7d32;">✔ Com Nota: ${totalComFmt} (${valorKgFmt}/kg)</span>`;
         }
-        if (totalSem > 0) {
-          // Quebra de linha somente se houver as duas partes
+        // Se o item possui alguma porção sem nota (valorSemNota > 0), então
+        // exibimos a linha de "Sem Nota". O valor exibido já considera
+        // eventual desconto aplicado. Caso totalSem esteja zerado após o
+        // desconto, mostramos o valor 0.
+        if (valorSemNota > 0) {
           if (linhas) linhas += '<br />';
-          linhas += `<span style="color:#c62828;">❌ Sem Nota: ${totalSemFmt} (${valorKgFmt}/kg)</span>`;
+          const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
+          linhas += `<span style="color:#c62828;">❌ Sem Nota: ${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
+        } else {
+          // Nota cheia: não há parte sem nota. Calcula-se o peso fiscal para
+          // exibição no lugar da linha vermelha.
+          const pesoNF = Number(item.valor_unitario) > 0 ? (totalCom / Number(item.valor_unitario)) : 0;
+          if (linhas) linhas += '<br />';
+          linhas += `<span style="color:#c62828;">❌ Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
         }
         return `
           <div class="barra-fiscal" style="font-weight:600; padding:4px 10px; font-size:15px;">
@@ -513,7 +534,8 @@ async function carregarPedidosFinanceiro() {
         // Aplica desconto comercial na parte sem nota apenas para o material correspondente
         const descontoComercialMaterial = descontosPedido
           .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(item.nome_produto))
-          .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(d.valor_unitario || 0)), 0);
+          // Utiliza o valor por quilo do próprio material (item.valor_unitario)
+          .reduce((soma, d) => soma + (Number(d.peso_calculado || 0) * Number(item.valor_unitario || 0)), 0);
         if (totalSem >= descontoComercialMaterial) {
           totalSem -= descontoComercialMaterial;
         } else {
