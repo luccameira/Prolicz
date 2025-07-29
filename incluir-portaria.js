@@ -1,23 +1,3 @@
-function usuarioTemPermissao(chave) {
-  const permissoesJSON = sessionStorage.getItem('permissoes');
-  if (!permissoesJSON) return false;
-  try {
-    const permissoes = JSON.parse(permissoesJSON);
-    return permissoes.includes(chave);
-  } catch {
-    return false;
-  }
-}
-
-const estiloErro = document.createElement('style');
-estiloErro.textContent = `
-  .campo-invalido {
-    border: 2px solid red !important;
-    background-color: #fff5f5;
-  }
-`;
-document.head.appendChild(estiloErro);
-
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
   monitorarUploads();
@@ -55,7 +35,9 @@ function formatarData(data) {
   try {
     const dt = new Date(data);
     if (isNaN(dt)) return '—';
-    return dt.toLocaleDateString('pt-BR');
+    return dt.toLocaleDateString('pt-BR').slice(0, 5) + ' ' +
+      String(dt.getHours()).padStart(2, '0') + ':' +
+      String(dt.getMinutes()).padStart(2, '0');
   } catch {
     return data;
   }
@@ -80,19 +62,17 @@ async function verificarCPF(pedidoId, isAjudante = false, index = '0') {
     const data = await res.json();
 
     let html = '';
-    const tipoPessoa = isAjudante ? 'Ajudante' : 'Motorista';
-
     if (!data.encontrado) {
-      html = `<span class="badge-status badge-nao-cadastrado">🟠 ${tipoPessoa} não cadastrado</span>`;
+      html = `<span class="badge-status badge-nao-cadastrado">🟠 Motorista não cadastrado</span>`;
     } else if (data.cadastroVencido) {
       html = `<span class="badge-status badge-vencido">🔴 Cadastro vencido - necessário reenvio da ficha</span>`;
     } else {
-      html = `<span class="badge-status badge-ok">🟢 ${tipoPessoa} já cadastrado</span>`;
+      html = `<span class="badge-status badge-ok">🟢 Motorista já cadastrado</span>`;
     }
 
     statusDiv.innerHTML = html;
     statusDiv.style.display = 'block';
-    statusDiv.style.marginTop = '6px';
+    statusDiv.style.marginTop = '6px'; // alinhamento com o campo de CPF
 
     if (!isAjudante) {
       const nomeInput = document.getElementById(`nome-${pedidoId}`);
@@ -186,7 +166,6 @@ function exibirCardAjudante(pedidoId, valor) {
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
-const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].includes(status);
   const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
   const pedidos = await res.json();
 
@@ -244,8 +223,14 @@ const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].incl
       if (timeline) animarLinhaProgresso(timeline);
     }, 20);
 
-    if (podeExecutar(pedido.status) && usuarioTemPermissao('executar tarefa portaria')) {
-  renderizarFormularioColeta(pedido, card);
+    if (status === 'Aguardando Início da Coleta') {
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const tipo = usuarioLogado?.tipo?.toLowerCase() || '';
+
+  // Apenas administrador e portaria podem ver o formulário de execução
+  if (tipo === 'administrador' || tipo === 'portaria') {
+    renderizarFormularioColeta(pedido, card);
+  }
 }
 
 // Inserir observações da portaria se existirem
@@ -343,11 +328,6 @@ ${(pedido.observacoes_setor?.length)
 }
 
 async function registrarColeta(pedidoId, botao) {
-  if (!usuarioTemPermissao('executar tarefa portaria')) {
-    alert("Você não tem permissão para executar esta tarefa.");
-    return;
-  }
-
   const confirmar = confirm("Tem certeza que deseja iniciar a coleta?");
   if (!confirmar) return;
 
@@ -363,25 +343,10 @@ if (!temAjudante) {
   return;
 }
 
-  let camposInvalidos = [];
-
-if (!cpf) {
-  camposInvalidos.push('CPF');
-  document.getElementById(`cpf-${pedidoId}`).classList.add('campo-invalido');
-}
-if (!placa) {
-  camposInvalidos.push('Placa');
-  document.getElementById(`placa-${pedidoId}`).classList.add('campo-invalido');
-}
-if (!caminhaoInput.files.length) {
-  camposInvalidos.push('Foto do Caminhão');
-  caminhaoInput.classList.add('campo-invalido');
-}
-
-if (camposInvalidos.length > 0) {
-  alert(`Preencha os seguintes campos obrigatórios: ${camposInvalidos.join(', ')}`);
-  return;
-}
+  if (!cpf || !placa || !caminhaoInput.files.length) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
 
   botao.disabled = true;
   botao.innerText = 'Enviando...';
@@ -393,70 +358,25 @@ if (camposInvalidos.length > 0) {
   if (fichaInput?.files.length) formData.append('ficha_integracao', fichaInput.files[0]);
   if (docInput?.files.length) formData.append('foto_documento', docInput.files[0]);
   formData.append('foto_caminhao', caminhaoInput.files[0]);
- 
-const nomeAjudante = [];
 
-const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  const nomeAjudante = [];
 
-// Se tem ajudante, os campos do ajudante devem ser obrigatórios
-if (temAjudante === 'sim' && ajudantes.length === 0) {
-  alert('Você informou que tem ajudante, mas os dados do ajudante não foram preenchidos.');
-  botao.disabled = false;
-  botao.innerText = 'Iniciar Coleta';
-  return;
-}
+  const ajudantes = Array.from(document.querySelectorAll(`[id^="card-ajudante-${pedidoId}-"]`));
+  ajudantes.forEach((card, index) => {
+    const cpfAj = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`)?.value;
+    const nomeAj = card.querySelector(`#nome-ajudante-${index}`)?.value;
+    const fichaAj = card.querySelector(`#ficha-ajudante-${index}`)?.files?.[0];
+    const docAj = card.querySelector(`#doc-ajudante-${index}`)?.files?.[0];
 
-let camposAjudanteInvalidos = false;
-
-ajudantes.forEach((card, index) => {
-  const cpfAjInput = card.querySelector(`#cpf-ajudante-${pedidoId}-${index}`);
-  const nomeAjInput = card.querySelector(`#nome-ajudante-${index}`);
-  const fichaAjInput = card.querySelector(`#ficha-ajudante-${index}`);
-  const docAjInput = card.querySelector(`#doc-ajudante-${index}`);
-
-  const cpfAj = cpfAjInput?.value?.trim();
-  const nomeAj = nomeAjInput?.value?.trim();
-  const fichaAj = fichaAjInput?.files?.[0];
-  const docAj = docAjInput?.files?.[0];
-
-  if (temAjudante === 'sim') {
-    if (!cpfAj) {
-      cpfAjInput?.classList.add('campo-invalido');
-      camposInvalidos.push(`CPF do Ajudante`);
-      camposAjudanteInvalidos = true;
-    }
-    if (!nomeAj) {
-      nomeAjInput?.classList.add('campo-invalido');
-      camposInvalidos.push(`Nome do Ajudante`);
-      camposAjudanteInvalidos = true;
-    }
-    if (!fichaAj) {
-      fichaAjInput?.classList.add('campo-invalido');
-      camposInvalidos.push(`Ficha de Integração do Ajudante`);
-      camposAjudanteInvalidos = true;
-    }
-    if (!docAj) {
-      docAjInput?.classList.add('campo-invalido');
-      camposInvalidos.push(`Documento com Foto do Ajudante`);
-      camposAjudanteInvalidos = true;
-    }
-
-    if (!camposAjudanteInvalidos) {
+    if (cpfAj && nomeAj) {
       formData.append('cpf_ajudante', cpfAj);
       formData.append('nome_ajudante', nomeAj);
-      formData.append('ficha_ajudante', fichaAj);
-      formData.append('documento_ajudante', docAj);
+      if (fichaAj) formData.append('ficha_ajudante', fichaAj);
+      if (docAj) formData.append('documento_ajudante', docAj);
       nomeAjudante.push(nomeAj);
     }
-  }
-});
+  });
 
-if (temAjudante === 'sim' && camposAjudanteInvalidos) {
-  alert(`Preencha todos os dados do ajudante corretamente: ${camposInvalidos.join(', ')}`);
-  botao.disabled = false;
-  botao.innerText = 'Iniciar Coleta';
-  return;
-}
   try {
     const res = await fetch('/api/motoristas', {
       method: 'POST',
