@@ -62,18 +62,40 @@ document.addEventListener("DOMContentLoaded", () => {
             linkUsuarios.setAttribute('href', 'usuarios.html');
           }
 
-// ⚠️ OCULTAR MENU "CLIENTES"
-const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
-const tiposSemClientes = ["vendedor", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
+          // ⚠️ OCULTAR MENUS DA SIDEBAR CONFORME O TIPO DO USUÁRIO
+          const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+          if (usuario) {
+            const tipo = usuario.tipo.toLowerCase();
 
-if (usuario && tiposSemClientes.includes(usuario.tipo)) {
-  const menuClientes = sidebarContainer.querySelector('a[href="clientes.html"]');
-  if (menuClientes) {
-    menuClientes.remove(); // Remove o item da sidebar
-    console.log(`🔒 Menu 'Clientes' ocultado para usuário tipo '${usuario.tipo}'`);
-  }
+            const tiposSemClientes = ["vendedor", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
+            if (tiposSemClientes.includes(tipo)) {
+              const menuClientes = sidebarContainer.querySelector('a[href="clientes.html"]');
+              if (menuClientes) {
+                menuClientes.remove();
+                console.log(`🔒 Menu 'Clientes' ocultado para tipo '${tipo}'`);
+              }
+            }
+
+            const tiposSemVendas = ["cadastrador", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
+            if (tiposSemVendas.includes(tipo)) {
+              const menuVendas = sidebarContainer.querySelector('a[href="vendas.html"]');
+              if (menuVendas) {
+                menuVendas.remove();
+                console.log(`🔒 Menu 'Vendas' ocultado para tipo '${tipo}'`);
 }
-          // Marcar como ativo o menu correspondente à página atual
+  }
+
+  // 👇 Bloquear menu 'Usuários' para todos, exceto administrador
+  if (tipo !== 'administrador') {
+    const menuUsuarios = sidebarContainer.querySelector('a[href="usuarios.html"]');
+    if (menuUsuarios) {
+      menuUsuarios.remove();
+      console.log(`🔒 Menu 'Usuários' ocultado para tipo '${tipo}'`);
+              }
+            }
+          }
+
+          // Ativar menu atual
           const path = window.location.pathname;
           sidebarContainer.querySelectorAll("a").forEach(link => {
             if (path.includes(link.getAttribute("href"))) {
