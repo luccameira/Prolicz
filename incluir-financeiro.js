@@ -211,12 +211,18 @@ async function carregarPedidosFinanceiro() {
             const pesoDesc = Number(d.peso_calculado || d.quantidade || 0);
             return soma + (pesoDesc * Number(mat.valor_unitario || 0));
           }, 0);
+        // Inicializa totais após desconto com os valores brutos
+        let totalComAposDesc = totalComBruto;
         let totalSemAposDesc = totalSemBruto;
         let descontoAplicadoItem = 0;
-        // Aplica desconto apenas se houver parte sem nota
+        // Se há parte sem nota, aplica desconto primeiro nela; caso contrário aplica na parte com nota
         if (valorSemNota > 0) {
           descontoAplicadoItem = Math.min(totalSemAposDesc, descontoIndividual);
           totalSemAposDesc -= descontoAplicadoItem;
+        } else {
+          // Nota cheia: aplica desconto diretamente na parte com nota
+          descontoAplicadoItem = Math.min(totalComAposDesc, descontoIndividual);
+          totalComAposDesc -= descontoAplicadoItem;
         }
         somaDescontoAplicado += descontoAplicadoItem;
         somaTotalComNota += totalComBruto;
@@ -224,13 +230,14 @@ async function carregarPedidosFinanceiro() {
           item: mat,
           valorComNota,
           valorSemNota,
-          totalCom: totalComBruto,
+          totalCom: totalComAposDesc,
           totalSem: totalSemAposDesc
         });
       });
       // Distribui desconto remanescente de forma sequencial nos itens com parte sem nota
       let descontoRestante = totalDescontosGlobais - somaDescontoAplicado;
       if (descontoRestante > 0) {
+        // Primeiro distribui nas partes sem nota remanescentes
         for (const ic of itensCalculados) {
           if (descontoRestante <= 0) break;
           if (ic.valorSemNota > 0 && ic.totalSem > 0) {
@@ -240,8 +247,20 @@ async function carregarPedidosFinanceiro() {
           }
         }
       }
+      // Se ainda sobrar desconto, aplica na parte com nota dos itens de nota cheia
+      if (descontoRestante > 0) {
+        for (const ic of itensCalculados) {
+          if (descontoRestante <= 0) break;
+          if (ic.valorSemNota === 0 && ic.totalCom > 0) {
+            const reducible = Math.min(ic.totalCom, descontoRestante);
+            ic.totalCom -= reducible;
+            descontoRestante -= reducible;
+          }
+        }
+      }
       // Calcula somas finais das partes com e sem nota
       const somaTotalSemNota = itensCalculados.reduce((soma, ic) => soma + ic.totalSem, 0);
+      const somaTotalComNotaFinal = itensCalculados.reduce((soma, ic) => soma + ic.totalCom, 0);
       // Gera HTML da barra fiscal para cada item
       const htmlBarra = itensCalculados.map(ic => {
         const mat = ic.item;
@@ -271,7 +290,8 @@ async function carregarPedidosFinanceiro() {
       }).join('');
       return {
         itensCalculados,
-        totalComNota: somaTotalComNota,
+        // totalComNota deve refletir o valor após aplicação de descontos também na parte com nota
+        totalComNota: somaTotalComNotaFinal,
         totalSemNota: somaTotalSemNota,
         codigosFiscaisBarraAzul: htmlBarra
       };
