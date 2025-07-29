@@ -253,17 +253,19 @@ async function carregarPedidosFinanceiro() {
         const valorKgFmt = formatarMoeda(Number(mat.valor_unitario) || 0);
         let linhas = '';
         if (totalCom > 0) {
-          linhas += `<span style="color:#2e7d32;">✔ Com Nota: ${totalComFmt} (${valorKgFmt}/kg)</span>`;
+          // Exibe apenas o valor com nota em verde sem ícone ou texto adicional
+          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgFmt}/kg)</span>`;
         }
         if (ic.valorSemNota > 0) {
           if (linhas) linhas += '<br />';
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
-          linhas += `<span style="color:#c62828;">❌ Sem Nota: ${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
+          // Exibe apenas o valor sem nota em vermelho, sem ícone ou rótulo
+          linhas += `<span style="color:#c62828;">${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
         } else {
-          // Nota cheia: exibe peso na NF
+          // Nota cheia: exibe apenas o peso na NF em vermelho, sem ícone
           const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
-          linhas += `<span style="color:#c62828;">❌ Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
+          linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
         }
         return `\n          <div class="barra-fiscal" style="font-weight:600; padding:4px 10px; font-size:15px;">\n            ${mat.nome_produto}: <span style="color:black;">(${codigoFmt})</span><br />\n            ${linhas}\n          </div>\n        `;
       }).join('');
@@ -573,17 +575,19 @@ async function carregarPedidosFinanceiro() {
         const valorKgFmt = formatarMoeda(Number(mat.valor_unitario) || 0);
         let linhas = '';
         if (totalCom > 0) {
-          linhas += `<span style="color:#2e7d32;">✔ Com Nota: ${totalComFmt} (${valorKgFmt}/kg)</span>`;
+          // Mostra apenas o valor com nota em verde, sem ícone ou texto adicional
+          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgFmt}/kg)</span>`;
         }
         if (ic.valorSemNota > 0) {
           if (linhas) linhas += '<br />';
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
-          linhas += `<span style="color:#c62828;">❌ Sem Nota: ${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
+          // Mostra somente o valor sem nota em vermelho
+          linhas += `<span style="color:#c62828;">${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
         } else {
-          // Nota cheia: exibe peso na NF
+          // Nota cheia: exibe apenas o peso na NF em vermelho
           const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
-          linhas += `<span style="color:#c62828;">❌ Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
+          linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
         }
         elem.innerHTML = `${mat.nome_produto}: <span style="color:black;">(${codigoFmt})</span><br />${linhas}`;
       });
