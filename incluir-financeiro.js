@@ -154,11 +154,12 @@ async function carregarPedidosFinanceiro() {
           const nomeProd = normalizarTexto(p.nome_produto);
           return nomeProd === nomeMat;
         });
-        // Para "Compra de Material", utilize o valor por quilo da tabela produtos_a_vender
-        // (produtoReal.valor_unitario). Para "Devolução de Material", utilize o
-        // valor_unitario do item carregado. Se não houver produtoReal ou valor, mantém 0.
+        // Para "Compra de Material" e "Devolução de Material", utilize o valor por quilo
+        // definido no cadastro do produto (produtoReal.valor_unitario). Se não houver
+        // produtoReal ou valor, mantém 0. Isso evita que o sistema use o valor do
+        // produto carregado no pedido, garantindo que o desconto utilize o preço correto.
         let valorKgDesconto;
-        if (desc.motivo === 'Compra de Material') {
+        if (desc.motivo === 'Compra de Material' || desc.motivo === 'Devolução de Material') {
           valorKgDesconto = Number(produtoReal?.valor_unitario) || 0;
         } else {
           valorKgDesconto = Number(item.valor_unitario) || 0;
