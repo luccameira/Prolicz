@@ -747,7 +747,13 @@ form.appendChild(blocoFin);
 card.appendChild(form);
 
 header.addEventListener('click', () => {
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+  const tipo = (usuarioLogado.tipo || '').toLowerCase();
+  const podeExecutar = (tipo === 'administrador' || tipo === 'financeiro');
+
+  if (!podeExecutar) return;
   if (pedido.status !== 'Em Análise pelo Financeiro') return;
+
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
 });
 
