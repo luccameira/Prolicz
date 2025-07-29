@@ -1,3 +1,11 @@
+/*
+ * Este arquivo contém a lógica de exibição e cálculo financeiro do módulo
+ * “incluir financeiro” do sistema Prolicz. Ele foi reestruturado para
+ * aplicar corretamente as regras fiscais da empresa para valores com
+ * nota fiscal (NF) e sem nota fiscal. As funcionalidades existentes de
+ * cálculo de descontos, exibição de timeline, vencimentos e controle
+ * dinâmico da soma dos vencimentos foram preservadas.
+ */
 
 function formatarData(data) {
   return new Date(data).toLocaleDateString('pt-BR');
