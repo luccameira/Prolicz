@@ -153,8 +153,8 @@
 if (
   tipoUsuario === "portaria" ||
   tipoUsuario === "vendedor" ||
-  tipoUsuario === "conferência de peso"
-  tipoUsuario === "financeiro"
+  tipoUsuario === "conferência de peso" ||
+  tipoUsuario === "financeiro" ||
   tipoUsuario === "emissão de nf"
 ) {
   alert("Você não tem permissão para acessar a página de clientes.");
@@ -192,12 +192,12 @@ if (
           }
 
           if (tipoUsuario === 'coordenador') {
-            podeEditar = permissoes.includes('Editar Cliente');
+            podeEditar = true;
             podeExcluir = false;
           }
 
           if (tipoUsuario === 'cadastrador') {
-            podeEditar = permissoes.includes('Editar Cliente');
+            podeEditar = true;
             podeExcluir = false;
           }
 
