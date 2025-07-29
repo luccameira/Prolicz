@@ -215,16 +215,19 @@ async function carregarPedidosFinanceiro() {
         let totalComAposDesc = totalComBruto;
         let totalSemAposDesc = totalSemBruto;
         let descontoAplicadoItem = 0;
-        // Se há parte sem nota, aplica desconto primeiro nela; caso contrário aplica na parte com nota
+        // Para itens com parte sem nota, aplica desconto apenas na parte sem nota
         if (valorSemNota > 0) {
+          // Aplica desconto até esgotar a parte sem nota. Não desconta da parte com nota.
           descontoAplicadoItem = Math.min(totalSemAposDesc, descontoIndividual);
           totalSemAposDesc -= descontoAplicadoItem;
         } else {
-          // Nota cheia: aplica desconto diretamente na parte com nota
-          descontoAplicadoItem = Math.min(totalComAposDesc, descontoIndividual);
-          totalComAposDesc -= descontoAplicadoItem;
+          // Para notas cheias (terminadas em 1), o desconto não afeta o valor de venda.
+          // Portanto, não descontamos da parte com nota. O valor total permanece o mesmo.
+          descontoAplicadoItem = 0;
         }
+        // Acumula apenas o desconto efetivamente aplicado (apenas parte sem nota)
         somaDescontoAplicado += descontoAplicadoItem;
+        // Soma original da parte com nota para cálculo de pesos e totais
         somaTotalComNota += totalComBruto;
         itensCalculados.push({
           item: mat,
@@ -234,26 +237,15 @@ async function carregarPedidosFinanceiro() {
           totalSem: totalSemAposDesc
         });
       });
-      // Distribui desconto remanescente de forma sequencial nos itens com parte sem nota
+      // Distribui desconto remanescente de forma sequencial apenas nos itens com parte sem nota
       let descontoRestante = totalDescontosGlobais - somaDescontoAplicado;
       if (descontoRestante > 0) {
-        // Primeiro distribui nas partes sem nota remanescentes
         for (const ic of itensCalculados) {
           if (descontoRestante <= 0) break;
+          // Só distribui desconto remanescente na parte sem nota dos itens parciais
           if (ic.valorSemNota > 0 && ic.totalSem > 0) {
             const reducible = Math.min(ic.totalSem, descontoRestante);
             ic.totalSem -= reducible;
-            descontoRestante -= reducible;
-          }
-        }
-      }
-      // Se ainda sobrar desconto, aplica na parte com nota dos itens de nota cheia
-      if (descontoRestante > 0) {
-        for (const ic of itensCalculados) {
-          if (descontoRestante <= 0) break;
-          if (ic.valorSemNota === 0 && ic.totalCom > 0) {
-            const reducible = Math.min(ic.totalCom, descontoRestante);
-            ic.totalCom -= reducible;
             descontoRestante -= reducible;
           }
         }
@@ -269,19 +261,20 @@ async function carregarPedidosFinanceiro() {
         const totalSem = ic.totalSem;
         const totalComFmt = formatarMoeda(totalCom);
         const totalSemFmt = formatarMoeda(totalSem);
-        const valorKgFmt = formatarMoeda(Number(mat.valor_unitario) || 0);
+        // Valor por kg que vai para a NF (parte com nota)
+        const valorKgComNotaFmt = formatarMoeda(ic.valorComNota || 0);
         let linhas = '';
         if (totalCom > 0) {
-          // Exibe apenas o valor com nota em verde sem ícone ou texto adicional
-          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgFmt}/kg)</span>`;
+          // Exibe apenas o valor com nota em verde e o valor por kg que vai para a NF
+          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgComNotaFmt}/kg)</span>`;
         }
         if (ic.valorSemNota > 0) {
           if (linhas) linhas += '<br />';
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
-          // Exibe apenas o valor sem nota em vermelho, sem ícone ou rótulo
-          linhas += `<span style="color:#c62828;">${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
+          // Exibe apenas o valor sem nota em vermelho, sem valor por kg
+          linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
         } else {
-          // Nota cheia: exibe apenas o peso na NF em vermelho, sem ícone
+          // Nota cheia: exibe apenas o peso na NF em vermelho
           const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
           linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
@@ -556,11 +549,24 @@ async function carregarPedidosFinanceiro() {
       return parcelas;
     }
 
+    // Constrói um resumo fiscal consolidado se houver mais de um produto no pedido
+    let resumoFiscalHtml = '';
+    if (pedido.materiais && pedido.materiais.length > 1) {
+      const totComFmt = formatarMoeda(totalComNota);
+      const totSemFmt = formatarMoeda(totalSemNota);
+      resumoFiscalHtml = `
+        <div class="resumo-fiscal-consolidado" style="font-weight:600; padding:4px 10px;">
+          <span style="color:#2e7d32;">Total com Nota: ${totComFmt}</span><br/>
+          <span style="color:#c62828;">Total sem Nota: ${totSemFmt}</span>
+        </div>
+      `;
+    }
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
       <p class="venc-soma-error" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
+      ${resumoFiscalHtml}
       ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
     `;
     const vencContainer = containerCinza.querySelector('.vencimentos-container');
@@ -581,6 +587,13 @@ async function carregarPedidosFinanceiro() {
       // Atualiza a exibição do total da venda
       const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
       if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
+      // Atualiza o resumo fiscal consolidado, se existir
+      const resumoElem = containerCinza.querySelector('.resumo-fiscal-consolidado');
+      if (resumoElem) {
+        const totComFmt = formatarMoeda(resultadoFiscalNovo.totalComNota);
+        const totSemFmt = formatarMoeda(resultadoFiscalNovo.totalSemNota);
+        resumoElem.innerHTML = `<span style="color:#2e7d32;">Total com Nota: ${totComFmt}</span><br/><span style="color:#c62828;">Total sem Nota: ${totSemFmt}</span>`;
+      }
       // Atualiza a barra fiscal existente com os novos valores por item
       const barras = containerCinza.querySelectorAll('.barra-fiscal');
       resultadoFiscalNovo.itensCalculados.forEach((ic, idx) => {
@@ -592,17 +605,18 @@ async function carregarPedidosFinanceiro() {
         const totalSem = ic.totalSem;
         const totalComFmt = formatarMoeda(totalCom);
         const totalSemFmt = formatarMoeda(totalSem);
-        const valorKgFmt = formatarMoeda(Number(mat.valor_unitario) || 0);
+        // Preço por kg que irá para a NF (parte com nota)
+        const valorKgComNotaFmt = formatarMoeda(ic.valorComNota || 0);
         let linhas = '';
         if (totalCom > 0) {
-          // Mostra apenas o valor com nota em verde, sem ícone ou texto adicional
-          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgFmt}/kg)</span>`;
+          // Exibe apenas o valor com nota em verde e o valor por kg que vai para a NF
+          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgComNotaFmt}/kg)</span>`;
         }
         if (ic.valorSemNota > 0) {
           if (linhas) linhas += '<br />';
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
-          // Mostra somente o valor sem nota em vermelho
-          linhas += `<span style="color:#c62828;">${valorSemFmtFinal} (${valorKgFmt}/kg)</span>`;
+          // Exibe somente o valor sem nota em vermelho, sem valor por kg
+          linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
         } else {
           // Nota cheia: exibe apenas o peso na NF em vermelho
           const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
