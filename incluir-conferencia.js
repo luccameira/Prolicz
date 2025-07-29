@@ -225,10 +225,18 @@ async function carregarPedidosConferencia() {
     timeline.style.zIndex = '1';
 
     timeline.addEventListener('click', (e) => {
-      if (pedido.status !== 'Aguardando Conferência do Peso') return;
-      e.stopPropagation();
-      form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    });
+  if (pedido.status !== 'Aguardando Conferência do Peso') return;
+
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const tipoUsuario = usuarioLogado?.tipo?.toLowerCase() || '';
+
+  if (tipoUsuario !== 'administrador' && tipoUsuario !== 'conferência de peso') {
+    return; // usuário não autorizado a abrir o card
+  }
+
+  e.stopPropagation();
+  form.style.display = form.style.display === 'block' ? 'none' : 'block';
+});
 
     card.style.position = 'relative';
     card.appendChild(form);
