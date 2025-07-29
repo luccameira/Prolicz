@@ -69,9 +69,14 @@
   </style>
 </head>
 <body>
+  <script>
+    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+    if (!usuarioLogado || usuarioLogado.tipo !== 'administrador') {
+      window.location.href = 'dashboard.html';
+    }
+  </script>
   <div class="topbar"></div>
   <div class="sidebar"></div>
-
   <div class="main-content">
     <h1>Usuários</h1>
     <a href="novo-usuario.html" class="btn btn-novo" style="text-decoration: none;">+ Novo Usuário</a>
