@@ -158,8 +158,8 @@
 }
 
   function editarUsuario(id) {
-    alert('Editar usuário com ID ' + id);
-  }
+  window.location.href = `editar-usuario.html?id=${id}`;
+}
 
   window.onload = carregarUsuarios;
 </script>
