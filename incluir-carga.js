@@ -122,11 +122,16 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const podeExecutar = ['Coleta Iniciada', 'Carga e Descarga'].includes(p.status);
-    const form = document.createElement('div');
-    form.className = 'formulario';
-    form.id = `form-${p.id}`;
-    form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
+    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+const tipoUsuario = usuarioLogado?.tipo?.toLowerCase() || '';
+
+const podeExecutar = ['Coleta Iniciada', 'Carga e Descarga'].includes(p.status) &&
+                     (tipoUsuario === 'administrador' || tipoUsuario === 'carga e descarga');
+
+const form = document.createElement('div');
+form.className = 'formulario';
+form.id = `form-${p.id}`;
+form.style.display = tarefasAbertas[p.id] && podeExecutar ? 'block' : 'none';
 
     p.materiais.forEach((item, index) => {
       const itemId = item.item_id;
@@ -388,5 +393,18 @@ async function registrarPeso(pedidoId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const tipoUsuario = localStorage.getItem('tipo_usuario');
+  const isCoordenador = tipoUsuario && tipoUsuario.toLowerCase() === 'coordenador';
+
+  // Se for coordenador, desabilita o acesso à execução da tarefa
+  if (isCoordenador) {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .formulario {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
   carregarPedidos();
 });
