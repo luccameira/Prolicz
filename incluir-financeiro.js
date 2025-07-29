@@ -340,11 +340,11 @@ async function carregarPedidosFinanceiro() {
           totalSemFiscal -= descontoUsado;
           descontoAplicadoFin += descontoUsado;
         } else {
-          // Nota cheia: aplica desconto apenas na parte financeira (total com nota)
+          // Nota cheia (terminação 1): aplica desconto tanto no valor fiscal quanto no financeiro
           const descontoUsado = Math.min(totalComFinanceiro, descontoIndividual);
           totalComFinanceiro -= descontoUsado;
+          totalComFiscal -= descontoUsado;
           descontoAplicadoFin += descontoUsado;
-          // Fiscal permanece com nota cheia (totalComFiscal e totalSemFiscal intactos)
         }
         somaDescontoAplicadoFinanceiro += descontoAplicadoFin;
         itensCalculados.push({
@@ -372,7 +372,7 @@ async function carregarPedidosFinanceiro() {
           }
         }
       }
-      // Se ainda restar desconto, aplica na parte financeira dos itens de nota cheia (sem afetar fiscal)
+      // Se ainda restar desconto, aplica nos itens de nota cheia (reduzindo tanto o valor fiscal quanto o financeiro)
       if (descontoRestante > 0) {
         for (const ic of itensCalculados) {
           if (descontoRestante <= 0) break;
@@ -380,6 +380,7 @@ async function carregarPedidosFinanceiro() {
           if (ic.valorSemNota === 0 && ic.totalComFinanceiro > 0) {
             const reducible = Math.min(ic.totalComFinanceiro, descontoRestante);
             ic.totalComFinanceiro -= reducible;
+            ic.totalComFiscal -= reducible;
             descontoRestante -= reducible;
           }
         }
