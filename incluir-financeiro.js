@@ -154,13 +154,19 @@ async function carregarPedidosFinanceiro() {
           const nomeProd = normalizarTexto(p.nome_produto);
           return nomeProd === nomeMat;
         });
+        // Para "Compra de Material", utilize o valor por quilo da tabela produtos_a_vender
+        // (produtoReal.valor_unitario). Para "Devolução de Material", utilize o
+        // valor_unitario do item carregado. Se não houver produtoReal ou valor, mantém 0.
+        let valorKgDesconto;
+        if (desc.motivo === 'Compra de Material') {
+          valorKgDesconto = Number(produtoReal?.valor_unitario) || 0;
+        } else {
+          valorKgDesconto = Number(item.valor_unitario) || 0;
+        }
         descontosPedido.push({
           ...desc,
           nome_produto: produtoReal?.nome_produto || desc.material || 'Produto não informado',
-          // Para o cálculo de desconto, utilize o valor por quilo do próprio item.
-          // Isso garante que o desconto seja calculado com o valor cheio do produto,
-          // independente de divisões de nota.
-          valor_unitario: Number(item.valor_unitario) || 0,
+          valor_unitario: valorKgDesconto,
           ticket_devolucao: desc.ticket_devolucao || null,
           ticket_compra: desc.ticket_compra || null,
           confirmado_valor_kg: false
@@ -289,10 +295,128 @@ async function carregarPedidosFinanceiro() {
         codigosFiscaisBarraAzul: htmlBarra
       };
     }
+
+    // Nova implementação de aplicarDescontosGlobais para corrigir as regras fiscais e financeiras.
+    // Esta função substitui a anterior para garantir que:
+    //  - O valor do desconto por compra de material utilize o valor_unitario correto do desconto
+    //    (campo valor_unitario do próprio desconto, que vem da tabela produtos_a_vender).
+    //  - Em notas cheias (terminação 1), o desconto reduza o valor financeiro da venda,
+    //    mas não altere o valor fiscal (com nota) exibido na barra fiscal.
+    //  - Em notas parciais (terminações 2, X, P ou PERSONALIZAR), o desconto seja aplicado
+    //    apenas na parte sem nota.
+    //  - Descontos remanescentes sejam distribuídos somente na parte sem nota dos itens parciais.
+    function aplicarDescontosGlobais(pedidoAtual, listaDescontos) {
+      const itensCalculados = [];
+      let somaDescontoAplicadoFinanceiro = 0;
+      const totalDescontosGlobais = listaDescontos.reduce((soma, d) => {
+        const pesoDesc = Number(d.peso_calculado || d.quantidade || 0);
+        return soma + (pesoDesc * Number(d.valor_unitario || 0));
+      }, 0);
+      pedidoAtual.materiais?.forEach(mat => {
+        const { valorComNota, valorSemNota } = calcularValoresFiscais(mat);
+        // Paletes reduzem o peso final
+        const descontosPalete = mat.descontos?.filter(d => d.motivo === 'Palete Pequeno' || d.motivo === 'Palete Grande') || [];
+        const descontoKg = descontosPalete.reduce((sum, d) => sum + Number(d.peso_calculado || 0), 0);
+        const pesoFinal = (Number(mat.peso_carregado) || 0) - descontoKg;
+        const totalComBruto = pesoFinal * valorComNota;
+        const totalSemBruto = pesoFinal * valorSemNota;
+        // Desconto individual por produto usando valor_unitario do desconto
+        const descontoIndividual = listaDescontos
+          .filter(d => normalizarTexto(d.nome_produto) === normalizarTexto(mat.nome_produto))
+          .reduce((acc, d) => {
+            const pesoDesc = Number(d.peso_calculado || d.quantidade || 0);
+            return acc + (pesoDesc * Number(d.valor_unitario || 0));
+          }, 0);
+        // Totais fiscais (barra) e financeiros (venda)
+        let totalComFiscal = totalComBruto;
+        let totalSemFiscal = totalSemBruto;
+        let totalComFinanceiro = totalComBruto;
+        let totalSemFinanceiro = totalSemBruto;
+        let descontoAplicadoFin = 0;
+        if (valorSemNota > 0) {
+          // Item parcial: aplica desconto somente na parte sem nota
+          const descontoUsado = Math.min(totalSemFinanceiro, descontoIndividual);
+          totalSemFinanceiro -= descontoUsado;
+          totalSemFiscal -= descontoUsado;
+          descontoAplicadoFin += descontoUsado;
+        } else {
+          // Nota cheia: aplica desconto apenas na parte financeira (total com nota)
+          const descontoUsado = Math.min(totalComFinanceiro, descontoIndividual);
+          totalComFinanceiro -= descontoUsado;
+          descontoAplicadoFin += descontoUsado;
+          // Fiscal permanece com nota cheia (totalComFiscal e totalSemFiscal intactos)
+        }
+        somaDescontoAplicadoFinanceiro += descontoAplicadoFin;
+        itensCalculados.push({
+          item: mat,
+          valorComNota,
+          valorSemNota,
+          totalComFiscal,
+          totalSemFiscal,
+          totalComFinanceiro,
+          totalSemFinanceiro
+        });
+      });
+      // Distribui desconto restante apenas na parte sem nota dos itens parciais
+      let descontoRestante = totalDescontosGlobais - somaDescontoAplicadoFinanceiro;
+      if (descontoRestante > 0) {
+        for (const ic of itensCalculados) {
+          if (descontoRestante <= 0) break;
+          if (ic.valorSemNota > 0 && ic.totalSemFinanceiro > 0) {
+            const reducible = Math.min(ic.totalSemFinanceiro, descontoRestante);
+            ic.totalSemFinanceiro -= reducible;
+            ic.totalSemFiscal -= reducible;
+            descontoRestante -= reducible;
+          }
+        }
+      }
+      // Soma finais fiscais e financeiros
+      const somaTotalComNotaFiscal = itensCalculados.reduce((acc, ic) => acc + ic.totalComFiscal, 0);
+      const somaTotalSemNotaFiscal = itensCalculados.reduce((acc, ic) => acc + ic.totalSemFiscal, 0);
+      const somaTotalComNotaFinanceiro = itensCalculados.reduce((acc, ic) => acc + ic.totalComFinanceiro, 0);
+      const somaTotalSemNotaFinanceiro = itensCalculados.reduce((acc, ic) => acc + ic.totalSemFinanceiro, 0);
+      // Constrói HTML da barra fiscal
+      const htmlBarra = itensCalculados.map(ic => {
+        const mat = ic.item;
+        const codigoFmt = (mat.codigo_fiscal || '').toUpperCase();
+        const totalCom = ic.totalComFiscal;
+        const totalSem = ic.totalSemFiscal;
+        const totalComFmt = formatarMoeda(totalCom);
+        const totalSemFmt = formatarMoeda(totalSem);
+        const valorKgComNotaFmt = formatarMoeda(ic.valorComNota || 0);
+        let linhas = '';
+        if (totalCom > 0) {
+          linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgComNotaFmt}/kg)</span>`;
+        }
+        if (ic.valorSemNota > 0) {
+          if (linhas) linhas += '<br />';
+          const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
+          linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
+        } else {
+          // Nota cheia: exibe o peso fiscal (peso na NF)
+          const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
+          if (linhas) linhas += '<br />';
+          linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
+        }
+        return `\n          <div class="barra-fiscal" style="font-weight:600; padding:4px 10px; font-size:15px;">\n            ${mat.nome_produto}: <span style="color:black;">(${codigoFmt})</span><br />\n            ${linhas}\n          </div>\n        `;
+      }).join('');
+      return {
+        itensCalculados,
+        totalComNota: somaTotalComNotaFinanceiro,
+        totalSemNota: somaTotalSemNotaFinanceiro,
+        totalComNotaFiscal: somaTotalComNotaFiscal,
+        totalSemNotaFiscal: somaTotalSemNotaFiscal,
+        codigosFiscaisBarraAzul: htmlBarra
+      };
+    }
     // Utiliza a função de descontos globais para obter valores iniciais e a barra fiscal
     const resultadoFiscal = aplicarDescontosGlobais(pedido, descontosPedido);
+    // Valores financeiros após descontos (base para venda e vencimentos)
     totalComNota = resultadoFiscal.totalComNota;
     totalSemNota = resultadoFiscal.totalSemNota;
+    // Valores fiscais (para resumo consolidado)
+    const totalComNotaFiscal = resultadoFiscal.totalComNotaFiscal;
+    const totalSemNotaFiscal = resultadoFiscal.totalSemNotaFiscal;
     codigosFiscaisBarraAzul = resultadoFiscal.codigosFiscaisBarraAzul;
 
     // Exibição dos materiais (peso, palete, valores brutos)
@@ -552,8 +676,9 @@ async function carregarPedidosFinanceiro() {
     // Constrói um resumo fiscal consolidado se houver mais de um produto no pedido
     let resumoFiscalHtml = '';
     if (pedido.materiais && pedido.materiais.length > 1) {
-      const totComFmt = formatarMoeda(totalComNota);
-      const totSemFmt = formatarMoeda(totalSemNota);
+      // Usa os valores fiscais (sem considerar descontos financeiros) para o resumo
+      const totComFmt = formatarMoeda(totalComNotaFiscal);
+      const totSemFmt = formatarMoeda(totalSemNotaFiscal);
       resumoFiscalHtml = `
         <div class="resumo-fiscal-consolidado" style="font-weight:600; padding:4px 10px;">
           <span style="color:#2e7d32;">Total com Nota: ${totComFmt}</span><br/>
@@ -582,43 +707,40 @@ async function carregarPedidosFinanceiro() {
     function atualizarResumoFinanceiro() {
       // Utiliza o helper para recalcular totais com e sem nota, aplicando descontos globais
       const resultadoFiscalNovo = aplicarDescontosGlobais(pedido, descontosPedido);
+      // Total final da venda deve considerar os valores financeiros após descontos
       const totalFinalVenda = resultadoFiscalNovo.totalComNota + resultadoFiscalNovo.totalSemNota;
       const totalFinalVendaFmt = formatarMoeda(totalFinalVenda);
       // Atualiza a exibição do total da venda
       const tagTotalVenda = containerCinza.querySelector('#reset-vencimentos');
       if (tagTotalVenda) tagTotalVenda.textContent = totalFinalVendaFmt;
-      // Atualiza o resumo fiscal consolidado, se existir
+      // Atualiza o resumo fiscal consolidado, se existir, utilizando valores fiscais
       const resumoElem = containerCinza.querySelector('.resumo-fiscal-consolidado');
       if (resumoElem) {
-        const totComFmt = formatarMoeda(resultadoFiscalNovo.totalComNota);
-        const totSemFmt = formatarMoeda(resultadoFiscalNovo.totalSemNota);
+        const totComFmt = formatarMoeda(resultadoFiscalNovo.totalComNotaFiscal);
+        const totSemFmt = formatarMoeda(resultadoFiscalNovo.totalSemNotaFiscal);
         resumoElem.innerHTML = `<span style="color:#2e7d32;">Total com Nota: ${totComFmt}</span><br/><span style="color:#c62828;">Total sem Nota: ${totSemFmt}</span>`;
       }
-      // Atualiza a barra fiscal existente com os novos valores por item
+      // Atualiza a barra fiscal existente com os novos valores por item (utilizando totais fiscais)
       const barras = containerCinza.querySelectorAll('.barra-fiscal');
       resultadoFiscalNovo.itensCalculados.forEach((ic, idx) => {
         const elem = barras[idx];
         if (!elem) return;
         const mat = ic.item;
         const codigoFmt = (mat.codigo_fiscal || '').toUpperCase();
-        const totalCom = ic.totalCom;
-        const totalSem = ic.totalSem;
+        const totalCom = ic.totalComFiscal;
+        const totalSem = ic.totalSemFiscal;
         const totalComFmt = formatarMoeda(totalCom);
         const totalSemFmt = formatarMoeda(totalSem);
-        // Preço por kg que irá para a NF (parte com nota)
         const valorKgComNotaFmt = formatarMoeda(ic.valorComNota || 0);
         let linhas = '';
         if (totalCom > 0) {
-          // Exibe apenas o valor com nota em verde e o valor por kg que vai para a NF
           linhas += `<span style="color:#2e7d32;">${totalComFmt} (${valorKgComNotaFmt}/kg)</span>`;
         }
         if (ic.valorSemNota > 0) {
           if (linhas) linhas += '<br />';
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
-          // Exibe somente o valor sem nota em vermelho, sem valor por kg
           linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
         } else {
-          // Nota cheia: exibe apenas o peso na NF em vermelho
           const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
           linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
