@@ -407,8 +407,8 @@ async function carregarPedidosFinanceiro() {
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
           linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
         } else {
-          // Nota cheia: exibe o peso fiscal (peso na NF)
-          const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
+          // Nota cheia: exibe o peso fiscal (peso na NF) calculado com base no valor financeiro da venda
+          const pesoNF = Number(mat.valor_unitario) > 0 ? (ic.totalComFinanceiro / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
           linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
         }
@@ -755,7 +755,8 @@ async function carregarPedidosFinanceiro() {
           const valorSemFmtFinal = totalSem > 0 ? totalSemFmt : formatarMoeda(0);
           linhas += `<span style="color:#c62828;">${valorSemFmtFinal}</span>`;
         } else {
-          const pesoNF = Number(mat.valor_unitario) > 0 ? (totalCom / Number(mat.valor_unitario)) : 0;
+          // Nota cheia: calcula o peso fiscal (peso na NF) com base no valor financeiro do item
+          const pesoNF = Number(mat.valor_unitario) > 0 ? (ic.totalComFinanceiro / Number(mat.valor_unitario)) : 0;
           if (linhas) linhas += '<br />';
           linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
         }
