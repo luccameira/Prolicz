@@ -110,6 +110,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 👇 Ocultar menu 'Conferência de Peso' para quem não for administrador nem conferência de peso
+  if (tipo !== 'administrador' && tipo !== 'conferência de peso') {
+    const menuConferencia = sidebarContainer.querySelector('a[href="tarefas-conferencia.html"]');
+    if (menuConferencia) {
+      menuConferencia.remove();
+      console.log(`🔒 Menu 'Conferência de Peso' ocultado para tipo '${tipo}'`);
+    }
+  }
+
               }
             }
           }
