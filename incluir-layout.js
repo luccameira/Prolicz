@@ -91,6 +91,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (menuUsuarios) {
       menuUsuarios.remove();
       console.log(`🔒 Menu 'Usuários' ocultado para tipo '${tipo}'`);
+
+  // 👇 Ocultar menu 'Portaria' para quem não for administrador nem portaria
+  if (tipo !== 'administrador' && tipo !== 'portaria') {
+    const menuPortaria = sidebarContainer.querySelector('a[href="tarefas-portaria.html"]');
+    if (menuPortaria) {
+      menuPortaria.remove();
+      console.log(`🔒 Menu 'Portaria' ocultado para tipo '${tipo}'`);
+    }
+  }
+
+  // 👇 Ocultar menu 'Carga e Descarga' para quem não for administrador nem carga e descarga
+  if (tipo !== 'administrador' && tipo !== 'carga e descarga') {
+    const menuCarga = sidebarContainer.querySelector('a[href="tarefas-carga.html"]');
+    if (menuCarga) {
+      menuCarga.remove();
+      console.log(`🔒 Menu 'Carga e Descarga' ocultado para tipo '${tipo}'`);
+    }
+  }
+
               }
             }
           }
