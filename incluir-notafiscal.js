@@ -101,6 +101,18 @@ function alternarCard(headerElement) {
   const statusPermitidos = ['Aguardando Emissão de NF', 'Cliente Liberado'];
   if (!statusPermitidos.includes(status)) return;
 
+  // Verificar se o usuário logado é do tipo administrador ou emissão de nf
+  const usuarioStr = localStorage.getItem('usuarioLogado');
+  let tipoUsuario = '';
+  try {
+    tipoUsuario = JSON.parse(usuarioStr)?.tipo?.toLowerCase() || '';
+  } catch (error) {
+    console.error('Erro ao analisar usuarioLogado:', error);
+  }
+  const tiposPermitidos = ['administrador', 'emissão de nf'];
+  if (!tiposPermitidos.includes(tipoUsuario)) return;
+
+  // Alternar exibição do card
   const corpo = card.querySelector('.card-body');
   corpo.style.display = corpo.style.display === 'none' ? 'block' : 'none';
 }
