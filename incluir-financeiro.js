@@ -357,15 +357,29 @@ async function carregarPedidosFinanceiro() {
           totalSemFinanceiro
         });
       });
-      // Distribui desconto restante apenas na parte sem nota dos itens parciais
+      // Distribui desconto restante: primeiro na parte sem nota dos itens parciais,
+      // depois na parte com nota dos itens de nota cheia (financeiro).
       let descontoRestante = totalDescontosGlobais - somaDescontoAplicadoFinanceiro;
       if (descontoRestante > 0) {
+        // Parte sem nota (parciais)
         for (const ic of itensCalculados) {
           if (descontoRestante <= 0) break;
           if (ic.valorSemNota > 0 && ic.totalSemFinanceiro > 0) {
             const reducible = Math.min(ic.totalSemFinanceiro, descontoRestante);
             ic.totalSemFinanceiro -= reducible;
             ic.totalSemFiscal -= reducible;
+            descontoRestante -= reducible;
+          }
+        }
+      }
+      // Se ainda restar desconto, aplica na parte financeira dos itens de nota cheia (sem afetar fiscal)
+      if (descontoRestante > 0) {
+        for (const ic of itensCalculados) {
+          if (descontoRestante <= 0) break;
+          // Itens de nota cheia possuem valorSemNota === 0
+          if (ic.valorSemNota === 0 && ic.totalComFinanceiro > 0) {
+            const reducible = Math.min(ic.totalComFinanceiro, descontoRestante);
+            ic.totalComFinanceiro -= reducible;
             descontoRestante -= reducible;
           }
         }
