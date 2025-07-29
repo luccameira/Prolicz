@@ -88,5 +88,53 @@ router.delete('/:id', async (req, res) => {
     res.status(500).send('Erro ao tentar excluir usuário.');
   }
 });
+// Buscar um único usuário por ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await db.query('SELECT id, nome, email, senha, tipo, permissoes FROM usuarios WHERE id = ?', [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    const usuario = rows[0];
+    usuario.permissoes = JSON.parse(usuario.permissoes || '[]');
+
+    res.json(usuario);
+  } catch (error) {
+    console.error('Erro ao buscar usuário por ID:', error);
+    res.status(500).send('Erro ao buscar usuário.');
+  }
+});
+
+// Atualizar usuário
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nome, email, senha, permissoes } = req.body;
+
+  if (!nome || !email || !senha || !Array.isArray(permissoes)) {
+    return res.status(400).send('Dados inválidos.');
+  }
+
+  try {
+    const permissoesFormatadas = JSON.stringify(permissoes);
+
+    const [resultado] = await db.query(
+      'UPDATE usuarios SET nome = ?, email = ?, senha = ?, permissoes = ? WHERE id = ?',
+      [nome, email, senha, permissoesFormatadas, id]
+    );
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    res.send('Usuário atualizado com sucesso.');
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).send('Erro ao tentar atualizar usuário.');
+  }
+});
 
 module.exports = router;
