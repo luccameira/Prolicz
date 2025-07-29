@@ -119,6 +119,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  if (tipo !== 'administrador' && tipo !== 'financeiro') {
+    const menuFinanceiro = sidebarContainer.querySelector('a[href="tarefas-financeiro.html"]');
+    if (menuFinanceiro) {
+      menuFinanceiro.remove();
+      console.log(`🔒 Menu 'Financeiro' ocultado para tipo '${tipo}'`);
+    }
+  }
+
+// Ocultar menu "Emissão de NF" para quem não for administrador nem emissão de nf
+if (tipo !== 'administrador' && tipo !== 'emissão de nf') {
+  const menuEmissaoNF = sidebarContainer.querySelector('a[href="tarefas-nf.html"]');
+  if (menuEmissaoNF) {
+    menuEmissaoNF.remove();
+    console.log(`🔒 Menu 'Emissão de NF' ocultado para tipo '${tipo}'`);
+  }
+}
               }
             }
           }
