@@ -122,11 +122,12 @@ function renderizarPedidos(lista) {
       if (timeline) animarLinhaProgresso(timeline);
     }, 10);
 
-    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
-const tipoUsuario = usuarioLogado?.tipo?.toLowerCase() || '';
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+const permissoes = Array.isArray(usuarioLogado?.permissoes)
+  ? usuarioLogado.permissoes.map(p => p.toLowerCase())
+  : [];
 
-const podeExecutar = ['Coleta Iniciada', 'Carga e Descarga'].includes(p.status) &&
-                     (tipoUsuario === 'administrador' || tipoUsuario === 'carga e descarga');
+const podeExecutar = permissoes.includes("executar tarefas - carga e descarga");
 
 const form = document.createElement('div');
 form.className = 'formulario';
@@ -393,18 +394,22 @@ async function registrarPeso(pedidoId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const tipoUsuario = localStorage.getItem('tipo_usuario');
-  const isCoordenador = tipoUsuario && tipoUsuario.toLowerCase() === 'coordenador';
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
+  const permissoes = Array.isArray(usuario?.permissoes)
+    ? usuario.permissoes.map(p => p.toLowerCase())
+    : [];
 
-  // Se for coordenador, desabilita o acesso à execução da tarefa
-  if (isCoordenador) {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .formulario {
-        display: none !important;
-      }
-    `;
-    document.head.appendChild(style);
+  const podeVisualizar = permissoes.includes("visualizar tarefas - carga e descarga");
+  const podeExecutar = permissoes.includes("executar tarefas - carga e descarga");
+
+  if (!podeVisualizar) {
+    const container = document.getElementById('lista-pedidos');
+    if (container) {
+      container.innerHTML = `<div style="margin-top: 40px; font-size: 18px; color: #555;">Você não tem permissão para visualizar as tarefas de carga e descarga.</div>`;
+    }
+    return;
   }
+
+  // Apenas executa se tiver permissão de visualizar
   carregarPedidos();
 });
