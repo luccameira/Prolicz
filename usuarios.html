@@ -69,17 +69,11 @@
   </style>
 </head>
 <body>
-  <script>
-    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
-    if (!usuarioLogado || usuarioLogado.tipo !== 'administrador') {
-      window.location.href = 'dashboard.html';
-    }
-  </script>
   <div class="topbar"></div>
   <div class="sidebar"></div>
   <div class="main-content">
     <h1>Usuários</h1>
-    <a href="novo-usuario.html" class="btn btn-novo" style="text-decoration: none;">+ Novo Usuário</a>
+    <div id="area-botao-novo"></div>
     <table>
       <thead>
         <tr>
@@ -94,6 +88,8 @@
   </div>
 
 <script>
+  let permissoes = [];
+
   async function carregarUsuarios() {
     const tbody = document.getElementById('usuarios-tbody');
     tbody.innerHTML = '';
@@ -112,15 +108,24 @@
 
       usuarios.forEach(usuario => {
         const tr = document.createElement('tr');
+
+        let botoes = '';
+
+        if (permissoes.includes("editar usuário")) {
+          botoes += `<button class="btn btn-edit" onclick="editarUsuario(${usuario.id})">Editar</button>`;
+        }
+
+        if (permissoes.includes("excluir usuário")) {
+          botoes += `<button class="btn btn-delete" onclick="excluirUsuario(${usuario.id})">Excluir</button>`;
+        }
+
         tr.innerHTML = `
           <td>${usuario.nome}</td>
           <td>${usuario.email}</td>
           <td>${usuario.tipo}</td>
-          <td>
-            <button class="btn btn-edit" onclick="editarUsuario(${usuario.id})">Editar</button>
-            <button class="btn btn-delete" onclick="excluirUsuario(${usuario.id})">Excluir</button>
-          </td>
+          <td>${botoes}</td>
         `;
+
         tbody.appendChild(tr);
       });
     } catch (error) {
@@ -130,38 +135,62 @@
   }
 
   async function excluirUsuario(id) {
-  if (!confirm('Deseja realmente excluir o usuário com ID ' + id + '?')) return;
+    if (!confirm('Deseja realmente excluir o usuário com ID ' + id + '?')) return;
 
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado')); // <-- ESSA LINHA É FUNDAMENTAL
+    const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
 
-  try {
-    const response = await fetch(`/api/usuarios/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'usuario-logado': JSON.stringify(usuarioLogado) // <-- ISSO AQUI É O QUE GARANTE O BLOQUEIO LÁ NO BACKEND
+    try {
+      const response = await fetch(`/api/usuarios/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'usuario-logado': JSON.stringify(usuarioLogado)
+        }
+      });
+
+      const msg = await response.text();
+
+      if (response.ok) {
+        alert(msg);
+        carregarUsuarios();
+      } else {
+        alert('Erro ao excluir: ' + msg);
       }
-    });
-
-    const msg = await response.text();
-
-    if (response.ok) {
-      alert(msg);
-      carregarUsuarios();
-    } else {
-      alert('Erro ao excluir: ' + msg);
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      alert('Erro ao excluir usuário.');
     }
-  } catch (error) {
-    console.error('Erro ao excluir:', error);
-    alert('Erro ao excluir usuário.');
   }
-}
 
   function editarUsuario(id) {
-  window.location.href = `editar-usuario.html?id=${id}`;
-}
+    window.location.href = `editar-usuario.html?id=${id}`;
+  }
 
-  window.onload = carregarUsuarios;
+  document.addEventListener("layoutCarregado", () => {
+    const dados = localStorage.getItem('usuarioLogado');
+    if (!dados) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    const usuarioLogado = JSON.parse(dados);
+    permissoes = Array.isArray(usuarioLogado.permissoes)
+      ? usuarioLogado.permissoes.map(p => p.toLowerCase())
+      : [];
+
+    if (!permissoes.includes("visualizar usuários")) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    // Mostrar botão + Novo Usuário somente se tiver permissão
+    if (permissoes.includes("adicionar usuário")) {
+      const area = document.getElementById('area-botao-novo');
+      area.innerHTML = `<a href="novo-usuario.html" class="btn btn-novo" style="text-decoration: none;">+ Novo Usuário</a>`;
+    }
+
+    carregarUsuarios();
+  });
 </script>
 </body>
 </html>
