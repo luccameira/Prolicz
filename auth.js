@@ -134,6 +134,7 @@ async function excluirUsuario(id) {
 // Carrega o usuário logado e executa as ações
 const usuarioLogado = loadUsuarioLogado();
 if (usuarioLogado) {
+localStorage.setItem('tipo', usuarioLogado.tipo.toLowerCase());
   carregarMenuLateral(usuarioLogado);
 
   // Só carrega os usuários se a tabela existir na página
