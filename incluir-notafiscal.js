@@ -101,16 +101,16 @@ function alternarCard(headerElement) {
   const statusPermitidos = ['Aguardando Emissão de NF', 'Cliente Liberado'];
   if (!statusPermitidos.includes(status)) return;
 
-  // Verificar se o usuário logado é do tipo administrador ou emissão de nf
-  const usuarioStr = localStorage.getItem('usuarioLogado');
-  let tipoUsuario = '';
-  try {
-    tipoUsuario = JSON.parse(usuarioStr)?.tipo?.toLowerCase() || '';
-  } catch (error) {
-    console.error('Erro ao analisar usuarioLogado:', error);
-  }
-  const tiposPermitidos = ['administrador', 'emissão de nf'];
-  if (!tiposPermitidos.includes(tipoUsuario)) return;
+// Verificar se o usuário tem permissão para executar a tarefa
+const usuarioStr = localStorage.getItem('usuarioLogado');
+let permissoes = [];
+try {
+  permissoes = JSON.parse(usuarioStr)?.permissoes || [];
+} catch (error) {
+  console.error('Erro ao analisar usuarioLogado:', error);
+}
+const podeExecutar = permissoes.includes('Executar Tarefas - Emissão de NF');
+if (!podeExecutar) return;
 
   // Alternar exibição do card
   const corpo = card.querySelector('.card-body');
