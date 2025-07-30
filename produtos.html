@@ -153,6 +153,7 @@
             <th>Nome</th>
             <th>Unidade de Medida</th>
             <th>Data de Cadastro</th>
+            <th>AÇÕES</th>
           </tr>
         </thead>
         <tbody id="tabela-produtos">
@@ -181,18 +182,38 @@
     }
 
     function renderizarTabela(lista) {
-      const tabela = document.getElementById('tabela-produtos');
-      tabela.innerHTML = '';
-      lista.forEach(produto => {
-        const linha = document.createElement('tr');
-        linha.innerHTML = `
-          <td>${produto.nome}</td>
-          <td>${produto.unidade}</td>
-          <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
-        `;
-        tabela.appendChild(linha);
-      });
+  const tabela = document.getElementById('tabela-produtos');
+  tabela.innerHTML = '';
+  
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
+  const permissoes = usuarioLogado.permissoes || [];
+
+  lista.forEach(produto => {
+    const linha = document.createElement('tr');
+
+    const podeEditar = permissoes.includes('Editar Produto');
+    const podeExcluir = permissoes.includes('Excluir Produto');
+
+    let botoes = '';
+
+    if (podeEditar) {
+      botoes += `<button class="btn-editar" onclick="editarProduto(${produto.id})">Editar</button>`;
     }
+
+    if (podeExcluir) {
+      botoes += `<button class="btn-excluir" onclick="excluirProduto(${produto.id})">Excluir</button>`;
+    }
+
+    linha.innerHTML = `
+      <td>${produto.nome}</td>
+      <td>${produto.unidade}</td>
+      <td>${new Date(produto.data_cadastro).toLocaleDateString('pt-BR')}</td>
+      <td>${botoes}</td>
+    `;
+
+    tabela.appendChild(linha);
+  });
+}
 
     function filtrarTabela() {
       const filtro = document.getElementById('filtroNome').value.toLowerCase();
@@ -204,5 +225,36 @@
       carregarProdutos();
     });
   </script>
+
+  <style>
+    .btn-editar {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+
+    .btn-editar:hover {
+      background-color: #218838;
+    }
+
+    .btn-excluir {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-excluir:hover {
+      background-color: #c82333;
+    }
+  </style>
 </body>
 </html>
