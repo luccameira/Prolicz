@@ -140,30 +140,56 @@
     </form>
   </div>
 
-  <script>
-    document.getElementById("form-login").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const usuario = document.getElementById("usuario").value.trim();
-      if (usuario) {
-        localStorage.setItem("nomeUsuario", usuario);
-        window.location.href = "dashboard.html";
-      } else {
-        alert("Digite o nome do usuário.");
-      }
-    });
+<script>
+  document.getElementById("form-login").addEventListener("submit", async function(e) {
+    e.preventDefault();
 
-    function toggleSenha(icon) {
-      const campoSenha = document.getElementById("senha");
-      if (campoSenha.type === "password") {
-        campoSenha.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-      } else {
-        campoSenha.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-      }
+    const email = document.getElementById("usuario").value.trim();
+    const senha = document.getElementById("senha").value.trim();
+
+    if (!email || !senha) {
+      alert("Preencha todos os campos.");
+      return;
     }
-  </script>
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.mensagem || "Erro ao fazer login.");
+        return;
+      }
+
+      localStorage.setItem("usuarioLogado", JSON.stringify(data));
+localStorage.setItem("nomeUsuario", data.email);
+      window.location.href = "dashboard.html";
+
+    } catch (error) {
+      console.error("Erro no login:", error);
+      alert("Erro ao conectar com o servidor.");
+    }
+  });
+
+  function toggleSenha(icon) {
+    const campoSenha = document.getElementById("senha");
+    if (campoSenha.type === "password") {
+      campoSenha.type = "text";
+      icon.classList.remove("fa-eye");
+      icon.classList.add("fa-eye-slash");
+    } else {
+      campoSenha.type = "password";
+      icon.classList.remove("fa-eye-slash");
+      icon.classList.add("fa-eye");
+    }
+  }
+</script>
 </body>
 </html>
