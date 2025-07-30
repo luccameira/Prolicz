@@ -146,20 +146,8 @@
 
 <script>
   const usuario = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
-  const tipoUsuario = usuario.tipo || '';
-  const permissoes = usuario.permissoes || [];
-
-  // Se for do tipo portaria, vendedor ou conferência de peso, redireciona
-if (
-  tipoUsuario === "portaria" ||
-  tipoUsuario === "vendedor" ||
-  tipoUsuario === "conferência de peso" ||
-  tipoUsuario === "financeiro" ||
-  tipoUsuario === "emissão de nf"
-) {
-  alert("Você não tem permissão para acessar a página de clientes.");
-  window.location.href = "index.html";
-}
+const tipoUsuario = usuario.tipo || '';
+const permissoes = Array.isArray(usuario.permissoes) ? usuario.permissoes : [];
 
   document.addEventListener("DOMContentLoaded", () => {
     // 🔐 Botão "Adicionar Cliente"
@@ -182,26 +170,9 @@ if (
         clientes.forEach(cliente => {
           const tr = document.createElement('tr');
 
-          // 🔐 Definindo permissões por tipo de usuário
-          let podeEditar = false;
-          let podeExcluir = false;
-
-          if (tipoUsuario === 'administrador') {
-            podeEditar = true;
-            podeExcluir = true;
-          }
-
-          if (tipoUsuario === 'coordenador') {
-            podeEditar = true;
-            podeExcluir = false;
-          }
-
-          if (tipoUsuario === 'cadastrador') {
-            podeEditar = true;
-            podeExcluir = false;
-          }
-
-          // (futuramente: portaria, vendedor, etc...)
+          // 🔐 Definindo permissões com base nas permissões do usuário
+let podeEditar = permissoes.includes("Editar Cliente");
+let podeExcluir = permissoes.includes("Excluir Cliente");
 
           let acoes = '';
           if (podeEditar) {
