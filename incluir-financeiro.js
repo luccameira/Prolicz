@@ -748,8 +748,9 @@ card.appendChild(form);
 
 header.addEventListener('click', () => {
   const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado') || '{}');
-  const tipo = (usuarioLogado.tipo || '').toLowerCase();
-  const podeExecutar = (tipo === 'administrador' || tipo === 'financeiro');
+  const permissoes = usuarioLogado.permissoes || [];
+
+  const podeExecutar = permissoes.includes('Executar Tarefas - Financeiro');
 
   if (!podeExecutar) return;
   if (pedido.status !== 'Em Análise pelo Financeiro') return;
@@ -772,12 +773,12 @@ async function confirmarFinanceiro(pedidoId, observacoes) {
     if (!res.ok) throw new Error('Erro ao confirmar liberação.');
 
     const data = await res.json();
-    if (data.sucesso) {
-      alert('Cliente liberado com sucesso!');
-      carregarPedidosFinanceiro();
-    } else {
-      alert(data.erro || 'Erro ao confirmar liberação.');
-    }
+if (data.mensagem && data.mensagem.includes("liberado")) {
+  alert(data.mensagem);
+  carregarPedidosFinanceiro();
+} else {
+  alert(data.erro || 'Erro ao confirmar liberação.');
+}
   } catch (err) {
     console.error('Erro ao confirmar liberação:', err);
     alert('Erro de comunicação com o servidor.');
