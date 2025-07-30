@@ -55,17 +55,13 @@
 </head>
 <body>
 <script>
-  const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
-  const tiposComAcesso = [
-    "administrador",
-    "coordenador",
-    "vendedor"
-  ];
+  const usuario = JSON.parse(localStorage.getItem("usuarioLogado") || '{}');
+const permissoes = Array.isArray(usuario.permissoes) ? usuario.permissoes : [];
 
-  if (!usuario || !tiposComAcesso.includes(usuario.tipo)) {
-    alert("Você não tem permissão para acessar esta página.");
-    window.location.href = "index.html";
-  }
+if (!permissoes.includes("Visualizar Vendas")) {
+  alert("Você não tem permissão para acessar esta página.");
+  window.location.href = "index.html";
+}
 </script>
 
   <div class="topbar"></div>
@@ -174,19 +170,19 @@
           window.location.href = `visualizar-venda.html?id=${p.pedido_id}`;
         });
         tr.innerHTML = `
-          <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
-          <td>${p.cliente}</td>
-          <td>${p.status}</td>
-          <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
-          <td>${p.nota_fiscal || '-'}</td>
-          <td>
-  ${usuario.tipo === "administrador", "coordenador" || usuario.permissoes?.includes("Editar Venda") ? `
-    <button class="btn btn-editar" onclick="event.stopPropagation();window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
-  ` : ''}
-  ${usuario.tipo === "administrador" || usuario.permissoes?.includes("Excluir Venda") ? `
-    <button class="btn btn-excluir" onclick="event.stopPropagation();excluirPedido(${p.pedido_id})">Excluir</button>
-  ` : ''}
-</td>
+  <td>${isHoje ? '<i class="fas fa-bell icone-alerta"></i>' : ''}${formatarDataBR(p.data_coleta)}</td>
+  <td>${p.cliente}</td>
+  <td>${p.status}</td>
+  <td title="${p.data_criacao}" class="cinza">${formatarDataBR(p.data_criacao)}</td>
+  <td>${p.nota_fiscal || '-'}</td>
+  <td>
+    ${permissoes.includes("Editar Venda") ? `
+      <button class="btn btn-editar" onclick="event.stopPropagation();window.location.href='editar-venda.html?id=${p.pedido_id}'">Editar</button>
+    ` : ''}
+    ${permissoes.includes("Excluir Venda") ? `
+      <button class="btn btn-excluir" onclick="event.stopPropagation();excluirPedido(${p.pedido_id})">Excluir</button>
+    ` : ''}
+  </td>
 `;
         tbody.appendChild(tr);
       });
