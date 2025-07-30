@@ -228,11 +228,11 @@ async function carregarPedidosConferencia() {
   if (pedido.status !== 'Aguardando Conferência do Peso') return;
 
   const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
-  const tipoUsuario = usuarioLogado?.tipo?.toLowerCase() || '';
+  const permissoes = (usuarioLogado?.permissoes || []).map(p => p.toLowerCase());
 
-  if (tipoUsuario !== 'administrador' && tipoUsuario !== 'conferência de peso') {
-    return; // usuário não autorizado a abrir o card
-  }
+  const podeExecutar = permissoes.includes('executar tarefas - conferência de peso');
+
+  if (!podeExecutar) return;
 
   e.stopPropagation();
   form.style.display = form.style.display === 'block' ? 'none' : 'block';
