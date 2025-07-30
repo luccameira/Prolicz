@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (topbarContainer) {
           topbarContainer.innerHTML = topbar.innerHTML;
 
-          // Botão ☰ para abrir/fechar sidebar
           const botaoToggle = document.createElement("button");
           botaoToggle.textContent = "☰";
           botaoToggle.style.background = "transparent";
@@ -34,15 +33,24 @@ document.addEventListener("DOMContentLoaded", () => {
           botaoToggle.style.marginRight = "20px";
           botaoToggle.style.outline = "none";
 
+          const containerLogo = topbarContainer.querySelector(".logo");
+          if (containerLogo) containerLogo.prepend(botaoToggle);
+
           botaoToggle.addEventListener("click", () => {
-            document.querySelector(".sidebar")?.classList.toggle("oculta");
-            document.querySelector(".main-content")?.classList.toggle("expandida");
+            const sidebar = document.querySelector(".sidebar");
+            const mainContent = document.querySelector(".main-content");
+
+            if (sidebar && mainContent) {
+              if (sidebar.classList.contains("oculta")) {
+                sidebar.classList.remove("oculta");
+                mainContent.classList.remove("expandida");
+              } else {
+                sidebar.classList.add("oculta");
+                mainContent.classList.add("expandida");
+              }
+            }
           });
 
-          const logo = topbarContainer.querySelector(".logo");
-          if (logo) logo.prepend(botaoToggle);
-
-          // Mostrar nome do usuário
           const nomeUsuario = localStorage.getItem("nomeUsuario");
           if (nomeUsuario) {
             const span = document.getElementById("nomeUsuarioTopo");
@@ -56,90 +64,40 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sidebarContainer) {
           sidebarContainer.innerHTML = sidebar.innerHTML;
 
-          // Corrigir link do menu "Usuários" se estiver errado
           const linkUsuarios = sidebarContainer.querySelector('a[href="login.html"]');
           if (linkUsuarios) {
             linkUsuarios.setAttribute('href', 'usuarios.html');
           }
 
-          // ⚠️ OCULTAR MENUS DA SIDEBAR CONFORME O TIPO DO USUÁRIO
           const usuario = JSON.parse(localStorage.getItem("usuarioLogado"));
           if (usuario) {
-            const tipo = usuario.tipo.toLowerCase();
+            const normalizar = texto => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const permissoes = Array.isArray(usuario.permissoes)
+              ? usuario.permissoes.map(p => normalizar(p))
+              : [];
 
-            const tiposSemClientes = ["vendedor", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
-            if (tiposSemClientes.includes(tipo)) {
-              const menuClientes = sidebarContainer.querySelector('a[href="clientes.html"]');
-              if (menuClientes) {
-                menuClientes.remove();
-                console.log(`🔒 Menu 'Clientes' ocultado para tipo '${tipo}'`);
+            const menus = [
+              { href: "clientes.html", permissoes: ["visualizar clientes"], nome: "Clientes" },
+              { href: "vendas.html", permissoes: ["visualizar vendas"], nome: "Vendas" },
+              { href: "produtos.html", permissoes: ["visualizar produtos"], nome: "Produtos" },
+              { href: "usuarios.html", permissoes: ["visualizar usuarios"], nome: "Usuários" },
+              { href: "tarefas-portaria.html", permissoes: ["visualizar tarefas - portaria", "executar tarefas - portaria"], nome: "Portaria" },
+              { href: "tarefas-carga.html", permissoes: ["visualizar tarefas - carga e descarga", "executar tarefas - carga e descarga"], nome: "Carga e Descarga" },
+              { href: "tarefas-conferencia.html", permissoes: ["visualizar tarefas - conferencia de peso", "executar tarefas - conferencia de peso"], nome: "Conferência de Peso" },
+              { href: "tarefas-financeiro.html", permissoes: ["visualizar tarefas - financeiro", "executar tarefas - financeiro"], nome: "Financeiro" },
+              { href: "tarefas-nf.html", permissoes: ["visualizar tarefas - emissao de nf", "executar tarefas - emissao de nf"], nome: "Emissão de NF" }
+            ];
+
+            menus.forEach(menu => {
+              const link = sidebarContainer.querySelector(`a[href="${menu.href}"]`);
+              const temPermissao = menu.permissoes.some(p => permissoes.includes(p));
+              if (!temPermissao && link) {
+                link.remove();
+                console.log(`🔒 Menu '${menu.nome}' ocultado por falta das permissões: ${menu.permissoes.join(" ou ")}`);
               }
-            }
-
-            const tiposSemVendas = ["cadastrador", "portaria", "carga e descarga", "conferência de peso", "financeiro", "emissão de nf"];
-            if (tiposSemVendas.includes(tipo)) {
-              const menuVendas = sidebarContainer.querySelector('a[href="vendas.html"]');
-              if (menuVendas) {
-                menuVendas.remove();
-                console.log(`🔒 Menu 'Vendas' ocultado para tipo '${tipo}'`);
-}
-  }
-
-  // 👇 Bloquear menu 'Usuários' para todos, exceto administrador
-  if (tipo !== 'administrador') {
-    const menuUsuarios = sidebarContainer.querySelector('a[href="usuarios.html"]');
-    if (menuUsuarios) {
-      menuUsuarios.remove();
-      console.log(`🔒 Menu 'Usuários' ocultado para tipo '${tipo}'`);
-
-  // 👇 Ocultar menu 'Portaria' para quem não for administrador nem portaria
-  if (tipo !== 'administrador' && tipo !== 'portaria') {
-    const menuPortaria = sidebarContainer.querySelector('a[href="tarefas-portaria.html"]');
-    if (menuPortaria) {
-      menuPortaria.remove();
-      console.log(`🔒 Menu 'Portaria' ocultado para tipo '${tipo}'`);
-    }
-  }
-
-  // 👇 Ocultar menu 'Carga e Descarga' para quem não for administrador nem carga e descarga
-  if (tipo !== 'administrador' && tipo !== 'carga e descarga') {
-    const menuCarga = sidebarContainer.querySelector('a[href="tarefas-carga.html"]');
-    if (menuCarga) {
-      menuCarga.remove();
-      console.log(`🔒 Menu 'Carga e Descarga' ocultado para tipo '${tipo}'`);
-    }
-  }
-
-  // 👇 Ocultar menu 'Conferência de Peso' para quem não for administrador nem conferência de peso
-  if (tipo !== 'administrador' && tipo !== 'conferência de peso') {
-    const menuConferencia = sidebarContainer.querySelector('a[href="tarefas-conferencia.html"]');
-    if (menuConferencia) {
-      menuConferencia.remove();
-      console.log(`🔒 Menu 'Conferência de Peso' ocultado para tipo '${tipo}'`);
-    }
-  }
-
-  if (tipo !== 'administrador' && tipo !== 'financeiro') {
-    const menuFinanceiro = sidebarContainer.querySelector('a[href="tarefas-financeiro.html"]');
-    if (menuFinanceiro) {
-      menuFinanceiro.remove();
-      console.log(`🔒 Menu 'Financeiro' ocultado para tipo '${tipo}'`);
-    }
-  }
-
-// Ocultar menu "Emissão de NF" para quem não for administrador nem emissão de nf
-if (tipo !== 'administrador' && tipo !== 'emissão de nf') {
-  const menuEmissaoNF = sidebarContainer.querySelector('a[href="tarefas-nf.html"]');
-  if (menuEmissaoNF) {
-    menuEmissaoNF.remove();
-    console.log(`🔒 Menu 'Emissão de NF' ocultado para tipo '${tipo}'`);
-  }
-}
-              }
-            }
+            });
           }
 
-          // Ativar menu atual
           const path = window.location.pathname;
           sidebarContainer.querySelectorAll("a").forEach(link => {
             if (path.includes(link.getAttribute("href"))) {
