@@ -14,22 +14,59 @@ function formatarNomeEmpresa(nome) {
   return nome;
 }
 
+/**
+ * Formata o código fiscal para exibição. Se o valor técnico for "Personalizar",
+ * exibe "GAP" para o usuário. Caso contrário, retorna o próprio valor.
+ * Assim, preservamos o valor interno ("Personalizar") no banco, mas
+ * mostramos "GAP" na interface.
+ */
+function formatarCodigoExibicao(codigo) {
+  if (!codigo) return '–';
+  return String(codigo).trim().toUpperCase() === 'PERSONALIZAR' ? 'GAP' : codigo;
+}
+
 function gerarMateriais(pedido) {
   if (!pedido.materiais || !pedido.materiais.length) return '';
 
-  return pedido.materiais.map(mat => `
-    <div class="material-bloco" style="margin-bottom: 20px;">
-      <h4>${mat.nome_produto} (${mat.codigo_fiscal || '–'})</h4>
-      <p><strong>Unidade:</strong> ${mat.unidade || '–'}</p>
-      <p><strong>Peso Carregado:</strong> ${parseFloat(mat.peso_carregado || 0).toLocaleString('pt-BR')} kg</p>
-      <p><strong>Tipo de Peso:</strong> ${mat.tipo_peso || '–'}</p>
-      <p><strong>Valor Unitário:</strong> R$ ${parseFloat(mat.valor_unitario || 0).toLocaleString('pt-BR')}</p>
-      <p><strong>Subtotal:</strong> R$ ${parseFloat(mat.valor_total || 0).toLocaleString('pt-BR')}</p>
-    </div>
-  `).join('');
+  return pedido.materiais
+    .filter(mat => {
+      const codigo = String(mat.codigo_fiscal || '').trim().toUpperCase();
+      return codigo !== 'GX';
+    })
+    .map(mat => {
+      const codigo = String(mat.codigo_fiscal || '').trim().toUpperCase();
+      const peso = parseFloat(mat.peso_carregado || 0);
+
+      let subtotal = 0;
+      let valorPorQuilo = 0;
+
+      if (codigo === 'GA1') {
+        subtotal = parseFloat(mat.valor_total || 0);
+        valorPorQuilo = parseFloat(mat.valor_unitario || 0);
+      } else if (codigo === 'GA2') {
+        subtotal = parseFloat((mat.valor_total || 0) / 2);
+        valorPorQuilo = peso > 0 ? subtotal / peso : 0;
+      } else if (codigo === 'PERSONALIZAR' || codigo === 'GAP') {
+console.log('🔍 Produto GAP detectado:', mat); // 👈 COLA ISSO
+        subtotal = parseFloat(mat.valor_com_nota ?? 0);
+        valorPorQuilo = peso > 0 ? subtotal / peso : 0;
+      }
+
+      return `
+        <div class="material-bloco" style="margin-bottom: 20px;">
+          <h4>${mat.nome_produto} (${formatarCodigoExibicao(codigo)})</h4>
+          <p><strong>Unidade:</strong> ${mat.unidade || '–'}</p>
+          <p><strong>Peso Carregado:</strong> ${peso.toLocaleString('pt-BR')} kg</p>
+          <p><strong>Valor por quilo:</strong> R$ ${valorPorQuilo.toFixed(2).replace('.', ',')}</p>
+          <p><strong>Subtotal:</strong> R$ ${subtotal.toFixed(2).replace('.', ',')}</p>
+        </div>
+      `;
+    })
+    .join('');
 }
 
 function montarCard(pedido) {
+console.log('🟢 Dados completos do pedido:', pedido);
   const timeline = gerarLinhaTempoCompleta(pedido);
   const empresaFormatada = formatarNomeEmpresa(pedido.empresa);
 
