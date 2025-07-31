@@ -90,8 +90,9 @@ let pedidoAtual = null;
     )];
 
     codigosPermitidos.forEach(c => {
-      selCodigo.append(`<option value="${c}">${c}</option>`);
-    });
+  const textoExibido = c === "Personalizar" ? "GAP" : c;
+  selCodigo.append(`<option value="${c}">${textoExibido}</option>`);
+});
 
     if (produto.codigo_fiscal && !codigosPermitidos.includes(produto.codigo_fiscal)) {
       selCodigo.append(`<option value="${produto.codigo_fiscal}" selected>${produto.codigo_fiscal}</option>`);
@@ -179,8 +180,9 @@ let pedidoAtual = null;
   const selectCodigo = bloco.find(".select-codigo");
   selectCodigo.empty().append('<option value="">Selecione</option>');
   codigos.forEach(c => {
-    selectCodigo.append(`<option value="${c}">${c}</option>`);
-  });
+  const textoExibido = c === "Personalizar" ? "GAP" : c;
+  selectCodigo.append(`<option value="${c}">${textoExibido}</option>`);
+});
 
   // Se já existir código "Personalizar" e houver campos personalizados, mostrar
   selectCodigo.val(codigos[0] || "").trigger("change");
@@ -415,6 +417,8 @@ $("#btn-confirmar-observacao").click(function () {
     fetch(`/api/pedidos/${pedidoId}`)
       .then(res => res.json())
       .then(pedido => {
+console.log("📦 Pedido completo recebido:");
+console.dir(pedido, { depth: null });
      pedidoAtual = pedido;
         $("#empresa").val(pedido.empresa || "");
         $("#cliente_nome").val(pedido.cliente_nome || "");
@@ -423,6 +427,7 @@ $("#btn-confirmar-observacao").click(function () {
 
         produtosAutorizados = pedido.produtos_autorizados || [];
         materiais = pedido.materiais || [];
+console.log("📦 Materiais recebidos:", materiais);
 
         const prazosSelecionadosTexto = Array.isArray(pedido.prazo_pagamento)
           ? pedido.prazo_pagamento
@@ -566,9 +571,22 @@ $("#btn-confirmar-reset").on("click", function () {
   $("#adicionar-produto").on("click", function () {
   adicionarProduto();
 
-  // força o .change() para preencher o valor por quilo após selecionar
   const ultimoProduto = $(".produto-bloco").last();
   const select = ultimoProduto.find(".select-produto");
-  select.trigger("change");
+
+  select.on("change", function () {
+  const nome = $(this).val();
+  const prod = materiais.find(p => p.nome_produto === nome);
+  const v = parseFloat(prod?.valor_unitario || 0);
+
+  const blocoAtual = $(this).closest(".produto-bloco");
+  blocoAtual.find(".valor-por-quilo").val(formatarNumero(v));
+});
+
+  // Disparar o change para já preencher valor se produto vier pré-carregado
+  const nomeSelecionado = select.val();
+  if (nomeSelecionado) {
+    select.trigger("change");
+  }
 });
 });
