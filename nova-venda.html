@@ -535,16 +535,20 @@ window.excluirObservacao = function (i) {
 
         const selCod = $('<select class="select-codigo-fiscal" required></select>')
           .append('<option value="">Selecione</option>');
-        windowCodigos.forEach(c => selCod.append(`<option value="${c}">${c}</option>`));
-        bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
+        function formatarCodigoExibicao(codigo) {
+  return codigo === "Personalizar" ? "GAP" : codigo;
+}
 
-        const gp = $(`<div class="grupo-personalizar">
-          <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
-          <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
-          <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
-        </div>`);
-        bloco.append(gp);
-        selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
+windowCodigos.forEach(c => selCod.append(`<option value="${c}">${formatarCodigoExibicao(c)}</option>`));
+bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCod);
+
+const gp = $(`<div class="grupo-personalizar">
+  <div class="form-group"><label>Valor com Nota</label><input class="valor-com-nota" type="text"></div>
+  <div class="form-group"><label>Valor sem Nota</label><input class="valor-sem-nota input-nao-editavel" readonly></div>
+  <p class="error-soma">A soma deve ser igual ao valor por quilo</p>
+</div>`);
+bloco.append(gp);
+selCod.change(() => gp.toggle(selCod.val() === "Personalizar"));
 
         gp.find(".valor-com-nota")
           .on("input", function(){
@@ -648,7 +652,7 @@ window.excluirObservacao = function (i) {
   });
 
   if (erroPersonalizar) {
-    alert("Para códigos 'Personalizar', os campos Valor com Nota e Valor sem Nota devem estar preenchidos.");
+    alert("Para códigos 'GAP', os campos Valor com Nota e Valor sem Nota devem estar preenchidos.");
     return;
   }
 
