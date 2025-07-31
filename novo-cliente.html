@@ -129,36 +129,54 @@
     </div>
   </div>
   <script>
-  const listaCodigosFiscais = [
-    "GA1", "GA2", "GX", "GG1", "GG2", "A1", "A2", "AX", "Personalizar"
-  ];
-  function adicionarCodigoFiscal(valorSelecionado = "") {
-    const container = document.getElementById("codigosFiscaisPermitidos");
-    const div = document.createElement("div");
-    div.className = "prazo-group";
-    const select = document.createElement("select");
-    select.className = "codigo-fiscal-select";
-    select.required = true;
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione o código fiscal";
-    select.appendChild(defaultOption);
-    listaCodigosFiscais.forEach(codigo => {
-      const option = document.createElement("option");
-      option.value = codigo;
-      option.textContent = codigo;
-      if (codigo === valorSelecionado) option.selected = true;
-      select.appendChild(option);
-    });
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "remover-btn";
-    button.innerHTML = "&times;";
-    button.onclick = () => div.remove();
-    div.appendChild(select);
-    div.appendChild(button);
-    container.appendChild(div);
-  }
+const listaCodigosFiscais = [
+  "GA1", "GA2", "GX", "GG1", "GG2", "A1", "A2", "AX", "Personalizar"
+];
+
+/**
+ * Formata o código fiscal para exibição. Se for "Personalizar",
+ * exibe "GAP". Caso contrário, mostra o próprio valor.
+ */
+function formatarCodigoExibicao(codigo) {
+  return String(codigo).trim().toUpperCase() === "PERSONALIZAR"
+    ? "GAP"
+    : codigo;
+}
+
+function adicionarCodigoFiscal(valorSelecionado = "") {
+  const container = document.getElementById("codigosFiscaisPermitidos");
+  const div = document.createElement("div");
+  div.className = "prazo-group";
+
+  const select = document.createElement("select");
+  select.className = "codigo-fiscal-select";
+  select.required = true;
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Selecione o código fiscal";
+  select.appendChild(defaultOption);
+
+  // Aqui criamos cada opção. A propriedade `value` mantém o valor original,
+  // e o texto exibido usa a função formatarCodigoExibicao()
+  listaCodigosFiscais.forEach((codigo) => {
+    const option = document.createElement("option");
+    option.value = codigo;
+    option.textContent = formatarCodigoExibicao(codigo); // exibe GAP no lugar de Personalizar
+    if (codigo === valorSelecionado) option.selected = true;
+    select.appendChild(option);
+  });
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "remover-btn";
+  button.innerHTML = "&times;";
+  button.onclick = () => div.remove();
+
+  div.appendChild(select);
+  div.appendChild(button);
+  container.appendChild(div);
+}
   function atualizarCamposPessoa() {
   const tipo = document.getElementById("tipoPessoa").value;
   const labelDoc = document.getElementById("labelDocumento");
