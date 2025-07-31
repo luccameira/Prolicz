@@ -36,6 +36,22 @@ function formatarPesoComMilhar(valor) {
 }
 
 /**
+ * Retorna o código fiscal formatado para exibição na interface. Se o valor
+ * técnico for "Personalizar" (ou qualquer capitalização), exibe "GAP".
+ * Caso contrário, retorna o código original. Isso permite manter o valor
+ * real salvo no banco de dados enquanto mostra a nomenclatura desejada
+ * pelo usuário.
+ *
+ * @param {string} codigo Código fiscal original
+ * @returns {string} Código a ser exibido
+ */
+function formatarCodigoExibicao(codigo) {
+  if (!codigo) return '';
+  // Compara ignorando diferenciação de maiúsculas e minúsculas
+  return codigo.toUpperCase() === 'PERSONALIZAR' ? 'GAP' : codigo;
+}
+
+/**
  * Calcula os valores por quilo com e sem nota fiscal para um item.
  * Regras:
  *  - Se o código fiscal for “PERSONALIZAR”, utiliza os campos valor_com_nota e valor_sem_nota do item.
@@ -348,9 +364,10 @@ async function carregarPedidosFinanceiro() {
             linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
           }
         }
+        // Usa formatarCodigoExibicao para exibir "GAP" no lugar de "Personalizar"
         return `
           <div class="barra-fiscal" style="font-weight:600; padding:4px 10px; font-size:15px;">
-            ${mat.nome_produto}: <span style="color:black;">(${codigoFmt})</span><br />
+            ${mat.nome_produto}: <span style="color:black;">(${formatarCodigoExibicao(codigoFmt)})</span><br />
             ${linhas}
           </div>
         `;
@@ -568,6 +585,26 @@ async function carregarPedidosFinanceiro() {
       });
     }
 
+    // Exibe observações específicas do setor financeiro (definidas no momento da venda)
+    // utilizando a propriedade `observacoes_setor` retornada pela API. Este bloco segue
+    // o mesmo padrão de apresentação de observações utilizado em outras etapas,
+    // como conferência de peso, garantindo uniformidade na interface. Se não
+    // houver observações registradas para o financeiro, nada será exibido.
+    if (pedido.observacoes_setor && pedido.observacoes_setor.length > 0) {
+      const obsFin = document.createElement('div');
+      // Estilos semelhantes ao aviso utilizado em conferência e outras páginas
+      obsFin.style.background = '#fff3cd';
+      obsFin.style.padding = '12px';
+      obsFin.style.borderLeft = '5px solid #ffc107';
+      obsFin.style.borderRadius = '4px';
+      obsFin.style.marginTop = '20px';
+      obsFin.innerHTML = `
+        <strong>Observações para Financeiro:</strong><br>
+        ${pedido.observacoes_setor.map(o => `<div>${o}</div>`).join('')}
+      `;
+      form.appendChild(obsFin);
+    }
+
     const separador = document.createElement('div');
     separador.className = 'divider-financeiro';
     form.appendChild(separador);
@@ -644,7 +681,7 @@ async function carregarPedidosFinanceiro() {
     containerCinza.innerHTML += `
       <p><strong>Valor Total da Venda:</strong> <span class="etiqueta-valor-item" id="reset-vencimentos">${totalVendaFmt}</span></p>
       <div class="vencimentos-container"></div>
-      <p class="venc-soma-error" style="color:red;"></p>
+      <p class="erro-vencimentos" style="color:red;"></p>
       ${codigosFiscaisBarraAzul}
       ${resumoFiscalHtml}
       ${pedido.observacoes && pedido.observacoes.trim() !== '' ? `<div class="obs-pedido"><strong>Observações:</strong> ${pedido.observacoes}</div>` : ''}
@@ -702,7 +739,8 @@ async function carregarPedidosFinanceiro() {
             linhas += `<span style="color:#c62828;">Peso NF: ${formatarPesoComMilhar(pesoNF)} Kg</span>`;
           }
         }
-        elem.innerHTML = `${mat.nome_produto}: <span style="color:black;">(${codigoFmt})</span><br />${linhas}`;
+        // Usa formatarCodigoExibicao para exibir "GAP" no lugar de "Personalizar"
+        elem.innerHTML = `${mat.nome_produto}: <span style="color:black;">(${formatarCodigoExibicao(codigoFmt)})</span><br />${linhas}`;
       });
       // Recalcula parcelas padrão
       valoresPadrao = calcularValoresVencimentos(totalFinalVenda);
@@ -846,12 +884,26 @@ async function carregarPedidosFinanceiro() {
       }
       // Busca o total da venda atualizado
       const totalVendaAtualStr = containerCinza.querySelector('#reset-vencimentos')?.textContent || '';
-      const totalVendaNum = parseFloat(totalVendaAtualStr.replace(/\./g, '').replace(',', '.')) || 0;
-      const erro = document.querySelector('.erro-vencimentos');
-      const liberador = document.querySelector('#liberar-btn');
+      // Converte a string do total de venda em número decimal.
+      // Remove qualquer caractere que não seja dígito ou vírgula, depois remove pontos
+      // e converte a vírgula decimal para ponto. Isso evita problemas com prefixos como "R$".
+      const totalVendaNum = parseFloat(
+        totalVendaAtualStr
+          .replace(/[^\d,]/g, '')
+          .replace(/\./g, '')
+          .replace(',', '.')
+      ) || 0;
+      // O elemento de erro pertence ao contêiner cinza deste formulário
+      const erro = containerCinza.querySelector('.erro-vencimentos');
+      // Seleciona o botão de liberação apenas dentro deste formulário
+      const liberador = form.querySelector('#liberar-btn');
+      // Se não houver botão de liberação ou elemento de erro, não há nada a atualizar
+      if (!liberador || !erro) return;
       if (Math.abs(soma - totalVendaNum) > 0.02) {
         erro.style.display = 'block';
-        erro.textContent = `A soma dos vencimentos (R$ ${formatarMoeda(soma)}) difere do total R$ ${formatarMoeda(totalVendaNum)}.`;
+        // Exibe mensagem de validação sem duplicar o prefixo de moeda. A função
+        // formatarMoeda já inclui "R$" na formatação.
+        erro.textContent = `A soma dos vencimentos (${formatarMoeda(soma)}) difere do total ${formatarMoeda(totalVendaNum)}.`;
         liberador.disabled = true;
       } else {
         erro.style.display = 'none';
@@ -862,6 +914,10 @@ async function carregarPedidosFinanceiro() {
 
     // Renderiza vencimentos iniciais
     renderizarVencimentos(valoresPadrao);
+    // Após renderizar os vencimentos pela primeira vez, ajusta o estado do botão
+    // de liberação conforme a soma das parcelas (evita que o botão permaneça
+    // desabilitado sem motivo ao carregar a tela inicialmente)
+    atualizarBotaoLiberar();
     form.appendChild(containerCinza);
     const valorTotalTag = containerCinza.querySelector('#reset-vencimentos');
     if (valorTotalTag) {
@@ -875,12 +931,14 @@ async function carregarPedidosFinanceiro() {
     blocoFin.innerHTML = `
       <label>Observações do Financeiro:</label>
       <textarea placeholder="Digite suas observações aqui..."></textarea>
-      <button class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
+      <button id="liberar-btn" class="btn btn-registrar" disabled>Confirmar Liberação do Cliente</button>
     `;
     const taFin = blocoFin.querySelector('textarea');
     const btnFin = blocoFin.querySelector('button');
     btnFin.addEventListener('click', () => confirmarFinanceiro(id, taFin.value));
     form.appendChild(blocoFin);
+    // Agora que o botão de liberação foi adicionado ao formulário, atualiza seu estado
+    atualizarBotaoLiberar();
 
     card.appendChild(form);
     header.addEventListener('click', () => {
