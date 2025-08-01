@@ -161,6 +161,7 @@ router.get('/carga', async (req, res) => {
 });
 
 // Rota GET /api/pedidos - listagem com filtros
+router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos =
@@ -1240,7 +1241,7 @@ router.post('/motoristas', (req, res) => {
 
         if (existeAjudante.length === 0) {
           await db.query(
-            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante)
+            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante) 
              VALUES (?, ?, ?, ?)`,
             [cpf_ajudante, nome_ajudante, fichaAjudante, documentoAjudante]
           );
