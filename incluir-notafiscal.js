@@ -217,6 +217,15 @@ async function emitirNota(pedidoId, btn) {
 
     const data = await res.json();
     alert(data.mensagem || 'Nota fiscal registrada com sucesso.');
+
+    // 🔁 Atualiza o status para "Aguardando Saída"
+    await fetch(`/api/pedidos/${pedidoId}/atualizar-status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Aguardando Saída' })
+    });
+
+    // 🔄 Recarrega os pedidos com nova etapa
     carregarPedidosNotaFiscal();
   } catch (error) {
     console.error('Erro ao emitir nota:', error);
