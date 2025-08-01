@@ -161,7 +161,6 @@ router.get('/carga', async (req, res) => {
 });
 
 // Rota GET /api/pedidos - listagem com filtros
-router.get('/', async (req, res) => {
   const { cliente, status, tipo, ordenar, de, ate } = req.query;
 
   let sqlPedidos =
@@ -218,11 +217,24 @@ router.get('/', async (req, res) => {
 
     for (const pedido of pedidos) {
       const [materiais] = await db.query(
-        `SELECT id, nome_produto, peso AS quantidade, tipo_peso, unidade, peso_carregado, valor_unitario, codigo_fiscal, (valor_unitario * peso) AS valor_total
-         FROM itens_pedido
-         WHERE pedido_id = ?`,
-        [pedido.pedido_id]
-      );
+  `SELECT 
+     id, 
+     nome_produto, 
+     peso AS quantidade, 
+     tipo_peso, 
+     unidade, 
+     peso_carregado, 
+     valor_unitario, 
+     codigo_fiscal, 
+     valor_com_nota,
+     valor_sem_nota,
+     (COALESCE(valor_com_nota, 0) / NULLIF(COALESCE(peso_carregado, 0), 0)) AS valor_por_quilo_com_nota,
+     (COALESCE(valor_com_nota, 0)) AS subtotal_com_nota,
+     (valor_unitario * peso) AS valor_total
+   FROM itens_pedido
+   WHERE pedido_id = ?`,
+  [pedido.pedido_id]
+);
 
       for (const item of materiais) {
         const [descontos] = await db.query(
@@ -1228,7 +1240,7 @@ router.post('/motoristas', (req, res) => {
 
         if (existeAjudante.length === 0) {
           await db.query(
-            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante) 
+            `INSERT INTO ajudantes (cpf, nome, ficha_ajudante, documento_ajudante)
              VALUES (?, ?, ?, ?)`,
             [cpf_ajudante, nome_ajudante, fichaAjudante, documentoAjudante]
           );
