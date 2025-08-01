@@ -47,10 +47,10 @@ function gerarMateriais(pedido) {
         subtotal = parseFloat((mat.valor_total || 0) / 2);
         valorPorQuilo = peso > 0 ? subtotal / peso : 0;
       } else if (codigo === 'PERSONALIZAR' || codigo === 'GAP') {
-console.log('🔍 Produto GAP detectado:', mat); // 👈 COLA ISSO
-        subtotal = parseFloat(mat.valor_com_nota ?? 0);
-        valorPorQuilo = peso > 0 ? subtotal / peso : 0;
-      }
+  console.log('🔍 Produto GAP detectado:', mat); // 👈 mantém log
+  valorPorQuilo = parseFloat(mat.valor_com_nota ?? 0);
+  subtotal = peso > 0 ? valorPorQuilo * peso : 0;
+}
 
       return `
         <div class="material-bloco" style="margin-bottom: 20px;">
@@ -58,7 +58,7 @@ console.log('🔍 Produto GAP detectado:', mat); // 👈 COLA ISSO
           <p><strong>Unidade:</strong> ${mat.unidade || '–'}</p>
           <p><strong>Peso Carregado:</strong> ${peso.toLocaleString('pt-BR')} kg</p>
           <p><strong>Valor por quilo:</strong> R$ ${valorPorQuilo.toFixed(2).replace('.', ',')}</p>
-          <p><strong>Subtotal:</strong> R$ ${subtotal.toFixed(2).replace('.', ',')}</p>
+          <p><strong>Subtotal:</strong> R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         </div>
       `;
     })
