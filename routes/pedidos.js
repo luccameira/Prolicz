@@ -1259,4 +1259,88 @@ router.post('/motoristas', (req, res) => {
   });
 });
 
+// PUT /api/pedidos/:id/emitir-nf
+const pastaNotas = path.join(__dirname, '..', 'uploads', 'notas');
+if (!fs.existsSync(pastaNotas)) {
+  fs.mkdirSync(pastaNotas, { recursive: true });
+}
+const storageNotas = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, pastaNotas),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nome = `nf_${Date.now()}${ext}`;
+    cb(null, nome);
+  }
+});
+const uploadNF = multer({ storage: storageNotas });
+
+router.put('/:id/emitir-nf', uploadNF.single('arquivo_nf'), async (req, res) => {
+  const pedidoId = req.params.id;
+  const numeroNF = req.body.numero_nf;
+  const arquivo = req.file?.filename;
+
+  if (!numeroNF || !arquivo) {
+    return res.status(400).json({ erro: 'Número e arquivo da nota são obrigatórios.' });
+  }
+
+  try {
+    // Atualiza dados do pedido com nota fiscal
+    await db.query(
+      `UPDATE pedidos 
+       SET nota_fiscal = ?, arquivo_nf = ?, status = 'Finalizado', data_emissao_nf = NOW()
+       WHERE id = ?`,
+      [numeroNF, arquivo, pedidoId]
+    );
+
+    // Insere no histórico
+    await db.query(
+      `INSERT INTO historico_pedido (pedido_id, titulo, descricao, data)
+       VALUES (?, 'Emissão de NF', ?, NOW())`,
+      [pedidoId, `NF emitida com número ${numeroNF}`]
+    );
+
+    // Cria nova tarefa para a portaria (saída)
+    await db.query(
+      `INSERT INTO tarefas_portaria (pedido_id, tipo, status, criado_em)
+       VALUES (?, 'saida', 'pendente', NOW())`,
+      [pedidoId]
+    );
+
+    res.json({ mensagem: 'Nota fiscal registrada com sucesso e tarefa de saída criada.' });
+  } catch (error) {
+    console.error('Erro ao registrar nota fiscal:', error);
+    res.status(500).json({ erro: 'Erro ao registrar nota fiscal.' });
+  }
+});
+
+router.put('/:id/emitir-nf', uploadNF.single('arquivo_nf'), async (req, res) => {
+  const pedidoId = req.params.id;
+  const numeroNF = req.body.numero_nf;
+  const arquivo = req.file?.filename;
+
+  if (!numeroNF || !arquivo) {
+    return res.status(400).json({ erro: 'Número e arquivo da nota são obrigatórios.' });
+  }
+
+  try {
+    await db.query(
+      `UPDATE pedidos 
+       SET nota_fiscal = ?, arquivo_nf = ?, status = 'Aguardando Saída', data_emissao_nf = NOW()
+       WHERE id = ?`,
+      [numeroNF, arquivo, pedidoId]
+    );
+
+    await db.query(
+      `INSERT INTO historico_pedido (pedido_id, titulo, descricao, data)
+       VALUES (?, 'Emissão de NF', ?, NOW())`,
+      [pedidoId, `NF emitida com número ${numeroNF}`]
+    );
+
+    res.json({ mensagem: 'Nota fiscal registrada com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao registrar nota fiscal:', error);
+    res.status(500).json({ erro: 'Erro ao registrar nota fiscal.' });
+  }
+});
+
 module.exports = router;
