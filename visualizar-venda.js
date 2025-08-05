@@ -44,11 +44,11 @@ function preencherInformacoesPrincipais(pedido) {
   }
 
   if (produto) {
-    document.getElementById('produto-nome').textContent = produto.nome || '—';
-    document.getElementById('produto-valor-quilo').textContent = formatarValor(produto.valor_por_quilo);
+    document.getElementById('produto-nome').textContent = produto.nome_produto || '—';
+    document.getElementById('produto-valor-quilo').textContent = formatarValor(produto.valor_unitario);
     document.getElementById('produto-peso').textContent = formatarNumero(produto.peso);
     document.getElementById('produto-tipo-peso').textContent = produto.tipo_peso || '—';
-    document.getElementById('produto-subtotal').textContent = formatarValor(produto.subtotal);
+    document.getElementById('produto-subtotal').textContent = formatarValor(produto.valor_total);
   }
 }
 
