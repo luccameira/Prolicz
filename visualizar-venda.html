@@ -1,334 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Visualizar Venda</title>
-  <link rel="stylesheet" href="layout.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="visualizar-venda.css">
   <script defer src="incluir-layout.js"></script>
-  <link rel="stylesheet" href="visualizar-venda.css" />
+  <script defer src="visualizar-venda.js"></script>
 </head>
 <body>
-  <div class="topbar"></div>
   <div class="sidebar"></div>
+  <div class="topbar"></div>
   <div class="main-content">
-    <a href="vendas.html" class="btn-voltar">&larr; Voltar</a>
+    <button class="btn-voltar" onclick="window.history.back()">← Voltar</button>
+
     <div class="cliente-header">
       <div class="cliente-inicial" id="cliente-inicial">--</div>
-      <div class="cliente-info">
-        <div class="nome-cliente" id="nome-cliente">—</div>
-        <div class="info-adicional" id="info-adicional">—</div>
+      <div class="cliente-nome">
+        <div id="cliente-nome" class="nome-cliente">—</div>
+        <div id="empresa-fornecedora" class="empresa-cliente">—</div>
       </div>
     </div>
-    <nav class="tabs-menu">
-      <a href="#" class="active" data-tab="info-pedido">Informações Principais</a>
-      <a href="#" data-tab="registros">Registros do Pedido</a>
-      <a href="#" data-tab="historico-pedido">Histórico do Pedido</a>
-    </nav>
-    <section id="info-pedido" class="tab-content">
-      <div class="info-bloco tab-section">
+
+    <div class="abas">
+      <button id="aba-informacoes" class="aba ativa" onclick="mostrarAba('informacoes')">Informações Principais</button>
+      <button id="aba-historico" class="aba" onclick="mostrarAba('historico')">Histórico do Pedido</button>
+    </div>
+
+    <!-- ABA: INFORMAÇÕES PRINCIPAIS -->
+    <div id="conteudo-informacoes" class="conteudo-aba ativo">
+      <div class="card">
         <h3>Informações do Pedido</h3>
-        <dl>
-          <dt>Data Prevista da Coleta</dt><dd id="data-coleta">—</dd>
-          <dt>Pedido Para</dt><dd id="pedido-para">—</dd>
-          <dt>Prazo de Pagamento</dt><dd id="prazo-pagamento">—</dd>
-          <dt>Condição para Pagamento à Vista</dt><dd id="condicao-pagamento">—</dd>
-          <dt>Código</dt><dd id="codigo-fiscal">—</dd>
-        </dl>
+        <p><strong>Data Prevista da Coleta:</strong> <span id="data-coleta">—</span></p>
+        <p><strong>Pedido Para:</strong> <span id="pedido-para">—</span></p>
+        <p><strong>Prazo de Pagamento:</strong> <span id="prazo-pagamento">—</span></p>
+        <p id="condicao-vista" class="condicao-vista"><strong>Condição para Pagamento à Vista</strong></p>
+        <p><strong>Código:</strong> <span id="codigo-venda">—</span></p>
       </div>
-      <div class="info-bloco tab-section" style="margin-top: 30px;">
+
+      <div class="card">
         <h3>Informações do Produto</h3>
-        <dl>
-          <dt>Nome do Produto</dt><dd id="nome-produto">—</dd>
-          <dt>Valor por Quilo</dt><dd id="valor-quilo">—</dd>
-          <dt>Peso (Kg)</dt><dd id="peso">—</dd>
-          <dt>Tipo de Peso</dt><dd id="tipo-peso">—</dd>
-          <dt>Subtotal</dt><dd id="subtotal">—</dd>
-        </dl>
+        <p><strong>Nome do Produto:</strong> <span id="produto-nome">—</span></p>
+        <p><strong>Valor por Quilo:</strong> <span id="produto-valor-quilo">—</span></p>
+        <p><strong>Peso (Kg):</strong> <span id="produto-peso">—</span></p>
+        <p><strong>Tipo de Peso:</strong> <span id="produto-tipo-peso">—</span></p>
+        <p><strong>Subtotal:</strong> <span id="produto-subtotal">—</span></p>
       </div>
-    </section>
-    <section id="registros" class="tab-content" style="display:none;">
-      <button id="btn-adicionar-registro" class="btn-adicionar" type="button" style="margin-bottom: 10px;">Adicionar Registro</button>
-      <div id="lista-registros">
-        <p style="color: #666;">Nenhum registro cadastrado.</p>
+    </div>
+
+    <!-- ABA: HISTÓRICO DO PEDIDO -->
+    <div id="conteudo-historico" class="conteudo-aba">
+      <div id="historico-cards">
+        <!-- Os cards serão adicionados dinamicamente pelo JS -->
       </div>
-      <form id="form-novo-registro" style="margin-top: 20px; display: none;">
-        <textarea id="input-novo-registro" rows="4" placeholder="Escreva um novo registro..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-size: 1rem;"></textarea>
-        <div style="margin-top: 10px;">
-          <button type="submit" style="background-color: #FFC107; color: #222; font-weight: 700; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-right: 10px;">Salvar</button>
-          <button type="button" id="btn-cancelar-registro" style="background-color: #e0e0e0; color: #333; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">Cancelar</button>
-        </div>
-      </form>
-    </section>
-    <section id="historico-pedido" class="tab-content" style="display:none;">
-  <div class="timeline-item">
-  <div class="timeline-dot"></div>
-  <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info1" id="toggle1">
-    <span>Pedido Criado</span>
-    <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-      <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="timeline-date" id="historico-data1">26/06/2023 14:03</div>
-  </div>
-  <div class="timeline-content" id="info1" role="region" aria-labelledby="toggle1" hidden>
-    <!-- Botão EDITAR deve ficar FORA da tabela! -->
-    <div style="display: flex; justify-content: flex-end; margin-top: -10px; margin-bottom: 10px;">
-      <button id="botao-editar" style="
-        background-color: #FFD700;
-        color: #000;
-        border: none;
-        padding: 8px 18px;
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 13px;
-        border-radius: 4px;
-        cursor: pointer;">
-        EDITAR
-      </button>
     </div>
-    <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-      <tr>
-        <td style="padding-left: 0; padding-right: 20px; min-width: 180px;">
-          <strong>Usuário:</strong>
-          <span id="historico-usuario">—</span>
-        </td>
-        <td colspan="3" style="min-width: 220px;">
-          <strong>Data Prevista da Coleta:</strong>
-          <span id="historico-data-coleta">—</span>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding-left: 0; padding-right: 28px; min-width: 220px;">
-          <strong>Empresa Fornecedora:</strong>
-          <span id="historico-empresa">—</span>
-        </td>
-        <td style="padding-right: 28px; padding-left: 40px; min-width: 180px;">
-          <strong>Pedido Para:</strong>
-          <span id="historico-pedido-para">—</span>
-        </td>
-        <td colspan="2" style="min-width: 200px;">
-          <strong>Prazo de Pagamento:</strong>
-          <span id="historico-prazo-pagamento">—</span>
-        </td>
-      </tr>
-      <tr style="display: none;">
-        <td><strong>Peso Previsto:</strong> <span id="historico-peso-previsto">—</span></td>
-        <td colspan="3"><strong>Código:</strong> <span id="historico-codigo">—</span></td>
-      </tr>
-    </table>
-    <!-- Tabela de Produtos do Pedido -->
-    <div id="tabela-produtos-historico" style="margin-top: 20px;">
-      <table class="grade-tabela-info" style="width: 100%; margin-top: 10px;">
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Peso Previsto</th>
-            <th>O Peso é</th>
-            <th>Valor Unitário</th>
-            <th>Subtotal</th>
-            <th>Código</th>
-          </tr>
-        </thead>
-        <tbody id="corpo-tabela-produtos-historico">
-          <!-- Linhas serão inseridas pelo JS -->
-        </tbody>
-      </table>
-        <div class="observacoes-card">
-    <strong>OBSERVAÇÕES:</strong>
-    <span id="historico-observacao"></span>
-  </div>
-    </div>
-  </div>
-</div>
 
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info2" id="toggle2">
-      <span>Entrada na Portaria</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data2">26/06/2023 15:45</div>
-    </div>
-    <div class="timeline-content" id="info2" role="region" aria-labelledby="toggle2" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-portaria">—</span></td>
-          <td><strong>CPF Motorista:</strong> <span id="historico-cpf-motorista">—</span></td>
-          <td><strong>Placa do Veículo:</strong> <span id="historico-placa-veiculo">—</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Nome do Ajudante (caso tenha):</strong> <span id="historico-nome-ajudante">—</span></td>
-          <td colspan="2"><strong>CPF do Ajudante (caso tenha):</strong> <span id="historico-cpf-ajudante">—</span></td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info3" id="toggle3">
-      <span>Coleta Iniciada</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data3">26/06/2023 15:20</div>
-    </div>
-    <div class="timeline-content" id="info3" role="region" aria-labelledby="toggle3" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-coleta">—</span></td>
-          <td><strong>Coleta Finalizada:</strong> <span id="historico-data-coleta-finalizada">—</span></td>
-          <td><strong>Peso Carregado:</strong> <span id="historico-peso-carregado">—</span></td>
-        </tr>
-        <tr>
-          <td colspan="3" style="padding-bottom: 10px;">
-            <strong>Ticket da Balança:</strong><br/>
-            <img src="" alt="Ticket da Balança" class="ticket-thumbnail" id="historico-ticket-balanca" />
-          </td>
-        </tr>
-        <tr>
-          <td colspan="3">
-            <strong>Desconto Aplicado:</strong><br />
-            <button id="btn-desconto-sim" class="inativo" type="button">Sim</button>
-          </td>
-        </tr>
-        <tr>
-          <td colspan="3" id="detalhes-desconto-historico" style="display:none; padding-top: 10px;">
-            <div>
-              <strong>Tipo de Desconto:</strong>
-              <span id="tipo-desconto-historico">—</span>
-            </div>
-            <div id="bloco-paletes-historico" style="display:none;">
-              <strong>Quantidade de Paletes:</strong>
-              <span id="quantidade-paletes-historico">0</span>
-            </div>
-            <div id="bloco-devolucao-historico" style="display:none;">
-              <strong>Material Devolvido:</strong>
-              <span id="material-devolvido-historico">—</span><br />
-              <strong>Peso Devolvido (Kg):</strong>
-              <span id="peso-devolvido-historico">0</span>
-            </div>
-            <div id="bloco-compra-historico" style="display:none;">
-              <strong>Material Comprado:</strong>
-              <span id="material-comprado-historico">—</span><br />
-              <strong>Peso Comprado (Kg):</strong>
-              <span id="peso-comprado-historico">0</span>
-            </div>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info4" id="toggle4">
-      <span>Peso Conferido</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data4">26/06/2023 17:10</div>
-    </div>
-    <div class="timeline-content" id="info4" role="region" aria-labelledby="toggle4" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-peso">—</span></td>
-        </tr>
-        <tr>
-          <td colspan="3" style="padding-bottom: 10px;">
-            <strong>Ticket da Balança:</strong><br/>
-            <img src="" alt="Ticket da Balança" class="ticket-thumbnail" id="historico-ticket-balanca-peso" />
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info5" id="toggle5">
-      <span>Cliente Liberado</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data5">27/06/2023 09:30</div>
-    </div>
-    <div class="timeline-content" id="info5" role="region" aria-labelledby="toggle5" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-liberado">—</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Valor Total da Venda:</strong> <span id="historico-valor-total">—</span></td>
-        </tr>
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;">
-            <strong>Vencimento 1:</strong> <span id="historico-vencimento1">—</span>
-            <input type="text" readonly style="width: 90px; text-align: right; margin-left: 10px; border: none; background: transparent;" />
-            <input type="checkbox" disabled style="margin-left: 10px;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;">
-            <strong>Código Fiscal:</strong> <span id="historico-codigo-fiscal">—</span>
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info6" id="toggle6">
-      <span>NF Emitida</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data6">27/06/2023 10:15</div>
-    </div>
-    <div class="timeline-content" id="info6" role="region" aria-labelledby="toggle6" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-nf">—</span></td>
-          <td><strong>Número da Nota Fiscal:</strong> <span id="historico-numero-nf">—</span></td>
-        </tr>
-        <tr>
-          <td colspan="3" style="padding-bottom: 10px;">
-            <strong>Arquivo da NF:</strong><br/>
-            <img src="" alt="Arquivo da NF" class="ticket-thumbnail" id="historico-ticket-nf" />
-          </td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div class="timeline-item">
-    <div class="timeline-dot"></div>
-    <div class="timeline-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="info7" id="toggle7">
-      <span>Saída na Portaria</span>
-      <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform-origin:center;">
-        <path d="M6 8L10 12L14 8" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="timeline-date" id="historico-data7">27/06/2023 11:00</div>
-    </div>
-    <div class="timeline-content" id="info7" role="region" aria-labelledby="toggle7" hidden>
-      <table class="grade-tabela-info" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding-left: 0; padding-right: 10px;"><strong>Usuário:</strong> <span id="historico-usuario-saida">—</span></td>
-          <td><strong>Status:</strong> <span id="historico-status-saida">—</span></td>
-          <td><strong>Responsável:</strong> <span id="historico-responsavel-saida">—</span></td>
-        </tr>
-        <tr>
-          <td colspan="3"><strong>Data da Liberação:</strong> <span id="historico-data-liberacao">—</span></td>
-        </tr>
-      </table>
-    </div>
-  </div>
-<!-- IMPORTANTE: Chama o arquivo .js novo (de preferência no fim do body) -->
-  <script src="visualizar-venda.js"></script>
-</section>
   </div>
 </body>
 </html>
