@@ -14,59 +14,22 @@ function formatarNomeEmpresa(nome) {
   return nome;
 }
 
-/**
- * Formata o código fiscal para exibição. Se o valor técnico for "Personalizar",
- * exibe "GAP" para o usuário. Caso contrário, retorna o próprio valor.
- * Assim, preservamos o valor interno ("Personalizar") no banco, mas
- * mostramos "GAP" na interface.
- */
-function formatarCodigoExibicao(codigo) {
-  if (!codigo) return '–';
-  return String(codigo).trim().toUpperCase() === 'PERSONALIZAR' ? 'GAP' : codigo;
-}
-
 function gerarMateriais(pedido) {
   if (!pedido.materiais || !pedido.materiais.length) return '';
 
-  return pedido.materiais
-    .filter(mat => {
-      const codigo = String(mat.codigo_fiscal || '').trim().toUpperCase();
-      return codigo !== 'GX';
-    })
-    .map(mat => {
-      const codigo = String(mat.codigo_fiscal || '').trim().toUpperCase();
-      const peso = parseFloat(mat.peso_carregado || 0);
-
-      let subtotal = 0;
-      let valorPorQuilo = 0;
-
-      if (codigo === 'GA1') {
-        subtotal = parseFloat(mat.valor_total || 0);
-        valorPorQuilo = parseFloat(mat.valor_unitario || 0);
-      } else if (codigo === 'GA2') {
-        subtotal = parseFloat((mat.valor_total || 0) / 2);
-        valorPorQuilo = peso > 0 ? subtotal / peso : 0;
-      } else if (codigo === 'PERSONALIZAR' || codigo === 'GAP') {
-  console.log('🔍 Produto GAP detectado:', mat); // 👈 mantém log
-  valorPorQuilo = parseFloat(mat.valor_com_nota ?? 0);
-  subtotal = peso > 0 ? valorPorQuilo * peso : 0;
-}
-
-      return `
-        <div class="material-bloco" style="margin-bottom: 20px;">
-          <h4>${mat.nome_produto} (${formatarCodigoExibicao(codigo)})</h4>
-          <p><strong>Unidade:</strong> ${mat.unidade || '–'}</p>
-          <p><strong>Peso Carregado:</strong> ${peso.toLocaleString('pt-BR')} kg</p>
-          <p><strong>Valor por quilo:</strong> R$ ${valorPorQuilo.toFixed(2).replace('.', ',')}</p>
-          <p><strong>Subtotal:</strong> R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-        </div>
-      `;
-    })
-    .join('');
+  return pedido.materiais.map(mat => `
+    <div class="material-bloco" style="margin-bottom: 20px;">
+      <h4>${mat.nome_produto} (${mat.codigo_fiscal || '–'})</h4>
+      <p><strong>Unidade:</strong> ${mat.unidade || '–'}</p>
+      <p><strong>Peso Carregado:</strong> ${parseFloat(mat.peso_carregado || 0).toLocaleString('pt-BR')} kg</p>
+      <p><strong>Tipo de Peso:</strong> ${mat.tipo_peso || '–'}</p>
+      <p><strong>Valor Unitário:</strong> R$ ${parseFloat(mat.valor_unitario || 0).toLocaleString('pt-BR')}</p>
+      <p><strong>Subtotal:</strong> R$ ${parseFloat(mat.valor_total || 0).toLocaleString('pt-BR')}</p>
+    </div>
+  `).join('');
 }
 
 function montarCard(pedido) {
-console.log('🟢 Dados completos do pedido:', pedido);
   const timeline = gerarLinhaTempoCompleta(pedido);
   const empresaFormatada = formatarNomeEmpresa(pedido.empresa);
 
@@ -86,49 +49,48 @@ console.log('🟢 Dados completos do pedido:', pedido);
 
       <div class="card-body" style="display: none; padding: 20px 32px 32px;">
         <div style="margin-bottom: 16px;">
-  <p><strong>Nome Fantasia:</strong> ${pedido.cliente}</p>
-  <p><strong>CNPJ:</strong> ${pedido.cnpj || '–'}</p>
-  <p><strong>Situação Tributária:</strong> ${pedido.situacao_tributaria || '–'}</p>
-  <p><strong>Inscrição Estadual:</strong> ${pedido.inscricao_estadual || '–'}</p>
-  <p><strong>Endereço:</strong> ${pedido.endereco || '–'}</p>
-</div>
+          <p><strong>Nome Fantasia:</strong> ${pedido.cliente}</p>
+          <p><strong>CNPJ:</strong> ${pedido.cnpj || '–'}</p>
+          <p><strong>Situação Tributária:</strong> ${pedido.situacao_tributaria || '–'}</p>
+          <p><strong>Inscrição Estadual:</strong> ${pedido.inscricao_estadual || '–'}</p>
+          <p><strong>Endereço:</strong> ${pedido.endereco || '–'}</p>
+        </div>
 
         <div style="margin-bottom: 16px;">
-  ${gerarMateriais(pedido)}
-</div>
+          ${gerarMateriais(pedido)}
+        </div>
 
-${['Aguardando Emissão de NF', 'Cliente Liberado'].includes(pedido.status) ? `
-  <form class="formulario-nf" enctype="multipart/form-data">
-    <label for="numero_nf_${pedido.pedido_id}">Número da Nota Fiscal</label>
-    <input type="text" id="numero_nf_${pedido.pedido_id}" name="numero_nf" maxlength="15" required>
+        ${['Aguardando Emissão de NF', 'Cliente Liberado'].includes(pedido.status) ? `
+          <form class="formulario-nf" enctype="multipart/form-data">
+            <label for="numero_nf_${pedido.pedido_id}">Número da Nota Fiscal</label>
+            <input type="text" id="numero_nf_${pedido.pedido_id}" name="numero_nf" maxlength="15" required>
 
-    <label for="arquivo_nf_${pedido.pedido_id}">Arquivo da NF (PDF)</label>
-    <input type="file" id="arquivo_nf_${pedido.pedido_id}" name="arquivo_nf" accept="application/pdf" required>
+            <label for="arquivo_nf_${pedido.pedido_id}">Arquivo da NF (PDF)</label>
+            <input type="file" id="arquivo_nf_${pedido.pedido_id}" name="arquivo_nf" accept="application/pdf" required>
 
-    ${pedido.observacoes_setor?.length ? `
-  <div style="display: flex; align-items: stretch; margin: 20px 0; border-radius: 6px; overflow: hidden;">
-    <div style="width: 6px; background-color: #f4b400;"></div>
-    <div style="background: #fff3cd; padding: 16px 20px; flex: 1;">
-      <p style="font-weight: bold; margin: 0 0 8px;">Observações para Emissão de Nota Fiscal:</p>
-      <div style="font-size: 14px; line-height: 1.5; color: #000;">
-        ${pedido.observacoes_setor.map(obs => `<div>${obs}</div>`).join('')}
-      </div>
-    </div>
-  </div>
-` : ''}
+            ${pedido.observacoes_setor?.length ? `
+              <div style="display: flex; align-items: stretch; margin: 20px 0; border-radius: 6px; overflow: hidden;">
+                <div style="width: 6px; background-color: #f4b400;"></div>
+                <div style="background: #fff3cd; padding: 16px 20px; flex: 1;">
+                  <p style="font-weight: bold; margin: 0 0 8px;">Observações para Emissão de Nota Fiscal:</p>
+                  <div style="font-size: 14px; line-height: 1.5; color: #000;">
+                    ${pedido.observacoes_setor.map(obs => `<div>${obs}</div>`).join('')}
+                  </div>
+                </div>
+              </div>
+            ` : ''}
 
-    <button class="btn btn-registrar-nf" onclick="emitirNota(${pedido.pedido_id}, this)">Registrar Nota Fiscal</button>
-  </form>
-  </div>
-  ` : `
-    <div style="margin-top: 16px;">
-      <p style="color: #888;">Este pedido ainda não está disponível para emissão de nota fiscal.</p>
-    </div>
-  `}
-  </div> <!-- card-body -->
-</div> <!-- card -->
-`;
-} // <-- ESTA CHAVE FECHA A FUNÇÃO montarCard CORRETAMENTE
+            <button class="btn btn-registrar-nf" onclick="emitirNota(event, ${pedido.pedido_id}, this)">Registrar Nota Fiscal</button>
+          </form>
+        ` : `
+          <div style="margin-top: 16px;">
+            <p style="color: #888;">Este pedido ainda não está disponível para emissão de nota fiscal.</p>
+          </div>
+        `}
+      </div> <!-- card-body -->
+    </div> <!-- card -->
+  `;
+}
 
 function alternarCard(headerElement) {
   const card = headerElement.closest('.card');
@@ -138,18 +100,6 @@ function alternarCard(headerElement) {
   const statusPermitidos = ['Aguardando Emissão de NF', 'Cliente Liberado'];
   if (!statusPermitidos.includes(status)) return;
 
-// Verificar se o usuário tem permissão para executar a tarefa
-const usuarioStr = localStorage.getItem('usuarioLogado');
-let permissoes = [];
-try {
-  permissoes = JSON.parse(usuarioStr)?.permissoes || [];
-} catch (error) {
-  console.error('Erro ao analisar usuarioLogado:', error);
-}
-const podeExecutar = permissoes.includes('Executar Tarefas - Emissão de NF');
-if (!podeExecutar) return;
-
-  // Alternar exibição do card
   const corpo = card.querySelector('.card-body');
   corpo.style.display = corpo.style.display === 'none' ? 'block' : 'none';
 }
@@ -193,7 +143,8 @@ async function carregarPedidosNotaFiscal() {
   }
 }
 
-async function emitirNota(pedidoId, btn) {
+async function emitirNota(event, pedidoId, btn) {
+  event.preventDefault();
   btn.disabled = true;
   const card = btn.closest('.card');
   const numero = card.querySelector('input[name="numero_nf"]').value.trim();
@@ -218,14 +169,8 @@ async function emitirNota(pedidoId, btn) {
     const data = await res.json();
     alert(data.mensagem || 'Nota fiscal registrada com sucesso.');
 
-    // 🔁 Atualiza o status para "Aguardando Saída"
-    await fetch(`/api/pedidos/${pedidoId}/atualizar-status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'Aguardando Saída' })
-    });
+    // Removido envio para rota inexistente
 
-    // 🔄 Recarrega os pedidos com nova etapa
     carregarPedidosNotaFiscal();
   } catch (error) {
     console.error('Erro ao emitir nota:', error);
