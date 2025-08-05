@@ -1,542 +1,117 @@
-   /* CSS mantido para preservar layout */
-    .main-content { position: relative; max-width: 1200px; margin-left: 280px; padding: 100px 40px 40px; background: #f4f6f8; min-height: 100vh; box-sizing: border-box; }
-    h1 { margin-bottom: 20px; font-weight: 700; font-size: 28px; }
-    .btn-voltar { margin-bottom: 30px; padding: 8px 18px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; }
-    .btn-voltar:hover { background: #5a6268; }
-    .cliente-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-    .cliente-inicial { width: 80px; height: 80px; background: #FFC107; color: #000; font-weight: 700; font-size: 36px; display: flex; justify-content: center; align-items: center; border-radius: 50%; user-select: none; }
-    .tabs-menu { border-bottom: 1px solid #ccc; display: flex; gap: 20px; margin-bottom: 20px; }
-    .tabs-menu a { padding-bottom: 6px; text-decoration: none; color: #000; font-weight: 700; font-size: 16px; border-bottom: 3px solid transparent; cursor: pointer; user-select: none; }
-    .tabs-menu a.active { border-bottom-color: #000; color: #000; background: #FFC107; border-radius: 6px; padding: 4px 12px; box-shadow: 0 0 6px rgba(0,0,0,0.15); }
-    .cliente-info .nome-cliente { font-weight: 900; font-size: 28px; color: #222; }
-    .info-adicional { font-weight: 400; font-size: 14px; color: #666; margin-top: 4px; }
-    .tab-content { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); min-height: 180px; }
-    .tab-section { margin-bottom: 20px; }
-    .tab-section h3 { font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 6px; font-size: 18px; }
-    .tab-section dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 40px; }
-    .tab-section dt { font-weight: 700; color: #333; }
-    .tab-section dd { margin: 0; color: #555; font-weight: 400; font-size: 14px; }
-    .lista-simples { list-style: none; padding: 0; margin: 0; }
-    .lista-simples li { margin-bottom: 8px; font-size: 14px; color: #555; }
-    .produto-bloco { border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-top: 15px; background: #f9f9f9; }
-    .produto-bloco .form-group { margin-bottom: 12px; }
-    .produto-bloco label { font-weight: 700; display: block; margin-bottom: 6px; }
-    .produto-bloco input { width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid #bbb; background: #e9ecef; font-size: 14px; color: #333; }
-    .info-bloco { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 20px 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .info-bloco h3 { margin-bottom: 15px; font-weight: 700; font-size: 20px; border-bottom: 2px solid #ddd; padding-bottom: 8px; }
-    .info-bloco dl { display: grid; grid-template-columns: 180px 1fr; gap: 10px 20px; }
-    .info-bloco dt { font-weight: 700; color: #444; align-self: center; }
-    .info-bloco dd { margin: 0; color: #666; font-size: 15px; align-self: center; text-align: right; }
-    #info-pedido.tab-content { background: transparent; padding: 0; border-radius: 0; box-shadow: none; min-height: auto; }
-    #historico-pedido.tab-content { background: transparent !important; padding: 0 !important; box-shadow: none !important; }
-    .timeline-item { position: relative; margin-bottom: 30px; width: 100%; max-width: none; }
-    .timeline-toggle {
+/* Layout principal */
+.main-content {
+  position: relative;
+  max-width: 1200px;
+  margin-left: 280px;
+  padding: 100px 40px 40px;
+  background: #f4f6f8;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-weight: 700;
+  font-size: 28px;
+}
+
+.btn-voltar {
+  margin-bottom: 30px;
+  padding: 8px 18px;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+}
+.btn-voltar:hover {
+  background: #5a6268;
+}
+
+/* Cabeçalho do cliente */
+.cliente-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* alinha à esquerda */
-  gap: 8px; /* espaço entre título e seta */
-  width: 100%;
-  padding: 16px 20px;
-  border-radius: 6px 6px 0 0;
-  user-select: none;
-  transition: background-color 0.2s ease;
-  font-weight: 700;
-  font-size: 20px;
-  background: #fff;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.12);
-  margin-bottom: 0;
-  border-left: 6px solid #FFC107;
-  box-sizing: border-box;
-  z-index: 1;
-  position: relative; /* necessário para posicionar a data */
+  gap: 15px;
+  margin-bottom: 20px;
 }
-.timeline-toggle:hover {
-  background-color: #fff3cd;
-}
-.timeline-toggle svg {
-  width: 28px;       /* aumentado de 20px para 28px */
-  height: 28px;      /* aumentado de 20px para 28px */
-  stroke: #ffb300;   /* amarelo vibrante */
-  stroke-width: 3;   /* traço mais grosso */
-  filter: 
-    drop-shadow(0 0 1px black) 
-    drop-shadow(0 0 1px black) 
-    drop-shadow(0 0 2px rgba(255, 193, 7, 0.7)); /* contorno preto + sombra amarela suave */
-  transition: transform 0.3s ease;
-}
-.timeline-toggle[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-.timeline-date {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 15px;          /* aumentado de 13px para 15px */
-  font-weight: 700;         /* negrito */
+.cliente-inicial {
+  width: 80px;
+  height: 80px;
+  background: #FFC107;
   color: #000;
-  margin-top: 0;            /* remove margem para alinhamento vertical */
-}
-    .timeline-dot { display: none; }
-    .ticket-thumbnail { max-width: 200px; max-height: 150px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
-    .ticket-thumbnail:hover { transform: scale(1.05); }
-    .btn-adicionar { background-color: #FFC107; color: #222; font-weight: 700; font-size: 1.1rem; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(255,193,7,0.5); transition: all 0.3s ease; margin-bottom: 20px; }
-    .btn-adicionar:hover { box-shadow: 0 4px 12px rgba(255,193,7,0.8); transform: scale(1.05); }
-    #lista-observacoes { max-height: 450px; overflow-y: auto; }
-    .observacao-item { background: #fafafa; border: 1.5px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .observacao-cabecalho {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 6px;
-      position: relative;
-      height: 24px; /* altura fixa para controle */
-    }
-    .observacao-data {
-      font-style: normal;
-      flex: 1;
-      text-align: left;
-    }
-    .observacao-usuario {
-      position: absolute;
-      left: 17%;
-      transform: translateX(-50%);
-      font-weight: 700;
-      color: #111;
-      background: #fafafa; /* mesma cor do fundo para dar destaque */
-      padding: 0 6px;
-      white-space: nowrap;
-      font-size: 0.9rem;
-    }
-    .observacao-texto {
-      font-size: 0.95rem;
-      color: #222;
-      line-height: 1.4;
-      white-space: pre-wrap; /* mantém quebras de linha */
-    }
-    .info-bloco dl {
-      grid-template-columns: 150px auto !important; /* reduz a largura da coluna dos títulos */
-    }
-    .info-bloco dd {
-      text-align: left !important;  /* mantém os dados alinhados à direita */
-      padding-left: 100px;             /* espaço extra para evitar colisão visual */
-      max-width: calc(100% - 180px);  /* garante que o conteúdo não ultrapasse */
-      white-space: nowrap;            /* evita quebra de linha nos dados */
-      overflow: hidden;
-      text-overflow: ellipsis;        /* adiciona "..." caso ultrapasse o espaço */
-    }
-    .info-bloco dt {
-      white-space: nowrap;
-      padding-right: 5px;             /* espaço à direita do título para melhor separação */
-    }
-    #data-coleta {
-      margin-left: -80px; /* Ajuste o valor conforme desejar */
-      display: inline-block;
-    }
-    #pedido-para {
-      margin-left: -160px; /* Ajuste o valor conforme desejar */
-      display: inline-block;
-    }
-    #prazo-pagamento {
-      margin-left: -100px; /* Ajuste o valor conforme desejar */
-      display: inline-block;
-    }
-    #codigo-fiscal {
-      margin-left: -200px; /* Ajuste conforme desejar */
-      display: inline-block;
-    }
-    #nome-produto {
-      margin-left: -120px; /* Ajuste o valor para aproximar ou afastar */
-      display: inline-block;
-    }
-    #valor-quilo {
-      margin-left: -140px; /* Ajuste o valor para aproximar ou afastar */
-      display: inline-block;
-    }
-    #peso {
-      margin-left: -180px; /* Ajuste conforme desejar */
-      display: inline-block;
-    }
-    #tipo-peso {
-      margin-left: -160px; /* Ajuste conforme desejar */
-      display: inline-block;
-    }
-    #subtotal {
-      margin-left: -190px; /* Ajuste conforme desejar */
-      display: inline-block;
-    }
-
-    .observacao-item {
-      position: relative; /* ADICIONE esta linha */
-      background: #fff; /* fundo branco */
-      border: 1.5px solid #ddd;
-      border-left: 6px solid #ffc107; /* tarja amarela na esquerda */
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-      color: #222;
-    }
-
-    /* Triângulo amarelo da pontinha do balão */
-    .observacao-item::after {
-      content: "";
-      position: absolute;
-      bottom: 75px;
-      left: -18px;
-      width: 0;
-      height: 0;
-      border-top: 16px solid #ffc107; /* mesma cor da tarja amarela */
-      border-right: 16px solid transparent;
-      border-left: none;
-      border-bottom: none;
-      transform: translateX(-50px);
-      z-index: 1;
-      transform: rotate(90deg);
-      transform-origin: left bottom; /* ponto de rotação ajustado */
-    }
-
-    .observacao-usuario {
-      background-color: #ffc107; /* fundo amarelo forte */
-      color: #111; /* texto escuro para contraste */
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-
-    #registros.tab-content {
-      background: transparent !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-    }
-    #lista-registros {
-      background: transparent !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-    }
-
-    #lista-registros {
-      background: transparent !important;
-      padding-left: 20px !important; /* espaço para o triângulo aparecer */
-      padding-top: 10px !important;
-      padding-bottom: 10px !important;
-      max-height: 600px;
-      overflow-y: auto;
-      overflow-x: visible !important; /* permite o triângulo sair da caixa */
-    }
-
-#historico-pedido .timeline-content p {
-  margin-bottom: 50px;
-}
-
-.timeline-content p {
-  padding-bottom: 8px;           /* Espaço interno abaixo do texto para não ficar grudado */
-  margin-bottom: 8px;            /* Espaço entre as linhas */
-  border-bottom: 1px solid #ddd; /* Linha fina e sutil, cor cinza claro */
-}
-
-.timeline-content p:last-child {
-  border-bottom: none;           /* Remove a linha da última linha para ficar limpo */
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.timeline-content {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 15px 20px;
-  margin-top: 10px;
-  background-color: #fff;
-}
-
-/* Aplica linha inferior a todos os <p> dentro do bloco de timeline content */
-.timeline-content > div > div > p {
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 4px; /* dá um espacinho entre o texto e a linha */
-  margin-bottom: 8px;  /* espaço entre linhas */
-}
-
-/* Exceção: remove a linha de p que estejam vazios (sem conteúdo forte) ou que queiram sem linha */
-/* Exemplo caso queira remover para campos específicos, mas por enquanto mantenha padrão */
-
-.timeline-content p strong {
-  display: inline-block;        /* faz o strong virar bloco inline para poder aplicar borda */
-  padding: 4px 8px;             /* espaço interno para "respirar" */
-  border: 1px solid #ddd;       /* borda sutil cinza clara */
-  border-radius: 4px;           /* cantos arredondados */
-  background-color: #fafafa;    /* fundo clarinho para destacar */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* sombra leve para dar relevo */
-}
-.grade-tabela-info {
-  width: 100% !important;
-  border-collapse: separate !important; /* para permitir espaçamento entre células */
-  border-spacing: 20px 12px; /* espaçamento horizontal e vertical entre células */
-  font-family: inherit !important;
-  font-weight: inherit !important;
-  font-size: inherit !important;
-  table-layout: fixed; /* distribui colunas proporcionalmente */
-}
-.grade-tabela-info tr {
-  /* Remove margem e padding específicos em linhas */
-  margin: 0;
-  padding: 0;
-}
-
-.grade-tabela-info td {
-  border: none !important;
-  padding: 8px 12px !important; /* padding uniforme em todas as células */
-  vertical-align: top !important;
-  text-align: left !important;
-  white-space: nowrap !important; /* evita quebra de linha para manter tudo na mesma linha */
-  font-weight: 400 !important; /* Dados em peso normal, não negrito */
-  font-size: 14px;
-  word-wrap: normal; /* evita quebra automática do texto */
-  max-width: 200px !important; /* define largura máxima para o campo */
-  overflow: hidden;
-  text-overflow: ellipsis; /* adiciona "..." caso o texto ultrapasse */
-  border-bottom: 1px solid #ddd !important; /* linha cinza clara, bem suave */
-  padding-bottom: 6px !important;           /* um espaçamento confortável abaixo */
-}
-
-.grade-tabela-info tr:last-child td:first-child {
   font-weight: 700;
-  width: 100% !important; /* última linha ocupa toda a largura */
-  padding-top: 15px !important;
-  white-space: pre-wrap !important; /* mantém quebras de linha na observação */
-  border-bottom: none !important;   /* remove a linha inferior da última célula */
+  font-size: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.cliente-nome {
+  display: flex;
+  flex-direction: column;
+}
+.nome-cliente {
+  font-size: 20px;
+  font-weight: 600;
+}
+.empresa-cliente {
+  font-size: 14px;
+  color: #555;
 }
 
-/* Remove qualquer espaçamento extra personalizado */
-.grade-tabela-info tr:nth-child(1) td,
-.grade-tabela-info tr:nth-child(2) td,
-.grade-tabela-info tr:nth-child(3) td {
-  padding-left: 12px !important;
-  padding-right: 12px !important;
+/* Abas */
+.abas {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
 }
-
-#historico-pedido .grade-tabela-info {
-  border-spacing: 0 12px !important; /* Remove espaçamento horizontal, mantém o vertical */
-}
-
-#historico-pedido .grade-tabela-info tr td:first-child {
-  padding-left: 0 !important;  /* Sem espaçamento à esquerda */
-  padding-right: 6px !important; /* Espaço pequeno para separar da próxima coluna */
-  text-align: left !important;
-}
-.grade-tabela-info td strong {
-  font-family: inherit !important;   /* Mantém a mesma fonte do sistema */
-  font-weight: 700 !important;       /* Força negrito para apenas os subtítulos */
-  font-size: 14px !important;        /* Tamanho consistente */
-  color: #000 !important;             /* Cor preta */
-  font-style: normal !important;     /* Remove itálico caso haja */
-  letter-spacing: normal !important; /* Espaçamento normal entre letras */
-}
-
-    /* Botão "Sim" estilizado */
-    #btn-desconto-sim {
-      border-radius: 20px;
-      padding: 6px 15px;
-      background-color: #ffc107;
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
-      color: #222;
-      transition: background-color 0.3s ease;
-      margin-bottom: 10px;
-    }
-    #btn-desconto-sim.inativo {
-      background-color: #ccc;
-      color: #666;
-    }
-
-    #detalhes-desconto {
-      margin-top: 15px;
-      padding: 15px;
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      display: none;
-    }
-
-.timeline-content {
-  position: relative;
-}
-
-#botao-editar {
-  position: absolute;
-  top: 12px;
-  right: 18px;      /* <-- CORRIGIDO */
-  background-color: #FFD700;
-  color: #111;
+.aba {
+  padding: 8px 16px;
   border: none;
-  padding: 10px 18px 10px 22px;
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(255,193,7,0.20);
-  z-index: 2;
-  letter-spacing: 1px;
-  transition: filter 0.2s;
-}
-
-#historico-empresa select,
-#historico-pedido-para select,
-#historico-prazo-pagamento select {
-  min-width: 170px !important;    /* garante largura mínima */
-  width: auto !important;
-  display: inline-block !important;
-  max-width: 100% !important;
-}
-
-#historico-empresa, #historico-pedido-para, #historico-prazo-pagamento {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: initial !important;
-  max-width: none !important;
-  vertical-align: middle !important;
-}
-.grade-tabela-info td {
-  overflow: visible !important;    /* <- ESSENCIAL para não cortar select! */
-}
-
-#input-historico-pedido-para, #input-historico-prazo-pagamento {
-  margin-left: 100px !important;
-}
-
-#corpo-tabela-produtos-historico,
-#corpo-tabela-produtos-historico tr,
-#corpo-tabela-produtos-historico td {
-  /* Não mexa aqui! Este é para produtos, não cabeçalho */
-}
-
-/* AJUSTA ESPAÇOS ENTRE CAMPOS DO CABEÇALHO EDITÁVEL */
-.timeline-content > table.grade-tabela-info tr:first-child td,
-.timeline-content > table.grade-tabela-info tr:nth-child(2) td {
-  padding-right: 36px !important;
-  vertical-align: middle !important;
-}
-
-/* Específico para o modo edição (inputs/selects) */
-.timeline-content input[type="date"],
-.timeline-content select,
-.timeline-content input[type="text"] {
-  min-width: 150px;
-  max-width: 260px;
-  margin-left: -0;
-  margin-right: 100px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  box-sizing: border-box;
-}
-
-/* Linha do cabeçalho histórico do pedido - FORÇA espaçamento e impede colisão */
-#historico-pedido .timeline-content > table.grade-tabela-info tr:first-child td {
-  padding-right: 56px !important;
-  min-width: 210px !important;
-  vertical-align: middle !important;
-  white-space: nowrap !important;
-}
-
-#historico-pedido .timeline-content > table.grade-tabela-info tr:first-child td:last-child {
-  padding-right: 0 !important;
-}
-
-#historico-pedido .timeline-content > table.grade-tabela-info label {
-  margin-right: 8px !important;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-#historico-pedido .timeline-content > table.grade-tabela-info input,
-#historico-pedido .timeline-content > table.grade-tabela-info select {
-  min-width: 140px !important;
-  max-width: 240px !important;
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  box-sizing: border-box;
-}
-
-.data-coleta-input {
-  position: relative;
-  padding-right: 30px; /* espaço para o ícone */
-}
-
-.data-coleta-input::-webkit-calendar-picker-indicator {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  filter: invert(50%) sepia(100%) saturate(500%) hue-rotate(40deg);
-}
-
-/* ==========================================================================
-   OBSERVAÇÕES – sem tarja lateral e com linhas sutis
-   ========================================================================== */
-#historico-observacao {
-  display: block !important;
-  margin: 0;                          /* remove espaçamento extra */
-  padding: 0;                         /* só o padding do wrapper */
-  background-color: transparent !important; /* sem fundo extra */
-  border-left: none !important;       /* sem tarja lateral */
-  border-radius: 0 !important;        /* sem bordas duplicadas */
-  white-space: pre-wrap !important;
-}
-
-/* Faz o <br> gerar linha fina e suave entre cada observação */
-#historico-observacao br {
-  display: block;
-  margin: 6px 0;               /* reduzido de 8px para 6px */
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 3px;         /* reduzido de 4px para 3px */
-}
-#historico-observacao br:last-of-type {
-  border-bottom: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* Realça o texto “Observação (…)” em cada linha */
-#historico-observacao strong {
-  display: inline-block;
-  margin-bottom: 4px;
-  font-size: 14px;
-  color: #333;
-}
-
-/* ==========================================================================
-   OBSERVAÇÕES – Card sem tarja lateral e com linhas sutis
-   ========================================================================== */
-.observacoes-card {
-  margin-top: 12px;
-  padding: 12px;
-  background-color: #fffbea;    /* mantém o fundo clarinho */
+  background: #e0e0e0;
+  color: #000;
   border-radius: 4px;
-  white-space: pre-wrap;
+  cursor: pointer;
+  font-weight: 500;
+}
+.aba.ativa {
+  background: #ffc107;
+  font-weight: 700;
+}
+.aba:hover {
+  background: #fdd835;
 }
 
-.observacoes-card #historico-observacao {
-  display: block !important;
-  margin: 0;
-  padding: 0;
+/* Conteúdo das abas */
+.conteudo-aba {
+  display: none;
 }
-
-.observacoes-card #historico-observacao br {
+.conteudo-aba.ativo {
   display: block;
-  margin: 8px 0;
-  border-bottom: 1px solid #ddd; /* linha fina e suave */
-  padding-bottom: 4px;
 }
 
-.observacoes-card #historico-observacao br:last-of-type {
-  border-bottom: none;           /* sem linha após a última */
-  margin: 0;
-  padding: 0;
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+.card h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.card p {
+  margin: 6px 0;
 }
 
+/* Condição de pagamento à vista (invisível por padrão) */
+.condicao-vista {
+  display: none;
+}
