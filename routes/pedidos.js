@@ -901,15 +901,25 @@ router.get('/:id', async (req, res) => {
     );
     pedido.prazos_permitidos = prazosPermitidos.map(p => `${p.descricao} (${p.dias} dias)`);
 
-    // Histórico
-    const [historico] = await db.query(
-      `SELECT titulo, descricao, data
-       FROM historico_pedido
-       WHERE pedido_id = ? 
-       ORDER BY data ASC`,
-      [pedidoId]
-    );
-    pedido.historico = historico;
+// Histórico
+const [historico] = await db.query(
+  `SELECT 
+     CASE tipo 
+       WHEN 'entrada' THEN 'Entrada na Portaria'
+       WHEN 'carga' THEN 'Coleta Iniciada'
+       WHEN 'conferencia' THEN 'Peso Conferido'
+       WHEN 'financeiro' THEN 'Pagamento Verificado'
+       WHEN 'nf' THEN 'Nota Fiscal Emitida'
+       WHEN 'saida' THEN 'Saída Liberada'
+     END AS titulo,
+     NULL AS descricao,
+     criado_em AS data
+   FROM tarefas_portaria
+   WHERE pedido_id = ?
+   ORDER BY criado_em ASC`,
+  [pedidoId]
+);
+pedido.historico = historico;
 
     // Observações
     const [observacoes] = await db.query(
@@ -1158,6 +1168,25 @@ router.put('/:id/emitir-nf', uploadNF.single('arquivo_nf'), async (req, res) => 
   } catch (error) {
     console.error('Erro ao registrar nota fiscal:', error);
     res.status(500).json({ erro: 'Erro ao registrar nota fiscal.' });
+  }
+});
+
+router.get('/portaria/saida', async (req, res) => {
+  const sql = `
+    SELECT tp.*, c.nome AS cliente_nome
+    FROM tarefas_portaria tp
+    JOIN pedidos p ON tp.pedido_id = p.id
+    JOIN clientes c ON p.cliente_id = c.id
+    WHERE tp.tipo = 'saida' AND tp.status = 'aberto'
+    ORDER BY tp.id DESC
+  `;
+
+  try {
+    const [tarefas] = await router.connection.query(sql);
+    res.json(tarefas);
+  } catch (error) {
+    console.error('Erro ao buscar tarefas de saída da portaria:', error);
+    res.status(500).json({ erro: 'Erro ao buscar tarefas de saída' });
   }
 });
 
