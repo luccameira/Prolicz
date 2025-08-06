@@ -120,24 +120,57 @@ function gerarConteudoHistoricoCriacao() {
 function gerarConteudoHistorico(dados) {
   const temProdutos = dados.produtos && dados.produtos.length > 0;
   const temFotoPlaca = dados.foto_placa;
+  const temUsuario = dados.usuario || false;
+  const temData = dados.data || dados.criado_em;
+
+  const conteudo = [];
+
+  if (temData) {
+    conteudo.push(`<p><strong>Data:</strong> ${formatarData(temData)}</p>`);
+  }
+
+  if (temUsuario) {
+    conteudo.push(`<p><strong>Usuário:</strong> ${dados.usuario}</p>`);
+  }
+
+  if (dados.empresa) {
+    conteudo.push(`<p><strong>Empresa:</strong> ${formatarEmpresa(dados.empresa)}</p>`);
+  }
+
+  if (dados.tipo_entrega) {
+    conteudo.push(`<p><strong>Pedido Para:</strong> ${dados.tipo_entrega}</p>`);
+  }
+
+  if (dados.prazo_pagamento) {
+    conteudo.push(`<p><strong>Prazo:</strong> ${dados.prazo_pagamento}</p>`);
+  }
+
+  if (dados.peso_previsto) {
+    conteudo.push(`<p><strong>Peso Previsto:</strong> ${formatarNumero(dados.peso_previsto)}</p>`);
+  }
+
+  if (temFotoPlaca) {
+    conteudo.push(`
+      <p><strong>Placa do Caminhão:</strong></p>
+      <div style="margin: 10px 0;">
+        <img src="${dados.foto_placa}" alt="Foto da Placa" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid #ccc;">
+      </div>
+    `);
+  }
+
+  if (dados.observacao) {
+    conteudo.push(`<p><strong>Observações:</strong> ${dados.observacao}</p>`);
+  }
+
+  if (!conteudo.length) {
+    return '<em>Sem informações registradas.</em>';
+  }
 
   return `
     <div class="historico-grid">
-      <p><strong>Data:</strong> ${formatarData(dados.data)}</p>
-      <p><strong>Usuário:</strong> ${dados.usuario || '—'}</p>
-      <p><strong>Empresa:</strong> ${formatarEmpresa(dados.empresa)}</p>
-      <p><strong>Pedido Para:</strong> ${dados.tipo_entrega || '—'}</p>
-      <p><strong>Prazo:</strong> ${dados.prazo_pagamento || '—'}</p>
-      <p><strong>Peso Previsto:</strong> ${formatarNumero(dados.peso_previsto)}</p>
-      ${temFotoPlaca ? `
-        <p><strong>Placa do Caminhão:</strong></p>
-        <div style="margin: 10px 0;">
-          <img src="${dados.foto_placa}" alt="Foto da Placa" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid #ccc;">
-        </div>
-      ` : ''}
+      ${conteudo.join('')}
     </div>
     ${temProdutos ? gerarTabelaProdutos(dados.produtos) : ''}
-    ${dados.observacao ? `<p><strong>Observações:</strong> ${dados.observacao}</p>` : ''}
   `;
 }
 
