@@ -8,7 +8,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resposta = await fetch(`/api/pedidos/${idPedido}`);
     if (!resposta.ok) throw new Error('Erro ao buscar dados do pedido.');
     const pedido = await resposta.json();
-console.log("🔎 Pedido recebido:", pedido);
+    console.log("🔎 Pedido recebido:", pedido);
+
+    window.pedidoGlobal = pedido; // ✅ usado no card "Pedido Criado"
 
     preencherCabecalho(pedido);
     preencherInformacoesPrincipais(pedido);
@@ -62,35 +64,79 @@ function preencherHistorico(historico) {
     'Coleta Iniciada',
     'Peso Conferido',
     'Cliente Liberado',
-    'NF Emitida',
+    'Emissão de NF',
     'Saída na Portaria'
   ];
 
   eventos.forEach(evento => {
-    const dados = historico.find(h => h.etapa === evento);
     const card = document.createElement('div');
     card.className = 'card card-historico';
-    card.innerHTML = `
+
+    const tituloHtml = `
       <div class="card-titulo" onclick="this.parentNode.classList.toggle('aberto')">
         ${evento}
       </div>
+    `;
+
+    const conteudoHtml = (evento === 'Pedido Criado')
+      ? gerarConteudoHistoricoCriacao()
+      : (() => {
+          const dados = historico.find(h =>
+            (h.titulo || '').toLowerCase().replace(/\s/g, '') === evento.toLowerCase().replace(/\s/g, '')
+          );
+          return dados ? gerarConteudoHistorico(dados) : '<em>Sem informações registradas.</em>';
+        })();
+
+    card.innerHTML = `
+      ${tituloHtml}
       <div class="card-conteudo">
-        ${dados ? gerarConteudoHistorico(dados) : '<em>Sem informações registradas.</em>'}
+        ${conteudoHtml}
       </div>
     `;
+
     container.appendChild(card);
   });
 }
 
-function gerarConteudoHistorico(dados) {
+function gerarConteudoHistoricoCriacao() {
+  const cliente = window.pedidoGlobal;
+
+  if (!cliente) return '<em>Sem informações registradas.</em>';
+
+  const produtos = cliente.materiais || [];
+
   return `
-    <p><strong>Data:</strong> ${formatarData(dados.data)}</p>
-    <p><strong>Usuário:</strong> ${dados.usuario || '—'}</p>
-    <p><strong>Empresa:</strong> ${formatarEmpresa(dados.empresa)}</p>
-    <p><strong>Pedido Para:</strong> ${dados.tipo_entrega || '—'}</p>
-    <p><strong>Prazo:</strong> ${dados.prazo_pagamento || '—'}</p>
-    <p><strong>Peso Previsto:</strong> ${formatarNumero(dados.peso_previsto)}</p>
-    ${dados.produtos ? gerarTabelaProdutos(dados.produtos) : ''}
+    <div class="grid-info-pedido">
+      <div><strong>Data:</strong> ${formatarData(cliente.data_criacao)}</div>
+      <div><strong>Pedido Para:</strong> ${cliente.tipo || '—'}</div>
+      <div><strong>Prazo:</strong> ${cliente.prazo_pagamento || '—'}</div>
+      <div><strong>Peso Previsto:</strong> ${formatarNumero(produtos.reduce((acc, p) => acc + (p.peso || 0), 0))}</div>
+    </div>
+    ${produtos.length ? gerarTabelaProdutos(produtos) : ''}
+    ${cliente.observacoes ? `<p><strong>Observações:</strong> ${cliente.observacoes}</p>` : ''}
+  `;
+}
+
+function gerarConteudoHistorico(dados) {
+  const temProdutos = dados.produtos && dados.produtos.length > 0;
+  const temFotoPlaca = dados.foto_placa;
+
+  return `
+    <div class="historico-grid">
+      <p><strong>Data:</strong> ${formatarData(dados.data)}</p>
+      <p><strong>Usuário:</strong> ${dados.usuario || '—'}</p>
+      <p><strong>Empresa:</strong> ${formatarEmpresa(dados.empresa)}</p>
+      <p><strong>Pedido Para:</strong> ${dados.tipo_entrega || '—'}</p>
+      <p><strong>Prazo:</strong> ${dados.prazo_pagamento || '—'}</p>
+      <p><strong>Peso Previsto:</strong> ${formatarNumero(dados.peso_previsto)}</p>
+      ${temFotoPlaca ? `
+        <p><strong>Placa do Caminhão:</strong></p>
+        <div style="margin: 10px 0;">
+          <img src="${dados.foto_placa}" alt="Foto da Placa" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 1px solid #ccc;">
+        </div>
+      ` : ''}
+    </div>
+    ${temProdutos ? gerarTabelaProdutos(dados.produtos) : ''}
     ${dados.observacao ? `<p><strong>Observações:</strong> ${dados.observacao}</p>` : ''}
   `;
 }
@@ -98,11 +144,11 @@ function gerarConteudoHistorico(dados) {
 function gerarTabelaProdutos(lista) {
   let linhas = lista.map(p => `
     <tr>
-      <td>${p.nome || '—'}</td>
+      <td>${p.nome_produto || p.nome || '—'}</td>
       <td>${formatarNumero(p.peso)}</td>
       <td>${p.tipo_peso || '—'}</td>
-      <td>${formatarValor(p.valor_por_quilo)}</td>
-      <td>${formatarValor(p.subtotal)}</td>
+      <td>${formatarValor(p.valor_unitario || p.valor_por_quilo)}</td>
+      <td>${formatarValor(p.valor_total || p.subtotal)}</td>
       <td>${p.codigo_fiscal || '—'}</td>
     </tr>
   `).join('');
