@@ -829,7 +829,6 @@ const [materiais] = await db.query(
   }
 });
 
-// GET /api/pedidos/:id - retorna os dados completos de um pedido específico
 router.get('/:id', async (req, res) => {
   const pedidoId = req.params.id;
 
@@ -853,6 +852,7 @@ router.get('/:id', async (req, res) => {
         c.documento,
         c.situacao_tributaria,
         c.inscricao_estadual,
+        c.codigos_fiscais,
         CONCAT(c.logradouro, ', ', c.numero, ' / ', c.bairro, ' / ', c.cidade, ' - ', c.estado) AS endereco
        FROM pedidos p
        INNER JOIN clientes c ON p.cliente_id = c.id
@@ -864,7 +864,25 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ erro: 'Pedido não encontrado' });
     }
 
-    const pedido = pedidos[0];
+const pedidoJson = pedidos[0];
+
+let codigosFiscais = [];
+if (pedidoJson.codigos_fiscais) {
+  if (Array.isArray(pedidoJson.codigos_fiscais)) {
+    codigosFiscais = pedidoJson.codigos_fiscais;
+  } else if (typeof pedidoJson.codigos_fiscais === 'string') {
+    codigosFiscais = pedidoJson.codigos_fiscais
+      .split(',')
+      .map(c => c.trim())
+      .filter(Boolean);
+  }
+}
+
+const pedido = {
+  ...pedidoJson,
+  codigos_fiscais: codigosFiscais
+};
+
 
     // Itens
     const [materiais] = await db.query(
@@ -901,25 +919,25 @@ router.get('/:id', async (req, res) => {
     );
     pedido.prazos_permitidos = prazosPermitidos.map(p => `${p.descricao} (${p.dias} dias)`);
 
-// Histórico
-const [historico] = await db.query(
-  `SELECT 
-     CASE tipo 
-       WHEN 'entrada' THEN 'Entrada na Portaria'
-       WHEN 'carga' THEN 'Coleta Iniciada'
-       WHEN 'conferencia' THEN 'Peso Conferido'
-       WHEN 'financeiro' THEN 'Pagamento Verificado'
-       WHEN 'nf' THEN 'Nota Fiscal Emitida'
-       WHEN 'saida' THEN 'Saída Liberada'
-     END AS titulo,
-     NULL AS descricao,
-     criado_em AS data
-   FROM tarefas_portaria
-   WHERE pedido_id = ?
-   ORDER BY criado_em ASC`,
-  [pedidoId]
-);
-pedido.historico = historico;
+    // Histórico
+    const [historico] = await db.query(
+      `SELECT 
+         CASE tipo 
+           WHEN 'entrada' THEN 'Entrada na Portaria'
+           WHEN 'carga' THEN 'Coleta Iniciada'
+           WHEN 'conferencia' THEN 'Peso Conferido'
+           WHEN 'financeiro' THEN 'Pagamento Verificado'
+           WHEN 'nf' THEN 'Nota Fiscal Emitida'
+           WHEN 'saida' THEN 'Saída Liberada'
+         END AS titulo,
+         NULL AS descricao,
+         criado_em AS data
+       FROM tarefas_portaria
+       WHERE pedido_id = ?
+       ORDER BY criado_em ASC`,
+      [pedidoId]
+    );
+    pedido.historico = historico;
 
     // Observações
     const [observacoes] = await db.query(
@@ -933,16 +951,16 @@ pedido.historico = historico;
 
     // Produtos autorizados
     const [produtosAutorizados] = await db.query(
-  `SELECT 
-     p.nome AS nome_produto, 
-     pa.valor_unitario, 
-     pa.codigo_fiscal
-   FROM produtos_autorizados pa
-   INNER JOIN produtos p ON pa.produto_id = p.id
-   WHERE pa.cliente_id = ?`,
-  [pedido.cliente_id]
-);
-pedido.produtos_autorizados = produtosAutorizados;
+      `SELECT 
+         p.nome AS nome_produto, 
+         pa.valor_unitario, 
+         pa.codigo_fiscal
+       FROM produtos_autorizados pa
+       INNER JOIN produtos p ON pa.produto_id = p.id
+       WHERE pa.cliente_id = ?`,
+      [pedido.cliente_id]
+    );
+    pedido.produtos_autorizados = produtosAutorizados;
 
     res.json(pedido);
   } catch (error) {
