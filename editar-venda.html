@@ -19,6 +19,51 @@
     <a href="vendas.html" class="btn-voltar">Voltar</a>
 
     <form id="form-editar-pedido">
+      <!-- CAMPOS PRINCIPAIS DO PEDIDO -->
+      <div class="form-group">
+        <label for="empresa">Empresa</label>
+        <select id="empresa" name="empresa" required>
+          <option value="">Selecione</option>
+          <option value="Mellicz Ambiental">Mellicz Ambiental</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="cliente_nome">Cliente</label>
+        <input type="text" id="cliente_nome" name="cliente_nome" readonly />
+      </div>
+
+      <div class="form-group">
+        <label for="data-coleta">Data Prevista da Coleta</label>
+        <input type="text" id="data-coleta" name="data_coleta" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pedido-para">Pedido para</label>
+        <select id="pedido-para" name="tipo_pedido" required>
+          <option value="">Selecione</option>
+          <option value="Retirar">Retirar</option>
+          <option value="Entregar">Entregar</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="prazo-pagamento">Prazos de Pagamento</label>
+        <select id="prazo-pagamento" name="prazo_pagamento" multiple="multiple" style="width: 100%;"></select>
+      </div>
+
+      <div id="condicao-a-vista" class="form-group" style="display: none;">
+        <label for="condicao_pagamento_a_vista">Condição para pagamento à vista:</label>
+        <select id="condicao_pagamento_a_vista" required>
+          <option value="">Selecione</option>
+          <option value="Aguardar pagamento">Aguardar pagamento</option>
+          <option value="Pagamento recebido">Pagamento recebido</option>
+          <option value="Pago na coleta">Pago na coleta</option>
+        </select>
+      </div>
+
+      <!-- BLOCO DE PRODUTOS -->
       <div id="produtos"></div>
       <button type="button" id="adicionar-produto" class="btn">Adicionar outro produto</button>
 
