@@ -66,7 +66,8 @@ $(function () {
 
   const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
   dispon.forEach(nome => {
-    selProd.append(`<option value="${nome}">${nome}</option>`);
+    const valor = produtosAutorizados.find(p => p.nome_produto === nome)?.valor_unitario || 0;
+selProd.append(`<option value="${nome}" data-valor="${valor}">${nome}</option>`);
   });
   bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
@@ -94,6 +95,24 @@ $(function () {
   $("#produtos").append(bloco);
 
   selProd.change(function () {
+
+// Se o produto já tem valores pré-definidos (edição), preenchê-los
+if (produto.peso) {
+  bloco.find(".peso").val(formatarNumero(produto.peso, true));
+}
+if (produto.tipo_peso) {
+  bloco.find(".tipo-peso").val(produto.tipo_peso);
+}
+if (produto.codigo_fiscal) {
+  bloco.find(".select-codigo").val(produto.codigo_fiscal).trigger("change");
+}
+if (produto.valor_com_nota) {
+  bloco.find(".valor-com-nota").val(formatarNumero(produto.valor_com_nota));
+  const valorUnit = parseMask(produto.valor_unitario || 0);
+  const valorNota = parseMask(produto.valor_com_nota);
+  bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(0, valorUnit - valorNota)));
+}
+
     const nome = $(this).val();
 
     let prod = materiais.find(p => p.nome_produto === nome);
@@ -101,8 +120,9 @@ $(function () {
       prod = produtosAutorizados.find(p => p.nome_produto === nome);
     }
 
-    const v = parseFloat(prod?.valor_unitario || 0);
-    bloco.find(".valor-por-quilo").val(formatarNumero(v));
+    const prodInfo = produtosAutorizados.find(p => p.nome_produto === nome);
+const v = parseFloat(prodInfo?.valor_unitario || 0) / 100;
+bloco.find(".valor-por-quilo").val(formatarNumero(v));
 
     const codigos = [...new Set(
   (pedidoAtual?.codigos_fiscais || [])
@@ -172,6 +192,15 @@ $(function () {
   if (produto.nome_produto) {
     selProd.val(produto.nome_produto).trigger("change");
   }
+
+selProd.on("change", function () {
+  const nome = $(this).val();
+  const prod = materiais.find(p => p.nome_produto === nome);
+  const v = parseFloat(prod?.valor_unitario || 0);
+
+  const blocoAtual = $(this).closest(".produto-bloco");
+  blocoAtual.find(".valor-por-quilo").val(formatarNumero(v));
+});
 
   if (produto.codigo_fiscal) {
     selCodigo.val(produto.codigo_fiscal).trigger("change");
@@ -561,13 +590,13 @@ $("#btn-confirmar-reset").on("click", function () {
   const select = ultimoProduto.find(".select-produto");
 
   select.on("change", function () {
-  const nome = $(this).val();
-  const prod = materiais.find(p => p.nome_produto === nome);
-  const v = parseFloat(prod?.valor_unitario || 0);
+    const nome = $(this).val();
+    const prod = materiais.find(p => p.nome_produto === nome);
+    const v = parseFloat(prod?.valor_unitario || 0);
 
-  const blocoAtual = $(this).closest(".produto-bloco");
-  blocoAtual.find(".valor-por-quilo").val(formatarNumero(v));
-});
+    const blocoAtual = $(this).closest(".produto-bloco");
+    blocoAtual.find(".valor-por-quilo").val(formatarNumero(v));
+  });
 
   // Disparar o change para já preencher valor se produto vier pré-carregado
   const nomeSelecionado = select.val();
