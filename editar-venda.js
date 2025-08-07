@@ -1,4 +1,17 @@
 // editar-venda.js
+  let pedidoAtual = null;
+  let produtosAutorizados = [];
+  let observacoes = [];
+  let materiais = [];
+  let editandoIndex = null;
+
+function parseMask(str) {
+    if (typeof str === "number") return str;
+    if (!str) return 0;
+    const limpo = str.toString().replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+    return parseFloat(limpo) || 0;
+  }
+
 $(function () {
   flatpickr("#data-coleta", {
     locale: "pt",
@@ -10,26 +23,12 @@ $(function () {
   const urlParams = new URLSearchParams(window.location.search);
   const pedidoId = urlParams.get("id");
 
-  let produtosAutorizados = [];
-  let observacoes = [];
-  let materiais = [];
-  let editandoIndex = null;
-let pedidoAtual = null;
-
-
   function formatarNumero(valor, inteiro = false) {
     const partes = inteiro
       ? [Math.floor(valor).toString()]
       : valor.toFixed(2).replace(".", ",").split(",");
     partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     return inteiro ? partes[0] : partes.join(",");
-  }
-
-  function parseMask(str) {
-    if (typeof str === "number") return str;
-    if (!str) return 0;
-    const limpo = str.toString().replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
-    return parseFloat(limpo) || 0;
   }
 
   function atualizarTotal() {
@@ -51,90 +50,84 @@ let pedidoAtual = null;
   }
 
   function adicionarProduto(produto = {}) {
-    const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get();
-    const dispon = produtosAutorizados.filter(p => !usados.includes(p.nome_produto) || p.nome_produto === produto.nome_produto);
-    if (!dispon.length) return;
+  const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get();
+  const produtosPermitidos = [...new Set(produtosAutorizados.map(p => p.nome_produto))];
+  const dispon = produtosPermitidos.filter(nome => !usados.includes(nome) || nome === produto.nome_produto);
+  if (!dispon.length) return;
 
-    const bloco = $('<div class="produto-bloco"></div>');
-    const btnRemove = $('<button type="button" class="btn-remove">×</button>').click(function () {
-      bloco.remove();
-      atualizarTotal();
-      updateAddButton();
-      updateRemoveButtons();
-    });
-    bloco.append(btnRemove);
+  const bloco = $('<div class="produto-bloco"></div>');
+  const btnRemove = $('<button type="button" class="btn-remove">×</button>').click(function () {
+    bloco.remove();
+    atualizarTotal();
+    updateAddButton();
+    updateRemoveButtons();
+  });
+  bloco.append(btnRemove);
 
-    const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
-    dispon.forEach(p => {
-      selProd.append(`<option value="${p.nome_produto}" data-valor="${p.valor_unitario}">${p.nome_produto}</option>`);
-    });
-    bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
+  const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
+  dispon.forEach(nome => {
+    selProd.append(`<option value="${nome}">${nome}</option>`);
+  });
+  bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
-    bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
-    bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
-    bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
-      <select class="tipo-peso" required>
-        <option value="">Selecione</option>
-        <option value="Exato">Exato</option>
-        <option value="Aproximado">Aproximado</option>
-      </select>
+  bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
+  bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
+  bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
+    <select class="tipo-peso" required>
+      <option value="">Selecione</option>
+      <option value="Exato">Exato</option>
+      <option value="Aproximado">Aproximado</option>
+    </select>
+  </div>`);
+  bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
+
+  const selCodigo = $('<select class="select-codigo" required><option value="">Selecione</option></select>');
+  bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCodigo);
+  setTimeout(() => selCodigo.select2({ width: '100%' }), 0);
+
+  const divPersonalizado = $(`  
+    <div class="personalizado-campos" style="display:none;">
+      <div class="form-group"><label>Valor com Nota</label><input type="text" class="valor-com-nota"></div>
+      <div class="form-group"><label>Valor sem Nota</label><input readonly class="valor-sem-nota input-nao-editavel"></div>
     </div>`);
-    bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
+  bloco.append(divPersonalizado);
 
-    const selCodigo = $('<select class="select-codigo" required><option value="">Selecione</option></select>');
-    const nomeProduto = produto.nome_produto || "";
-    const codigosPermitidos = [...new Set(
+  $("#produtos").append(bloco);
+
+  selProd.change(function () {
+    const nome = $(this).val();
+
+    let prod = materiais.find(p => p.nome_produto === nome);
+    if (!prod) {
+      prod = produtosAutorizados.find(p => p.nome_produto === nome);
+    }
+
+    const v = parseFloat(prod?.valor_unitario || 0);
+    bloco.find(".valor-por-quilo").val(formatarNumero(v));
+
+    const codigos = [...new Set(
       materiais
-        .filter(m => m.nome_produto === nomeProduto && m.codigo_fiscal)
+        .filter(m => m.nome_produto === nome && m.codigo_fiscal)
         .map(m => m.codigo_fiscal)
     )];
 
-    codigosPermitidos.forEach(c => {
-  const textoExibido = c === "Personalizar" ? "GAP" : c;
-  selCodigo.append(`<option value="${c}">${textoExibido}</option>`);
-});
+    const selectCodigo = bloco.find(".select-codigo");
+    selectCodigo.empty().append('<option value="">Selecione</option>');
+    codigos.forEach(c => {
+      const textoExibido = c === "Personalizar" ? "GAP" : c;
+      selectCodigo.append(`<option value="${c}">${textoExibido}</option>`);
+    });
 
-    if (produto.codigo_fiscal && !codigosPermitidos.includes(produto.codigo_fiscal)) {
-      selCodigo.append(`<option value="${produto.codigo_fiscal}" selected>${produto.codigo_fiscal}</option>`);
-    }
+    selectCodigo.val(codigos[0] || "").trigger("change");
 
-    if (produto.codigo_fiscal) {
-      selCodigo.val(produto.codigo_fiscal);
-    }
+    const inputComNota = bloco.find(".valor-com-nota");
+    const inputSemNota = bloco.find(".valor-sem-nota");
 
-    bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCodigo);
-    setTimeout(() => selCodigo.select2({ width: '100%' }), 0);
-
-    const divPersonalizado = $(`  
-      <div class="personalizado-campos" style="display:none;">
-        <div class="form-group"><label>Valor com Nota</label><input type="text" class="valor-com-nota"></div>
-        <div class="form-group"><label>Valor sem Nota</label><input readonly class="valor-sem-nota input-nao-editavel"></div>
-      </div>`);
-    bloco.append(divPersonalizado);
-
-    const valorInicial = parseMask(produto.valor_unitario) / 100;
-    const pesoInicial = parseMask(produto.peso) / 1000;
-    const tipoPesoInicial = produto.tipo_peso || "";
-
-    if (produto.nome_produto) {
-  selProd.val(produto.nome_produto).trigger("change");
-}
-    bloco.find(".valor-por-quilo").val(formatarNumero(valorInicial));
-    bloco.find(".peso").val(formatarNumero(pesoInicial, true));
-    bloco.find(".tipo-peso").val(tipoPesoInicial);
-    bloco.find(".subtotal").val("R$ " + formatarNumero(valorInicial * pesoInicial));
-
-    if (produto.codigo_fiscal === "Personalizar") {
+    if (selectCodigo.val() === "Personalizar") {
       divPersonalizado.show();
 
-      const inputComNota = bloco.find(".valor-com-nota");
-      const inputSemNota = bloco.find(".valor-sem-nota");
-      const inputValorQuilo = bloco.find(".valor-por-quilo");
-
-      const valorKg = parseMask(inputValorQuilo.val());
-      let valorNota = parseMask(produto.valor_com_nota) / 100;
-      inputComNota.val(formatarNumero(valorNota));
-      inputSemNota.val(formatarNumero(Math.max(0, valorKg - valorNota)));
+      let valorNota = parseMask(inputComNota.val());
+      inputSemNota.val(formatarNumero(Math.max(0, v - valorNota)));
 
       inputComNota.off("input blur");
 
@@ -146,55 +139,67 @@ let pedidoAtual = null;
         $(this).val(formatado);
 
         const novoValorNota = parseMask($(this).val());
-        const valorAtual = parseMask(inputValorQuilo.val());
-        inputSemNota.val(formatarNumero(Math.max(0, valorAtual - novoValorNota)));
+        inputSemNota.val(formatarNumero(Math.max(0, v - novoValorNota)));
       });
 
       inputComNota.on("blur", function () {
-        const vUnit = parseMask(inputValorQuilo.val());
         let raw = parseMask($(this).val());
-        raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
+        raw = Math.min(raw, Math.max(v - 0.01, 0));
         $(this).val(formatarNumero(raw));
-        inputSemNota.val(formatarNumero(Math.max(0, vUnit - raw)));
+        inputSemNota.val(formatarNumero(Math.max(0, v - raw)));
       });
+
+    } else {
+      divPersonalizado.hide();
+      inputComNota.val('');
+      inputSemNota.val('');
     }
 
-    selCodigo.on("change", function () {
-      const isPersonalizar = $(this).val() === "Personalizar";
-      divPersonalizado.toggle(isPersonalizar);
-    });
+    atualizarSub();
+    atualizarTotal();
+  });
 
-        selProd.change(function () {
-  const nome = $(this).val();
-  const prod = materiais.find(p => p.nome_produto === nome);
-  const v = parseFloat(prod?.valor_unitario || 0);
+  bloco.find(".peso").on("input", function () {
+    const val = parseMask($(this).val());
+    $(this).val(formatarNumero(val, true));
+    atualizarSub();
+    atualizarTotal();
+  });
 
-  bloco.find(".valor-por-quilo").val(formatarNumero(v));
+  function atualizarSub() {
+    const v = parseMask(bloco.find(".valor-por-quilo").val());
+    const p = parseMask(bloco.find(".peso").val());
+    bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
+  }
 
-  const codigos = [...new Set(
-    materiais
-      .filter(m => m.nome_produto === nome && m.codigo_fiscal)
-      .map(m => m.codigo_fiscal)
-  )];
+  if (produto.nome_produto) {
+    selProd.val(produto.nome_produto).trigger("change");
+  }
 
-  const selectCodigo = bloco.find(".select-codigo");
-  selectCodigo.empty().append('<option value="">Selecione</option>');
-  codigos.forEach(c => {
-  const textoExibido = c === "Personalizar" ? "GAP" : c;
-  selectCodigo.append(`<option value="${c}">${textoExibido}</option>`);
-});
+  if (produto.codigo_fiscal) {
+    selCodigo.val(produto.codigo_fiscal).trigger("change");
+  }
 
-  // Se já existir código "Personalizar" e houver campos personalizados, mostrar
-  selectCodigo.val(codigos[0] || "").trigger("change");
+  const valorInicial = parseMask(produto.valor_unitario) / 100;
+  const pesoInicial = parseMask(produto.peso) / 1000;
+  const tipoPesoInicial = produto.tipo_peso || "";
 
-  const inputComNota = bloco.find(".valor-com-nota");
-  const inputSemNota = bloco.find(".valor-sem-nota");
+  bloco.find(".valor-por-quilo").val(formatarNumero(valorInicial));
+  bloco.find(".peso").val(formatarNumero(pesoInicial, true));
+  bloco.find(".tipo-peso").val(tipoPesoInicial);
+  bloco.find(".subtotal").val("R$ " + formatarNumero(valorInicial * pesoInicial));
 
-  if (selectCodigo.val() === "Personalizar") {
+  if (produto.codigo_fiscal === "Personalizar") {
     divPersonalizado.show();
 
-    let valorNota = parseMask(inputComNota.val());
-    inputSemNota.val(formatarNumero(Math.max(0, v - valorNota)));
+    const inputComNota = bloco.find(".valor-com-nota");
+    const inputSemNota = bloco.find(".valor-sem-nota");
+    const inputValorQuilo = bloco.find(".valor-por-quilo");
+
+    const valorKg = parseMask(inputValorQuilo.val());
+    let valorNota = parseMask(produto.valor_com_nota) / 100;
+    inputComNota.val(formatarNumero(valorNota));
+    inputSemNota.val(formatarNumero(Math.max(0, valorKg - valorNota)));
 
     inputComNota.off("input blur");
 
@@ -206,43 +211,27 @@ let pedidoAtual = null;
       $(this).val(formatado);
 
       const novoValorNota = parseMask($(this).val());
-      inputSemNota.val(formatarNumero(Math.max(0, v - novoValorNota)));
+      const valorAtual = parseMask(inputValorQuilo.val());
+      inputSemNota.val(formatarNumero(Math.max(0, valorAtual - novoValorNota)));
     });
 
     inputComNota.on("blur", function () {
+      const vUnit = parseMask(inputValorQuilo.val());
       let raw = parseMask($(this).val());
-      raw = Math.min(raw, Math.max(v - 0.01, 0));
+      raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
       $(this).val(formatarNumero(raw));
-      inputSemNota.val(formatarNumero(Math.max(0, v - raw)));
+      inputSemNota.val(formatarNumero(Math.max(0, vUnit - raw)));
     });
-
-  } else {
-    divPersonalizado.hide();
-    inputComNota.val('');
-    inputSemNota.val('');
   }
 
-  atualizarSub();
-  atualizarTotal();
-});
+  selCodigo.on("change", function () {
+    const isPersonalizar = $(this).val() === "Personalizar";
+    divPersonalizado.toggle(isPersonalizar);
+  });
 
-    bloco.find(".peso").on("input", function () {
-      const val = parseMask($(this).val());
-      $(this).val(formatarNumero(val, true));
-      atualizarSub();
-      atualizarTotal();
-    });
-
-    function atualizarSub() {
-      const v = parseMask(bloco.find(".valor-por-quilo").val());
-      const p = parseMask(bloco.find(".peso").val());
-      bloco.find(".subtotal").val("R$ " + formatarNumero(v * p));
-    }
-
-    $("#produtos").append(bloco);
-    updateAddButton();
-    updateRemoveButtons();
-  }
+  updateAddButton();
+  updateRemoveButtons();
+}
 
   function renderizarObservacoes() {
   const containerComum = document.getElementById('observacoes-comuns');
@@ -589,4 +578,86 @@ $("#btn-confirmar-reset").on("click", function () {
     select.trigger("change");
   }
 });
+});
+
+// ⬇️⬇️ FUNÇÃO DE ENVIO DO FORMULÁRIO ⬇️⬇️
+const formulario = document.querySelector('#form-editar-pedido');
+
+formulario.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const pedidoId = urlParams.get('id');
+  if (!pedidoId) return alert('ID do pedido não encontrado.');
+
+  const cliente_id = pedidoAtual?.cliente_id || '';
+  const empresa = document.querySelector('#empresa')?.value || '';
+  const tipo_pedido = document.querySelector('#pedido-para')?.value || '';
+  const data_prevista = document.querySelector('#data-coleta')?.value || '';
+  const tipo_peso = $(".produto-bloco").length ? $(".produto-bloco").first().find(".tipo-peso").val() || '' : '';
+
+  const itens = [...document.querySelectorAll('.produto-bloco')].map((bloco) => {
+  const nome_produto = bloco.querySelector('.select-produto')?.value || '';
+  const valor_unitario = parseFloat(parseMask(bloco.querySelector('.valor-por-quilo')?.value)) || 0;
+  const peso = parseFloat(parseMask(bloco.querySelector('.peso')?.value)) || 0;
+  const tipo_peso = bloco.querySelector('.tipo-peso')?.value || '';
+  const codigo_fiscal = bloco.querySelector('.select-codigo')?.value || '';
+  const valor_com_nota = parseFloat(parseMask(bloco.querySelector('.valor-com-nota')?.value)) || null;
+  const valor_sem_nota = parseFloat(parseMask(bloco.querySelector('.valor-sem-nota')?.value)) || null;
+
+  return {
+    nome_produto,
+    valor_unitario,
+    peso,
+    tipo_peso,
+    codigo_fiscal,
+    valor_com_nota,
+    valor_sem_nota
+  };
+});
+
+  const prazosSelecionados = $('#prazo-pagamento').val() || [];
+  const prazos = prazosSelecionados.map((descricao) => {
+    let dias = 0;
+    if (descricao.toLowerCase().includes('à vista') || descricao.toLowerCase().includes('a vista')) {
+      dias = 0;
+    } else {
+      const match = descricao.match(/\d+/);
+      dias = match ? parseInt(match[0], 10) : 0;
+    }
+    return { descricao, dias };
+  });
+
+  const observacoesPayload = observacoes.map(obs => ({
+    setor: obs.setor,
+    texto: obs.texto_observacao || obs.texto || ''
+  }));
+
+  const payload = {
+    cliente_id,
+    empresa,
+    tipo: tipo_pedido,
+    data_coleta: document.getElementById("data-coleta")?.value || null,
+    tipo_peso,
+    itens,
+    prazos,
+    observacoes: observacoesPayload,
+    condicao_pagamento_a_vista: document.querySelector('#condicao_pagamento_a_vista')?.value || ''
+  };
+
+  try {
+    const resposta = await fetch(`/api/pedidos/${pedidoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resposta.ok) throw new Error('Erro ao salvar alterações.');
+
+    alert('Pedido atualizado com sucesso!');
+    window.location.href = `visualizar-venda.html?id=${pedidoId}`;
+  } catch (erro) {
+    console.error(erro);
+    alert('Erro ao atualizar pedido.');
+  }
 });
