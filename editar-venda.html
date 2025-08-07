@@ -24,18 +24,21 @@
         <label for="empresa">Empresa</label>
         <select id="empresa" name="empresa" required>
           <option value="">Selecione</option>
+          <!-- Ajuste conforme documentação: somente duas empresas -->
           <option value="Mellicz Ambiental">Mellicz Ambiental</option>
-          <option value="Outros">Outros</option>
+          <option value="Pronasa">Pronasa</option>
         </select>
       </div>
 
       <div class="form-group">
         <label for="cliente_nome">Cliente</label>
+        <!-- Campo somente leitura conforme documentação -->
         <input type="text" id="cliente_nome" name="cliente_nome" readonly />
       </div>
 
       <div class="form-group">
         <label for="data-coleta">Data Prevista da Coleta</label>
+        <!-- Usado com flatpickr, pré-preenchido e editável -->
         <input type="text" id="data-coleta" name="data_coleta" required />
       </div>
 
@@ -50,6 +53,7 @@
 
       <div class="form-group">
         <label for="prazo-pagamento">Prazos de Pagamento</label>
+        <!-- Seleção múltipla, opções serão carregadas via JS conforme cliente -->
         <select id="prazo-pagamento" name="prazo_pagamento" multiple="multiple" style="width: 100%;"></select>
       </div>
 
@@ -60,6 +64,8 @@
           <option value="Aguardar pagamento">Aguardar pagamento</option>
           <option value="Pagamento recebido">Pagamento recebido</option>
           <option value="Pago na coleta">Pago na coleta</option>
+          <!-- Inclusão da opção prevista na documentação -->
+          <option value="Liberar caminhão">Liberar caminhão</option>
         </select>
       </div>
 
@@ -75,7 +81,6 @@
 
       <div id="observacao-bloco" style="display: none;">
         <button type="button" class="btn-fechar" id="btn-fechar-observacao">×</button>
-
         <div class="form-group">
           <label for="setor-observacao">Setor</label>
           <select id="setor-observacao" multiple="multiple" style="width: 100%;">
@@ -87,12 +92,10 @@
             <option value="Emissão de NF">Emissão de NF</option>
           </select>
         </div>
-
         <div class="form-group">
           <label for="texto-observacao">Observação</label>
           <textarea id="texto-observacao" style="width: 100%;" rows="4"></textarea>
         </div>
-
         <button type="button" id="btn-confirmar-observacao" class="btn btn-azul">Confirmar Observação</button>
       </div>
 
@@ -112,7 +115,6 @@
       <p id="etapa-atual-exibida" style="margin-top: 10px; margin-bottom: 15px;">
         <strong>Etapa atual da tarefa:</strong> <span id="nome-etapa-atual">--</span>
       </p>
-
       <label for="setor-resetar">Para qual etapa você deseja reenviar esta tarefa para correção?</label>
       <select id="setor-resetar" required>
         <option value="">Selecione a etapa</option>
@@ -122,10 +124,8 @@
         <option value="Financeiro">Financeiro</option>
         <option value="Emissão de NF">Emissão de NF</option>
       </select>
-
       <label for="motivo-reset">Justifique a necessidade de correção:</label>
       <textarea id="motivo-reset" rows="4" required></textarea>
-
       <div class="modal-botoes">
         <button id="btn-confirmar-reset" class="btn btn-azul">Confirmar</button>
         <button id="btn-cancelar-reset" class="btn">Cancelar</button>
@@ -147,6 +147,7 @@
       });
     });
   </script>
+  <!-- O script de edição agora está em arquivo separado -->
   <script src="editar-venda.js"></script>
 </body>
 </html>
