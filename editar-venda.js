@@ -83,7 +83,6 @@ $(function () {
 
   const selCodigo = $('<select class="select-codigo" required><option value="">Selecione</option></select>');
   bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCodigo);
-  setTimeout(() => selCodigo.select2({ width: '100%' }), 0);
 
   const divPersonalizado = $(`  
     <div class="personalizado-campos" style="display:none;">
@@ -106,10 +105,8 @@ $(function () {
     bloco.find(".valor-por-quilo").val(formatarNumero(v));
 
     const codigos = [...new Set(
-      materiais
-        .filter(m => m.nome_produto === nome && m.codigo_fiscal)
-        .map(m => m.codigo_fiscal)
-    )];
+  (pedidoAtual?.codigos_fiscais || [])
+)];
 
     const selectCodigo = bloco.find(".select-codigo");
     selectCodigo.empty().append('<option value="">Selecione</option>');
