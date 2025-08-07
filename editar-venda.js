@@ -138,8 +138,7 @@ $(function () {
       }
 
       // Calcula o valor unitário em reais (divide por 100 se necessário)
-      const unitRaw = parseFloat(prodSel?.valor_unitario || 0);
-      const valorQuilo = unitRaw / 100;
+      const valorQuilo = parseFloat(prodSel?.valor_unitario || 0);
       bloco.find(".valor-por-quilo").val(formatarNumero(valorQuilo));
 
       // Atualiza lista de códigos fiscais
