@@ -583,20 +583,9 @@ $("#btn-confirmar-reset").on("click", function () {
     $("#texto-observacao").css("margin-top", "0");
   });
 
-  $("#adicionar-produto").on("click", function () {
-  adicionarProduto();
-
-  const ultimoProduto = $(".produto-bloco").last();
-  const select = ultimoProduto.find(".select-produto");
-
-  select.on("change", function () {
-    const nome = $(this).val();
-    const prod = materiais.find(p => p.nome_produto === nome);
-    const v = parseFloat(prod?.valor_unitario || 0);
-
-    const blocoAtual = $(this).closest(".produto-bloco");
-    blocoAtual.find(".valor-por-quilo").val(formatarNumero(v));
-  });
+ $("#adicionar-produto").on("click", function () {
+  adicionarProduto(); // já contém a lógica completa, inclusive o listener .change
+});
 
   // Disparar o change para já preencher valor se produto vier pré-carregado
   const nomeSelecionado = select.val();
