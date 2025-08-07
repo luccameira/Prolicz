@@ -138,8 +138,7 @@ $(function () {
       }
 
       // Calcula o valor unitário em reais (divide por 100 se necessário)
-      const unitRaw = parseFloat(prodSel?.valor_unitario || 0);
-      const valorQuilo = unitRaw / 100;
+      const valorQuilo = parseFloat(prodSel?.valor_unitario || 0);
       bloco.find(".valor-por-quilo").val(formatarNumero(valorQuilo));
 
       // Atualiza lista de códigos fiscais
@@ -429,8 +428,7 @@ $(function () {
       .then(pedido => {
         pedidoAtual = pedido;
         $("#empresa").val(pedido.empresa || '');
-        // Nome do cliente pode vir como 'cliente' no JSON retornado
-        $("#cliente_nome").val(pedido.cliente || pedido.cliente_nome || '');
+        $("#cliente_nome").val(pedido.cliente_nome || '');
         $("#data-coleta").val(pedido.data_coleta?.substring(0, 10) || '');
         $("#pedido-para").val(pedido.tipo || '');
         produtosAutorizados = pedido.produtos_autorizados || [];
