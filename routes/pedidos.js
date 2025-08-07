@@ -933,17 +933,16 @@ pedido.historico = historico;
 
     // Produtos autorizados
     const [produtosAutorizados] = await db.query(
-      `SELECT 
-         p.nome AS nome_produto, 
-         p.valor_unitario, 
-         p.unidade, 
-         p.codigo_fiscal
-       FROM produtos_autorizados pa
-       INNER JOIN produtos p ON pa.produto_id = p.id
-       WHERE pa.cliente_id = ?`,
-      [pedido.cliente_id]
-    );
-    pedido.produtos_autorizados = produtosAutorizados;
+  `SELECT 
+     p.nome AS nome_produto, 
+     pa.valor_unitario, 
+     pa.codigo_fiscal
+   FROM produtos_autorizados pa
+   INNER JOIN produtos p ON pa.produto_id = p.id
+   WHERE pa.cliente_id = ?`,
+  [pedido.cliente_id]
+);
+pedido.produtos_autorizados = produtosAutorizados;
 
     res.json(pedido);
   } catch (error) {
@@ -1187,6 +1186,76 @@ router.get('/portaria/saida', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar tarefas de saída da portaria:', error);
     res.status(500).json({ erro: 'Erro ao buscar tarefas de saída' });
+  }
+});
+
+// ✅ ROTA PUT /api/pedidos/:id — atualizar pedido existente
+router.put('/:id', async (req, res) => {
+  const pedidoId = req.params.id;
+  const { cliente_id, empresa, tipo, data_coleta, tipo_peso, itens, prazos, observacoes, condicao_pagamento_a_vista } = req.body;
+
+  try {
+    // Atualiza o pedido principal
+    await db.query(
+      `UPDATE pedidos 
+       SET cliente_id = ?, empresa = ?, tipo = ?, data_coleta = ?, tipo_peso = ?, condicao_pagamento_avista = ?
+       WHERE id = ?`,
+      [cliente_id, empresa, tipo, data_coleta, tipo_peso, condicao_pagamento_a_vista, pedidoId]
+    );
+
+    // Remove itens antigos
+    await db.query('DELETE FROM itens_pedido WHERE pedido_id = ?', [pedidoId]);
+
+    // Insere os novos itens
+    for (const item of itens) {
+      await db.query(
+        `INSERT INTO itens_pedido (
+          pedido_id, nome_produto, valor_unitario, peso, tipo_peso, unidade, codigo_fiscal, valor_com_nota, valor_sem_nota
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          pedidoId,
+          item.nome_produto,
+          item.valor_unitario,
+          item.peso,
+          item.tipo_peso,
+          item.unidade || '',
+          item.codigo_fiscal || '',
+          item.valor_com_nota || null,
+          item.valor_sem_nota || null
+        ]
+      );
+    }
+
+    // Remove prazos antigos
+    await db.query('DELETE FROM prazos_pedido WHERE pedido_id = ?', [pedidoId]);
+
+    // Insere os novos prazos
+    for (const prazo of prazos) {
+      await db.query(
+        `INSERT INTO prazos_pedido (pedido_id, descricao, dias) VALUES (?, ?, ?)`,
+        [pedidoId, prazo.descricao, prazo.dias]
+      );
+    }
+
+    // Remove observações antigas
+    await db.query('DELETE FROM observacoes_pedido WHERE pedido_id = ?', [pedidoId]);
+
+    // Insere novas observações
+    for (const obs of observacoes) {
+      const setores = Array.isArray(obs.setor) ? obs.setor : [obs.setor];
+      const texto = obs.texto || '';
+      for (const setor of setores) {
+        await db.query(
+          `INSERT INTO observacoes_pedido (pedido_id, setor, texto) VALUES (?, ?, ?)`,
+          [pedidoId, setor, texto]
+        );
+      }
+    }
+
+    res.json({ mensagem: 'Pedido atualizado com sucesso.' });
+  } catch (erro) {
+    console.error('Erro ao atualizar pedido:', erro);
+    res.status(500).json({ erro: 'Erro ao atualizar pedido.' });
   }
 });
 
