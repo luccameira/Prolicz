@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
+  carregarTarefasSaida(); // ⬅️ nova chamada
   monitorarUploads();
 });
 
@@ -232,6 +233,99 @@ const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].incl
 
 lista.appendChild(card);
   });
+}
+
+async function carregarTarefasSaida() {
+  try {
+    const res = await fetch('/api/pedidos/portaria/saida');
+    const tarefas = await res.json();
+
+    const cardsContainer = document.getElementById('cards-pedidos');
+    cardsContainer.innerHTML = '';
+
+    if (!tarefas.length) {
+      cardsContainer.innerHTML = "<p style='padding: 0 25px;'>Nenhuma tarefa de saída encontrada.</p>";
+      return;
+    }
+
+    tarefas.forEach(tarefa => {
+      const card = document.createElement('div');
+      card.className = 'card saida';
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="info">
+            <h3>${tarefa.cliente_nome || 'Cliente'}</h3>
+            <p>Saída do cliente autorizada</p>
+          </div>
+          <div class="status-badge status-azul">Aguardando Saída</div>
+        </div>
+
+        <div class="formulario">
+          <p style="margin-bottom: 14px;">Esta tarefa representa a <strong>saída do cliente</strong> após a emissão da nota fiscal.</p>
+
+          <div class="bloco-motorista">
+            <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
+            <div class="linha-motorista">
+              <div>
+                <label>Nome do Motorista</label>
+                <input type="text" value="${tarefa.nome_motorista || ''}" readonly>
+              </div>
+              <div>
+                <label>Placa do Veículo</label>
+                <input type="text" value="${tarefa.placa_veiculo || ''}" readonly>
+              </div>
+            </div>
+          </div>
+
+          ${tarefa.nome_ajudante ? `
+          <div class="bloco-ajudante" style="margin-top: 22px;">
+            <h3><i class="fas fa-user-friends"></i> Dados do Ajudante</h3>
+            <div class="linha-motorista">
+              <div>
+                <label>Nome do Ajudante</label>
+                <input type="text" value="${tarefa.nome_ajudante}" readonly>
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div style="margin-top: 28px;">
+            <button class="botao-confirmar-saida" onclick="confirmarSaida(${tarefa.pedido_id}, this)">
+              <i class="fas fa-sign-out-alt"></i> Confirmar Saída do Cliente
+            </button>
+          </div>
+        </div>
+      `;
+
+      cardsContainer.appendChild(card);
+    });
+
+  } catch (error) {
+    console.error('Erro ao carregar tarefas de saída:', error);
+  }
+}
+
+async function confirmarSaida(pedidoId, botao) {
+  const confirmar = confirm("Deseja realmente confirmar a saída do cliente?");
+  if (!confirmar) return;
+
+  botao.disabled = true;
+  botao.innerText = 'Confirmando...';
+
+  try {
+    await fetch(`/api/tarefas-portaria/${pedidoId}/saida`, {
+      method: 'PUT'
+    });
+
+    alert("Saída confirmada com sucesso!");
+    carregarTarefasSaida(); // Atualiza os cards
+  } catch (error) {
+    console.error('Erro ao confirmar saída:', error);
+    alert("Erro ao confirmar saída.");
+  } finally {
+    botao.disabled = false;
+    botao.innerText = 'Confirmar Saída do Cliente';
+  }
 }
 
 function renderizarFormularioColeta(pedido, card) {
