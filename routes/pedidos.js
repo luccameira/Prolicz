@@ -1190,11 +1190,16 @@ router.put('/:id/emitir-nf', uploadNF.single('arquivo_nf'), async (req, res) => 
 
 router.get('/portaria/saida', async (req, res) => {
   const sql = `
-    SELECT tp.*, c.nome AS cliente_nome
+    SELECT 
+      tp.*, 
+      c.nome_fantasia AS cliente_nome,
+      p.placa_veiculo,
+      p.nome_motorista,
+      p.nome_ajudante
     FROM tarefas_portaria tp
     JOIN pedidos p ON tp.pedido_id = p.id
     JOIN clientes c ON p.cliente_id = c.id
-    WHERE tp.tipo = 'saida' AND tp.status = 'aberto'
+    WHERE tp.tipo = 'saida' AND tp.status IN ('aberto', 'pendente')
     ORDER BY tp.id DESC
   `;
 
