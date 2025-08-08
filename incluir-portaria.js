@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidosPortaria();
-  carregarTarefasSaida(); // ⬅️ nova chamada
   monitorarUploads();
 });
 
@@ -167,72 +166,114 @@ function exibirCardAjudante(pedidoId, valor) {
 
 async function carregarPedidosPortaria() {
   const hoje = new Date().toISOString().split('T')[0];
-const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].includes(status);
-  const res = await fetch(`/api/pedidos/portaria?data=${hoje}`);
-  const pedidos = await res.json();
+  const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].includes(status);
+
+  const [resPedidos, resSaidas] = await Promise.all([
+    fetch(`/api/pedidos/portaria?data=${hoje}`),
+    fetch('/api/pedidos/portaria/saida')
+  ]);
+
+  const pedidos = await resPedidos.json();
+  const saidas = await resSaidas.json();
 
   const lista = document.getElementById('lista-pedidos');
   lista.innerHTML = '';
 
-  if (!pedidos.length) {
+  if (!pedidos.length && !saidas.length) {
     lista.innerHTML = "<p style='padding: 0 25px;'>Nenhum pedido encontrado.</p>";
     return;
   }
 
-  pedidos.sort((a, b) => {
-    const prioridade = status => status === 'Finalizado' ? 1 : 0;
-    return prioridade(a.status) - prioridade(b.status);
+  // Agrupar tarefas de saída por pedido_id
+  const saidasPorPedido = {};
+  saidas.forEach(saida => {
+    saidasPorPedido[saida.pedido_id] = saida;
   });
 
   pedidos.forEach(pedido => {
-    const pedidoId = pedido.pedido_id || pedido.id;
-    const status = pedido.status;
+  const pedidoId = pedido.pedido_id || pedido.id;
+  console.log("🟢 Pedido renderizado:", pedidoId);
+  const tarefaSaida = saidasPorPedido[pedidoId];
+console.log("🔎 Tarefa de saída encontrada para pedido", pedidoId, tarefaSaida);
 
-    const card = document.createElement('div');
-    card.className = 'card';
+  const card = document.createElement('div');
+  card.className = 'card';
 
-    const header = document.createElement('div');
-    header.className = 'card-header';
+  const header = document.createElement('div');
+  header.className = 'card-header';
+  header.innerHTML = `
+    <div class="info">
+      <h3>${pedido.cliente}</h3>
+      <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
+      ${pedido.observacoes?.portaria ? `<p style="margin-top: 6px;"><strong>Obs:</strong> ${pedido.observacoes.portaria}</p>` : ''}
+    </div>
+    <div class="status-badge ${pedido.status === 'Aguardando Início da Coleta' ? 'status-amarelo' : 'status-verde'}">
+      ${pedido.status === 'Aguardando Início da Coleta' ? 'Aguardando Início da Coleta' : 'Coleta Iniciada'}
+    </div>
+  `;
+  card.appendChild(header);
 
-    const info = document.createElement('div');
-    info.className = 'info';
-    info.innerHTML = `
-  <h3>${pedido.cliente}</h3>
-  <p>Data prevista: ${formatarData(pedido.data_coleta)}</p>
-  ${pedido.observacoes?.portaria ? `<p style="margin-top: 6px;"><strong>Obs:</strong> ${pedido.observacoes.portaria}</p>` : ''}
-`;
+  const linhaTempo = document.createElement('div');
+  linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
+  card.appendChild(linhaTempo);
 
-    const statusTag = document.createElement('div');
-    statusTag.className = 'status-badge';
-    if (status === 'Aguardando Início da Coleta') {
-      statusTag.classList.add('status-amarelo');
-      statusTag.textContent = 'Aguardando Início da Coleta';
-    } else {
-      statusTag.classList.add('status-verde');
-      statusTag.textContent = 'Coleta Iniciada';
-    }
+  setTimeout(() => {
+    const timeline = card.querySelector('.timeline-simples');
+    if (timeline) animarLinhaProgresso(timeline);
+  }, 20);
 
-    header.appendChild(info);
-    header.appendChild(statusTag);
-    card.appendChild(header);
+  // ENTRADA
+  const podeExecutar = status => ['Aguardando Início da Coleta', 'Portaria'].includes(status);
+  if (podeExecutar(pedido.status)) {
+    renderizarFormularioColeta(pedido, card);
+  }
 
-    const linhaTempo = document.createElement('div');
-    linhaTempo.innerHTML = gerarLinhaTempoCompleta(pedido);
-    card.appendChild(linhaTempo);
+  // SAÍDA
+  if (tarefaSaida && tarefaSaida.status === 'pendente') {
+    const formularioSaida = document.createElement('div');
+    formularioSaida.className = 'formulario';
+    formularioSaida.style.display = 'block';
 
-    setTimeout(() => {
-      const timeline = card.querySelector('.timeline-simples');
-      if (timeline) animarLinhaProgresso(timeline);
-    }, 20);
+    formularioSaida.innerHTML = `
+      <p style="margin-bottom: 14px;">Esta tarefa representa a <strong>saída do cliente</strong> após a emissão da nota fiscal.</p>
 
-    if (podeExecutar(pedido.status)) {
-  renderizarFormularioColeta(pedido, card);
-}
+      <div class="bloco-motorista">
+        <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
+        <div class="linha-motorista">
+          <div>
+            <label>Nome do Motorista</label>
+            <input type="text" value="${tarefaSaida.nome_motorista || ''}" readonly>
+          </div>
+          <div>
+            <label>Placa do Veículo</label>
+            <input type="text" value="${tarefaSaida.placa_veiculo || ''}" readonly>
+          </div>
+        </div>
+      </div>
 
-// Inserir observações da portaria se existirem
+      ${tarefaSaida.nome_ajudante ? `
+      <div class="bloco-ajudante" style="margin-top: 22px;">
+        <h3><i class="fas fa-user-friends"></i> Dados do Ajudante</h3>
+        <div class="linha-motorista">
+          <div>
+            <label>Nome do Ajudante</label>
+            <input type="text" value="${tarefaSaida.nome_ajudante}" readonly>
+          </div>
+        </div>
+      </div>` : ''}
 
-lista.appendChild(card);
-  });
+      <div style="margin-top: 28px;">
+        <button class="botao-confirmar-saida" onclick="confirmarSaida(${pedidoId}, this)">
+          <i class="fas fa-sign-out-alt"></i> Confirmar Saída do Cliente
+        </button>
+      </div>
+    `;
+
+    card.appendChild(formularioSaida);
+  }
+
+  lista.appendChild(card);
+});
 }
 
 async function carregarTarefasSaida() {
@@ -249,6 +290,7 @@ async function carregarTarefasSaida() {
     }
 
     tarefas.forEach(tarefa => {
+  console.log("🟡 Tarefa saída recebida:", tarefa);
       const card = document.createElement('div');
       card.className = 'card saida';
 
