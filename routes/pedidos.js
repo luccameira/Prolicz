@@ -833,7 +833,6 @@ router.get('/:id', async (req, res) => {
   const pedidoId = req.params.id;
 
   try {
-    // 👉 Seleção do pedido já trazendo campos usados no histórico/anexos
     const [pedidos] = await db.query(
       `SELECT 
         p.id AS pedido_id,
@@ -843,18 +842,6 @@ router.get('/:id', async (req, res) => {
         p.status,
         p.data_coleta,
         p.data_criacao,
-        p.data_coleta_iniciada,
-        p.data_carga_finalizada,
-        p.data_conferencia_peso,
-        p.data_financeiro,
-        p.data_emissao_nf,
-        p.data_finalizado,
-        p.placa_veiculo,
-        p.nome_motorista,
-        p.nome_ajudante,
-        p.ticket_balanca,
-        p.nota_fiscal,
-        p.arquivo_nf,
         p.observacao,
         p.prazo_pagamento,
         p.condicao_pagamento_avista,
@@ -877,27 +864,27 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ erro: 'Pedido não encontrado' });
     }
 
-    const pedidoJson = pedidos[0];
+const pedidoJson = pedidos[0];
 
-    // Normalização dos códigos fiscais do cliente
-    let codigosFiscais = [];
-    if (pedidoJson.codigos_fiscais) {
-      if (Array.isArray(pedidoJson.codigos_fiscais)) {
-        codigosFiscais = pedidoJson.codigos_fiscais;
-      } else if (typeof pedidoJson.codigos_fiscais === 'string') {
-        codigosFiscais = pedidoJson.codigos_fiscais
-          .split(',')
-          .map(c => c.trim())
-          .filter(Boolean);
-      }
-    }
+let codigosFiscais = [];
+if (pedidoJson.codigos_fiscais) {
+  if (Array.isArray(pedidoJson.codigos_fiscais)) {
+    codigosFiscais = pedidoJson.codigos_fiscais;
+  } else if (typeof pedidoJson.codigos_fiscais === 'string') {
+    codigosFiscais = pedidoJson.codigos_fiscais
+      .split(',')
+      .map(c => c.trim())
+      .filter(Boolean);
+  }
+}
 
-    const pedido = {
-      ...pedidoJson,
-      codigos_fiscais: codigosFiscais
-    };
+const pedido = {
+  ...pedidoJson,
+  codigos_fiscais: codigosFiscais
+};
 
-    // ===== Itens do pedido =====
+
+    // Itens
     const [materiais] = await db.query(
       `SELECT 
          id, 
@@ -917,7 +904,7 @@ router.get('/:id', async (req, res) => {
     );
     pedido.materiais = materiais;
 
-    // ===== Prazos usados =====
+    // Prazos usados
     const [prazosPedido] = await db.query(
       `SELECT descricao, dias FROM prazos_pedido WHERE pedido_id = ?`,
       [pedidoId]
@@ -925,14 +912,14 @@ router.get('/:id', async (req, res) => {
     pedido.prazos_pagamento = prazosPedido;
     pedido.prazo_pagamento = prazosPedido.map(p => `${p.descricao} (${p.dias} dias)`);
 
-    // ===== Prazos permitidos (para edição) =====
+    // Prazos permitidos
     const [prazosPermitidos] = await db.query(
       `SELECT descricao, dias FROM prazos_pagamento WHERE cliente_id = ?`,
       [pedido.cliente_id]
     );
     pedido.prazos_permitidos = prazosPermitidos.map(p => `${p.descricao} (${p.dias} dias)`);
 
-    // ===== Histórico “tarefas_portaria” (mantido) =====
+    // Histórico
     const [historico] = await db.query(
       `SELECT 
          CASE tipo 
@@ -952,7 +939,7 @@ router.get('/:id', async (req, res) => {
     );
     pedido.historico = historico;
 
-    // ===== Observações por setor =====
+    // Observações
     const [observacoes] = await db.query(
       `SELECT id, setor, texto AS texto_observacao, usuario_nome, data_criacao
        FROM observacoes_pedido
@@ -962,7 +949,7 @@ router.get('/:id', async (req, res) => {
     );
     pedido.observacoes = observacoes;
 
-    // ===== Produtos autorizados do cliente (para edição) =====
+    // Produtos autorizados
     const [produtosAutorizados] = await db.query(
       `SELECT 
          p.nome AS nome_produto, 
@@ -975,158 +962,7 @@ router.get('/:id', async (req, res) => {
     );
     pedido.produtos_autorizados = produtosAutorizados;
 
-    // ====== AQUI COMEÇA O PAYLOAD RICO PARA A “VISUALIZAR VENDA” ======
-    // Cabeçalho que a tela usa
-    const cabecalho = {
-      cliente: pedido.cliente,
-      empresa: pedido.empresa,
-      tipo: pedido.tipo,
-      data_coleta: pedido.data_coleta,
-      condicao_pagamento_avista: pedido.condicao_pagamento_avista || null,
-      prazos: (pedido.prazos_pagamento || []).map(p => ({
-        descricao: p.descricao,
-        dias: p.dias
-      }))
-    };
-
-    // Padronização "itens"
-    const itens = (pedido.materiais || []).map(it => ({
-      id: it.id,
-      nome_produto: it.nome_produto,
-      peso: it.peso,
-      tipo_peso: it.tipo_peso,
-      valor_unitario: it.valor_unitario,
-      codigo_fiscal: it.codigo_fiscal,
-      valor_com_nota: it.valor_com_nota,
-      valor_sem_nota: it.valor_sem_nota,
-      valor_total: it.valor_total
-    }));
-
-    // Observações agrupadas por setor
-    const obsPorSetor = {};
-    (pedido.observacoes || []).forEach(o => {
-      const setor = o.setor || 'Geral';
-      if (!obsPorSetor[setor]) obsPorSetor[setor] = [];
-      obsPorSetor[setor].push({
-        texto: o.texto_observacao,
-        usuario_nome: o.usuario_nome || null,
-        data_criacao: o.data_criacao || null
-      });
-    });
-
-    // Anexos conhecidos
-    const anexos = {
-      ticket_balanca: pedido.ticket_balanca || null,
-      nf: pedido.nota_fiscal ? {
-        numero: pedido.nota_fiscal,
-        arquivo: pedido.arquivo_nf || null
-      } : null
-    };
-
-    const toISO = v => (v ? new Date(v).toISOString() : null);
-
-    // Linha do tempo (etapas com datas do pedido)
-    const timeline = [];
-
-    // Pedido Criado
-    timeline.push({
-      etapa: 'pedido_criado',
-      titulo: 'Pedido Criado',
-      data: toISO(pedido.data_criacao),
-      usuario: null,
-      payload: {
-        snapshot_itens: itens,
-        snapshot_prazos: cabecalho.prazos,
-        observacoes_setor: obsPorSetor['Geral'] || []
-      }
-    });
-
-    // Coleta Iniciada
-    if (pedido.data_coleta_iniciada) {
-      timeline.push({
-        etapa: 'carga',
-        titulo: 'Coleta Iniciada',
-        data: toISO(pedido.data_coleta_iniciada),
-        usuario: null,
-        payload: {
-          placa: pedido.placa_veiculo || null,
-          nome_motorista: pedido.nome_motorista || null,
-          nome_ajudante: pedido.nome_ajudante || null,
-          observacoes_setor: obsPorSetor['Carga e Descarga'] || []
-        }
-      });
-    }
-
-    // Coleta Finalizada
-    if (pedido.data_carga_finalizada) {
-      timeline.push({
-        etapa: 'carga_finalizada',
-        titulo: 'Coleta Finalizada',
-        data: toISO(pedido.data_carga_finalizada),
-        usuario: null,
-        payload: {
-          ticket_balanca: pedido.ticket_balanca || null
-        }
-      });
-    }
-
-    // Peso Conferido
-    if (pedido.data_conferencia_peso) {
-      timeline.push({
-        etapa: 'conferencia_peso',
-        titulo: 'Peso Conferido',
-        data: toISO(pedido.data_conferencia_peso),
-        usuario: null,
-        payload: {
-          observacoes_setor: obsPorSetor['Conferência de Peso'] || []
-        }
-      });
-    }
-
-    // Financeiro
-    if (pedido.data_financeiro) {
-      timeline.push({
-        etapa: 'financeiro',
-        titulo: 'Pagamento Verificado',
-        data: toISO(pedido.data_financeiro),
-        usuario: null,
-        payload: {
-          condicao_pagamento_avista: cabecalho.condicao_pagamento_avista || null,
-          observacoes_setor: obsPorSetor['Financeiro'] || []
-        }
-      });
-    }
-
-    // Emissão NF
-    if (pedido.data_emissao_nf) {
-      timeline.push({
-        etapa: 'nf',
-        titulo: 'Nota Fiscal Emitida',
-        data: toISO(pedido.data_emissao_nf),
-        usuario: null,
-        payload: anexos.nf
-      });
-    }
-
-    // Saída
-    if (pedido.data_finalizado) {
-      timeline.push({
-        etapa: 'saida',
-        titulo: 'Saída Liberada',
-        data: toISO(pedido.data_finalizado),
-        usuario: null,
-        payload: {}
-      });
-    }
-
-    // Anexar estruturas ricas (sem quebrar compat)
-    pedido.cabecalho = cabecalho;
-    pedido.itens = itens;
-    pedido.observacoes_por_setor = obsPorSetor;
-    pedido.anexos = anexos;
-    pedido.timeline = timeline;
-
-    return res.json(pedido);
+    res.json(pedido);
   } catch (error) {
     console.error('Erro ao buscar pedido:', error);
     res.status(500).json({ erro: 'Erro ao buscar pedido' });
