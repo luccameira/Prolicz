@@ -1282,4 +1282,26 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.put('/:pedidoId/saida', async (req, res) => {
+  const pedidoId = req.params.pedidoId;
+
+  try {
+    const [resultado] = await db.query(
+      `UPDATE tarefas_portaria 
+       SET status = 'executado' 
+       WHERE pedido_id = ? AND tipo = 'saida'`,
+      [pedidoId]
+    );
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ erro: 'Tarefa de saída não encontrada para este pedido.' });
+    }
+
+    res.sendStatus(200);
+  } catch (erro) {
+    console.error('Erro ao atualizar tarefa de saída:', erro);
+    res.sendStatus(500);
+  }
+});
+
 module.exports = router;
