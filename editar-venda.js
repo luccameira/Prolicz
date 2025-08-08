@@ -1,16 +1,17 @@
-// Arquivo modificado: editar-venda.js
-//
-// Esta versão corrige o problema de comportamentos automáticos
-// ao adicionar um novo produto na edição de pedidos. O bug era
-// causado por ouvintes (`change`) duplicados que sobrescreviam
-// o valor por quilo e não atualizavam subtotal/total. A lógica foi
-// centralizada em um único handler de mudança e os duplicados foram
-// removidos.
+// editar-venda.js
+// Página de edição de pedidos do Prolicz
+// Regras principais:
+// - Itens já salvos vêm 100% pré-preenchidos (produto, valor/kg, peso, tipo de peso, código fiscal, com/sem nota, subtotal).
+// - Ao adicionar novo item, selecionar o produto preenche Valor/kg automaticamente.
+// - Alterar peso recalcula Subtotal; Total do pedido atualiza em tempo real.
+// - "Personalizar" (GAP) exibe campos com/sem nota; com-nota não pode exceder valor/kg.
+// - Prazos: se incluir "À vista", exibe a condição para pagamento à vista.
+// - Observações por setor preservadas; reset de tarefa mantido.
 
 let pedidoAtual = null;
-let produtosAutorizados = [];
+let produtosAutorizados = []; // [{nome_produto, valor_unitario, codigo_fiscal}]
 let observacoes = [];
-let materiais = [];
+let materiais = []; // itens do pedido (edit)
 let editandoIndex = null;
 
 function parseMask(str) {
@@ -20,25 +21,35 @@ function parseMask(str) {
   return parseFloat(limpo) || 0;
 }
 
+function formatarNumero(valor, inteiro = false) {
+  if (isNaN(valor) || valor === null) valor = 0;
+  const partes = inteiro
+    ? [Math.floor(valor).toString()]
+    : Number(valor).toFixed(2).replace(".", ",").split(",");
+  partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return inteiro ? partes[0] : partes.join(",");
+}
+
 $(function () {
+  // Data coleta
   flatpickr("#data-coleta", {
     locale: "pt",
     dateFormat: "Y-m-d",
-    minDate: "today",
     allowInput: true
+  });
+
+  // Select2 prazos (o HTML já instancia o select2 dos setores)
+  $("#prazo-pagamento").select2({
+    width: '100%',
+    placeholder: 'Selecione os prazos',
+    allowClear: true,
+    multiple: true
   });
 
   const urlParams = new URLSearchParams(window.location.search);
   const pedidoId = urlParams.get("id");
 
-  function formatarNumero(valor, inteiro = false) {
-    const partes = inteiro
-      ? [Math.floor(valor).toString()]
-      : valor.toFixed(2).replace(".", ",").split(",");
-    partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return inteiro ? partes[0] : partes.join(",");
-  }
-
+  // Utilitários de UI totais/botões
   function atualizarTotal() {
     let tot = 0;
     $(".produto-bloco").each(function () {
@@ -53,22 +64,23 @@ $(function () {
   }
 
   function updateAddButton() {
-    const count = $(".produto-bloco").length;
-    $("#adicionar-produto").prop("disabled", count >= produtosAutorizados.length);
+    const usados = $(".produto-bloco").map((_, el) => $(el).find(".select-produto").val()).get();
+    const nomesPermitidos = [...new Set(produtosAutorizados.map(p => p.nome_produto))];
+    const dispon = nomesPermitidos.filter(n => !usados.includes(n));
+    $("#adicionar-produto").prop("disabled", dispon.length === 0);
   }
 
-  // Função responsável por criar um bloco de produto e anexar todos os handlers
+  // Montagem do bloco do item
   function adicionarProduto(produto = {}) {
-    // Verifica quais produtos já foram usados para montar as opções
-    const usados = $(".produto-bloco")
-      .map((i, el) => $(el).find(".select-produto").val())
-      .get();
-    const produtosPermitidos = [...new Set(produtosAutorizados.map(p => p.nome_produto))];
-    const dispon = produtosPermitidos.filter(nome => !usados.includes(nome) || nome === produto.nome_produto);
-    if (!dispon.length) return;
+    // Produtos disponíveis sem repetir (exceto quando editando o mesmo produto já usado)
+    const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get();
+    const nomesPermitidos = [...new Set(produtosAutorizados.map(p => p.nome_produto))];
+    const disponiveis = nomesPermitidos.filter(n => !usados.includes(n) || n === produto.nome_produto);
+    if (!disponiveis.length) return;
 
     const bloco = $('<div class="produto-bloco"></div>');
-    const btnRemove = $('<button type="button" class="btn-remove">×</button>').click(function () {
+
+    const btnRemove = $('<button type="button" class="btn-remove">×</button>').on('click', () => {
       bloco.remove();
       atualizarTotal();
       updateAddButton();
@@ -76,118 +88,144 @@ $(function () {
     });
     bloco.append(btnRemove);
 
-    // Select de produtos
+    // Select de produto
     const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
-    dispon.forEach(nome => {
-      const valor = produtosAutorizados.find(p => p.nome_produto === nome)?.valor_unitario || 0;
+    disponiveis.forEach(nome => {
+      const p = produtosAutorizados.find(x => x.nome_produto === nome);
+      const valor = p ? Number(p.valor_unitario) : 0;
       selProd.append(`<option value="${nome}" data-valor="${valor}">${nome}</option>`);
     });
     bloco.append('<div class="form-group"><label>Produto</label></div>').children().last().append(selProd);
 
-    // Campos de valor por quilo, peso e tipo de peso
+    // Valor/kg, Peso, Tipo de Peso, Subtotal
     bloco.append('<div class="form-group"><label>Valor por Quilo</label><input readonly class="valor-por-quilo input-nao-editavel"></div>');
     bloco.append('<div class="form-group"><label>Peso (Kg)</label><input type="text" class="peso"></div>');
-    bloco.append(`<div class="form-group"><label>Tipo de Peso</label>
-      <select class="tipo-peso" required>
-        <option value="">Selecione</option>
-        <option value="Exato">Exato</option>
-        <option value="Aproximado">Aproximado</option>
-      </select>
-    </div>`);
+    bloco.append(`
+      <div class="form-group">
+        <label>Tipo de Peso</label>
+        <select class="tipo-peso" required>
+          <option value="">Selecione</option>
+          <option value="Exato">Exato</option>
+          <option value="Aproximado">Aproximado</option>
+        </select>
+      </div>
+    `);
     bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-    // Select de código fiscal
+    // Código fiscal
     const selCodigo = $('<select class="select-codigo" required><option value="">Selecione</option></select>');
     bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCodigo);
 
-    // Campos extras para Personalizar (valor com e sem nota)
-    const divPersonalizado = $(`  
+    // Campos Personalizar (GAP)
+    const divPersonalizado = $(`
       <div class="personalizado-campos" style="display:none;">
         <div class="form-group"><label>Valor com Nota</label><input type="text" class="valor-com-nota"></div>
         <div class="form-group"><label>Valor sem Nota</label><input readonly class="valor-sem-nota input-nao-editavel"></div>
-      </div>`);
+      </div>
+    `);
     bloco.append(divPersonalizado);
 
     $("#produtos").append(bloco);
 
-    // Handler de mudança do produto
-    selProd.on('change', function () {
-      const nome = $(this).val();
+    // Helpers locais
+    const getValorKg = () => parseMask(bloco.find('.valor-por-quilo').val());
+    const getPeso = () => parseMask(bloco.find('.peso').val());
+    const formatMoney = (n) => 'R$ ' + formatarNumero(n || 0);
 
-      // Preenche campos se este produto for parte de um pedido já salvo
-      if (produto.peso) {
-        bloco.find(".peso").val(formatarNumero(produto.peso, true));
-      }
-      if (produto.tipo_peso) {
-        bloco.find(".tipo-peso").val(produto.tipo_peso);
-      }
-      if (produto.codigo_fiscal) {
-        bloco.find(".select-codigo").val(produto.codigo_fiscal).trigger("change");
-      }
-      if (produto.valor_com_nota) {
-        bloco.find(".valor-com-nota").val(formatarNumero(produto.valor_com_nota));
-        const valorUnit = parseMask(produto.valor_unitario || 0);
-        const valorNota = parseMask(produto.valor_com_nota);
-        bloco.find(".valor-sem-nota").val(formatarNumero(Math.max(0, valorUnit - valorNota)));
-      }
+    function atualizarSub() {
+      bloco.find('.subtotal').val(formatMoney(getValorKg() * getPeso()));
+    }
 
-      // Procura o produto na lista de materiais ou de autorizados
-      let prodSel = materiais.find(p => p.nome_produto === nome);
-      if (!prodSel) {
-        prodSel = produtosAutorizados.find(p => p.nome_produto === nome);
-      }
-
-      // Calcula o valor unitário em reais (divide por 100 se necessário)
-      const valorQuilo = parseFloat(prodSel?.valor_unitario || 0);
-      bloco.find(".valor-por-quilo").val(formatarNumero(valorQuilo));
-
-      // Atualiza lista de códigos fiscais
-      const codigos = [...new Set((pedidoAtual?.codigos_fiscais || []))];
-      const selectCodigo = bloco.find(".select-codigo");
-      selectCodigo.empty().append('<option value="">Selecione</option>');
+    function montarCodigosFiscais(selecionado) {
+      const codigos = [...new Set(pedidoAtual?.codigos_fiscais || [])]; // ex.: ["GA1", "GA2", "Personalizar"]
+      selCodigo.empty().append('<option value="">Selecione</option>');
       codigos.forEach(c => {
-        const textoExibido = c === "Personalizar" ? "GAP" : c;
-        selectCodigo.append(`<option value="${c}">${textoExibido}</option>`);
+        const label = (c === 'Personalizar') ? 'GAP' : c;
+        selCodigo.append(`<option value="${c}">${label}</option>`);
       });
-      // Seleciona o primeiro código como padrão e dispara mudança
-      selectCodigo.val(codigos[0] || "").trigger('change');
+      if (selecionado) {
+        selCodigo.val(selecionado);
+      } else {
+        selCodigo.val(codigos[0] || '');
+      }
+      selCodigo.trigger('change');
+    }
 
-      // Lógica para campos Personalizar
+    function ligarPersonalizar() {
       const inputComNota = bloco.find('.valor-com-nota');
       const inputSemNota = bloco.find('.valor-sem-nota');
-      if (selectCodigo.val() === 'Personalizar') {
-        divPersonalizado.show();
-        let valorNota = parseMask(inputComNota.val());
-        inputSemNota.val(formatarNumero(Math.max(0, valorQuilo - valorNota)));
-        // Listeners para atualizar valores com/sem nota
-        inputComNota.off('input blur');
-        inputComNota.on('input', function () {
-          let raw = $(this).val().replace(/\D/g, '');
-          raw = raw.replace(/^0+/, '');
-          if (raw.length < 3) raw = raw.padStart(3, '0');
-          const formatado = raw.replace(/(\d+)(\d{2})$/, '$1,$2');
-          $(this).val(formatado);
-          const novoValorNota = parseMask($(this).val());
-          inputSemNota.val(formatarNumero(Math.max(0, valorQuilo - novoValorNota)));
-        });
-        inputComNota.on('blur', function () {
-          let raw = parseMask($(this).val());
-          raw = Math.min(raw, Math.max(valorQuilo - 0.01, 0));
-          $(this).val(formatarNumero(raw));
-          inputSemNota.val(formatarNumero(Math.max(0, valorQuilo - raw)));
-        });
-      } else {
-        divPersonalizado.hide();
-        inputComNota.val('');
-        inputSemNota.val('');
+
+      function reformatarComNota() {
+        let raw = inputComNota.val().replace(/\D/g, '');
+        raw = raw.replace(/^0+/, '');
+        if (raw.length < 3) raw = raw.padStart(3, '0');
+        const formatado = raw.replace(/(\d+)(\d{2})$/, '$1,$2');
+        inputComNota.val(formatado);
       }
 
-      // Recalcula subtotal e total
+      function recalcularSemNota() {
+        const vKg = getValorKg();
+        const vNota = parseMask(inputComNota.val());
+        inputSemNota.val(formatarNumero(Math.max(0, vKg - vNota)));
+      }
+
+      inputComNota.off('input blur').on('input', () => {
+        reformatarComNota();
+        recalcularSemNota();
+      }).on('blur', () => {
+        const vKg = getValorKg();
+        let vNota = parseMask(inputComNota.val());
+        vNota = Math.min(vNota, Math.max(vKg - 0.01, 0)); // nunca maior que valor/kg
+        inputComNota.val(formatarNumero(vNota));
+        recalcularSemNota();
+      });
+    }
+
+    // Eventos
+    selProd.on('change', function () {
+      const nome = $(this).val();
+      if (!nome) {
+        bloco.find('.valor-por-quilo').val('');
+        bloco.find('.subtotal').val('');
+        divPersonalizado.hide();
+        atualizarTotal();
+        return;
+      }
+
+      // Busca nos itens do pedido (materiais) e depois nos autorizados
+      let p = (materiais || []).find(x => x.nome_produto === nome);
+      if (!p) p = produtosAutorizados.find(x => x.nome_produto === nome);
+
+      const valorQuilo = Number(p?.valor_unitario || 0); // R$/kg
+      bloco.find('.valor-por-quilo').val(formatarNumero(valorQuilo));
+
+      // Popular códigos fiscais (do cliente/pedido)
+      montarCodigosFiscais(produto.codigo_fiscal);
+
+      // Se Personalizar
+      if (selCodigo.val() === 'Personalizar') {
+        divPersonalizado.show();
+        const inputComNota = bloco.find('.valor-com-nota');
+        const inputSemNota = bloco.find('.valor-sem-nota');
+
+        if (produto && produto.valor_com_nota != null) {
+          inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
+        } else {
+          inputComNota.val('');
+        }
+        inputSemNota.val(formatarNumero(Math.max(0, valorQuilo - parseMask(inputComNota.val()))));
+        ligarPersonalizar();
+      } else {
+        divPersonalizado.hide();
+        bloco.find('.valor-com-nota').val('');
+        bloco.find('.valor-sem-nota').val('');
+      }
+
       atualizarSub();
       atualizarTotal();
     });
 
-    // Listener do campo de peso
+    // Peso → recalcula
     bloco.find('.peso').on('input', function () {
       const val = parseMask($(this).val());
       $(this).val(formatarNumero(val, true));
@@ -195,79 +233,60 @@ $(function () {
       atualizarTotal();
     });
 
-    // Função interna para atualizar o subtotal
-    function atualizarSub() {
-      const v = parseMask(bloco.find('.valor-por-quilo').val());
-      const p = parseMask(bloco.find('.peso').val());
-      bloco.find('.subtotal').val('R$ ' + formatarNumero(v * p));
-    }
-
-    // Se o produto possui nome pré‑definido, seleciona e dispara o change
-    if (produto.nome_produto) {
-      selProd.val(produto.nome_produto).trigger('change');
-    }
-
-    // Se houver código fiscal definido no objeto, seleciona e dispara mudança
-    if (produto.codigo_fiscal) {
-      selCodigo.val(produto.codigo_fiscal).trigger('change');
-    }
-
-    // Ajuste de valores iniciais quando carregado de um pedido salvo
-    const valorInicial = parseMask(produto.valor_unitario) / 100;
-    const pesoInicial = parseMask(produto.peso) / 1000;
-    const tipoPesoInicial = produto.tipo_peso || '';
-    bloco.find('.valor-por-quilo').val(formatarNumero(valorInicial));
-    bloco.find('.peso').val(formatarNumero(pesoInicial, true));
-    bloco.find('.tipo-peso').val(tipoPesoInicial);
-    bloco.find('.subtotal').val('R$ ' + formatarNumero(valorInicial * pesoInicial));
-
-    // Lógica de Personalizar se código já está definido no carregamento
-    if (produto.codigo_fiscal === 'Personalizar') {
-      divPersonalizado.show();
-      const inputComNota = bloco.find('.valor-com-nota');
-      const inputSemNota = bloco.find('.valor-sem-nota');
-      const inputValorQuilo = bloco.find('.valor-por-quilo');
-      const valorKg = parseMask(inputValorQuilo.val());
-      let valorNota = parseMask(produto.valor_com_nota) / 100;
-      inputComNota.val(formatarNumero(valorNota));
-      inputSemNota.val(formatarNumero(Math.max(0, valorKg - valorNota)));
-      inputComNota.off('input blur');
-      inputComNota.on('input', function () {
-        let raw = $(this).val().replace(/\D/g, '');
-        raw = raw.replace(/^0+/, '');
-        if (raw.length < 3) raw = raw.padStart(3, '0');
-        const formatado = raw.replace(/(\d+)(\d{2})$/, '$1,$2');
-        $(this).val(formatado);
-        const novoValorNota = parseMask($(this).val());
-        const valorAtual = parseMask(inputValorQuilo.val());
-        inputSemNota.val(formatarNumero(Math.max(0, valorAtual - novoValorNota)));
-      });
-      inputComNota.on('blur', function () {
-        const vUnit = parseMask(inputValorQuilo.val());
-        let raw = parseMask($(this).val());
-        raw = Math.min(raw, Math.max(vUnit - 0.01, 0));
-        $(this).val(formatarNumero(raw));
-        inputSemNota.val(formatarNumero(Math.max(0, vUnit - raw)));
-      });
-    }
-
-    // Mostra ou oculta campos de Personalizar ao mudar o código
+    // Código fiscal → mostra/oculta bloco personalizado
     selCodigo.on('change', function () {
-      const isPersonalizar = $(this).val() === 'Personalizar';
-      divPersonalizado.toggle(isPersonalizar);
+      const isPers = $(this).val() === 'Personalizar';
+      divPersonalizado.toggle(isPers);
+      if (isPers) ligarPersonalizar();
+      atualizarSub();
+      atualizarTotal();
     });
 
-    // Atualiza botões após adicionar
+    // Pré-preenchimento quando veio do pedido
+    const veioDoPedido = !!Object.keys(produto || {}).length;
+
+    if (veioDoPedido) {
+      if (produto.valor_unitario != null) {
+        bloco.find('.valor-por-quilo').val(formatarNumero(Number(produto.valor_unitario)));
+      }
+      if (produto.peso != null) {
+        bloco.find('.peso').val(formatarNumero(Number(produto.peso), true));
+      }
+      if (produto.tipo_peso) {
+        bloco.find('.tipo-peso').val(produto.tipo_peso);
+      }
+    }
+
+    // Seleciona produto (se veio do pedido) e arma toda lógica
+    if (produto.nome_produto) {
+      selProd.val(produto.nome_produto);
+    }
+    selProd.trigger('change'); // seta valor/kg, códigos, fiscal, subtotal, total
+
+    // Se já veio Personalizar no carregamento, completar campos
+    if (produto.codigo_fiscal === 'Personalizar') {
+      const inputComNota = bloco.find('.valor-com-nota');
+      const inputSemNota = bloco.find('.valor-sem-nota');
+      if (produto.valor_com_nota != null) {
+        inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
+      }
+      const vKg = getValorKg();
+      inputSemNota.val(formatarNumero(Math.max(0, vKg - parseMask(inputComNota.val()))));
+      ligarPersonalizar();
+    }
+
     updateAddButton();
     updateRemoveButtons();
   }
 
+  // Observações (mesma lógica consolidada)
   function renderizarObservacoes() {
     const containerComum = document.getElementById('observacoes-comuns');
     const containerReset = document.getElementById('resets-confirmados');
     containerComum.innerHTML = '';
     containerReset.innerHTML = '';
     const agrupadas = [];
+
     observacoes.forEach((obs, index) => {
       const key = `${obs.texto}__${obs.usuario_nome || 'Sistema'}__${obs.data_criacao || ''}`;
       const existente = agrupadas.find(item => item.chave === key);
@@ -287,6 +306,7 @@ $(function () {
         });
       }
     });
+
     agrupadas.forEach(item => {
       const setores = item.setores.join(', ');
       const primeiroIndex = item.indices[0];
@@ -295,8 +315,9 @@ $(function () {
       const usuario = item.usuario;
       const data = item.data ? new Date(item.data).toLocaleString('pt-BR') : '';
       const div = document.createElement('div');
-      div.className = 'obs-item';
+
       if (ehReset) {
+        div.className = 'obs-item';
         const match = item.texto.match(/\[RESET\] Etapa anterior: (.+?)\. Nova etapa: (.+?)\. Justificativa: (.+)/);
         let etapaAntes = '';
         let etapaDepois = '';
@@ -326,6 +347,7 @@ $(function () {
         `;
         containerReset.appendChild(div);
       } else {
+        div.className = 'obs-item';
         div.innerHTML = `
           <div class="obs-normal">
             <strong>🔸 ${setores}:</strong><br>
@@ -414,78 +436,7 @@ $(function () {
     editandoIndex = null;
   });
 
-  $("#prazo-pagamento").select2({
-    width: '100%',
-    placeholder: 'Selecione os prazos',
-    allowClear: true,
-    multiple: true
-  });
-
-  // Carrega os dados do pedido existente
-  if (pedidoId) {
-    fetch(`/api/pedidos/${pedidoId}`)
-      .then(res => res.json())
-      .then(pedido => {
-        pedidoAtual = pedido;
-        $("#empresa").val(pedido.empresa || '');
-        $("#cliente_nome").val(pedido.cliente_nome || '');
-        $("#data-coleta").val(pedido.data_coleta?.substring(0, 10) || '');
-        $("#pedido-para").val(pedido.tipo || '');
-        produtosAutorizados = pedido.produtos_autorizados || [];
-        materiais = pedido.materiais || [];
-        const prazosSelecionadosTexto = Array.isArray(pedido.prazo_pagamento)
-          ? pedido.prazo_pagamento
-          : typeof pedido.prazo_pagamento === 'string'
-          ? [pedido.prazo_pagamento]
-          : [];
-        const todosTextos = Array.isArray(pedido.prazos_permitidos)
-          ? pedido.prazos_permitidos
-          : [];
-        $("#prazo-pagamento").empty();
-        todosTextos.forEach(texto => {
-          const opt = $("<option>").val(texto).text(texto);
-          if (prazosSelecionadosTexto.includes(texto)) {
-            opt.prop('selected', true);
-          }
-          $("#prazo-pagamento").append(opt);
-        });
-        $("#prazo-pagamento").trigger('change');
-        const textoNormalizado = prazosSelecionadosTexto
-          .join(' ')
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase();
-        if (textoNormalizado.includes('avista') || textoNormalizado.includes('a vista')) {
-          $("#condicao-a-vista").show();
-          $("#condicao_pagamento_a_vista").val(pedido.condicao_pagamento_avista || '').prop('required', true);
-        } else {
-          $("#condicao-a-vista").hide();
-          $("#condicao_pagamento_a_vista").val('').prop('required', false);
-        }
-        materiais.forEach(prod => {
-          adicionarProduto({
-            nome_produto: prod.nome_produto,
-            valor_unitario: prod.valor_unitario,
-            peso: prod.peso,
-            tipo_peso: prod.tipo_peso,
-            codigo_fiscal: prod.codigo_fiscal,
-            valor_com_nota: prod.valor_com_nota
-          });
-        });
-        if (pedido.observacoes) {
-          observacoes = pedido.observacoes.map(obs => ({
-            setor: obs.setor,
-            texto: obs.texto_observacao || obs.texto,
-            usuario_nome: obs.usuario_nome || 'Sistema',
-            data_criacao: obs.data_criacao || ''
-          }));
-          renderizarObservacoes();
-        }
-        atualizarTotal();
-      });
-  }
-
-  // Implementação do botão de resetar tarefa (mantida sem alterações)
+  // Abrir modal de resetar tarefa
   $("#btn-resetar-tarefa").on('click', function () {
     const mapaStatus = {
       'Aguardando Início da Coleta': 'Portaria',
@@ -496,7 +447,7 @@ $(function () {
       'Aguardando Emissão de NF': 'Emissão de NF'
     };
     const fluxoSetores = ['Portaria', 'Carga e Descarga', 'Conferência de Peso', 'Financeiro', 'Emissão de NF'];
-    const etapaAtual = mapaStatus[pedidoAtual.status] || '';
+    const etapaAtual = mapaStatus[pedidoAtual?.status] || '';
     $("#nome-etapa-atual").text(etapaAtual);
     const indexAtual = fluxoSetores.indexOf(etapaAtual);
     $("#setor-resetar option").each(function () {
@@ -516,26 +467,20 @@ $(function () {
   $("#btn-confirmar-reset").on('click', function () {
     const setor = $("#setor-resetar").val();
     const motivo = $("#motivo-reset").val().trim();
-    if (!setor) {
-      alert('Selecione um setor para resetar a tarefa.');
-      return;
-    }
-    if (!motivo) {
-      alert('Explique o motivo da correção.');
-      return;
-    }
-    if (!confirm(`Tem certeza que deseja resetar esta tarefa para o setor ${setor}? Esta ação é irreversível.`)) {
-      return;
-    }
+    if (!setor) return alert('Selecione um setor para resetar a tarefa.');
+    if (!motivo) return alert('Explique o motivo da correção.');
+    if (!confirm(`Tem certeza que deseja resetar esta tarefa para o setor ${setor}? Esta ação é irreversível.`)) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pedidoId = urlParams.get("id");
+
     fetch(`/api/pedidos/${pedidoId}/resetar-tarefa`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ setor, motivo })
     })
       .then(res => res.json())
-      .then(data => {
+      .then(() => {
         alert('Tarefa resetada com sucesso!');
         location.reload();
       })
@@ -544,74 +489,185 @@ $(function () {
         alert('Erro ao resetar tarefa.');
       });
   });
+
+  // Carregamento do pedido
+  if (pedidoId) {
+    fetch(`/api/pedidos/${pedidoId}`)
+      .then(res => res.json())
+      .then(pedido => {
+        pedidoAtual = pedido;
+
+        // Cabeçalho
+        $("#empresa").val(pedido.empresa || '');
+        $("#cliente_nome").val(pedido.cliente || pedido.cliente_nome || '');
+        $("#data-coleta").val((pedido.data_coleta || '').substring(0, 10));
+        $("#pedido-para").val(pedido.tipo || '');
+
+        // Produtos autorizados do cliente (nome_produto, valor_unitario, codigo_fiscal)
+        produtosAutorizados = Array.isArray(pedido.produtos_autorizados) ? pedido.produtos_autorizados : [];
+
+        // Itens do pedido (materiais)
+        materiais = Array.isArray(pedido.materiais) ? pedido.materiais : [];
+
+        // Prazos (permitidos + selecionados)
+        const prazosSelecionados = Array.isArray(pedido.prazo_pagamento)
+          ? pedido.prazo_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
+          : Array.isArray(pedido.prazos_pagamento)
+            ? pedido.prazos_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
+            : [];
+
+        const prazosPermitidosArr = Array.isArray(pedido.prazos_permitidos) ? pedido.prazos_permitidos : [];
+        $("#prazo-pagamento").empty();
+        prazosPermitidosArr.forEach(texto => {
+          const opt = $("<option>").val(texto).text(texto);
+          if (prazosSelecionados.includes(texto)) opt.prop('selected', true);
+          $("#prazo-pagamento").append(opt);
+        });
+        $("#prazo-pagamento").trigger('change');
+
+        const textoNorm = prazosSelecionados
+          .join(' ')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+
+        if (textoNorm.includes('avista') || textoNorm.includes('a vista')) {
+          $("#condicao-a-vista").show();
+          $("#condicao_pagamento_a_vista").val(pedido.condicao_pagamento_avista || '').prop('required', true);
+        } else {
+          $("#condicao-a-vista").hide();
+          $("#condicao_pagamento_a_vista").val('').prop('required', false);
+        }
+
+        // Renderizar itens (pré-preenchidos)
+        if (materiais.length) {
+          materiais.forEach(prod => {
+            adicionarProduto({
+              nome_produto: prod.nome_produto,
+              valor_unitario: prod.valor_unitario,
+              peso: prod.peso,
+              tipo_peso: prod.tipo_peso,
+              codigo_fiscal: prod.codigo_fiscal,
+              valor_com_nota: prod.valor_com_nota
+            });
+          });
+        } else {
+          // Sem itens? Cria um bloco vazio
+          adicionarProduto();
+        }
+
+        // Observações
+        if (pedido.observacoes) {
+          observacoes = pedido.observacoes.map(obs => ({
+            setor: obs.setor,
+            texto: obs.texto_observacao || obs.texto,
+            usuario_nome: obs.usuario_nome || 'Sistema',
+            data_criacao: obs.data_criacao || ''
+          }));
+          renderizarObservacoes();
+        }
+
+        atualizarTotal();
+        updateAddButton();
+        updateRemoveButtons();
+      })
+      .catch(err => {
+        console.error('Erro ao carregar pedido', err);
+        alert('Erro ao carregar o pedido.');
+      });
+  }
+
+  // Quando prazos mudam, mostra/oculta condição à vista
+  $("#prazo-pagamento").on('change', function () {
+    const textos = ($(this).val() || []).join(' ').toLowerCase();
+    const temAvista = textos.includes('à vista') || textos.includes('a vista');
+    $("#condicao-a-vista").toggle(temAvista);
+    $("#condicao_pagamento_a_vista").prop('required', temAvista);
+  });
+
+  // Adicionar novo produto
+  $('#adicionar-produto').on('click', function () {
+    adicionarProduto();
+  });
+
+  // Ajuste visual de margem quando select2 abre/fecha (setor observação)
   $('#setor-observacao').on('select2:open', function () {
     $("#texto-observacao").css('margin-top', '150px');
   });
   $('#setor-observacao').on('select2:close', function () {
     $("#texto-observacao").css('margin-top', '0');
   });
-  // Clique para adicionar um novo produto (sem duplicar handlers)
-  $('#adicionar-produto').on('click', function () {
-    adicionarProduto();
-  });
 });
 
-// Envio do formulário de edição
-const formulario = document.querySelector('#form-editar-pedido');
-formulario.addEventListener('submit', async (e) => {
+// Envio do formulário (PUT /api/pedidos/:id)
+document.querySelector('#form-editar-pedido').addEventListener('submit', async (e) => {
   e.preventDefault();
   const urlParams = new URLSearchParams(window.location.search);
   const pedidoId = urlParams.get('id');
   if (!pedidoId) return alert('ID do pedido não encontrado.');
+
   const cliente_id = pedidoAtual?.cliente_id || '';
   const empresa = document.querySelector('#empresa')?.value || '';
   const tipo_pedido = document.querySelector('#pedido-para')?.value || '';
   const data_prevista = document.querySelector('#data-coleta')?.value || '';
-  const tipo_peso = $(".produto-bloco").length ? $(".produto-bloco").first().find('.tipo-peso').val() || '' : '';
+
+  // tipo_peso global (compat com seu UPDATE)
+  const tipo_peso_global = $(".produto-bloco").length ? $(".produto-bloco").first().find('.tipo-peso').val() || '' : '';
+
+  // Itens
   const itens = [...document.querySelectorAll('.produto-bloco')].map((bloco) => {
     const nome_produto = bloco.querySelector('.select-produto')?.value || '';
-    const valor_unitario = parseFloat(parseMask(bloco.querySelector('.valor-por-quilo')?.value)) || 0;
-    const peso = parseFloat(parseMask(bloco.querySelector('.peso')?.value)) || 0;
+    const valor_unitario = parseFloat(parseMask(bloco.querySelector('.valor-por-quilo')?.value)) || 0; // R$/kg
+    const peso = parseFloat(parseMask(bloco.querySelector('.peso')?.value)) || 0; // kg
     const tipo_peso = bloco.querySelector('.tipo-peso')?.value || '';
     const codigo_fiscal = bloco.querySelector('.select-codigo')?.value || '';
-    const valor_com_nota = parseFloat(parseMask(bloco.querySelector('.valor-com-nota')?.value)) || null;
-    const valor_sem_nota = parseFloat(parseMask(bloco.querySelector('.valor-sem-nota')?.value)) || null;
+    const valor_com_nota = bloco.querySelector('.valor-com-nota') ? parseFloat(parseMask(bloco.querySelector('.valor-com-nota').value)) || null : null;
+    const valor_sem_nota = bloco.querySelector('.valor-sem-nota') ? parseFloat(parseMask(bloco.querySelector('.valor-sem-nota').value)) || null : null;
+
     return {
       nome_produto,
       valor_unitario,
       peso,
       tipo_peso,
+      unidade: '', // campo existe no banco; mantemos vazio no front
       codigo_fiscal,
       valor_com_nota,
       valor_sem_nota
     };
   });
+
+  // Prazos
   const prazosSelecionados = $('#prazo-pagamento').val() || [];
   const prazos = prazosSelecionados.map((descricao) => {
     let dias = 0;
-    if (descricao.toLowerCase().includes('à vista') || descricao.toLowerCase().includes('a vista')) {
+    const lower = (descricao || '').toLowerCase();
+    if (lower.includes('à vista') || lower.includes('a vista')) {
       dias = 0;
     } else {
-      const match = descricao.match(/\d+/);
+      const match = (descricao || '').match(/\d+/);
       dias = match ? parseInt(match[0], 10) : 0;
     }
     return { descricao, dias };
   });
+
+  // Observações payload
   const observacoesPayload = observacoes.map(obs => ({
     setor: obs.setor,
     texto: obs.texto_observacao || obs.texto || ''
   }));
+
   const payload = {
     cliente_id,
     empresa,
     tipo: tipo_pedido,
-    data_coleta: document.getElementById('data-coleta')?.value || null,
-    tipo_peso,
+    data_coleta: data_prevista || null,
+    tipo_peso: tipo_peso_global,
     itens,
     prazos,
     observacoes: observacoesPayload,
     condicao_pagamento_a_vista: document.querySelector('#condicao_pagamento_a_vista')?.value || ''
   };
+
   try {
     const resposta = await fetch(`/api/pedidos/${pedidoId}`, {
       method: 'PUT',
