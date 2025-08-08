@@ -1,4 +1,4 @@
-// editar-venda.js (com prazos: pré-preenchidos e edição só com autorizados)
+// editar-venda.js — com prazos sem parênteses e "A vista" pré-selecionado
 
 let pedidoAtual = null;
 let produtosAutorizados = [];
@@ -6,7 +6,9 @@ let observacoes = [];
 let materiais = [];
 let editandoIndex = null;
 
-// >>> novo: prazos que aparecem apenas para informação (não-autorizados)
+// mapeia rótulo -> dias (usado para converter no PUT)
+let mapaPrazoLabelParaDias = new Map();
+// prazos que estavam selecionados mas não são mais autorizados (mantidos no PUT)
 let prazosSomenteExibicao = [];
 
 function parseMask(str) {
@@ -23,15 +25,8 @@ function formatarNumero(valor, inteiro = false) {
   partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return inteiro ? partes[0] : partes.join(",");
 }
-
-// ---------- helpers de fallback/normalização ----------
 function normalizeTxt(s) {
-  return (s || "")
-    .toString()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  return (s || "").toString().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 function trySetSelectByExact($sel, value) {
   if (!value) return false;
@@ -168,7 +163,6 @@ $(function () {
     function ligarPersonalizar() {
       const inputComNota = bloco.find('.valor-com-nota');
       const inputSemNota = bloco.find('.valor-sem-nota');
-
       function reformatarComNota() {
         let raw = inputComNota.val().replace(/\D/g, '');
         raw = raw.replace(/^0+/, '');
@@ -303,14 +297,8 @@ $(function () {
       if (ehReset) {
         div.className = 'obs-item';
         const match = item.texto.match(/\[RESET\] Etapa anterior: (.+?)\. Nova etapa: (.+?)\. Justificativa: (.+)/);
-        let etapaAntes = '';
-        let etapaDepois = '';
-        let justificativa = textoLimpo;
-        if (match) {
-          etapaAntes = match[1];
-          etapaDepois = match[2];
-          justificativa = match[3];
-        }
+        let etapaAntes = '', etapaDepois = '', justificativa = textoLimpo;
+        if (match) { etapaAntes = match[1]; etapaDepois = match[2]; justificativa = match[3]; }
         div.innerHTML = `
           <div class="obs-resetada">
             <div class="obs-reset-header">
@@ -320,12 +308,7 @@ $(function () {
             <div class="texto-reset">
               <p>${justificativa}</p>
               <span class="usuario-reset">Usuário: ${usuario}</span>
-              ${etapaAntes && etapaDepois ? `
-                <div class="usuario-reset" style="margin-top: 5px;">
-                  Estava na etapa → ${etapaAntes}<br>
-                  Retornado para → ${etapaDepois}
-                </div>
-              ` : ''}
+              ${etapaAntes && etapaDepois ? `<div class="usuario-reset" style="margin-top:5px;">Estava na etapa → ${etapaAntes}<br>Retornado para → ${etapaDepois}</div>` : ''}
             </div>
           </div>
         `;
@@ -457,7 +440,6 @@ $(function () {
       .then(pedido => {
         pedidoAtual = pedido;
 
-        // Empresa
         const $empresa = $("#empresa");
         const okEmpresa = ensureSelect($empresa, pedido.empresa, "empresa");
         if (!okEmpresa && pedido.empresa) {
@@ -469,7 +451,6 @@ $(function () {
         $("#cliente_nome").val(pedido.cliente || pedido.cliente_nome || '');
         $("#data-coleta").val((pedido.data_coleta || '').substring(0, 10));
 
-        // Tipo Retirar/Entregar
         const $tipo = $("#pedido-para");
         const okTipo = ensureSelect($tipo, pedido.tipo, "tipo_pedido");
         if (!okTipo && pedido.tipo) {
@@ -478,73 +459,83 @@ $(function () {
           if (t.includes('entreg')) $tipo.val("Entregar");
         }
 
-        // Produtos autorizados / itens
         produtosAutorizados = Array.isArray(pedido.produtos_autorizados) ? pedido.produtos_autorizados : [];
         materiais = Array.isArray(pedido.materiais) ? pedido.materiais : [];
 
-        // ----------- PRAZOS -----------
-        // selecionados no pedido (texto "Descrição (X dias)")
-        const prazosSelecionados = Array.isArray(pedido.prazo_pagamento)
-          ? pedido.prazo_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
-          : Array.isArray(pedido.prazos_pagamento)
-            ? pedido.prazos_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
+        // ------ PRAZOS: exibir sem parênteses e pré-selecionar ------
+        // Selecionados no pedido (como objetos {descricao, dias} se disponível)
+        const selecionadosObjs = Array.isArray(pedido.prazos_pagamento)
+          ? pedido.prazos_pagamento
+          : Array.isArray(pedido.prazo_pagamento)
+            ? pedido.prazo_pagamento
             : [];
 
-        // autorizados para o cliente
+        // Transforma em rótulos (sem parênteses)
+        const labelsSelecionados = selecionadosObjs.map(p => {
+          const dias = Number(p.dias ?? 0);
+          const desc = (p.descricao || '').trim();
+          if (dias === 0 || normalizeTxt(desc).includes('vista')) return 'A vista';
+          // se o backend usa "7 Dias" como descricao, mantemos
+          return desc || `${dias} Dias`;
+        });
+
+        // Prazos autorizados (backend entrega string "Desc (X dias)")
         const prazosPermitidosArr = Array.isArray(pedido.prazos_permitidos) ? pedido.prazos_permitidos : [];
 
-        // limpa e reconstrói opções
-        prazosSomenteExibicao = [];
+        // monta mapping label->dias e opções do select SEM parênteses
+        mapaPrazoLabelParaDias = new Map();
         $("#prazo-pagamento").empty();
 
-        if (prazosPermitidosArr.length === 0) {
-          const avisoId = "aviso-sem-prazos";
-          $("#" + avisoId).remove();
-          const $aviso = $(`<small id="${avisoId}" style="display:block;margin-top:6px;color:#a94442">Cliente sem prazos cadastrados.</small>`);
-          $("#prazo-pagamento").parent().append($aviso);
-          console.warn("[editar-venda] Cliente sem prazos_permitidos.");
-        } else {
-          // adiciona apenas opções autorizadas
-          prazosPermitidosArr.forEach(texto => {
-            const opt = $("<option>").val(texto).text(texto);
-            if (prazosSelecionados.includes(texto)) opt.prop('selected', true);
-            $("#prazo-pagamento").append(opt);
-          });
-        }
+        prazosPermitidosArr.forEach(txt => {
+          // extrai descricao e dias
+          const m = /(.*)\((\d+)\s*dias?\)/i.exec(txt);
+          let descricao = txt;
+          let dias = 0;
+          if (m) {
+            descricao = m[1].trim();
+            dias = parseInt(m[2], 10);
+          } else {
+            // fallback: tenta inferir
+            const m2 = /(\d+)/.exec(txt);
+            dias = m2 ? parseInt(m2[1], 10) : (normalizeTxt(txt).includes('vista') ? 0 : 0);
+            descricao = txt.replace(/\(.*\)/, '').trim();
+          }
+          const label = (dias === 0 || normalizeTxt(descricao).includes('vista')) ? 'A vista' : (descricao || `${dias} Dias`);
+          mapaPrazoLabelParaDias.set(label, dias);
 
-        // selecionados que NÃO estão mais autorizados → mostrar desabilitados
-        const naoPermitidosSelecionados = prazosSelecionados.filter(t => !prazosPermitidosArr.includes(t));
-        if (naoPermitidosSelecionados.length) {
-          prazosSomenteExibicao = naoPermitidosSelecionados.slice();
-          naoPermitidosSelecionados.forEach(texto => {
+          const opt = $("<option>").val(label).text(label);
+          if (labelsSelecionados.includes(label)) opt.prop('selected', true);
+          $("#prazo-pagamento").append(opt);
+        });
+
+        // Selecionados que não estão mais autorizados → manter selecionados e desabilitados (sem sufixo)
+        prazosSomenteExibicao = [];
+        const labelsAutorizados = Array.from(mapaPrazoLabelParaDias.keys());
+        const naoPermitidos = labelsSelecionados.filter(l => !labelsAutorizados.includes(l));
+        if (naoPermitidos.length) {
+          prazosSomenteExibicao = naoPermitidos.slice();
+          naoPermitidos.forEach(label => {
             $("#prazo-pagamento").append(
-              $(`<option disabled selected></option>`).val(texto).text(`${texto} (não autorizado)`)
+              $("<option disabled selected></option>").val(label).text(label)
             );
           });
+          // Aviso opcional, discreto
           const avisoId = "aviso-prazo-nao-aut";
           $("#" + avisoId).remove();
-          const $aviso = $(`<small id="${avisoId}" style="display:block;margin-top:6px;color:#8a6d3b">Alguns prazos usados neste pedido não estão mais autorizados. Eles serão mantidos ao salvar, a menos que você os substitua pelos prazos autorizados.</small>`);
+          const $aviso = $(`<small id="${avisoId}" style="display:block;margin-top:6px;color:#8a6d3b">Alguns prazos usados neste pedido não estão mais autorizados. Eles serão mantidos ao salvar, a menos que você os substitua.</small>`);
           $("#prazo-pagamento").parent().append($aviso);
         }
 
         $("#prazo-pagamento").trigger('change');
 
-        const textoNorm = prazosSelecionados
-          .join(' ')
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase();
+        // Mostra/oculta condição à vista com base na seleção inicial
+        const temAvistaInicial = labelsSelecionados.some(l => normalizeTxt(l).includes('vista'));
+        $("#condicao-a-vista").toggle(temAvistaInicial);
+        $("#condicao_pagamento_a_vista").prop('required', temAvistaInicial)
+          .val(pedido.condicao_pagamento_avista || '');
 
-        if (textoNorm.includes('avista') || textoNorm.includes('a vista')) {
-          $("#condicao-a-vista").show();
-          $("#condicao_pagamento_a_vista").val(pedido.condicao_pagamento_avista || '').prop('required', true);
-        } else {
-          $("#condicao-a-vista").hide();
-          $("#condicao_pagamento_a_vista").val('').prop('required', false);
-        }
-        // -------- fim prazos ---------
+        // ------ FIM PRAZOS ------
 
-        // Render itens
         if (materiais.length) {
           materiais.forEach(prod => {
             adicionarProduto({
@@ -560,7 +551,6 @@ $(function () {
           adicionarProduto();
         }
 
-        // Observações
         if (pedido.observacoes) {
           observacoes = pedido.observacoes.map(obs => ({
             setor: obs.setor,
@@ -581,10 +571,10 @@ $(function () {
       });
   }
 
-  // Condição à vista
+  // Condição à vista quando o usuário altera prazos
   $("#prazo-pagamento").on('change', function () {
-    const textos = ($(this).val() || []).join(' ').toLowerCase();
-    const temAvista = textos.includes('à vista') || textos.includes('a vista');
+    const labels = $(this).val() || [];
+    const temAvista = labels.some(l => normalizeTxt(l).includes('vista'));
     $("#condicao-a-vista").toggle(temAvista);
     $("#condicao_pagamento_a_vista").prop('required', temAvista);
   });
@@ -610,7 +600,6 @@ document.querySelector('#form-editar-pedido').addEventListener('submit', async (
   const empresa = document.querySelector('#empresa')?.value || '';
   const tipo_pedido = document.querySelector('#pedido-para')?.value || '';
   const data_prevista = document.querySelector('#data-coleta')?.value || '';
-
   const tipo_peso_global = $(".produto-bloco").length ? $(".produto-bloco").first().find('.tipo-peso').val() || '' : '';
 
   const itens = [...document.querySelectorAll('.produto-bloco')].map((bloco) => {
@@ -634,19 +623,16 @@ document.querySelector('#form-editar-pedido').addEventListener('submit', async (
     };
   });
 
-  // Prazos selecionáveis + legados (não-autorizados, apenas exibição)
-  const selecionadosPermitidos = $('#prazo-pagamento').val() || [];
-  const todosSelecionados = Array.from(new Set([...selecionadosPermitidos, ...prazosSomenteExibicao]));
+  // Prazos selecionados (labels) + legados
+  const labelsSelecionadosPermitidos = $('#prazo-pagamento').val() || [];
+  const todosLabels = Array.from(new Set([...labelsSelecionadosPermitidos, ...prazosSomenteExibicao]));
 
-  const prazos = todosSelecionados.map((descricao) => {
-    let dias = 0;
-    const lower = (descricao || '').toLowerCase();
-    if (lower.includes('à vista') || lower.includes('a vista')) {
-      dias = 0;
-    } else {
-      const match = (descricao || '').match(/\d+/);
-      dias = match ? parseInt(match[0], 10) : 0;
-    }
+  // Converte label -> {descricao, dias}
+  const prazos = todosLabels.map((label) => {
+    let dias = mapaPrazoLabelParaDias.has(label)
+      ? mapaPrazoLabelParaDias.get(label)
+      : (normalizeTxt(label).includes('vista') ? 0 : (parseInt((label.match(/\d+/) || [0])[0], 10) || 0));
+    let descricao = (dias === 0) ? 'A vista' : label; // mantém o mesmo texto que você usa no novo pedido
     return { descricao, dias };
   });
 
