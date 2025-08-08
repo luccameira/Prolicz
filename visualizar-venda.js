@@ -68,59 +68,119 @@ function preencherInformacoesPrincipais(pedido) {
 /* =======================
    HISTÓRICO – os cartões
    ======================= */
-function preencherHistorico(pedido) {
-  const historico = Array.isArray(pedido.historico) ? pedido.historico : [];
-  const container = document.getElementById('historico-cards');
-  container.innerHTML = '';
+function preencherHistorico(historico = []) {
+  const c = document.getElementById('historico-cards');
+  c.innerHTML = '';
 
-  const eventos = [
-    'Pedido Criado',
-    'Entrada na Portaria',
-    'Coleta Iniciada',
-    'Peso Conferido',
-    'Cliente Liberado',
-    'Emissão de NF',
-    'Saída na Portaria'
-  ];
-
-  eventos.forEach(evento => {
-    const card = document.createElement('div');
-    card.className = 'card card-historico';
-
-    // título + (quando for portaria) o chip de setor
-    let tituloHtml = `<div class="card-titulo" onclick="this.parentNode.classList.toggle('aberto')">${evento}</div>`;
-
-    // conteúdo por evento
-    let conteudoHtml = '';
-
-    if (evento === 'Pedido Criado') {
-      conteudoHtml = gerarConteudoHistoricoCriacao();
-    } else if (evento === 'Coleta Iniciada') {
-      // ⚠️ copiar visual da Portaria
-      conteudoHtml = gerarCardColetaIniciadaPortariaLike(pedido);
-      // título com chip “Portaria”
-      tituloHtml = `
-        <div class="card-titulo" onclick="this.parentNode.classList.toggle('aberto')">
-          ${evento}
-          <span class="chip-setor">Portaria</span>
-        </div>
-      `;
-    } else {
-      const dados = historico.find(h =>
-        (h.titulo || '').toLowerCase().replace(/\s/g, '') === evento.toLowerCase().replace(/\s/g, '')
-      );
-      conteudoHtml = dados ? gerarConteudoHistoricoGenerico(dados) : '<em>Sem informações registradas.</em>';
-    }
-
-    card.innerHTML = `
-      ${tituloHtml}
-      <div class="card-conteudo">
-        ${conteudoHtml}
-      </div>
-    `;
-
-    container.appendChild(card);
+  // 1) Pedido criado – sempre aparece
+  renderCard(c, {
+    titulo: 'Pedido Criado',
+    html: gerarConteudoHistoricoCriacao(),
   });
+
+  // 2) Entrada na Portaria – só se existir no histórico
+  const entrada = historico.find(h => (h.titulo || '').toLowerCase().includes('entrada'));
+  if (entrada) {
+    renderCard(c, {
+      titulo: 'Entrada na Portaria',
+      html: gerarConteudoHistorico(entrada),
+    });
+  }
+
+  // 3) Coleta Iniciada – sempre que o pedido tiver os dados preenchidos
+  if (window.pedidoGlobal?.data_coleta_iniciada) {
+    renderCard(c, {
+      titulo: 'Coleta Iniciada',
+      html: renderColetaIniciadaPortaria(window.pedidoGlobal),
+      setor: 'Portaria',       // mostra o badge “Portaria”
+      destaque: 'verde'        // borda verde como na portaria
+    });
+  }
+
+  // 4) Peso Conferido – se existir
+  const conferencia = historico.find(h => (h.titulo || '').toLowerCase().includes('peso conferido'));
+  if (conferencia) {
+    renderCard(c, {
+      titulo: 'Peso Conferido',
+      html: gerarConteudoHistorico(conferencia),
+    });
+  }
+
+  // 5) Cliente Liberado / Financeiro – se existir
+  const liberado = historico.find(h => (h.titulo || '').toLowerCase().includes('cliente liberado'));
+  if (liberado) {
+    renderCard(c, {
+      titulo: 'Cliente Liberado',
+      html: gerarConteudoHistorico(liberado),
+    });
+  }
+
+  // 6) Emissão de NF – se existir
+  const nf = historico.find(h => (h.titulo || '').toLowerCase().includes('nota fiscal'));
+  if (nf) {
+    renderCard(c, {
+      titulo: 'Emissão de NF',
+      html: gerarConteudoHistorico(nf),
+    });
+  }
+
+  // 7) Saída na Portaria – se existir
+  const saida = historico.find(h => (h.titulo || '').toLowerCase().includes('saída'));
+  if (saida) {
+    renderCard(c, {
+      titulo: 'Saída na Portaria',
+      html: gerarConteudoHistorico(saida),
+      setor: 'Portaria'
+    });
+  }
+}
+
+// helper para padronizar os cards do histórico (com badge do setor e cor)
+function renderCard(container, { titulo, html, setor = '', destaque = '' }) {
+  const card = document.createElement('div');
+  card.className = 'card card-historico';
+  if (destaque === 'verde') card.classList.add('hist-portaria');
+
+  card.innerHTML = `
+    <div class="card-titulo">
+      <span>${titulo}</span>
+      ${setor ? `<span class="badge-setor">${setor}</span>` : ''}
+    </div>
+    <div class="card-conteudo">
+      ${html || '<em>Sem informações registradas.</em>'}
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+// copia visual do card da Portaria (somente leitura)
+function renderColetaIniciadaPortaria(pedido) {
+  const dt = formatarData(pedido.data_coleta_iniciada);
+  const motorista = pedido.nome_motorista || '—';
+  const placa = pedido.placa_veiculo || '—';
+
+  return `
+    <div class="portaria-card readonly">
+      <div class="linha-motorista">
+        <div class="campo">
+          <div class="rotulo">Data:</div>
+          <div class="valor">${dt}</div>
+        </div>
+      </div>
+      <div class="linha-motorista">
+        <div class="campo">
+          <div class="rotulo">Motorista:</div>
+          <div class="valor">${motorista}</div>
+        </div>
+      </div>
+      <div class="linha-motorista">
+        <div class="campo">
+          <div class="rotulo">Placa do Veículo:</div>
+          <div class="valor">${placa}</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /* =============================================================
