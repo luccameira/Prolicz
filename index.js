@@ -24,6 +24,7 @@ app.use('/api/clientes', withConnection('./routes/clientes'));
 app.use('/api/pedidos', withConnection('./routes/pedidos'));
 app.use('/api/produtos', withConnection('./routes/produtos'));
 app.use('/api/usuarios', withConnection('./routes/usuarios'));
+app.use('/api/tarefas-portaria', withConnection('./routes/portaria')); // ✅ rota da portaria
 app.use('/api/motoristas', require('./routes/motoristas')); // rota sem injeção
 app.use('/api/login', require('./routes/login'));
 
