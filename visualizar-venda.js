@@ -1,3 +1,4 @@
+// visualizar-venda.js
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const idPedido = urlParams.get('id');
@@ -9,24 +10,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!resposta.ok) throw new Error('Erro ao buscar dados do pedido.');
     const pedido = await resposta.json();
 
-    // deixa global pra usar no “Pedido Criado”
+    // Disponibiliza globalmente para o histórico
     window.pedidoGlobal = pedido;
 
     preencherCabecalho(pedido);
     preencherInformacoesPrincipais(pedido);
-    preencherHistorico(pedido);
+    preencherHistorico(pedido.historico);
   } catch (error) {
     console.error(error);
     alert('Erro ao carregar informações da venda.');
   }
 });
 
-/* =========================
-   CABEÇALHO (avatar + nomes)
-   ========================= */
+/* ========= CABEÇALHO & INFO PRINCIPAIS ========= */
 function preencherCabecalho(pedido) {
-  const clienteNome = (pedido.cliente || '—').trim();
-  const empresa = (pedido.empresa || '—').trim();
+  const clienteNome = (pedido.cliente || '').trim() || '—';
+  const empresa = (pedido.empresa || '').trim() || '—';
 
   const partes = clienteNome.split(/\s+/).filter(Boolean);
   const iniciais = partes.slice(0, 2).map(p => p[0].toUpperCase()).join('');
@@ -36,98 +35,125 @@ function preencherCabecalho(pedido) {
   document.getElementById('empresa-fornecedora').textContent = formatarEmpresa(empresa);
 }
 
-/* ===================================
-   INFORMAÇÕES PRINCIPAIS (cartões top)
-   =================================== */
 function preencherInformacoesPrincipais(pedido) {
   const produto = Array.isArray(pedido.materiais) ? pedido.materiais[0] : null;
 
-  document.getElementById('data-coleta').textContent = formatarDataBR(pedido.data_coleta);
+  document.getElementById('data-coleta').textContent = formatarData(pedido.data_coleta);
   document.getElementById('pedido-para').textContent = pedido.tipo || '—';
 
-  const prazosTexto = Array.isArray(pedido.prazo_pagamento) && pedido.prazo_pagamento.length
+  const prazosLegivel = Array.isArray(pedido.prazo_pagamento)
     ? pedido.prazo_pagamento.join(', ')
-    : '—';
-  document.getElementById('prazo-pagamento').textContent = prazosTexto;
-
-  if (String(pedido.condicao_pagamento_avista || '').toLowerCase() === 'à vista') {
-    document.getElementById('condicao-vista').style.display = 'block';
-  }
+    : (pedido.prazo_pagamento || '—');
+  document.getElementById('prazo-pagamento').textContent = prazosLegivel;
 
   document.getElementById('codigo-venda').textContent = produto?.codigo_fiscal || '—';
 
+  if (String(pedido.condicao_pagamento_avista || '').toLowerCase().includes('vista')) {
+    document.getElementById('condicao-vista').style.display = 'block';
+  }
+
   if (produto) {
     document.getElementById('produto-nome').textContent = produto.nome_produto || '—';
-    document.getElementById('produto-valor-quilo').textContent = formatarMoeda(produto.valor_unitario);
+    document.getElementById('produto-valor-quilo').textContent = formatarValor(produto.valor_unitario);
     document.getElementById('produto-peso').textContent = formatarNumero(produto.peso);
     document.getElementById('produto-tipo-peso').textContent = produto.tipo_peso || '—';
-    document.getElementById('produto-subtotal').textContent = formatarMoeda(produto.valor_total);
+    document.getElementById('produto-subtotal').textContent = formatarValor(produto.valor_total);
   }
 }
 
-/* =======================
-   HISTÓRICO – os cartões
-   ======================= */
-function preencherHistorico(historico = []) {
-  const c = document.getElementById('historico-cards');
-  c.innerHTML = '';
+/* ================== HISTÓRICO =================== */
+function normalizeHistorico(h) {
+  if (Array.isArray(h)) return h;
+  if (!h) return [];
+  if (typeof h === 'object') return Object.values(h);
+  return [];
+}
 
-  // 1) Pedido criado – sempre aparece
-  renderCard(c, {
+function preencherHistorico(h) {
+  const container = document.getElementById('historico-cards');
+  container.innerHTML = '';
+
+  const historico = normalizeHistorico(h);
+
+  // 1) Pedido Criado — sempre mostra
+  renderCard(container, {
     titulo: 'Pedido Criado',
-    html: gerarConteudoHistoricoCriacao(),
+    html: gerarConteudoHistoricoCriacao()
   });
 
-  // 2) Entrada na Portaria – só se existir no histórico
-  const entrada = historico.find(h => (h.titulo || '').toLowerCase().includes('entrada'));
+  // 2) Entrada na Portaria — quando existir
+  const entrada = historico.find(x =>
+    (x.titulo || '').toLowerCase().replace(/\s+/g, '').includes('entradanaportaria')
+  );
   if (entrada) {
-    renderCard(c, {
+    renderCard(container, {
       titulo: 'Entrada na Portaria',
       html: gerarConteudoHistorico(entrada),
+      setor: 'Portaria'
+    });
+  } else {
+    renderCard(container, {
+      titulo: 'Entrada na Portaria',
+      html: '<em>Sem informações registradas.</em>',
+      setor: 'Portaria'
     });
   }
 
-  // 3) Coleta Iniciada – sempre que o pedido tiver os dados preenchidos
+  // 3) Coleta Iniciada — cópia do card da Portaria (somente leitura)
   if (window.pedidoGlobal?.data_coleta_iniciada) {
-    renderCard(c, {
-      titulo: 'Coleta Iniciada',
+    renderCard(container, {
+      titulo: 'Coleta Iniciada Portaria',
       html: renderColetaIniciadaPortaria(window.pedidoGlobal),
-      setor: 'Portaria',       // mostra o badge “Portaria”
-      destaque: 'verde'        // borda verde como na portaria
+      setor: 'Portaria',
+      destaque: 'verde'
+    });
+  } else {
+    renderCard(container, {
+      titulo: 'Coleta Iniciada Portaria',
+      html: '<em>Sem informações registradas.</em>',
+      setor: 'Portaria'
     });
   }
 
-  // 4) Peso Conferido – se existir
-  const conferencia = historico.find(h => (h.titulo || '').toLowerCase().includes('peso conferido'));
-  if (conferencia) {
-    renderCard(c, {
-      titulo: 'Peso Conferido',
-      html: gerarConteudoHistorico(conferencia),
-    });
-  }
+  // 4) Peso Conferido
+  const pesoConf = historico.find(x =>
+    (x.titulo || '').toLowerCase().replace(/\s+/g, '').includes('pesoconferido')
+  );
+  renderCard(container, {
+    titulo: 'Peso Conferido',
+    html: pesoConf ? gerarConteudoHistorico(pesoConf) : '<em>Sem informações registradas.</em>'
+  });
 
-  // 5) Cliente Liberado / Financeiro – se existir
-  const liberado = historico.find(h => (h.titulo || '').toLowerCase().includes('cliente liberado'));
+  // 5) Cliente Liberado (Financeiro)
+  const liberado = historico.find(x =>
+    (x.titulo || '').toLowerCase().includes('cliente liberado')
+  );
   if (liberado) {
-    renderCard(c, {
+    renderCard(container, {
       titulo: 'Cliente Liberado',
       html: gerarConteudoHistorico(liberado),
+      setor: 'Financeiro'
     });
   }
 
-  // 6) Emissão de NF – se existir
-  const nf = historico.find(h => (h.titulo || '').toLowerCase().includes('nota fiscal'));
+  // 6) Emissão de NF
+  const nf = historico.find(x =>
+    (x.titulo || '').toLowerCase().includes('nota fiscal')
+  );
   if (nf) {
-    renderCard(c, {
+    renderCard(container, {
       titulo: 'Emissão de NF',
       html: gerarConteudoHistorico(nf),
+      setor: 'Emissão de NF'
     });
   }
 
-  // 7) Saída na Portaria – se existir
-  const saida = historico.find(h => (h.titulo || '').toLowerCase().includes('saída'));
+  // 7) Saída na Portaria
+  const saida = historico.find(x =>
+    (x.titulo || '').toLowerCase().includes('saída')
+  );
   if (saida) {
-    renderCard(c, {
+    renderCard(container, {
       titulo: 'Saída na Portaria',
       html: gerarConteudoHistorico(saida),
       setor: 'Portaria'
@@ -135,11 +161,11 @@ function preencherHistorico(historico = []) {
   }
 }
 
-// helper para padronizar os cards do histórico (com badge do setor e cor)
+// Componente base do card + badge do setor
 function renderCard(container, { titulo, html, setor = '', destaque = '' }) {
   const card = document.createElement('div');
   card.className = 'card card-historico';
-  if (destaque === 'verde') card.classList.add('hist-portaria');
+  if (destaque === 'verde') card.classList.add('hist-portaria'); // borda/realce opcional
 
   card.innerHTML = `
     <div class="card-titulo">
@@ -153,9 +179,9 @@ function renderCard(container, { titulo, html, setor = '', destaque = '' }) {
   container.appendChild(card);
 }
 
-// copia visual do card da Portaria (somente leitura)
+// Card de "Coleta Iniciada" idêntico ao da Portaria (somente leitura)
 function renderColetaIniciadaPortaria(pedido) {
-  const dt = formatarData(pedido.data_coleta_iniciada);
+  const dt = formatarDataHora(pedido.data_coleta_iniciada);
   const motorista = pedido.nome_motorista || '—';
   const placa = pedido.placa_veiculo || '—';
 
@@ -183,9 +209,7 @@ function renderColetaIniciadaPortaria(pedido) {
   `;
 }
 
-/* =============================================================
-   “Pedido Criado” – usa os campos do pedido e lista de materiais
-   ============================================================= */
+/* ======== CONTEÚDOS AUXILIARES ======== */
 function gerarConteudoHistoricoCriacao() {
   const pedido = window.pedidoGlobal;
   if (!pedido) return '<em>Sem informações registradas.</em>';
@@ -194,75 +218,21 @@ function gerarConteudoHistoricoCriacao() {
 
   return `
     <div class="grid-info-pedido">
-      <div><strong>Data:</strong> ${formatarDataBR(pedido.data_criacao)}</div>
+      <div><strong>Data:</strong> ${formatarData(pedido.data_criacao)}</div>
       <div><strong>Pedido Para:</strong> ${pedido.tipo || '—'}</div>
-      <div><strong>Prazo:</strong> ${
-        Array.isArray(pedido.prazo_pagamento) && pedido.prazo_pagamento.length
-          ? pedido.prazo_pagamento.join(', ')
-          : '—'
-      }</div>
-      <div><strong>Peso Previsto:</strong> ${
-        formatarNumero(produtos.reduce((acc, p) => acc + (Number(p.peso) || 0), 0))
-      }</div>
+      <div><strong>Prazo:</strong> ${Array.isArray(pedido.prazo_pagamento) ? pedido.prazo_pagamento.join(', ') : (pedido.prazo_pagamento || '—')}</div>
+      <div><strong>Peso Previsto:</strong> ${formatarNumero(produtos.reduce((acc, p) => acc + (p.peso || 0), 0))}</div>
     </div>
     ${produtos.length ? gerarTabelaProdutos(produtos) : ''}
-    ${pedido.observacoes?.length ? `
-      <div style="margin-top:10px">
-        <strong>Observações:</strong>
-        <ul style="margin:6px 0 0 18px;">
-          ${pedido.observacoes.map(o => `<li>${o.texto_observacao || o.texto || ''}</li>`).join('')}
-        </ul>
-      </div>` : ''
-    }
+    ${pedido.observacoes ? `<p><strong>Observações:</strong> ${pedido.observacoes}</p>` : ''}
   `;
 }
 
-/* ===================================================================================
-   “Coleta Iniciada” – **CÓPIA VISUAL DA PORTARIA** (subcard/bloco e linhas de dados)
-   =================================================================================== */
-function gerarCardColetaIniciadaPortariaLike(pedido) {
-  const data = pedido.data_coleta_iniciada || null;
-  const motorista = pedido.nome_motorista || '—';
-  const placa = pedido.placa_veiculo || '—';
+function gerarConteudoHistorico(dados) {
+  if (!dados || typeof dados !== 'object') return '<em>Sem informações registradas.</em>';
 
-  if (!data && motorista === '—' && placa === '—') {
-    return '<em>Sem informações registradas.</em>';
-  }
-
-  // Subcard/bloco no mesmo espírito do card da Portaria (somente leitura)
-  return `
-    <div class="subcard bloco-motorista bloco-motorista--readonly">
-      <h3><i class="fas fa-id-card"></i> Dados do Motorista</h3>
-
-      <div class="linha-motorista">
-        <div>
-          <label>Data</label>
-          <input type="text" value="${formatarDataHoraCurta(data)}" readonly>
-        </div>
-        <div></div>
-      </div>
-
-      <div class="linha-motorista">
-        <div>
-          <label>Motorista</label>
-          <input type="text" value="${motorista}" readonly>
-        </div>
-        <div>
-          <label>Placa do Veículo</label>
-          <input type="text" value="${placa}" readonly>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-/* ===========================================================
-   Genérico para outros eventos quando vier do array histórico
-   =========================================================== */
-function gerarConteudoHistoricoGenerico(dados) {
   const partes = [];
-
-  if (dados.data) partes.push(`<p><strong>Data:</strong> ${formatarDataBR(dados.data)}</p>`);
+  if (dados.data) partes.push(`<p><strong>Data:</strong> ${formatarDataHora(dados.data)}</p>`);
   if (dados.usuario) partes.push(`<p><strong>Usuário:</strong> ${dados.usuario}</p>`);
   if (dados.empresa) partes.push(`<p><strong>Empresa:</strong> ${formatarEmpresa(dados.empresa)}</p>`);
   if (dados.tipo_entrega) partes.push(`<p><strong>Pedido Para:</strong> ${dados.tipo_entrega}</p>`);
@@ -270,20 +240,18 @@ function gerarConteudoHistoricoGenerico(dados) {
   if (dados.peso_previsto) partes.push(`<p><strong>Peso Previsto:</strong> ${formatarNumero(dados.peso_previsto)}</p>`);
   if (dados.observacao) partes.push(`<p><strong>Observações:</strong> ${dados.observacao}</p>`);
 
-  return partes.length ? partes.join('') : '<em>Sem informações registradas.</em>';
+  if (!partes.length) return '<em>Sem informações registradas.</em>';
+  return partes.join('');
 }
 
-/* ===========================
-   Tabela de produtos (reuso)
-   =========================== */
 function gerarTabelaProdutos(lista) {
   const linhas = (lista || []).map(p => `
     <tr>
       <td>${p.nome_produto || p.nome || '—'}</td>
       <td>${formatarNumero(p.peso)}</td>
       <td>${p.tipo_peso || '—'}</td>
-      <td>${formatarMoeda(p.valor_unitario || p.valor_por_quilo)}</td>
-      <td>${formatarMoeda(p.valor_total || p.subtotal)}</td>
+      <td>${formatarValor(p.valor_unitario || p.valor_por_quilo)}</td>
+      <td>${formatarValor(p.valor_total || p.subtotal)}</td>
       <td>${p.codigo_fiscal || '—'}</td>
     </tr>
   `).join('');
@@ -306,49 +274,49 @@ function gerarTabelaProdutos(lista) {
   `;
 }
 
-/* ==========
-   Utilitários
-   ========== */
+/* =============== ABA =============== */
 function mostrarAba(qual) {
   document.querySelectorAll('.conteudo-aba').forEach(el => el.classList.remove('ativo'));
   document.querySelectorAll('.aba').forEach(el => el.classList.remove('ativa'));
-
   document.getElementById(`conteudo-${qual}`).classList.add('ativo');
   document.getElementById(`aba-${qual}`).classList.add('ativa');
 }
 
-function formatarDataBR(dataISO) {
-  if (!dataISO) return '—';
-  const d = new Date(dataISO);
-  if (isNaN(d)) return '—';
-  return d.toLocaleDateString('pt-BR');
+/* ============= FORMATADORES ============= */
+function formatarData(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '—';
+  return dt.toLocaleDateString('pt-BR');
 }
 
-function formatarDataHoraCurta(dataISO) {
-  if (!dataISO) return '—';
-  const d = new Date(dataISO);
-  if (isNaN(d)) return '—';
-  const data = d.toLocaleDateString('pt-BR');
-  const hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  return `${data} ${hora}`;
+function formatarDataHora(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '—';
+  const hh = String(dt.getHours()).padStart(2, '0');
+  const mm = String(dt.getMinutes()).padStart(2, '0');
+  return `${dt.toLocaleDateString('pt-BR')} ${hh}:${mm}`;
 }
 
-function formatarMoeda(v) {
-  const n = Number(v);
-  if (!isFinite(n)) return '—';
+function formatarValor(valor) {
+  if (valor === null || valor === undefined || valor === '') return '—';
+  const n = Number(valor);
+  if (isNaN(n)) return '—';
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function formatarNumero(n) {
-  const v = Number(n);
-  if (!isFinite(v)) return '—';
-  return v.toLocaleString('pt-BR');
+function formatarNumero(num) {
+  if (num === null || num === undefined || num === '') return '—';
+  const n = Number(num);
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('pt-BR');
 }
 
 function formatarEmpresa(nome) {
   if (!nome) return '—';
-  const low = nome.toLowerCase();
-  if (low === 'mellicz') return 'Mellicz Ambiental';
-  if (low === 'pronasa') return 'Pronasa';
+  const n = (nome + '').toLowerCase();
+  if (n === 'mellicz') return 'Mellicz Ambiental';
+  if (n === 'pronasa') return 'Pronasa';
   return nome.charAt(0).toUpperCase() + nome.slice(1);
 }
