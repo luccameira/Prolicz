@@ -263,7 +263,7 @@ console.log("🔎 Tarefa de saída encontrada para pedido", pedidoId, tarefaSaid
       </div>` : ''}
 
       <div style="margin-top: 28px;">
-        <button class="botao-confirmar-saida" onclick="confirmarSaida(${pedidoId}, this)">
+        <button class="botao-confirmar-saida estilizado" onclick="confirmarSaida(${pedidoId}, this)">
           <i class="fas fa-sign-out-alt"></i> Confirmar Saída do Cliente
         </button>
       </div>
