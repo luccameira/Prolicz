@@ -27,7 +27,6 @@ app.use('/api/usuarios', withConnection('./routes/usuarios'));
 app.use('/api/motoristas', require('./routes/motoristas')); // rota sem injeção
 app.use('/api/login', require('./routes/login'));
 
-
 // Redirecionamentos para páginas HTML
 app.get('/visualizar-venda', (req, res) => {
   res.sendFile(path.join(__dirname, 'visualizar-venda.html'));
