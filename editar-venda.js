@@ -1,15 +1,13 @@
-// editar-venda.js (corrigido com fallbacks/avisos)
-// - Pré-preenche tudo quando existir no backend
-// - Se valor de empresa/tipo não casar com as opções do select, tenta normalizar;
-//   se ainda assim não casar, deixa vazio e mostra console.warn
-// - Se cliente não tiver prazos permitidos, exibe aviso abaixo do select
-// - Ao adicionar item novo, aplica as mesmas regras da criação (valor/kg, subtotal, total, fiscal)
+// editar-venda.js (com prazos: pré-preenchidos e edição só com autorizados)
 
 let pedidoAtual = null;
-let produtosAutorizados = []; // [{nome_produto, valor_unitario, codigo_fiscal}]
+let produtosAutorizados = [];
 let observacoes = [];
-let materiais = []; // itens do pedido (para edição)
+let materiais = [];
 let editandoIndex = null;
+
+// >>> novo: prazos que aparecem apenas para informação (não-autorizados)
+let prazosSomenteExibicao = [];
 
 function parseMask(str) {
   if (typeof str === "number") return str;
@@ -17,7 +15,6 @@ function parseMask(str) {
   const limpo = str.toString().replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
   return parseFloat(limpo) || 0;
 }
-
 function formatarNumero(valor, inteiro = false) {
   if (isNaN(valor) || valor === null) valor = 0;
   const partes = inteiro
@@ -62,24 +59,16 @@ function warnSelectMismatch(nomeCampo, valor, $sel) {
   console.warn(`[editar-venda] Valor inesperado para ${nomeCampo}: "${valor}". Opções: ${opts}`);
 }
 function ensureSelect($sel, valor, nomeCampo) {
-  // tenta por value, depois por texto normalizado
   if (trySetSelectByExact($sel, valor)) return true;
   if (trySetSelectByText($sel, valor)) return true;
   if (valor) warnSelectMismatch(nomeCampo, valor, $sel);
-  // mantém vazio
   $sel.val("");
   return false;
 }
 
 $(function () {
-  // Data coleta
-  flatpickr("#data-coleta", {
-    locale: "pt",
-    dateFormat: "Y-m-d",
-    allowInput: true
-  });
+  flatpickr("#data-coleta", { locale: "pt", dateFormat: "Y-m-d", allowInput: true });
 
-  // Select2 prazos
   $("#prazo-pagamento").select2({
     width: '100%',
     placeholder: 'Selecione os prazos',
@@ -90,7 +79,6 @@ $(function () {
   const urlParams = new URLSearchParams(window.location.search);
   const pedidoId = urlParams.get("id");
 
-  // Totais e botões
   function atualizarTotal() {
     let tot = 0;
     $(".produto-bloco").each(function () {
@@ -109,7 +97,6 @@ $(function () {
     $("#adicionar-produto").prop("disabled", dispon.length === 0);
   }
 
-  // Bloco do item
   function adicionarProduto(produto = {}) {
     const usados = $(".produto-bloco").map((i, el) => $(el).find(".select-produto").val()).get();
     const nomesPermitidos = [...new Set(produtosAutorizados.map(p => p.nome_produto))];
@@ -125,7 +112,6 @@ $(function () {
     });
     bloco.append(btnRemove);
 
-    // Select de produto
     const selProd = $('<select class="select-produto" required><option value="">Produto</option></select>');
     disponiveis.forEach(nome => {
       const p = produtosAutorizados.find(x => x.nome_produto === nome);
@@ -148,7 +134,6 @@ $(function () {
     `);
     bloco.append('<div class="form-group"><label>Subtotal</label><input readonly class="subtotal input-nao-editavel"></div>');
 
-    // Código fiscal
     const selCodigo = $('<select class="select-codigo" required><option value="">Selecione</option></select>');
     bloco.append('<div class="form-group"><label>Código</label></div>').children().last().append(selCodigo);
 
@@ -162,7 +147,6 @@ $(function () {
 
     $("#produtos").append(bloco);
 
-    // Helpers locais
     const getValorKg = () => parseMask(bloco.find('.valor-por-quilo').val());
     const getPeso = () => parseMask(bloco.find('.peso').val());
     const formatMoney = (n) => 'R$ ' + formatarNumero(n || 0);
@@ -209,7 +193,6 @@ $(function () {
       });
     }
 
-    // Eventos
     selProd.on('change', function () {
       const nome = $(this).val();
       if (!nome) {
@@ -219,11 +202,10 @@ $(function () {
         atualizarTotal();
         return;
       }
-      // Busca nos itens do pedido (materiais) e depois nos autorizados
       let p = (materiais || []).find(x => x.nome_produto === nome);
       if (!p) p = produtosAutorizados.find(x => x.nome_produto === nome);
 
-      const valorQuilo = Number(p?.valor_unitario || 0); // R$/kg
+      const valorQuilo = Number(p?.valor_unitario || 0);
       bloco.find('.valor-por-quilo').val(formatarNumero(valorQuilo));
 
       montarCodigosFiscais(produto.codigo_fiscal);
@@ -232,11 +214,8 @@ $(function () {
         divPersonalizado.show();
         const inputComNota = bloco.find('.valor-com-nota');
         const inputSemNota = bloco.find('.valor-sem-nota');
-        if (produto && produto.valor_com_nota != null) {
-          inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
-        } else {
-          inputComNota.val('');
-        }
+        if (produto && produto.valor_com_nota != null) inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
+        else inputComNota.val('');
         inputSemNota.val(formatarNumero(Math.max(0, valorQuilo - parseMask(inputComNota.val()))));
         ligarPersonalizar();
       } else {
@@ -264,18 +243,11 @@ $(function () {
       atualizarTotal();
     });
 
-    // Pré-preencher se veio do pedido
     const veioDoPedido = !!Object.keys(produto || {}).length;
     if (veioDoPedido) {
-      if (produto.valor_unitario != null) {
-        bloco.find('.valor-por-quilo').val(formatarNumero(Number(produto.valor_unitario)));
-      }
-      if (produto.peso != null) {
-        bloco.find('.peso').val(formatarNumero(Number(produto.peso), true));
-      }
-      if (produto.tipo_peso) {
-        bloco.find('.tipo-peso').val(produto.tipo_peso);
-      }
+      if (produto.valor_unitario != null) bloco.find('.valor-por-quilo').val(formatarNumero(Number(produto.valor_unitario)));
+      if (produto.peso != null) bloco.find('.peso').val(formatarNumero(Number(produto.peso), true));
+      if (produto.tipo_peso) bloco.find('.tipo-peso').val(produto.tipo_peso);
     }
 
     if (produto.nome_produto) selProd.val(produto.nome_produto);
@@ -284,9 +256,7 @@ $(function () {
     if (produto.codigo_fiscal === 'Personalizar') {
       const inputComNota = bloco.find('.valor-com-nota');
       const inputSemNota = bloco.find('.valor-sem-nota');
-      if (produto.valor_com_nota != null) {
-        inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
-      }
+      if (produto.valor_com_nota != null) inputComNota.val(formatarNumero(Number(produto.valor_com_nota)));
       const vKg = parseMask(bloco.find('.valor-por-quilo').val());
       inputSemNota.val(formatarNumero(Math.max(0, vKg - parseMask(inputComNota.val()))));
       ligarPersonalizar();
@@ -296,7 +266,6 @@ $(function () {
     updateRemoveButtons();
   }
 
-  // Observações (mantido)
   function renderizarObservacoes() {
     const containerComum = document.getElementById('observacoes-comuns');
     const containerReset = document.getElementById('resets-confirmados');
@@ -381,9 +350,7 @@ $(function () {
   window.editarObservacao = function (i, event) {
     if (event) event.preventDefault();
     const obs = observacoes[i];
-    const relacionados = observacoes
-      .map((o, idx) => ({ ...o, idx }))
-      .filter(o => o.texto === obs.texto);
+    const relacionados = observacoes.map((o, idx) => ({ ...o, idx })).filter(o => o.texto === obs.texto);
     const setores = relacionados.map(o => o.setor);
     $("#setor-observacao").val(setores).trigger('change');
     $("#texto-observacao").val(obs.texto).prop('disabled', false);
@@ -490,23 +457,19 @@ $(function () {
       .then(pedido => {
         pedidoAtual = pedido;
 
-        // Empresa (fallback por texto)
+        // Empresa
         const $empresa = $("#empresa");
         const okEmpresa = ensureSelect($empresa, pedido.empresa, "empresa");
         if (!okEmpresa && pedido.empresa) {
-          // Tenta heurísticas simples
           const empN = normalizeTxt(pedido.empresa);
           if (empN.includes('mellicz')) $empresa.val("Mellicz Ambiental");
           if (empN.includes('pronasa')) $empresa.val("Pronasa");
         }
 
-        // Cliente (somente leitura visual)
         $("#cliente_nome").val(pedido.cliente || pedido.cliente_nome || '');
-
-        // Data
         $("#data-coleta").val((pedido.data_coleta || '').substring(0, 10));
 
-        // Tipo (Retirar/Entregar) com fallback por texto
+        // Tipo Retirar/Entregar
         const $tipo = $("#pedido-para");
         const okTipo = ensureSelect($tipo, pedido.tipo, "tipo_pedido");
         if (!okTipo && pedido.tipo) {
@@ -515,33 +478,55 @@ $(function () {
           if (t.includes('entreg')) $tipo.val("Entregar");
         }
 
-        // Produtos autorizados e itens
+        // Produtos autorizados / itens
         produtosAutorizados = Array.isArray(pedido.produtos_autorizados) ? pedido.produtos_autorizados : [];
         materiais = Array.isArray(pedido.materiais) ? pedido.materiais : [];
 
-        // Prazos
+        // ----------- PRAZOS -----------
+        // selecionados no pedido (texto "Descrição (X dias)")
         const prazosSelecionados = Array.isArray(pedido.prazo_pagamento)
           ? pedido.prazo_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
           : Array.isArray(pedido.prazos_pagamento)
             ? pedido.prazos_pagamento.map(p => `${p.descricao} (${p.dias} dias)`)
             : [];
 
+        // autorizados para o cliente
         const prazosPermitidosArr = Array.isArray(pedido.prazos_permitidos) ? pedido.prazos_permitidos : [];
+
+        // limpa e reconstrói opções
+        prazosSomenteExibicao = [];
         $("#prazo-pagamento").empty();
+
         if (prazosPermitidosArr.length === 0) {
-          // Sem prazos cadastrados → mostra aviso discreto
           const avisoId = "aviso-sem-prazos";
           $("#" + avisoId).remove();
           const $aviso = $(`<small id="${avisoId}" style="display:block;margin-top:6px;color:#a94442">Cliente sem prazos cadastrados.</small>`);
           $("#prazo-pagamento").parent().append($aviso);
           console.warn("[editar-venda] Cliente sem prazos_permitidos.");
         } else {
+          // adiciona apenas opções autorizadas
           prazosPermitidosArr.forEach(texto => {
             const opt = $("<option>").val(texto).text(texto);
             if (prazosSelecionados.includes(texto)) opt.prop('selected', true);
             $("#prazo-pagamento").append(opt);
           });
         }
+
+        // selecionados que NÃO estão mais autorizados → mostrar desabilitados
+        const naoPermitidosSelecionados = prazosSelecionados.filter(t => !prazosPermitidosArr.includes(t));
+        if (naoPermitidosSelecionados.length) {
+          prazosSomenteExibicao = naoPermitidosSelecionados.slice();
+          naoPermitidosSelecionados.forEach(texto => {
+            $("#prazo-pagamento").append(
+              $(`<option disabled selected></option>`).val(texto).text(`${texto} (não autorizado)`)
+            );
+          });
+          const avisoId = "aviso-prazo-nao-aut";
+          $("#" + avisoId).remove();
+          const $aviso = $(`<small id="${avisoId}" style="display:block;margin-top:6px;color:#8a6d3b">Alguns prazos usados neste pedido não estão mais autorizados. Eles serão mantidos ao salvar, a menos que você os substitua pelos prazos autorizados.</small>`);
+          $("#prazo-pagamento").parent().append($aviso);
+        }
+
         $("#prazo-pagamento").trigger('change');
 
         const textoNorm = prazosSelecionados
@@ -557,6 +542,7 @@ $(function () {
           $("#condicao-a-vista").hide();
           $("#condicao_pagamento_a_vista").val('').prop('required', false);
         }
+        // -------- fim prazos ---------
 
         // Render itens
         if (materiais.length) {
@@ -595,7 +581,7 @@ $(function () {
       });
   }
 
-  // Prazos → cond. à vista
+  // Condição à vista
   $("#prazo-pagamento").on('change', function () {
     const textos = ($(this).val() || []).join(' ').toLowerCase();
     const temAvista = textos.includes('à vista') || textos.includes('a vista');
@@ -603,12 +589,8 @@ $(function () {
     $("#condicao_pagamento_a_vista").prop('required', temAvista);
   });
 
-  // Adicionar novo produto
-  $('#adicionar-produto').on('click', function () {
-    adicionarProduto();
-  });
+  $('#adicionar-produto').on('click', function () { adicionarProduto(); });
 
-  // Ajuste visual quando select2 abre/fecha
   $('#setor-observacao').on('select2:open', function () {
     $("#texto-observacao").css('margin-top', '150px');
   });
@@ -652,8 +634,11 @@ document.querySelector('#form-editar-pedido').addEventListener('submit', async (
     };
   });
 
-  const prazosSelecionados = $('#prazo-pagamento').val() || [];
-  const prazos = prazosSelecionados.map((descricao) => {
+  // Prazos selecionáveis + legados (não-autorizados, apenas exibição)
+  const selecionadosPermitidos = $('#prazo-pagamento').val() || [];
+  const todosSelecionados = Array.from(new Set([...selecionadosPermitidos, ...prazosSomenteExibicao]));
+
+  const prazos = todosSelecionados.map((descricao) => {
     let dias = 0;
     const lower = (descricao || '').toLowerCase();
     if (lower.includes('à vista') || lower.includes('a vista')) {
