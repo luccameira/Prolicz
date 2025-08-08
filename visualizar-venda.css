@@ -199,3 +199,56 @@ h1 {
   border-radius: 6px;
   font-size: 15px;
 }
+
+/* Badge do setor (Portaria) para copiar o “look” do card original */
+.card-setor .card-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badge-setor {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e8f5e9;   /* fundo leve */
+  color: #2e7d32;        /* verde */
+  border: 1px solid #c8e6c9;
+}
+
+/* Diferenciar a borda do card de Portaria */
+.card-historico.portaria {
+  border-left-color: #2e7d32; /* verde */
+}
+
+/* Bloco “Dados do Motorista” (read-only) */
+.bloco-motorista-visu {
+  background: #f9fafb;
+  border: 1px solid #e6e8eb;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.linha-info {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e3e5e8;
+}
+
+.linha-info:last-child {
+  border-bottom: 0;
+}
+
+.linha-info .rotulo {
+  min-width: 160px;
+  font-weight: 600;
+  color: #444;
+}
+
+.linha-info .valor {
+  color: #222;
+}
